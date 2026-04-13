@@ -1,0 +1,75 @@
+@keyframes panelFadeSlide {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+[class*="text-slate-900"] {
+  color: #f2f9ff !important;
+}
+
+[class*="text-slate-700"] {
+  color: #d1dfec !important;
+}
+
+[class*="text-slate-600"] {
+  color: #9db1c3 !important;
+}
+
+[class*="text-slate-500"] {
+  color: #708499 !important;
+}
+
+[class*="border-slate-200"],
+[class*="border-slate-300"] {
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+[class*="border-rose-200"] {
+  border-color: rgba(253, 164, 175, 0.18) !important;
+}
+
+[class*="bg-rose-50"] {
+  background: linear-gradient(180deg, rgba(61, 23, 34, 0.9), rgba(35, 15, 22, 0.96)) !important;
+}
+
+[class*="text-rose-800"] {
+  color: #ffd6de !important;
+}
+
+[class*="bg-white/80"],
+[class*="bg-white/75"],
+[class*="bg-white/70"],
+[class*="bg-white "] {
+  background-color: rgba(18, 25, 34, 0.78) !important;
+}
+
+[class*="bg-slate-50"] {
+  background-color: rgba(16, 21, 28, 0.92) !important;
+}
+
+.glass-panel table {
+  border-collapse: collapse;
+}
+
+.glass-panel table thead th {
+  color: #8fa6b9;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.glass-panel table tbody tr {
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+.glass-panel table tbody td,
+.glass-panel table thead th {
+  padding-top: 0.55rem;
+  padding-bottom: 0.55rem;
+}

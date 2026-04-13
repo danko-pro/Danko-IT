@@ -1,0 +1,191 @@
+.dashboard-project-contract-hero,
+.dashboard-project-contract-terms,
+.dashboard-project-contract-milestones {
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.02);
+  padding: 0.92rem 1rem;
+}
+
+.dashboard-project-contract-file {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #89a0b3;
+}
+
+.dashboard-project-contract-title-row {
+  margin-top: 0.45rem;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.dashboard-project-contract-title {
+  min-width: 0;
+  font-size: 1rem;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  color: #f2fbff;
+}
+
+.dashboard-project-contract-number {
+  margin-top: 0.65rem;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: #edf6fd;
+}
+
+.dashboard-project-contract-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.7rem;
+}
+
+.dashboard-project-contract-terms-text {
+  margin-top: 0.4rem;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: #d9e8f4;
+}
+
+.dashboard-project-contract-signal {
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 0.95rem 1rem;
+  display: grid;
+  gap: 0.7rem;
+}
+
+.dashboard-project-contract-signal-due {
+  border-color: rgba(255, 209, 102, 0.18);
+  background: linear-gradient(180deg, rgba(48, 35, 12, 0.92), rgba(23, 19, 11, 0.98));
+}
+
+.dashboard-project-contract-signal-upcoming {
+  border-color: rgba(7, 248, 198, 0.14);
+  background: linear-gradient(180deg, rgba(11, 30, 31, 0.92), rgba(9, 17, 24, 0.98));
+}
+
+.dashboard-project-contract-signal-complete {
+  border-color: rgba(125, 245, 182, 0.12);
+  background: linear-gradient(180deg, rgba(12, 29, 24, 0.9), rgba(9, 17, 21, 0.98));
+}
+
+.dashboard-project-contract-signal-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.dashboard-project-contract-signal-title {
+  margin-top: 0.35rem;
+  font-size: 0.98rem;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  color: #f0fbff;
+}
+
+.dashboard-project-contract-signal-text {
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: #d3e0ea;
+}
+
+.dashboard-project-contract-signal-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.dashboard-project-contract-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 0.28rem 0.6rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.dashboard-project-contract-chip-due {
+  border-color: rgba(255, 209, 102, 0.2);
+  background: rgba(255, 209, 102, 0.1);
+  color: #ffd166;
+}
+
+.dashboard-project-contract-chip-upcoming {
+  border-color: rgba(7, 248, 198, 0.18);
+  background: rgba(7, 248, 198, 0.08);
+  color: #86f6df;
+}
+
+.dashboard-project-contract-chip-completed {
+  border-color: rgba(125, 245, 182, 0.15);
+  background: rgba(125, 245, 182, 0.08);
+  color: #b6ffd2;
+}
+
+.dashboard-project-contract-milestones-list {
+  margin-top: 0.65rem;
+  display: grid;
+  gap: 0.55rem;
+}
+
+.dashboard-project-contract-milestone-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.85rem;
+  align-items: start;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.018);
+  padding: 0.78rem 0.9rem;
+}
+
+.dashboard-project-contract-milestone-main {
+  min-width: 0;
+}
+
+.dashboard-project-contract-milestone-title {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #eef8ff;
+}
+
+.dashboard-project-contract-milestone-note {
+  margin-top: 0.28rem;
+  font-size: 0.78rem;
+  line-height: 1.42;
+  color: #8ea3b6;
+}
+
+.dashboard-project-contract-milestone-meta {
+  display: grid;
+  justify-items: end;
+  gap: 0.28rem;
+}
+
+.dashboard-project-contract-milestone-amount {
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: #f4fbff;
+  white-space: nowrap;
+}
+
+.dashboard-project-contract-milestone-date {
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #7891a5;
+  white-space: nowrap;
+}
+

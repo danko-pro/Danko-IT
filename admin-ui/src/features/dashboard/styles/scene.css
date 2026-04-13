@@ -1,0 +1,46 @@
+.dashboard-prototype-stack {
+  display: grid;
+  gap: 1rem;
+}
+
+.dashboard-scene-stage {
+  position: relative;
+  transition: height 520ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.dashboard-scene {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  transition:
+    opacity 520ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 520ms cubic-bezier(0.22, 1, 0.36, 1),
+    filter 420ms ease;
+  will-change: opacity, transform, filter;
+}
+
+.dashboard-scene-active {
+  opacity: 1;
+  transform: translateX(0);
+  filter: blur(0);
+  pointer-events: auto;
+  z-index: 2;
+}
+
+.dashboard-scene-card-hidden {
+  opacity: 0;
+  transform: translateX(-64px);
+  filter: blur(10px);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.dashboard-scene-accounting-hidden {
+  opacity: 0;
+  transform: translateX(72px);
+  filter: blur(12px);
+  pointer-events: none;
+  z-index: 1;
+}
+

@@ -151,6 +151,7 @@ type RequestsOverviewPanelProps = {
   deliverySettings: DeliverySettings | null;
   loading: boolean;
   error: string | null;
+  onReloadOverview: () => Promise<void>;
 };
 
 // Верхняя сводка логистики: статусы, приоритетные заявки, объекты и окно доставки.
@@ -161,8 +162,15 @@ export function RequestsOverviewPanel(props: RequestsOverviewPanelProps) {
   return (
     <div className="space-y-4">
       {props.error ? (
-        <div className="glass-panel border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
-          {props.error}
+        <div className="glass-panel flex items-center justify-between gap-3 border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
+          <span>{props.error}</span>
+          <button
+            type="button"
+            className="secondary-button px-3 py-2 text-xs"
+            onClick={() => void props.onReloadOverview()}
+          >
+            Повторить
+          </button>
         </div>
       ) : null}
 

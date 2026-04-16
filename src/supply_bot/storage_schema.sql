@@ -152,6 +152,127 @@ CREATE TABLE IF NOT EXISTS estimate_projects (
     updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS projects (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    code TEXT NOT NULL,
+    name TEXT NOT NULL,
+    stage_label TEXT NOT NULL DEFAULT 'Черновик',
+    stage_tone TEXT NOT NULL DEFAULT 'neutral',
+    estimate_project_id INTEGER REFERENCES estimate_projects(id) ON DELETE SET NULL,
+    estimate_source TEXT NOT NULL DEFAULT '',
+    area_m2 REAL NOT NULL DEFAULT 0,
+    received_total REAL NOT NULL DEFAULT 0,
+    remaining_total REAL NOT NULL DEFAULT 0,
+    deferred_total REAL NOT NULL DEFAULT 0,
+    planned_total REAL NOT NULL DEFAULT 0,
+    actual_total REAL NOT NULL DEFAULT 0,
+    work_per_m2 REAL NOT NULL DEFAULT 0,
+    materials_per_m2 REAL NOT NULL DEFAULT 0,
+    planned_margin_percent REAL NOT NULL DEFAULT 0,
+    next_delivery_label TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_projects_updated_at ON projects(updated_at DESC, id DESC);
+CREATE INDEX IF NOT EXISTS idx_projects_estimate_project_id ON projects(estimate_project_id);
+
+CREATE TABLE IF NOT EXISTS project_advances (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+    title TEXT NOT NULL,
+    amount REAL NOT NULL DEFAULT 0,
+    date TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'paid',
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_project_advances_project_id ON project_advances(project_id, date DESC, id DESC);
+
+CREATE TABLE IF NOT EXISTS project_ledger_entries (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+    category TEXT NOT NULL,
+    item TEXT NOT NULL,
+    owner TEXT NOT NULL DEFAULT '',
+    counterparty TEXT NOT NULL DEFAULT '',
+    counterparty_inn TEXT,
+    counterparty_legal_name TEXT,
+    counterparty_manager_name TEXT,
+    counterparty_email TEXT,
+    counterparty_phone TEXT,
+    counterparty_messenger TEXT,
+    status TEXT NOT NULL DEFAULT 'planned',
+    plan_amount REAL NOT NULL DEFAULT 0,
+    actual_amount REAL NOT NULL DEFAULT 0,
+    control_date TEXT NOT NULL DEFAULT '',
+    sort_order INTEGER NOT NULL DEFAULT 100,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_project_ledger_entries_project_id ON project_ledger_entries(project_id, sort_order, id);
+
+CREATE TABLE IF NOT EXISTS project_ledger_documents (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+    ledger_entry_id INTEGER NOT NULL REFERENCES project_ledger_entries(id) ON DELETE CASCADE,
+    kind TEXT NOT NULL,
+    title TEXT NOT NULL DEFAULT '',
+    date TEXT NOT NULL DEFAULT '',
+    amount REAL NOT NULL DEFAULT 0,
+    source_file_name TEXT NOT NULL,
+    source_mime_type TEXT NOT NULL DEFAULT 'application/octet-stream',
+    source_storage_key TEXT NOT NULL,
+    extracted_by_ai INTEGER NOT NULL DEFAULT 0,
+    verified_by_user INTEGER NOT NULL DEFAULT 0,
+    uploaded_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(ledger_entry_id, kind)
+);
+
+CREATE INDEX IF NOT EXISTS idx_project_ledger_documents_project_id ON project_ledger_documents(project_id, ledger_entry_id, kind);
+
+CREATE TABLE IF NOT EXISTS project_contracts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    project_id INTEGER NOT NULL UNIQUE REFERENCES projects(id) ON DELETE CASCADE,
+    file_name TEXT NOT NULL DEFAULT '',
+    title TEXT NOT NULL DEFAULT '',
+    number TEXT NOT NULL DEFAULT '',
+    signed_at TEXT NOT NULL DEFAULT '',
+    start_date TEXT NOT NULL DEFAULT '',
+    planned_end_date TEXT NOT NULL DEFAULT '',
+    amount REAL NOT NULL DEFAULT 0,
+    advance_terms TEXT NOT NULL DEFAULT '',
+    extraction_status TEXT NOT NULL DEFAULT 'review',
+    source_file_name TEXT,
+    source_mime_type TEXT,
+    source_storage_key TEXT,
+    uploaded_at TEXT,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_project_contracts_project_id ON project_contracts(project_id);
+
+CREATE TABLE IF NOT EXISTS project_contract_milestones (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    contract_id INTEGER NOT NULL REFERENCES project_contracts(id) ON DELETE CASCADE,
+    kind TEXT NOT NULL,
+    title TEXT NOT NULL,
+    planned_date TEXT NOT NULL,
+    amount REAL,
+    note TEXT,
+    status TEXT NOT NULL DEFAULT 'upcoming',
+    sort_order INTEGER NOT NULL DEFAULT 100,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_project_contract_milestones_contract_id ON project_contract_milestones(contract_id, sort_order, id);
+
 CREATE TABLE IF NOT EXISTS estimate_rooms (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     project_id INTEGER NOT NULL REFERENCES estimate_projects(id) ON DELETE CASCADE,

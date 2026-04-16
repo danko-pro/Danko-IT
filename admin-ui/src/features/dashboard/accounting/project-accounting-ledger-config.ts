@@ -1,12 +1,23 @@
 import type { ProjectCardLedgerStatus } from "../model/project-model";
 
-export const CATEGORY_OPTIONS = ["Работы", "Материалы", "Услуги", "Техника", "Мебель", "Двери", "Другое"];
+export const CATEGORY_OPTIONS = [
+  "Материалы",
+  "Инструмент",
+  "Услуги",
+  "Работы",
+  "Доп.работы",
+  "Прочие",
+  "Техника",
+  "Аванс",
+  "Зеркала",
+  "Мебель",
+];
 
 export const STATUS_OPTIONS: Array<{ value: ProjectCardLedgerStatus | "all"; label: string }> = [
   { value: "all", label: "Все статусы" },
   { value: "planned", label: "План" },
   { value: "invoice", label: "Счёт" },
-  { value: "waiting-payment", label: "Ждём оплату" },
+  { value: "waiting-payment", label: "Ожидает оплаты" },
   { value: "paid", label: "Оплачено" },
   { value: "completed", label: "Закрыто" },
 ];
@@ -15,14 +26,19 @@ export type LedgerDocumentKind = "invoice" | "act";
 
 export function categoryToneClass(category: string) {
   switch (category) {
-    case "Работы":
-      return "dashboard-ledger-primary-amber";
     case "Материалы":
       return "dashboard-ledger-primary-emerald";
+    case "Инструмент":
+      return "dashboard-ledger-primary-amber";
     case "Услуги":
       return "dashboard-ledger-primary-cyan";
+    case "Работы":
+      return "dashboard-ledger-primary-amber";
+    case "Доп.работы":
     case "Техника":
       return "dashboard-ledger-primary-rose";
+    case "Аванс":
+      return "dashboard-ledger-primary-cyan";
     default:
       return "dashboard-ledger-primary-slate";
   }
@@ -57,5 +73,5 @@ export function requiresInvoice(status: ProjectCardLedgerStatus) {
 }
 
 export function requiresAct(status: ProjectCardLedgerStatus) {
-  return status === "completed";
+  return status === "paid" || status === "completed";
 }

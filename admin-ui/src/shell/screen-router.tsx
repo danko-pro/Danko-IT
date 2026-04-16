@@ -61,6 +61,7 @@ export function AppScreenRouter(props: { controller: AdminAppController }) {
     calculatorError,
     settingsError,
     loadRequests,
+    loadOverview,
     loadFamilies,
     loadCatalogSearch,
     loadCalculatorProjects,
@@ -115,6 +116,7 @@ export function AppScreenRouter(props: { controller: AdminAppController }) {
           selectedRequestId={selectedRequestId}
           requestActionId={requestActionId}
           overviewError={error}
+          onReloadOverview={loadOverview}
           requestDetailBusyKey={requestDetailBusyKey}
           error={requestError}
           onReload={loadRequests}

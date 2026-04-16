@@ -1,4 +1,9 @@
-import type { DashboardProjectCardData, ProjectCardLedgerDocument, ProjectCardSourceFile } from "./project-model";
+import type {
+  DashboardProjectCardData,
+  ProjectCardLedgerCounterparty,
+  ProjectCardLedgerDocument,
+  ProjectCardSourceFile,
+} from "./project-model";
 
 function sourceFile(id: string, fileName: string, uploadedAt: string, mimeType = "application/pdf"): ProjectCardSourceFile {
   return { id, fileName, uploadedAt, mimeType };
@@ -26,7 +31,26 @@ function ledgerDocument(
   };
 }
 
+function counterpartyDetails(
+  inn: string,
+  legalName: string,
+  managerName: string,
+  email: string,
+  phone: string,
+  messenger: string,
+): ProjectCardLedgerCounterparty {
+  return {
+    inn,
+    legalName,
+    managerName,
+    email,
+    phone,
+    messenger,
+  };
+}
+
 export const firstProjectCardMock: DashboardProjectCardData = {
+  id: "project-ib-22",
   code: "ИБ / 22",
   name: "Карточка объекта",
   stageLabel: "В работе",
@@ -58,6 +82,14 @@ export const firstProjectCardMock: DashboardProjectCardData = {
       item: "Черновые работы",
       owner: "Прохоров Д.",
       counterparty: "ООО Баумастер Рус",
+      counterpartyDetails: counterpartyDetails(
+        "7704123456",
+        "ООО Баумастер Рус",
+        "Илья Смирнов",
+        "smirnov@baumaster.ru",
+        "+7 915 220-11-44",
+        "@baumaster_ilya",
+      ),
       status: "paid",
       invoiceDocument: ledgerDocument(
         "invoice-rough-work",
@@ -79,106 +111,6 @@ export const firstProjectCardMock: DashboardProjectCardData = {
       actualAmount: 318400,
       controlDate: "2026-03-22",
     },
-    {
-      id: "ledger-materials-clean",
-      category: "Материалы",
-      item: "Чистовые материалы",
-      owner: "Прохоров Д.",
-      counterparty: "ООО Сан-Склад",
-      status: "waiting-payment",
-      invoiceDocument: ledgerDocument(
-        "invoice-materials-clean",
-        "invoice",
-        "Счёт / материалы / 02",
-        "2026-04-19",
-        620000,
-        sourceFile("source-invoice-materials-clean", "Счёт_материалы_02.pdf", "2026-04-19T11:15:00"),
-      ),
-      actDocument: null,
-      planAmount: 620000,
-      actualAmount: 0,
-      controlDate: "2026-04-25",
-    },
-    {
-      id: "ledger-doors",
-      category: "Двери",
-      item: "Дверной блок и фурнитура",
-      owner: "Прохоров В.",
-      counterparty: "ИП Двери Шоурум",
-      status: "invoice",
-      invoiceDocument: ledgerDocument(
-        "invoice-doors",
-        "invoice",
-        "Счёт / двери / 01",
-        "2026-04-28",
-        67766,
-        sourceFile("source-invoice-doors", "Счёт_двери_01.pdf", "2026-04-28T09:40:00"),
-      ),
-      actDocument: null,
-      planAmount: 67766,
-      actualAmount: 0,
-      controlDate: "2026-05-03",
-    },
-    {
-      id: "ledger-services",
-      category: "Услуги",
-      item: "Вывоз мусора и логистика",
-      owner: "Меркушин Б.",
-      counterparty: "ООО Сервис Снаб",
-      status: "completed",
-      invoiceDocument: ledgerDocument(
-        "invoice-services",
-        "invoice",
-        "Счёт / логистика / 03",
-        "2026-03-05",
-        25000,
-        sourceFile("source-invoice-services", "Счёт_логистика_03.pdf", "2026-03-05T12:30:00"),
-      ),
-      actDocument: ledgerDocument(
-        "act-services",
-        "act",
-        "Акт / логистика / 03",
-        "2026-03-10",
-        25000,
-        sourceFile("source-act-services", "Акт_логистика_03.pdf", "2026-03-10T18:10:00"),
-      ),
-      planAmount: 25000,
-      actualAmount: 25000,
-      controlDate: "2026-03-10",
-    },
-    {
-      id: "ledger-tech",
-      category: "Техника",
-      item: "Аренда подъёмника",
-      owner: "Меркушин Б.",
-      counterparty: "ООО ТехНайм",
-      status: "planned",
-      invoiceDocument: null,
-      actDocument: null,
-      planAmount: 143940,
-      actualAmount: 0,
-      controlDate: "2026-05-10",
-    },
-    {
-      id: "ledger-furniture",
-      category: "Мебель",
-      item: "Встроенная мебель",
-      owner: "Прохоров Г.",
-      counterparty: "ООО Мебель Ателье",
-      status: "invoice",
-      invoiceDocument: ledgerDocument(
-        "invoice-furniture",
-        "invoice",
-        "Счёт / мебель / 01",
-        "2026-05-08",
-        43200,
-        sourceFile("source-invoice-furniture", "Счёт_мебель_01.pdf", "2026-05-08T14:05:00"),
-      ),
-      actDocument: null,
-      planAmount: 43200,
-      actualAmount: 0,
-      controlDate: "2026-05-16",
-    },
   ],
   contract: {
     fileName: "ДОГОВОР ПОДРЯДА 01-02-26.pdf",
@@ -190,6 +122,12 @@ export const firstProjectCardMock: DashboardProjectCardData = {
     amount: 2446704,
     advanceTerms: "Первичный аванс 30%, далее оплата по выставленным счетам и актам этапов.",
     extractionStatus: "review",
+    sourceFile: sourceFile(
+      "contract-source-ib-22",
+      "Р”РћР“РћР’РћР _РџРћР”Р РЇР”Рђ_01-02-26.pdf",
+      "2026-02-08T10:00:00",
+    ),
+    downloadUrl: "/api/projects/1/contract/download",
     milestones: [
       {
         id: "contract-invoice-2",
@@ -228,3 +166,64 @@ export const firstProjectCardMock: DashboardProjectCardData = {
     ],
   },
 };
+
+export function createEmptyProjectContract(): DashboardProjectCardData["contract"] {
+  return {
+    fileName: "Договор не загружен",
+    title: "Договор не загружен",
+    number: "Без номера",
+    signedAt: "",
+    startDate: "",
+    plannedEndDate: "",
+    amount: 0,
+    advanceTerms: "Загрузите договор, чтобы система выделила условия оплаты и ближайшие вехи.",
+    extractionStatus: "review",
+    sourceFile: null,
+    downloadUrl: null,
+    milestones: [],
+  };
+}
+
+export function createDashboardProjectDraft(sequence: number): DashboardProjectCardData {
+  const codeNumber = String(sequence).padStart(2, "0");
+
+  return {
+    id: `project-draft-${sequence}-${Date.now()}`,
+    code: `НОВ / ${codeNumber}`,
+    name: "Новый объект",
+    stageLabel: "Черновик",
+    stageTone: "neutral",
+    areaM2: 0,
+    estimateSource: "",
+    receivedTotal: 0,
+    remainingTotal: 0,
+    deferredTotal: 0,
+    plannedTotal: 0,
+    actualTotal: 0,
+    workPerM2: 0,
+    materialsPerM2: 0,
+    plannedMarginPercent: 0,
+    nextDeliveryLabel: "—",
+    expenses: [],
+    advances: [],
+    ledgerEntries: [],
+    contract: {
+      fileName: "Договор не загружен",
+      title: "Договор не загружен",
+      number: "Без номера",
+      signedAt: "",
+      startDate: "",
+      plannedEndDate: "",
+      amount: 0,
+      advanceTerms: "Загрузите договор, чтобы система выделила условия оплаты и ближайшие вехи.",
+      extractionStatus: "review",
+      sourceFile: null,
+      downloadUrl: null,
+      milestones: [],
+    },
+  };
+}
+
+export function cloneDashboardProjectData(project: DashboardProjectCardData): DashboardProjectCardData {
+  return structuredClone(project);
+}

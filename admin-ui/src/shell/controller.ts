@@ -1,13 +1,14 @@
-﻿import { type FormEvent, useEffect, useState } from "react";
-import type { DeliverySettings, GroupProfile, ScreenKey, Summary } from "../shared/types";
+import { type FormEvent, useEffect, useState } from "react";
 import { useAdminCalculatorController } from "../features/calculator/controller";
 import { useAdminMaterialsController } from "../features/materials/controller";
 import { useAdminRequestsController } from "../features/requests/controller";
-import { fetchJson } from "../shared/utils";
+import type { AdminAuthSession, DeliverySettings, GroupProfile, ScreenKey, Summary } from "../shared/types";
+import { ApiError, fetchJson, isAuthenticatedSession } from "../shared/utils";
 
-// Основной orchestration-слой admin UI: shell, overview и сборка доменных hooks.
+// Основной orchestration-слой admin UI: shell, auth, overview и сборка доменных hooks.
 export function useAdminAppController() {
   const [screen, setScreen] = useState<ScreenKey>("dashboard");
+  const [authSession, setAuthSession] = useState<AdminAuthSession | null>(null);
   const [summary, setSummary] = useState<Summary | null>(null);
   const [groups, setGroups] = useState<GroupProfile[]>([]);
   const [deliverySettings, setDeliverySettings] = useState<DeliverySettings | null>(null);
@@ -19,7 +20,10 @@ export function useAdminAppController() {
 
   const [loading, setLoading] = useState(true);
   const [savingDelivery, setSavingDelivery] = useState(false);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [authPending, setAuthPending] = useState(false);
 
+  const [authError, setAuthError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [settingsError, setSettingsError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -36,7 +40,7 @@ export function useAdminAppController() {
   });
 
   useEffect(() => {
-    void loadOverview();
+    void bootstrapAdminApp();
   }, []);
 
   useEffect(() => {
@@ -55,6 +59,27 @@ export function useAdminAppController() {
     return () => window.clearTimeout(timerId);
   }, [successMessage]);
 
+  async function bootstrapAdminApp() {
+    try {
+      setAuthLoading(true);
+      setAuthError(null);
+      const session = await fetchJson<AdminAuthSession>("/api/auth/session");
+      setAuthSession(session);
+
+      if (isAuthenticatedSession(session)) {
+        await loadOverview();
+        return;
+      }
+
+      setLoading(false);
+    } catch (loadError) {
+      setAuthError(loadError instanceof Error ? loadError.message : "Не удалось проверить admin-сессию");
+      setLoading(false);
+    } finally {
+      setAuthLoading(false);
+    }
+  }
+
   async function loadOverview() {
     try {
       setLoading(true);
@@ -71,6 +96,27 @@ export function useAdminAppController() {
       setDeliverySettings(deliveryData);
       setError(null);
     } catch (loadError) {
+      if (loadError instanceof ApiError && loadError.status === 401) {
+        setAuthSession((current) =>
+          current
+            ? {
+                ...current,
+                authenticated: false,
+                user: null,
+                expires_at: null,
+              }
+            : {
+                auth_enabled: true,
+                authenticated: false,
+                mode: "session",
+                user: null,
+                expires_at: null,
+              },
+        );
+        setAuthError("Admin-сессия завершена. Войдите снова.");
+        setLoading(false);
+        return;
+      }
       setError(loadError instanceof Error ? loadError.message : "Не удалось загрузить панель");
     } finally {
       setLoading(false);
@@ -95,7 +141,54 @@ export function useAdminAppController() {
     }
   }
 
+  async function handleLogin(password: string) {
+    try {
+      setAuthPending(true);
+      setAuthError(null);
+      const session = await fetchJson<AdminAuthSession>("/api/auth/login", {
+        method: "POST",
+        body: JSON.stringify({ password }),
+      });
+      setAuthSession(session);
+
+      if (isAuthenticatedSession(session)) {
+        await loadOverview();
+      }
+    } catch (loginError) {
+      if (loginError instanceof ApiError && loginError.status === 401) {
+        setAuthError("Неверный пароль администратора.");
+        return;
+      }
+      setAuthError(loginError instanceof Error ? loginError.message : "Не удалось войти в admin-панель");
+    } finally {
+      setAuthPending(false);
+    }
+  }
+
+  async function handleLogout() {
+    try {
+      setAuthPending(true);
+      const session = await fetchJson<AdminAuthSession>("/api/auth/logout", {
+        method: "POST",
+      });
+      setAuthSession(session);
+      setScreen("dashboard");
+      setSuccessMessage(null);
+      setError(null);
+      setSettingsError(null);
+      setLoading(false);
+    } catch (logoutError) {
+      setAuthError(logoutError instanceof Error ? logoutError.message : "Не удалось завершить admin-сессию");
+    } finally {
+      setAuthPending(false);
+    }
+  }
+
   return {
+    authSession,
+    authLoading,
+    authPending,
+    authError,
     screen,
     setScreen,
     summary,
@@ -109,7 +202,10 @@ export function useAdminAppController() {
     settingsError,
     successMessage,
     setSuccessMessage,
+    bootstrapAdminApp,
     loadOverview,
+    handleLogin,
+    handleLogout,
     handleSaveDeliverySettings,
     ...requestsController,
     ...materialsController,
@@ -118,4 +214,3 @@ export function useAdminAppController() {
 }
 
 export type AdminAppController = ReturnType<typeof useAdminAppController>;
-

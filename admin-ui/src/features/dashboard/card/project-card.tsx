@@ -1,6 +1,6 @@
 import { SignalChip, StatusBadge } from "../../../shared/ui";
 import { formatMoney } from "../model/project-accounting-format";
-import type { DashboardProjectCardData } from "../model/project-model";
+import type { DashboardProjectCardData, ProjectCardContract } from "../model/project-model";
 import { ProjectCardAdvancesPanel } from "./project-card-advances-panel";
 import { ProjectCardContractPanel } from "./project-card-contract-panel";
 import { ContractHeaderIcon, SideMetric, SummaryMetric } from "./project-card-primitives";
@@ -11,10 +11,20 @@ export function ProjectCard(props: {
   onAddAdvance: (payload: { title: string; amount: number; date: string }) => void;
   onDeleteAdvance: (advanceId: string) => void;
   onCompleteContractMilestone: (milestoneId: string) => void;
+  onUploadContract: (file: File) => void;
+  onExtractContract: () => void;
+  onUpdateContract: (contract: ProjectCardContract) => void | Promise<void>;
+  onDeleteContract: () => void | Promise<void>;
+  contractSyncState: {
+    uploading: boolean;
+    extracting: boolean;
+    tone: "info" | "success" | "error";
+    message: string | null;
+  };
   onOpenAccounting: () => void;
 }) {
   const { project } = props;
-  const contractSummary = getContractSummary(project.contract);
+  const contractSummary = getContractSummary(project.contract, project.advances);
 
   return (
     <article className="dashboard-project-card">
@@ -28,7 +38,6 @@ export function ProjectCard(props: {
             <StatusBadge label={project.stageLabel} tone={project.stageTone} />
           </div>
           <div className="dashboard-project-subtitle">{project.name}</div>
-          <div className="dashboard-project-caption">{project.estimateSource}</div>
         </div>
 
         <button type="button" className="dashboard-project-header-cta" onClick={props.onOpenAccounting}>
@@ -111,7 +120,13 @@ export function ProjectCard(props: {
 
           <ProjectCardContractPanel
             contract={project.contract}
+            advances={project.advances}
             onCompleteContractMilestone={props.onCompleteContractMilestone}
+            onUploadContract={props.onUploadContract}
+            onExtractContract={props.onExtractContract}
+            onUpdateContract={props.onUpdateContract}
+            onDeleteContract={props.onDeleteContract}
+            syncState={props.contractSyncState}
           />
         </div>
       </div>

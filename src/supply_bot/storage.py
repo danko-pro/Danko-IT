@@ -12,12 +12,14 @@ from supply_bot.storage_estimate_core import EstimateCoreStorageMixin
 from supply_bot.storage_estimate_doors import EstimateDoorsStorageMixin
 from supply_bot.storage_estimate_flooring import EstimateFlooringStorageMixin
 from supply_bot.storage_estimate_wall_finish import EstimateWallFinishStorageMixin
+from supply_bot.storage_projects import ProjectsStorageMixin
 from supply_bot.storage_requests import GroupRequestsStorageMixin
 
 
 class BotStorage(
     CatalogStorageMixin,
     GroupRequestsStorageMixin,
+    ProjectsStorageMixin,
     EstimateDoorsStorageMixin,
     EstimateWallFinishStorageMixin,
     EstimateFlooringStorageMixin,

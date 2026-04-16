@@ -1,11 +1,274 @@
 .dashboard-prototype-stack {
   display: grid;
   gap: 1rem;
+  --dashboard-motion-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --dashboard-motion-ease-soft: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --dashboard-motion-ease-emphasis: cubic-bezier(0.16, 1, 0.3, 1);
+  --dashboard-motion-fast: 220ms;
+  --dashboard-motion-medium: 340ms;
+  --dashboard-motion-slow: 520ms;
+  --dashboard-motion-panel: 620ms;
+}
+
+.dashboard-project-switcher {
+  position: relative;
+  z-index: 8;
+  isolation: isolate;
+  display: grid;
+  gap: 0.55rem;
+  overflow: visible;
+}
+
+.dashboard-project-switcher-tabs {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+  overflow: visible;
+}
+
+.dashboard-project-switcher-add-inline {
+  margin-left: 0.08rem;
+}
+
+.dashboard-project-switcher-tab {
+  min-width: 0;
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.58rem;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background:
+    linear-gradient(180deg, rgba(18, 24, 33, 0.9), rgba(10, 15, 21, 0.96)),
+    radial-gradient(circle at top left, rgba(7, 248, 198, 0.04), transparent 70%);
+  padding: 0.44rem 0.56rem 0.46rem 0.66rem;
+  cursor: pointer;
+  transition:
+    transform var(--dashboard-motion-fast) var(--dashboard-motion-ease-soft),
+    border-color var(--dashboard-motion-fast) var(--dashboard-motion-ease-soft),
+    background-color var(--dashboard-motion-fast) var(--dashboard-motion-ease-soft),
+    box-shadow var(--dashboard-motion-medium) var(--dashboard-motion-ease-soft);
+}
+
+.dashboard-project-switcher-tab:hover {
+  transform: translateY(-1px);
+  border-color: rgba(7, 248, 198, 0.14);
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.14);
+}
+
+.dashboard-project-switcher-tab-active {
+  z-index: 3;
+  border-color: rgba(7, 248, 198, 0.2);
+  background:
+    linear-gradient(180deg, rgba(18, 26, 34, 0.96), rgba(10, 15, 21, 1)),
+    radial-gradient(circle at top left, rgba(7, 248, 198, 0.08), transparent 64%);
+  box-shadow:
+    0 0 0 1px rgba(7, 248, 198, 0.05),
+    0 12px 24px rgba(0, 0, 0, 0.18);
+}
+
+.dashboard-project-switcher-tab-main {
+  min-width: 0;
+  display: grid;
+  gap: 0.12rem;
+}
+
+.dashboard-project-switcher-tab-code-row {
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.34rem;
+  cursor: inherit;
+}
+
+.dashboard-project-switcher-tab-label {
+  font-size: 0.52rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #6f8698;
+  cursor: inherit;
+}
+
+.dashboard-project-switcher-tab-code {
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: 0.04em;
+  color: #e7f5ff;
+  cursor: inherit;
+  transition:
+    color var(--dashboard-motion-fast) var(--dashboard-motion-ease-soft),
+    text-decoration-color var(--dashboard-motion-fast) var(--dashboard-motion-ease-soft);
+}
+
+.dashboard-project-switcher-tab-edit-hint {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  font-size: 0.58rem;
+  line-height: 1;
+  color: rgba(7, 248, 198, 0.72);
+  opacity: 0;
+  transform: translateY(1px);
+  cursor: inherit;
+  transition:
+    opacity var(--dashboard-motion-fast) var(--dashboard-motion-ease-soft),
+    transform var(--dashboard-motion-fast) var(--dashboard-motion-ease-soft),
+    color var(--dashboard-motion-fast) var(--dashboard-motion-ease-soft);
+}
+
+.dashboard-project-switcher-tab:hover .dashboard-project-switcher-tab-code,
+.dashboard-project-switcher-tab-active .dashboard-project-switcher-tab-code {
+  color: #f0fbff;
+  text-decoration: underline;
+  text-decoration-color: rgba(7, 248, 198, 0.34);
+  text-underline-offset: 0.14em;
+}
+
+.dashboard-project-switcher-tab:hover .dashboard-project-switcher-tab-edit-hint,
+.dashboard-project-switcher-tab-active .dashboard-project-switcher-tab-edit-hint {
+  opacity: 0.88;
+  transform: translateY(0);
+}
+
+.dashboard-project-switcher-tab-editing .dashboard-project-switcher-tab-edit-hint,
+.dashboard-project-switcher-tab-editing .dashboard-project-switcher-tab-code {
+  opacity: 0;
+  text-decoration: none;
+}
+
+.dashboard-project-switcher-tab-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 1rem;
+  width: 1rem;
+  flex: 0 0 1rem;
+  margin-top: 0.12rem;
+  border: none;
+  background: transparent;
+  padding: 0;
+  font-size: 0.95rem;
+  font-weight: 300;
+  line-height: 1;
+  color: #71889a;
+  opacity: 1;
+  transition:
+    color var(--dashboard-motion-fast) var(--dashboard-motion-ease-soft),
+    opacity var(--dashboard-motion-fast) var(--dashboard-motion-ease-soft),
+    transform var(--dashboard-motion-fast) var(--dashboard-motion-ease-soft);
+}
+
+.dashboard-project-switcher-tab:hover .dashboard-project-switcher-tab-remove,
+.dashboard-project-switcher-tab-active .dashboard-project-switcher-tab-remove {
+  opacity: 1;
+}
+
+.dashboard-project-switcher-tab-remove:hover {
+  color: #f2c0cf;
+  transform: scale(1.04);
+}
+
+.dashboard-project-switcher-tab-delete-cloud {
+  position: absolute;
+  top: calc(100% + 0.45rem);
+  right: 0;
+  z-index: 24;
+  min-width: 11.5rem;
+  display: grid;
+  gap: 0.45rem;
+  border-radius: 14px;
+  border: 1px solid rgba(7, 248, 198, 0.16);
+  background:
+    linear-gradient(180deg, rgba(18, 26, 34, 0.98), rgba(10, 15, 21, 1)),
+    radial-gradient(circle at top left, rgba(7, 248, 198, 0.08), transparent 70%);
+  padding: 0.6rem 0.68rem;
+  box-shadow:
+    0 16px 28px rgba(0, 0, 0, 0.22),
+    0 0 0 1px rgba(7, 248, 198, 0.04);
+}
+
+.dashboard-project-switcher-tab-delete-cloud::before {
+  content: "";
+  position: absolute;
+  top: -6px;
+  right: 0.9rem;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-bottom: 6px solid rgba(7, 248, 198, 0.26);
+}
+
+.dashboard-project-switcher-tab-delete-copy {
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: #e9f7ff;
+}
+
+.dashboard-project-switcher-tab-delete-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.38rem;
+}
+
+.dashboard-project-switcher-tab-delete-button {
+  min-height: 1.8rem;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  padding: 0.22rem 0.5rem;
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #dce9f4;
+  transition:
+    transform var(--dashboard-motion-fast) var(--dashboard-motion-ease-soft),
+    border-color var(--dashboard-motion-fast) var(--dashboard-motion-ease-soft),
+    background-color var(--dashboard-motion-fast) var(--dashboard-motion-ease-soft),
+    color var(--dashboard-motion-fast) var(--dashboard-motion-ease-soft);
+}
+
+.dashboard-project-switcher-tab-delete-button:hover {
+  transform: translateY(-1px);
+  border-color: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.dashboard-project-switcher-tab-delete-button-danger {
+  border-color: rgba(255, 128, 160, 0.18);
+  background: rgba(255, 128, 160, 0.08);
+  color: #f1bfd0;
+}
+
+.dashboard-project-switcher-tab-delete-button-danger:hover {
+  border-color: rgba(255, 128, 160, 0.26);
+  background: rgba(255, 128, 160, 0.12);
+}
+
+.dashboard-project-switcher-tab-input {
+  width: 6.6rem;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  padding: 0;
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: 0.04em;
+  color: #f0fbff;
+  outline: none;
 }
 
 .dashboard-scene-stage {
   position: relative;
-  transition: height 520ms cubic-bezier(0.22, 1, 0.36, 1);
+  transition: height var(--dashboard-motion-panel) var(--dashboard-motion-ease);
 }
 
 .dashboard-scene {
@@ -14,9 +277,9 @@
   top: 0;
   width: 100%;
   transition:
-    opacity 520ms cubic-bezier(0.22, 1, 0.36, 1),
-    transform 520ms cubic-bezier(0.22, 1, 0.36, 1),
-    filter 420ms ease;
+    opacity var(--dashboard-motion-slow) var(--dashboard-motion-ease),
+    transform var(--dashboard-motion-slow) var(--dashboard-motion-ease),
+    filter var(--dashboard-motion-medium) var(--dashboard-motion-ease-soft);
   will-change: opacity, transform, filter;
 }
 

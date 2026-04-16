@@ -4,6 +4,17 @@ export type ScreenKey = "dashboard" | "requests" | "materials" | "calculator" | 
 
 export type StatusTone = "ok" | "warn" | "neutral" | "active" | "error";
 
+export type AdminAuthSession = {
+  auth_enabled: boolean;
+  authenticated: boolean;
+  mode: "session" | "local-bypass";
+  user: {
+    subject: string;
+    role: string;
+  } | null;
+  expires_at: string | null;
+};
+
 export type Summary = {
   families_count: number;
   skus_count: number;

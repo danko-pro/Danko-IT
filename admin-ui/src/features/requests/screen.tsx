@@ -27,6 +27,7 @@ export function RequestsScreen(props: {
   selectedRequestId: number | null;
   requestActionId: number | null;
   overviewError: string | null;
+  onReloadOverview: () => Promise<void>;
   requestDetailBusyKey: string | null;
   error: string | null;
   onReload: () => Promise<void>;
@@ -48,6 +49,7 @@ export function RequestsScreen(props: {
         deliverySettings={props.deliverySettings}
         loading={props.loading}
         error={props.overviewError}
+        onReloadOverview={props.onReloadOverview}
       />
 
       <div className="grid gap-4 xl:grid-cols-[0.88fr_1.32fr]">

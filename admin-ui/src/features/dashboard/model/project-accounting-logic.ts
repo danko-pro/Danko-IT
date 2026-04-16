@@ -78,6 +78,10 @@ function buildExpenses(entries: ProjectCardLedgerEntry[]): ProjectCardExpenseIte
   }));
 }
 
+export function buildLedgerExpenses(entries: ProjectCardLedgerEntry[]): ProjectCardExpenseItem[] {
+  return buildExpenses(entries);
+}
+
 export function createEmptyLedgerEntry(): ProjectCardLedgerEntry {
   return {
     id: `ledger-${Date.now()}`,
@@ -85,6 +89,7 @@ export function createEmptyLedgerEntry(): ProjectCardLedgerEntry {
     item: "",
     owner: "",
     counterparty: "",
+    counterpartyDetails: null,
     status: "planned",
     invoiceDocument: null,
     actDocument: null,
@@ -114,5 +119,16 @@ export function recalculateProjectFromLedger(project: DashboardProjectCardData):
     materialsPerM2: project.areaM2 > 0 ? materialsExpense / project.areaM2 : 0,
     expenses,
     nextDeliveryLabel: formatNextDeliveryLabel(nextControlDate),
+  };
+}
+
+export function applyLedgerEntriesToProject(
+  project: DashboardProjectCardData,
+  ledgerEntries: ProjectCardLedgerEntry[],
+): DashboardProjectCardData {
+  return {
+    ...project,
+    ledgerEntries,
+    expenses: buildExpenses(ledgerEntries),
   };
 }

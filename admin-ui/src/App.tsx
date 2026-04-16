@@ -1,4 +1,5 @@
 import type { ScreenKey } from "./shared/types";
+import { AdminAuthScreen } from "./features/auth/screen";
 import { useAdminAppController } from "./shell/controller";
 import { navigation, screenTitles, type NavigationScreenKey } from "./shell/navigation";
 import { AppScreenRouter } from "./shell/screen-router";
@@ -12,8 +13,10 @@ function isNavigationScreen(screen: ScreenKey): screen is NavigationScreenKey {
 
 export default function App() {
   const controller = useAdminAppController();
+  const requiresLogin = controller.authSession?.auth_enabled && !controller.authSession.authenticated;
+  const showAuthGate = !controller.authLoading && (!controller.authSession || requiresLogin);
 
-  const { screen, summary, successMessage, setSuccessMessage, loadRequests, loadFamilies, loadCalculatorProjects } = controller;
+  const { screen, summary, successMessage, setSuccessMessage, loadOverview, loadCalculatorProjects } = controller;
   const isEditorScreen = screen === "editor";
 
   const currentNavigationItem =
@@ -24,15 +27,12 @@ export default function App() {
     controller.setScreen(nextScreen);
     setSuccessMessage(null);
 
-    if (nextScreen === "requests") {
-      void loadRequests();
-    }
-    if (nextScreen === "materials") {
-      void loadFamilies();
-    }
     if (nextScreen === "calculator") {
       void loadCalculatorProjects();
+      return;
     }
+
+    void loadOverview();
   }
 
   return (
@@ -44,34 +44,50 @@ export default function App() {
       </div>
 
       <div className="relative z-10 mx-auto flex min-h-[calc(100vh-1.5rem)] max-w-[1680px] flex-col gap-4">
-        <div className="grid flex-1 grid-cols-1 gap-4 lg:grid-cols-[272px_minmax(0,1fr)]">
-          <AppShellSidebar
-            screen={screen}
-            calculatorProjects={controller.calculatorProjects}
-            selectedCalculatorProjectId={controller.selectedCalculatorProjectId}
-            calculatorLoading={controller.calculatorLoading}
-            onScreenSelect={handleScreenSelect}
-            onSelectCalculatorProject={controller.setSelectedCalculatorProjectId}
-            onClearSuccessMessage={() => setSuccessMessage(null)}
-            onQuickCreateCalculatorProject={() => void controller.handleQuickCreateCalculatorProject()}
-          />
+        {controller.authLoading ? (
+          <div className="glass-panel flex min-h-[calc(100vh-8rem)] items-center justify-center">
+            <div className="space-y-2 text-center">
+              <div className="eyebrow">Admin Session</div>
+              <div className="text-lg font-semibold text-slate-100">Проверка доступа...</div>
+            </div>
+          </div>
+        ) : showAuthGate ? (
+          <AdminAuthScreen loading={controller.authPending} error={controller.authError} onLogin={controller.handleLogin} />
+        ) : (
+          <div className="grid flex-1 grid-cols-1 gap-4 lg:grid-cols-[272px_minmax(0,1fr)]">
+            <AppShellSidebar
+              screen={screen}
+              calculatorProjects={controller.calculatorProjects}
+              selectedCalculatorProjectId={controller.selectedCalculatorProjectId}
+              calculatorLoading={controller.calculatorLoading}
+              onScreenSelect={handleScreenSelect}
+              onSelectCalculatorProject={controller.setSelectedCalculatorProjectId}
+              onClearSuccessMessage={() => setSuccessMessage(null)}
+              onQuickCreateCalculatorProject={() => void controller.handleQuickCreateCalculatorProject()}
+            />
 
-          <main className={isEditorScreen ? "" : "space-y-4"}>
-            {!isEditorScreen && currentNavigationItem ? (
-              <AppShellHeader
-                screen={screen}
-                eyebrow={currentNavigationItem.label}
-                title={currentScreenTitle}
-                unknownTermsCount={summary?.new_unknown_terms_count}
-                successMessage={successMessage}
-              />
-            ) : null}
+            <main className={isEditorScreen ? "" : "space-y-4"}>
+              {!isEditorScreen && currentNavigationItem ? (
+                <AppShellHeader
+                  screen={screen}
+                  eyebrow={currentNavigationItem.label}
+                  title={currentScreenTitle}
+                  unknownTermsCount={summary?.new_unknown_terms_count}
+                  successMessage={successMessage}
+                />
+              ) : null}
 
-            <AppScreenRouter controller={controller} />
-          </main>
-        </div>
+              <AppScreenRouter controller={controller} />
+            </main>
+          </div>
+        )}
 
-        <AppShellFooter loading={controller.loading} />
+        <AppShellFooter
+          loading={controller.loading}
+          authSession={controller.authSession}
+          authPending={controller.authPending}
+          onLogout={controller.handleLogout}
+        />
       </div>
     </div>
   );

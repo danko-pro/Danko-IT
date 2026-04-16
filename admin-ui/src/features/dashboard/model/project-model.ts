@@ -34,12 +34,22 @@ export type ProjectCardLedgerDocument = {
   verifiedByUser: boolean;
 };
 
+export type ProjectCardLedgerCounterparty = {
+  inn: string;
+  legalName: string;
+  managerName: string;
+  email: string;
+  phone: string;
+  messenger: string;
+};
+
 export type ProjectCardLedgerEntry = {
   id: string;
   category: string;
   item: string;
   owner: string;
   counterparty: string;
+  counterpartyDetails: ProjectCardLedgerCounterparty | null;
   status: ProjectCardLedgerStatus;
   invoiceDocument: ProjectCardLedgerDocument | null;
   actDocument: ProjectCardLedgerDocument | null;
@@ -56,6 +66,7 @@ export type ProjectCardContractMilestone = {
   amount?: number;
   note?: string;
   status: "upcoming" | "due" | "completed";
+  synthetic?: "start-after-advance";
 };
 
 export type ProjectCardContract = {
@@ -68,10 +79,51 @@ export type ProjectCardContract = {
   amount: number;
   advanceTerms: string;
   extractionStatus: "review" | "verified";
+  sourceFile: ProjectCardSourceFile | null;
+  downloadUrl: string | null;
   milestones: ProjectCardContractMilestone[];
 };
 
+export type DashboardProjectContractMilestoneApiRecord = {
+  id: number;
+  contract_id: number;
+  kind: "invoice" | "payment" | "deadline";
+  title: string;
+  planned_date: string;
+  amount: number | null;
+  note: string;
+  status: "upcoming" | "due" | "completed";
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type DashboardProjectContractApiRecord = {
+  id: number;
+  project_id: number;
+  file_name: string;
+  title: string;
+  number: string;
+  signed_at: string;
+  start_date: string;
+  planned_end_date: string;
+  amount: number;
+  advance_terms: string;
+  extraction_status: "review" | "verified";
+  source_file: {
+    id: string;
+    file_name: string;
+    mime_type: string;
+    uploaded_at: string;
+  } | null;
+  download_url: string | null;
+  milestones: DashboardProjectContractMilestoneApiRecord[];
+  created_at: string;
+  updated_at: string;
+};
+
 export type DashboardProjectCardData = {
+  id: string;
   code: string;
   name: string;
   stageLabel: string;
@@ -91,4 +143,78 @@ export type DashboardProjectCardData = {
   advances: ProjectCardAdvanceItem[];
   ledgerEntries: ProjectCardLedgerEntry[];
   contract: ProjectCardContract;
+};
+
+export type DashboardProjectApiRecord = {
+  id: number;
+  code: string;
+  name: string;
+  stage_label: string;
+  stage_tone: "ok" | "warn" | "neutral" | "active" | "error";
+  estimate_project_id: number | null;
+  estimate_project_name: string | null;
+  estimate_source: string;
+  area_m2: number;
+  received_total: number;
+  remaining_total: number;
+  deferred_total: number;
+  planned_total: number;
+  actual_total: number;
+  work_per_m2: number;
+  materials_per_m2: number;
+  planned_margin_percent: number;
+  next_delivery_label: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type DashboardProjectAdvanceApiRecord = {
+  id: number;
+  project_id: number;
+  title: string;
+  amount: number;
+  date: string;
+  status: "paid" | "planned";
+  created_at: string;
+  updated_at: string;
+};
+
+export type DashboardProjectLedgerApiRecord = {
+  id: number;
+  project_id: number;
+  category: string;
+  item: string;
+  owner: string;
+  counterparty: string;
+  counterparty_details: ProjectCardLedgerCounterparty | null;
+  status: ProjectCardLedgerStatus;
+  plan_amount: number;
+  actual_amount: number;
+  control_date: string;
+  sort_order: number;
+  invoice_document: DashboardProjectLedgerDocumentApiRecord | null;
+  act_document: DashboardProjectLedgerDocumentApiRecord | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type DashboardProjectLedgerDocumentApiRecord = {
+  id: number;
+  project_id: number;
+  ledger_entry_id: number;
+  kind: "invoice" | "act";
+  title: string;
+  date: string;
+  amount: number;
+  source_file: {
+    id: string;
+    file_name: string;
+    mime_type: string;
+    uploaded_at: string;
+  };
+  download_url: string;
+  extracted_by_ai: boolean;
+  verified_by_user: boolean;
+  created_at: string;
+  updated_at: string;
 };

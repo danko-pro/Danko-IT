@@ -14,6 +14,8 @@ PLACEHOLDER_VALUES = {
     "your_openrouter_api_key_here",
     "your_mistral_api_key_here",
     "your_notion_token_here",
+    "your_admin_password_hash_here",
+    "your_admin_session_secret_here",
 }
 
 
@@ -49,6 +51,10 @@ class Settings:
     supply_dialogue_mistral_max_output_tokens: int
     supply_dialogue_mistral_timeout_seconds: int
     database_path: Path
+    admin_password_hash: str | 1
+    admin_session_secret: str | 1
+    admin_session_ttl_seconds: int
+    project_documents_dir: Path
     config_path: Path
 
     @property
@@ -65,6 +71,10 @@ class Settings:
         if provider == "openai":
             return self.openai_api_key
         return None
+
+    @property
+    def admin_auth_enabled(self) -> bool:
+        return bool(self.admin_password_hash and self.admin_session_secret)
 
 
 def _read_env_file(path: Path) -> dict[str, str]:
@@ -154,5 +164,9 @@ def load_settings(config_path: Path | None = None) -> Settings:
         supply_dialogue_mistral_max_output_tokens=int(env.get("SUPPLY_DIALOGUE_MISTRAL_MAX_OUTPUT_TOKENS", "320")),
         supply_dialogue_mistral_timeout_seconds=int(env.get("SUPPLY_DIALOGUE_MISTRAL_TIMEOUT_SECONDS", "25")),
         database_path=_pick_path(base_dir, env.get("DATABASE_PATH"), default="./data/supply_bot.sqlite3"),
+        admin_password_hash=_optional_secret(env.get("ADMIN_PASSWORD_HASH")),
+        admin_session_secret=_optional_secret(env.get("ADMIN_SESSION_SECRET")),
+        admin_session_ttl_seconds=int(env.get("ADMIN_SESSION_TTL_SECONDS", "43200")),
+        project_documents_dir=_pick_path(base_dir, env.get("PROJECT_DOCUMENTS_DIR"), default="./data/project-documents"),
         config_path=path,
     )

@@ -38,7 +38,7 @@ export function ledgerStatusView(status: ProjectCardLedgerStatus): {
     case "paid":
       return { label: "Оплачено", tone: "active" };
     case "waiting-payment":
-      return { label: "Ждём оплату", tone: "warn" };
+      return { label: "Ожидает оплаты", tone: "warn" };
     case "invoice":
       return { label: "Счёт", tone: "warn" };
     case "planned":

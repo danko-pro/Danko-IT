@@ -7,7 +7,7 @@ from typing import Any
 from fastapi import FastAPI, Request
 
 from supply_bot.admin_api.app_helpers import _fetch_scalar, _parse_hhmm
-from supply_bot.storage import BotStorage
+from supply_bot.admin_api.deps import get_settings, get_storage
 
 
 def register_support_routes(
@@ -25,7 +25,7 @@ def register_support_routes(
 
     @app.get("/api/dashboard/summary")
     async def dashboard_summary(request: Request) -> dict[str, Any]:
-        storage_obj: BotStorage = request.app.state.storage
+        storage_obj = get_storage(request)
         today = date.today().isoformat()
         async with storage_obj.connection() as db:
             return {
@@ -65,7 +65,7 @@ def register_support_routes(
 
     @app.get("/api/groups")
     async def groups(request: Request, limit: int = 20) -> list[dict[str, Any]]:
-        storage_obj: BotStorage = request.app.state.storage
+        storage_obj = get_storage(request)
         async with storage_obj.connection() as db:
             cursor = await db.execute(
                 """
@@ -92,8 +92,8 @@ def register_support_routes(
 
     @app.get("/api/settings/delivery")
     async def delivery_settings(request: Request) -> dict[str, str]:
-        settings_obj = request.app.state.settings
-        storage_obj: BotStorage = request.app.state.storage
+        settings_obj = get_settings(request)
+        storage_obj = get_storage(request)
         return await storage_obj.get_delivery_defaults(
             {
                 "delivery_start": settings_obj.default_delivery_start.strftime("%H:%M"),
@@ -107,7 +107,7 @@ def register_support_routes(
         request: Request,
         payload: delivery_settings_payload_model,
     ) -> dict[str, str]:
-        storage_obj: BotStorage = request.app.state.storage
+        storage_obj = get_storage(request)
         delivery_start = _parse_hhmm(payload.delivery_start)
         delivery_end = _parse_hhmm(payload.delivery_end)
         delivery_fallback = _parse_hhmm(payload.delivery_fallback)

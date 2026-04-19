@@ -1,9 +1,8 @@
 import { memo, type Dispatch, type SetStateAction } from "react";
 
 import { TextField, formatArea, formatMeters, formatMoney } from "./calculator-shared";
-import type { CalculatorWarmFloorRoom, WarmFloorEditState } from "./calculator";
-
-type WarmFloorRoomEdit = WarmFloorEditState["rooms"][number];
+import type { CalculatorWarmFloorRoom, WarmFloorEditState } from "./calculator-types";
+import type { WarmFloorRoomEdit } from "./calculator-warm-floor-stage-types";
 
 type WarmFloorRoomCardProps = {
   room: CalculatorWarmFloorRoom;

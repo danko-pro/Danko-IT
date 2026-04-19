@@ -1,4 +1,6 @@
 import type { AdminAuthSession } from "../shared/types";
+
+import { Button } from "../shared/controls";
 import { StatusBadge } from "../shared/ui";
 import { API_BASE } from "../shared/utils";
 
@@ -24,14 +26,15 @@ export function AppShellFooter(props: {
       <div className="flex flex-wrap items-center gap-3">
         <span>API {API_BASE}</span>
         {authEnabled && authenticated ? (
-          <button
+          <Button
             type="button"
-            className="secondary-button px-3 py-2 text-xs"
+            variant="secondary"
+            className="px-3 py-2 text-xs"
             disabled={props.authPending}
             onClick={() => void props.onLogout()}
           >
             {props.authPending ? "Выход..." : "Выйти"}
-          </button>
+          </Button>
         ) : null}
       </div>
     </footer>

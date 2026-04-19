@@ -11,6 +11,12 @@ import {
   buildProjectDoorComponentPayload,
   buildProjectDoorPayload,
 } from "./calculator-payloads";
+import type {
+  DoorCatalogPayload,
+  DoorComponentCatalogPayload,
+  ProjectDoorComponentPayload,
+  ProjectDoorPayload,
+} from "./calculator-payloads";
 import {
   emptyDoorCatalogState,
   emptyDoorComponentCatalogState,
@@ -29,53 +35,7 @@ import type {
   DoorComponentCatalogCreateState,
   ProjectDoorComponentState,
   ProjectDoorCreateState,
-} from "./calculator";
-
-type DoorCatalogPayload = {
-  title: string;
-  width_mm: number;
-  height_mm: number;
-  thickness_mm: number | null;
-  purchase_price: number | null;
-  sale_price: number | null;
-  install_price: number | null;
-  note: string;
-};
-
-type DoorComponentCatalogPayload = {
-  category_code: string;
-  title: string;
-  unit: string;
-  purchase_price: number | null;
-  sale_price: number | null;
-  note: string;
-};
-
-type ProjectDoorPayload = {
-  door_catalog_id: number | null;
-  opening_kind: string;
-  title: string | null;
-  width_mm: number | null;
-  height_mm: number | null;
-  thickness_mm: number | null;
-  purchase_price: number | null;
-  sale_price: number | null;
-  install_price: number | null;
-  room_a_id: number | null;
-  room_b_id: number | null;
-  note: string | null;
-};
-
-type ProjectDoorComponentPayload = {
-  component_catalog_id: number | null;
-  category_code: string | null;
-  title: string | null;
-  unit: string | null;
-  quantity: number;
-  purchase_price: number | null;
-  sale_price: number | null;
-  note: string | null;
-};
+} from "./calculator-types";
 
 type UseCalculatorDoorsControllerParams = {
   projectDetail: CalculatorProjectDetail | null;

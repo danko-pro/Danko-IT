@@ -33,7 +33,7 @@ import type {
   WallFinishEditState,
   WallFinishLayoutCreateState,
   WallFinishPreparationCreateState,
-} from "./calculator";
+} from "./calculator-types";
 
 type WallFinishControllerParams = {
   projectDetail: CalculatorProjectDetail | null;

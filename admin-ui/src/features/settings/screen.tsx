@@ -1,4 +1,5 @@
-﻿import type { FormEvent } from "react";
+import type { FormEvent } from "react";
+import { Button } from "../../shared/controls";
 import type { DeliverySettings, GroupProfile } from "../../shared/types";
 import { TimeField } from "../../shared/ui";
 import { formatAddress } from "../../shared/utils";
@@ -44,9 +45,9 @@ export function SettingsScreen(props: {
             />
           </div>
 
-          <button type="submit" className="action-button" disabled={props.savingDelivery}>
+          <Button type="submit" disabled={props.savingDelivery}>
             {props.savingDelivery ? "Сохраняю..." : "Сохранить окно доставки"}
-          </button>
+          </Button>
         </form>
       </section>
 
@@ -85,4 +86,3 @@ export function SettingsScreen(props: {
     </div>
   );
 }
-

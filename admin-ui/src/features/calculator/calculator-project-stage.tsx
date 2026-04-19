@@ -1,7 +1,8 @@
 import type { Dispatch, FormEvent, SetStateAction } from "react";
 
+import { Button } from "../../shared/controls";
 import { TextField, formatDateTime } from "./calculator-shared";
-import type { CalculatorProjectDetail } from "./calculator";
+import type { CalculatorProjectDetail } from "./calculator-types";
 
 type ProjectStageSectionProps = {
   projectDetail: CalculatorProjectDetail | null;
@@ -39,9 +40,9 @@ export function ProjectStageSection(props: ProjectStageSectionProps) {
           <div className="eyebrow">Калькулятор</div>
           <h3 className="section-title mt-1.5">Проекты объекта</h3>
         </div>
-        <button type="button" className="secondary-button" onClick={() => void onReload()}>
+        <Button type="button" variant="secondary" onClick={() => void onReload()}>
           Обновить
-        </button>
+        </Button>
       </div>
 
       {error ? (
@@ -55,9 +56,9 @@ export function ProjectStageSection(props: ProjectStageSectionProps) {
         <TextField label="Название проекта" value={projectName} onChange={setProjectName} placeholder="Например, Калинина 111 / смета v1" />
         <TextField label="Заметка" value={projectNote} onChange={setProjectNote} placeholder="Короткое описание объекта" />
         <div className="flex justify-end">
-          <button type="submit" className="action-button" disabled={busyKey === "calculator-project-create"}>
+          <Button type="submit" disabled={busyKey === "calculator-project-create"}>
             {busyKey === "calculator-project-create" ? "Создаю..." : "Создать проект"}
-          </button>
+          </Button>
         </div>
       </form>
 

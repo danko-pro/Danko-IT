@@ -8,10 +8,10 @@ Telegram-бот, backend админки и React-интерфейс для:
 
 ## Документы проекта
 
-- `ENGINEERING_LAWS.md` — главный инженерный документ проекта.
+- `PROJECT_RULES.md` — обязательный рабочий регламент проекта.
+- `ENGINEERING_LAWS.md` — расширенный инженерный документ проекта.
 - `ARCHITECTURE.md` — карта текущей архитектуры и ближайшего плана развития.
 - `AI_COLLABORATION_RULES.md` — короткие правила работы ИИ с репозиторием.
-- `PROJECT_RULES.md` — переходный compatibility-документ.
 
 ## Что уже есть
 
@@ -69,6 +69,8 @@ pip install -r requirements.txt
 python run_bot.py
 ```
 
+Перед стартом срабатывает `tools/project_guard.py` и просит сначала подтвердить архитектурное размещение по `PROJECT_RULES.md`.
+
 ## Базовые проверки кода
 
 Для локальной инженерной гигиены есть отдельный dev-набор:
@@ -116,6 +118,8 @@ cd admin-ui
 npm install
 npm run dev
 ```
+
+Для `run_admin.py` и `npm run dev` тот же `project_guard` тоже срабатывает автоматически.
 
 UI открывается на:
 

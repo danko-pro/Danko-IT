@@ -1,4 +1,5 @@
-﻿import type { FormEvent } from "react";
+import type { FormEvent } from "react";
+import { Button } from "../../shared/controls";
 import type { FamilyFormState, MaterialFamily, MaterialSearchResult } from "../../shared/types";
 import { dialogFieldOptions } from "../../shared/types";
 import { Field } from "../../shared/ui";
@@ -35,9 +36,9 @@ export function MaterialsCatalogPanel(props: MaterialsCatalogPanelProps) {
 
           <div className="flex items-center gap-2">
             <span className="slot-chip">{props.families.length}</span>
-            <button type="button" className="secondary-button" onClick={() => void props.onReloadFamilies()}>
+            <Button variant="secondary" onClick={() => void props.onReloadFamilies()}>
               Обновить
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -52,7 +53,7 @@ export function MaterialsCatalogPanel(props: MaterialsCatalogPanelProps) {
             label="Быстрый поиск по каталогу"
             value={props.catalogQuery}
             onChange={(value) => void props.onSearchCatalog(value)}
-            placeholder="????? ?????????, ???????, SKU ??? ?????"
+            placeholder="Название, вариант, SKU или алиас"
           />
 
           {props.searchResults.length ? (
@@ -169,12 +170,11 @@ export function MaterialsCatalogPanel(props: MaterialsCatalogPanelProps) {
             </div>
           </div>
 
-          <button type="submit" className="action-button" disabled={props.savingFamily}>
+          <Button type="submit" disabled={props.savingFamily}>
             {props.savingFamily ? "Сохраняю..." : "Создать семейство"}
-          </button>
+          </Button>
         </form>
       </section>
     </div>
   );
 }
-

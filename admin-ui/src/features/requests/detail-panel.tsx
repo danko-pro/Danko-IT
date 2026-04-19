@@ -1,5 +1,6 @@
 ﻿import { type FormEvent, useEffect, useState } from "react";
 import type { RequestDetail, RequestDeliveryFormState, RequestItem, RequestItemFormState } from "../../shared/types";
+import { Button } from "../../shared/controls";
 import { emptyRequestDeliveryForm, emptyRequestItemForm } from "../../shared/types";
 import { Field, InfoCard } from "../../shared/ui";
 import {
@@ -181,9 +182,9 @@ export function RequestsDetailPanel(props: RequestsDetailPanelProps) {
             </label>
 
             <div className="flex items-end">
-              <button type="submit" className="action-button w-full md:w-auto" disabled={deliveryBusy}>
+              <Button type="submit" className="w-full md:w-auto" disabled={deliveryBusy}>
                 {deliveryBusy ? "Сохраняю..." : "Сохранить доставку"}
-              </button>
+              </Button>
             </div>
           </form>
         </div>
@@ -217,22 +218,21 @@ export function RequestsDetailPanel(props: RequestsDetailPanelProps) {
                   </div>
 
                   <div className="flex flex-wrap gap-1.5">
-                    <button
-                      type="button"
-                      className="micro-action"
+                    <Button
+                      variant="micro"
                       disabled={props.requestDetailBusyKey === `item-${item.id}`}
                       onClick={() => beginEditItem(item)}
                     >
                       ????????
-                    </button>
-                    <button
-                      type="button"
-                      className="micro-action micro-action-danger"
+                    </Button>
+                    <Button
+                      variant="micro"
+                      tone="danger"
                       disabled={props.requestDetailBusyKey === `delete-item-${item.id}`}
                       onClick={() => void props.onDeleteItem(requestDetail.draft.id, item.id)}
                     >
                       {props.requestDetailBusyKey === `delete-item-${item.id}` ? "..." : "Удалить"}
-                    </button>
+                    </Button>
                   </div>
                 </div>
 
@@ -297,19 +297,18 @@ export function RequestsDetailPanel(props: RequestsDetailPanelProps) {
                     </div>
 
                     <div className="flex flex-wrap gap-2">
-                      <button type="submit" className="action-button" disabled={props.requestDetailBusyKey === `item-${item.id}`}>
+                      <Button type="submit" disabled={props.requestDetailBusyKey === `item-${item.id}`}>
                         {props.requestDetailBusyKey === `item-${item.id}` ? "Сохраняю..." : "Сохранить"}
-                      </button>
-                      <button
-                        type="button"
-                        className="secondary-button"
+                      </Button>
+                      <Button
+                        variant="secondary"
                         onClick={() => {
                           setEditingItemId(null);
                           setEditingItemForm(emptyRequestItemForm);
                         }}
                       >
                         Отмена
-                      </button>
+                      </Button>
                     </div>
                   </form>
                 ) : null}
@@ -374,9 +373,9 @@ export function RequestsDetailPanel(props: RequestsDetailPanelProps) {
             </div>
 
             <div className="flex justify-end">
-              <button type="submit" className="action-button" disabled={createItemBusy}>
+              <Button type="submit" disabled={createItemBusy}>
                 {createItemBusy ? "Добавляю..." : "Добавить позицию"}
-              </button>
+              </Button>
             </div>
           </form>
         </div>

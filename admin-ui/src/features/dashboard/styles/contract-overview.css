@@ -1,0 +1,109 @@
+/* Базовые contract-блоки: hero, terms, верхняя шапка и обзорные поля. */
+
+.dashboard-project-contract-hero,
+.dashboard-project-contract-terms,
+.dashboard-project-contract-milestones {
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.02);
+  padding: 0.92rem 1rem;
+}
+
+.dashboard-project-contract-file {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #89a0b3;
+}
+
+.dashboard-project-contract-title-row {
+  margin-top: 0.45rem;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.dashboard-project-contract-title {
+  min-width: 0;
+  font-size: 1rem;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  color: #f2fbff;
+}
+
+.dashboard-project-contract-number {
+  margin-top: 0.65rem;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: #edf6fd;
+}
+
+.dashboard-project-contract-head-actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.dashboard-project-contract-action {
+  min-height: 2.35rem;
+  padding-inline: 0.92rem;
+  font-size: 0.82rem;
+  white-space: nowrap;
+}
+
+.dashboard-project-contract-icon-button {
+  min-width: 2.35rem;
+  min-height: 2.35rem;
+  padding: 0;
+  flex: 0 0 auto;
+}
+
+.dashboard-project-contract-icon {
+  width: 1rem;
+  height: 1rem;
+}
+
+.dashboard-project-contract-upload-input {
+  display: none;
+}
+
+.dashboard-project-contract-source-row {
+  margin-top: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.dashboard-project-contract-source-name {
+  min-width: 0;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: #cfe1ee;
+  word-break: break-word;
+}
+
+.dashboard-project-contract-source-note {
+  margin-top: 0.75rem;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: #88a0b2;
+}
+
+.dashboard-project-contract-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.7rem;
+}
+
+.dashboard-project-contract-terms-text {
+  margin-top: 0.4rem;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: #d9e8f4;
+}

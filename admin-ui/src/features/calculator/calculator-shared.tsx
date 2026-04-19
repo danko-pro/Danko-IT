@@ -1,4 +1,14 @@
-import type { CalculatorProjectDoor } from "./calculator";
+import type { CalculatorProjectDoor } from "./calculator-types";
+import { formatDateTimeRu } from "../../shared/formatters/date";
+import { formatMoneySuffix } from "../../shared/formatters/money";
+import { trimFloatFixed } from "../../shared/formatters/number";
+
+// Общие helpers калькулятора.
+// В этом модуле остаются только калькуляторные форматтеры, опции и локальные виджеты.
+// Базовые текстовые/select поля переиспользуются из общего shared UI,
+// чтобы не держать две одинаковые реализации контролов.
+
+export { Field as TextField, SelectField } from "../../shared/ui";
 
 export type SelectOption = {
   value: string;
@@ -32,45 +42,6 @@ export const underlayModeOptions: SelectOption[] = [
   { value: "optional", label: "Опционально" },
 ];
 
-export function TextField(props: {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  placeholder?: string;
-}) {
-  return (
-    <label className="block">
-      <div className="field-label">{props.label}</div>
-      <input
-        className="text-input"
-        value={props.value}
-        onChange={(event) => props.onChange(event.target.value)}
-        placeholder={props.placeholder}
-      />
-    </label>
-  );
-}
-
-export function SelectField(props: {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  options: SelectOption[];
-}) {
-  return (
-    <label className="block">
-      <div className="field-label">{props.label}</div>
-      <select className="text-input" value={props.value} onChange={(event) => props.onChange(event.target.value)}>
-        {props.options.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
-    </label>
-  );
-}
-
 export function MetricChip(props: { label: string; value: string }) {
   return (
     <div className="subpanel p-3 metric-chip">
@@ -103,12 +74,7 @@ export function formatMeters(value: number) {
 }
 
 export function formatMoney(value: number) {
-  return (
-    new Intl.NumberFormat("ru-RU", {
-      maximumFractionDigits: 2,
-      minimumFractionDigits: 0,
-    }).format(value) + " ₽"
-  );
+  return formatMoneySuffix(value);
 }
 
 export function formatContourWord(value: number) {
@@ -124,14 +90,7 @@ export function formatContourWord(value: number) {
 }
 
 export function formatDateTime(value: string) {
-  const parsed = new Date(value.includes("T") ? value : value.replace(" ", "T"));
-  if (Number.isNaN(parsed.getTime())) {
-    return value;
-  }
-  return new Intl.DateTimeFormat("ru-RU", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(parsed);
+  return formatDateTimeRu(value);
 }
 
 export function getDoorKindLabel(value: string) {
@@ -175,7 +134,7 @@ export function getDoorComponentCategoryLabel(value: string) {
 }
 
 export function trimFloat(value: number) {
-  return Number.isInteger(value) ? String(value) : value.toFixed(2).replace(/\.?0+$/, "");
+  return trimFloatFixed(value);
 }
 
 export function toNumber(value: string) {

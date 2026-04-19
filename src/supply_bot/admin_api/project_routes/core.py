@@ -1,0 +1,143 @@
+"""CRUD маршруты для сущности проекта.
+
+Модуль держит только HTTP-обвязку:
+- читает request/payload;
+- вызывает доменный/use-case слой;
+- возвращает готовый API payload.
+"""
+
+from __future__ import annotations
+
+from typing import Any
+
+from fastapi import Depends, FastAPI, Request
+
+from supply_bot.admin_api.auth import AdminSession
+from supply_bot.admin_api.deps import require_admin_session
+from supply_bot.admin_api.project_routes.shared import (
+    extract_patch_payload,
+    get_project_route_storage,
+    raise_bad_request,
+    resolve_or_not_found,
+    resolve_or_server_error,
+)
+from supply_bot.projects.orchestration import (
+    load_project_payload,
+    require_estimate_project,
+    require_project,
+)
+from supply_bot.projects.service import (
+    ProjectValidationError,
+    build_default_project_code,
+    build_project_create_values,
+    build_project_payload,
+    build_project_update_values,
+)
+
+
+# Регистрация базовых CRUD-маршрутов проекта.
+def register_project_core_routes(
+    app: FastAPI,
+    *,
+    project_create_payload_model,
+    project_update_payload_model,
+) -> None:
+    @app.get("/api/projects")
+    async def list_projects(
+        request: Request,
+        _session: AdminSession = Depends(require_admin_session),
+    ) -> list[dict[str, Any]]:
+        storage_obj = get_project_route_storage(request)
+        rows = await storage_obj.list_projects()
+        return [build_project_payload(row) for row in rows]
+
+    async def create_project(
+        request: Request,
+        payload,
+        _session: AdminSession = Depends(require_admin_session),
+    ) -> dict[str, Any]:
+        storage_obj = get_project_route_storage(request)
+
+        estimate_project = None
+        if payload.estimate_project_id is not None:
+            estimate_project = await resolve_or_not_found(
+                require_estimate_project(storage_obj, payload.estimate_project_id)
+            )
+
+        project_count = await storage_obj.count_projects()
+        try:
+            project_values = build_project_create_values(
+                payload,
+                default_code=build_default_project_code(project_count + 1),
+                default_name=str(estimate_project["name"]) if estimate_project else None,
+            )
+        except ProjectValidationError as exc:
+            raise_bad_request(exc)
+
+        project_id = await storage_obj.create_project(**project_values)
+        return await resolve_or_server_error(
+            load_project_payload(
+                storage_obj,
+                project_id=project_id,
+                error_detail="Project was not created",
+            )
+        )
+
+    create_project.__annotations__["payload"] = project_create_payload_model
+    app.post("/api/projects")(create_project)
+
+    @app.get("/api/projects/{project_id}")
+    async def project_detail(
+        request: Request,
+        project_id: int,
+        _session: AdminSession = Depends(require_admin_session),
+    ) -> dict[str, Any]:
+        storage_obj = get_project_route_storage(request)
+        project = await resolve_or_not_found(require_project(storage_obj, project_id))
+        return build_project_payload(project)
+
+    async def update_project(
+        request: Request,
+        project_id: int,
+        payload,
+        _session: AdminSession = Depends(require_admin_session),
+    ) -> dict[str, Any]:
+        storage_obj = get_project_route_storage(request)
+        current = await resolve_or_not_found(require_project(storage_obj, project_id))
+
+        payload_data = extract_patch_payload(payload)
+        if not payload_data:
+            return build_project_payload(current)
+
+        if "estimate_project_id" in payload_data and payload_data["estimate_project_id"] is not None:
+            await resolve_or_not_found(
+                require_estimate_project(storage_obj, int(payload_data["estimate_project_id"]))
+            )
+
+        try:
+            updates = build_project_update_values(payload_data)
+        except ProjectValidationError as exc:
+            raise_bad_request(exc)
+
+        await storage_obj.update_project(project_id, **updates)
+        return await resolve_or_server_error(
+            load_project_payload(
+                storage_obj,
+                project_id=project_id,
+                error_detail="Project update failed",
+            )
+        )
+
+    update_project.__annotations__["payload"] = project_update_payload_model
+    app.patch("/api/projects/{project_id}")(update_project)
+
+    @app.delete("/api/projects/{project_id}")
+    async def delete_project(
+        request: Request,
+        project_id: int,
+        _session: AdminSession = Depends(require_admin_session),
+    ) -> dict[str, Any]:
+        storage_obj = get_project_route_storage(request)
+        await resolve_or_not_found(require_project(storage_obj, project_id))
+        await storage_obj.delete_project(project_id)
+        return {"deleted": True, "project_id": project_id}

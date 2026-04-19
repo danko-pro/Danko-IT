@@ -1,0 +1,312 @@
+/* Advances и expense-list внутри project card. */
+
+.dashboard-project-advance-overlay {
+  display: grid;
+}
+
+.dashboard-project-advance-form-shell {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transform: translateY(-8px) scale(0.992);
+  pointer-events: none;
+  transition:
+    grid-template-rows var(--dashboard-motion-panel) var(--dashboard-motion-ease),
+    opacity var(--dashboard-motion-medium) var(--dashboard-motion-ease-soft),
+    transform var(--dashboard-motion-slow) var(--dashboard-motion-ease),
+    margin-top var(--dashboard-motion-panel) var(--dashboard-motion-ease);
+  margin-top: 0;
+  will-change: grid-template-rows, opacity, transform;
+}
+
+.dashboard-project-advance-form-shell-open {
+  grid-template-rows: 1fr;
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+  margin-top: 0.28rem;
+}
+
+.dashboard-project-advance-form-shell-inner {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.dashboard-project-advance-form {
+  border-radius: 18px;
+  border: 1px solid rgba(7, 248, 198, 0.16);
+  background: linear-gradient(180deg, rgba(10, 24, 28, 0.95), rgba(7, 13, 19, 0.985));
+  padding: 0.9rem;
+  transform: translateY(4px) scale(0.992);
+  transform-origin: top center;
+  transition:
+    transform var(--dashboard-motion-slow) var(--dashboard-motion-ease),
+    border-color var(--dashboard-motion-medium) var(--dashboard-motion-ease-soft),
+    box-shadow var(--dashboard-motion-medium) var(--dashboard-motion-ease-soft);
+}
+
+.dashboard-project-advance-form-shell-open .dashboard-project-advance-form {
+  transform: translateY(0) scale(1);
+  box-shadow:
+    0 16px 36px rgba(0, 0, 0, 0.2),
+    0 0 0 1px rgba(7, 248, 198, 0.06);
+}
+
+.dashboard-project-advance-fields {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.9fr) minmax(0, 0.9fr);
+  gap: 0.75rem;
+}
+
+.dashboard-project-advance-field {
+  display: grid;
+  min-width: 0;
+  gap: 0.45rem;
+}
+
+.dashboard-project-advance-field .field-label {
+  display: block;
+  margin-bottom: 0;
+  white-space: normal;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.dashboard-project-advance-input {
+  width: 100%;
+  min-width: 0;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(9, 13, 18, 0.78);
+  padding: 0.72rem 0.85rem;
+  font-size: 0.9rem;
+  color: #eefaff;
+  outline: none;
+}
+
+.dashboard-project-advance-input:focus {
+  border-color: rgba(7, 248, 198, 0.35);
+  box-shadow: 0 0 0 1px rgba(7, 248, 198, 0.12);
+}
+
+.dashboard-project-advance-error {
+  margin-top: 0.7rem;
+  font-size: 0.8rem;
+  color: #ffb8c7;
+}
+
+.dashboard-project-advance-actions {
+  margin-top: 0.85rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.dashboard-project-expense-list,
+.dashboard-project-advances {
+  margin-top: 0.9rem;
+  display: grid;
+  gap: 0.55rem;
+}
+
+.dashboard-project-advances {
+  gap: 0.42rem;
+}
+
+.dashboard-project-advance-separator {
+  position: relative;
+  margin: 0.55rem 0 0.35rem;
+  display: flex;
+  justify-content: center;
+}
+
+.dashboard-project-advance-separator::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.04));
+  transform: translateY(-50%);
+}
+
+.dashboard-project-advance-row-shell {
+  display: grid;
+  grid-template-rows: 1fr;
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  transition:
+    grid-template-rows var(--dashboard-motion-slow) var(--dashboard-motion-ease),
+    opacity var(--dashboard-motion-medium) var(--dashboard-motion-ease-soft),
+    transform var(--dashboard-motion-slow) var(--dashboard-motion-ease);
+  transform-origin: top center;
+}
+
+.dashboard-project-advance-row-shell-removing {
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transform: translateY(-7px) scale(0.985);
+  pointer-events: none;
+}
+
+.dashboard-project-advance-row-shell-inner {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.dashboard-project-expense-row,
+.dashboard-project-advance-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.85rem;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.02);
+  padding: 0.78rem 0.9rem;
+  transition:
+    transform var(--dashboard-motion-slow) var(--dashboard-motion-ease),
+    opacity var(--dashboard-motion-fast) var(--dashboard-motion-ease-soft),
+    filter var(--dashboard-motion-fast) var(--dashboard-motion-ease-soft),
+    border-color var(--dashboard-motion-medium) var(--dashboard-motion-ease-soft),
+    background-color var(--dashboard-motion-medium) var(--dashboard-motion-ease-soft),
+    box-shadow var(--dashboard-motion-medium) var(--dashboard-motion-ease-soft);
+}
+
+.dashboard-project-expense-row:hover,
+.dashboard-project-advance-row:hover {
+  transform: translateY(-1px);
+  border-color: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.035);
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.16);
+}
+
+.dashboard-project-advance-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(138px, 0.92fr) minmax(120px, 0.82fr) auto auto;
+  align-items: center;
+  gap: 0.9rem;
+  border-radius: 16px;
+  padding: 0.78rem 0.9rem;
+}
+
+.dashboard-project-advance-row-removing {
+  opacity: 0.58;
+  filter: saturate(0.72);
+  transform: scale(0.985);
+  box-shadow: none;
+}
+
+.dashboard-project-expense-name {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: #edf6fc;
+}
+
+.dashboard-project-expense-dot {
+  height: 0.5rem;
+  width: 0.5rem;
+  flex: 0 0 auto;
+  border-radius: 9999px;
+  background: currentColor;
+  box-shadow: 0 0 0 5px rgba(255, 255, 255, 0.05);
+}
+
+.dashboard-project-expense-amount,
+.dashboard-project-advance-amount {
+  font-size: 0.92rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #f4fbff;
+}
+
+.dashboard-project-expense-cyan {
+  color: #07f8c6;
+}
+
+.dashboard-project-expense-emerald {
+  color: #7df5b6;
+}
+
+.dashboard-project-expense-amber {
+  color: #f6d36a;
+}
+
+.dashboard-project-expense-rose {
+  color: #ff8cab;
+}
+
+.dashboard-project-expense-slate {
+  color: #c4d7e7;
+}
+
+.dashboard-project-advance-title {
+  min-width: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #edf7fd;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dashboard-project-advance-date {
+  margin-top: 0;
+  font-size: 0.74rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #70879b;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.dashboard-project-advance-status {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.dashboard-project-advance-amount {
+  justify-self: end;
+  font-size: 0.92rem;
+  white-space: nowrap;
+  text-align: right;
+}
+
+.dashboard-project-advance-remove {
+  display: inline-flex;
+  height: 1.7rem;
+  width: 1.7rem;
+  align-items: center;
+  justify-content: center;
+  justify-self: end;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  color: #9cb1c3;
+  font-size: 1rem;
+  line-height: 1;
+  transition:
+    transform var(--dashboard-motion-medium) var(--dashboard-motion-ease),
+    border-color var(--dashboard-motion-fast) var(--dashboard-motion-ease-soft),
+    color var(--dashboard-motion-fast) var(--dashboard-motion-ease-soft),
+    background-color var(--dashboard-motion-fast) var(--dashboard-motion-ease-soft);
+}
+
+.dashboard-project-advance-remove:hover {
+  transform: scale(1.05);
+  border-color: rgba(248, 113, 113, 0.3);
+  background: rgba(248, 113, 113, 0.08);
+  color: #ffc4c4;
+}
+
+.dashboard-project-advance-remove:disabled {
+  cursor: default;
+  opacity: 0.45;
+  transform: none;
+}

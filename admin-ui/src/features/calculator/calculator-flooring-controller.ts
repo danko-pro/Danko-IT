@@ -33,7 +33,7 @@ import type {
   FlooringEditState,
   FlooringLayoutCreateState,
   FlooringPreparationCreateState,
-} from "./calculator";
+} from "./calculator-types";
 
 type FlooringControllerParams = {
   projectDetail: CalculatorProjectDetail | null;

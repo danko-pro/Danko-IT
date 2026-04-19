@@ -1,4 +1,5 @@
-﻿import type { RecentRequest } from "../../shared/types";
+import { Button } from "../../shared/controls";
+import type { RecentRequest } from "../../shared/types";
 import { StatusBadge } from "../../shared/ui";
 import { canDeleteRequest, formatDeliveryWindow, formatStatus, requestActionsForStatus, toneForStatus, waitingForLabel } from "../../shared/utils";
 
@@ -27,9 +28,9 @@ export function RequestsListPanel(props: RequestsListPanelProps) {
 
         <div className="flex items-center gap-2">
           <span className="slot-chip">{props.requests.length}</span>
-          <button type="button" className="secondary-button" onClick={() => void props.onReload()}>
+          <Button variant="secondary" onClick={() => void props.onReload()}>
             Обновить
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -79,26 +80,25 @@ export function RequestsListPanel(props: RequestsListPanelProps) {
               {actions.length ? (
                 <div className="mt-3 flex flex-wrap gap-1.5 border-t border-white/6 pt-3">
                   {actions.map((action) => (
-                    <button
+                    <Button
                       key={action.status}
-                      type="button"
-                      className="micro-action"
+                      variant="micro"
                       disabled={busy}
                       onClick={() => void props.onChangeStatus(request.id, action.status)}
                     >
                       {busy ? "..." : action.label}
-                    </button>
+                    </Button>
                   ))}
 
                   {canDeleteRequest(request.status) ? (
-                    <button
-                      type="button"
-                      className="micro-action micro-action-danger"
+                    <Button
+                      variant="micro"
+                      tone="danger"
                       disabled={busy}
                       onClick={() => void props.onDeleteRequest(request.id)}
                     >
                       {busy ? "..." : "Удалить"}
-                    </button>
+                    </Button>
                   ) : null}
                 </div>
               ) : null}
@@ -113,4 +113,3 @@ export function RequestsListPanel(props: RequestsListPanelProps) {
     </section>
   );
 }
-

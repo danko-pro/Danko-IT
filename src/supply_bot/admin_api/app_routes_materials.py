@@ -6,7 +6,7 @@ from typing import Any
 from fastapi import FastAPI, HTTPException, Request
 
 from supply_bot.admin_api.app_helpers import _family_overview, _split_alias_values
-from supply_bot.storage import BotStorage
+from supply_bot.admin_api.deps import get_storage
 from supply_bot.utils import normalize_text
 
 
@@ -24,14 +24,14 @@ def register_material_routes(
     # Material catalog is a separate subsystem; routes stay isolated from calculator flows.
     @app.get("/api/materials/families")
     async def material_families(request: Request, limit: int = 100) -> list[dict[str, Any]]:
-        storage_obj: BotStorage = request.app.state.storage
+        storage_obj = get_storage(request)
         families = await storage_obj.list_families()
         trimmed = families[: max(1, min(limit, 100))]
         return [await _family_overview(storage_obj, family) for family in trimmed]
 
     @app.get("/api/materials/families/{family_id}")
     async def material_family_detail(request: Request, family_id: int) -> dict[str, Any]:
-        storage_obj: BotStorage = request.app.state.storage
+        storage_obj = get_storage(request)
         family = await storage_obj.get_family(family_id)
         if not family:
             raise HTTPException(status_code=404, detail="Family not found")
@@ -50,7 +50,7 @@ def register_material_routes(
         request: Request,
         payload: family_create_payload_model,
     ) -> dict[str, Any]:
-        storage_obj: BotStorage = request.app.state.storage
+        storage_obj = get_storage(request)
         canonical_name = payload.canonical_name.strip()
         default_unit = payload.default_unit.strip()
         if not canonical_name:
@@ -74,7 +74,7 @@ def register_material_routes(
         request: Request,
         payload: variant_create_payload_model,
     ) -> dict[str, Any]:
-        storage_obj: BotStorage = request.app.state.storage
+        storage_obj = get_storage(request)
         family = await storage_obj.get_family(payload.family_id)
         if not family:
             raise HTTPException(status_code=404, detail="Family not found")
@@ -92,7 +92,7 @@ def register_material_routes(
         request: Request,
         payload: sku_create_payload_model,
     ) -> dict[str, Any]:
-        storage_obj: BotStorage = request.app.state.storage
+        storage_obj = get_storage(request)
         family = await storage_obj.get_family(payload.family_id)
         if not family:
             raise HTTPException(status_code=404, detail="Family not found")
@@ -134,7 +134,7 @@ def register_material_routes(
         request: Request,
         payload: alias_create_payload_model,
     ) -> dict[str, Any]:
-        storage_obj: BotStorage = request.app.state.storage
+        storage_obj = get_storage(request)
         alias = payload.alias.strip()
         if not alias:
             raise HTTPException(status_code=400, detail="alias is required")
@@ -174,7 +174,7 @@ def register_material_routes(
 
     @app.get("/api/materials/search")
     async def search_materials(request: Request, q: str) -> list[dict[str, Any]]:
-        storage_obj: BotStorage = request.app.state.storage
+        storage_obj = get_storage(request)
         needle = f"%{normalize_text(q)}%"
         if len(normalize_text(q)) < 2:
             return []

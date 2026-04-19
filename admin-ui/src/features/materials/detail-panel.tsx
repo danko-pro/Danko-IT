@@ -1,5 +1,6 @@
 ﻿import type { FormEvent } from "react";
 import type { AliasFormState, FamilyDetail, SkuFormState, VariantFormState } from "../../shared/types";
+import { Button } from "../../shared/controls";
 import { Field, InfoCard, SelectField } from "../../shared/ui";
 import { aliasTargetOptions, formatSkuDimensions } from "../../shared/utils";
 
@@ -101,9 +102,9 @@ export function MaterialsDetailPanel(props: MaterialsDetailPanelProps) {
                   onChange={(value) => props.onVariantFormChange({ display_name: value })}
                   placeholder="Например: влагостойкий"
                 />
-                <button type="submit" className="secondary-button" disabled={props.savingVariant}>
+                <Button type="submit" variant="secondary" disabled={props.savingVariant}>
                   {props.savingVariant ? "Сохраняю..." : "Добавить вариант"}
-                </button>
+                </Button>
               </form>
             </div>
 
@@ -163,9 +164,9 @@ export function MaterialsDetailPanel(props: MaterialsDetailPanelProps) {
                   />
                 </div>
 
-                <button type="submit" className="secondary-button" disabled={props.savingAlias}>
+                <Button type="submit" variant="secondary" disabled={props.savingAlias}>
                   {props.savingAlias ? "Сохраняю..." : "Добавить алиас"}
-                </button>
+                </Button>
               </form>
             </div>
           </div>
@@ -277,9 +278,9 @@ export function MaterialsDetailPanel(props: MaterialsDetailPanelProps) {
             />
           </div>
 
-          <button type="submit" className="action-button" disabled={props.savingSku}>
+          <Button type="submit" disabled={props.savingSku}>
             {props.savingSku ? "Сохраняю..." : "Добавить SKU"}
-          </button>
+          </Button>
         </form>
       </section>
     </div>

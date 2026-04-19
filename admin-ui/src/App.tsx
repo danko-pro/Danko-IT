@@ -2,7 +2,7 @@ import type { ScreenKey } from "./shared/types";
 import { AdminAuthScreen } from "./features/auth/screen";
 import { useAdminAppController } from "./shell/controller";
 import { navigation, screenTitles, type NavigationScreenKey } from "./shell/navigation";
-import { AppScreenRouter } from "./shell/screen-router";
+import { AppScreenRouter, preloadAppScreen } from "./shell/screen-router";
 import { AppShellFooter } from "./shell/footer";
 import { AppShellHeader } from "./shell/header";
 import { AppShellSidebar } from "./shell/sidebar";
@@ -24,6 +24,7 @@ export default function App() {
   const currentScreenTitle = currentNavigationItem ? screenTitles[currentNavigationItem.key] : "";
 
   function handleScreenSelect(nextScreen: NavigationScreenKey) {
+    void preloadAppScreen(nextScreen);
     controller.setScreen(nextScreen);
     setSuccessMessage(null);
 

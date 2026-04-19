@@ -9,8 +9,7 @@ from supply_bot.admin_api.app_helpers import (
     _request_detail_payload,
     _send_group_message,
 )
-from supply_bot.config import Settings
-from supply_bot.storage import BotStorage
+from supply_bot.admin_api.deps import get_settings, get_storage
 
 
 def register_request_routes(
@@ -28,7 +27,7 @@ def register_request_routes(
     # Requests are the main operational workflow in admin. Keep them grouped.
     @app.get("/api/requests/recent")
     async def recent_requests(request: Request, limit: int = 20) -> list[dict[str, Any]]:
-        storage_obj: BotStorage = request.app.state.storage
+        storage_obj = get_storage(request)
         async with storage_obj.connection() as db:
             cursor = await db.execute(
                 """
@@ -62,7 +61,7 @@ def register_request_routes(
 
     @app.get("/api/requests/{draft_id}")
     async def request_detail(request: Request, draft_id: int) -> dict[str, Any]:
-        storage_obj: BotStorage = request.app.state.storage
+        storage_obj = get_storage(request)
         draft = await storage_obj.get_draft(draft_id)
         if not draft:
             raise HTTPException(status_code=404, detail="Draft not found")
@@ -73,8 +72,8 @@ def register_request_routes(
         draft_id: int,
         payload,
     ):
-        storage_obj: BotStorage = request.app.state.storage
-        settings_obj: Settings = request.app.state.settings
+        storage_obj = get_storage(request)
+        settings_obj = get_settings(request)
         draft = await storage_obj.get_draft(draft_id)
         if not draft:
             raise HTTPException(status_code=404, detail="Draft not found")
@@ -118,7 +117,7 @@ def register_request_routes(
 
     @app.delete("/api/requests/{draft_id}")
     async def delete_request(request: Request, draft_id: int) -> dict[str, Any]:
-        storage_obj: BotStorage = request.app.state.storage
+        storage_obj = get_storage(request)
         draft = await storage_obj.get_draft(draft_id)
         if not draft:
             raise HTTPException(status_code=404, detail="Draft not found")
@@ -137,7 +136,7 @@ def register_request_routes(
         draft_id: int,
         payload,
     ) -> dict[str, Any]:
-        storage_obj: BotStorage = request.app.state.storage
+        storage_obj = get_storage(request)
         draft = await storage_obj.get_draft(draft_id)
         if not draft:
             raise HTTPException(status_code=404, detail="Draft not found")
@@ -182,7 +181,7 @@ def register_request_routes(
         draft_id: int,
         payload,
     ) -> dict[str, Any]:
-        storage_obj: BotStorage = request.app.state.storage
+        storage_obj = get_storage(request)
         draft = await storage_obj.get_draft(draft_id)
         if not draft:
             raise HTTPException(status_code=404, detail="Draft not found")
@@ -222,7 +221,7 @@ def register_request_routes(
         item_id: int,
         payload,
     ) -> dict[str, Any]:
-        storage_obj: BotStorage = request.app.state.storage
+        storage_obj = get_storage(request)
         item = await storage_obj.get_request_item(item_id)
         if not item:
             raise HTTPException(status_code=404, detail="Request item not found")
@@ -262,7 +261,7 @@ def register_request_routes(
 
     @app.delete("/api/requests/items/{item_id}")
     async def delete_request_item(request: Request, item_id: int) -> dict[str, Any]:
-        storage_obj: BotStorage = request.app.state.storage
+        storage_obj = get_storage(request)
         item = await storage_obj.get_request_item(item_id)
         if not item:
             raise HTTPException(status_code=404, detail="Request item not found")

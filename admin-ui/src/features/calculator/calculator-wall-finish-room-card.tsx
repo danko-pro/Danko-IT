@@ -7,7 +7,7 @@ import type {
   CalculatorWallFinishPreparation,
   CalculatorWallFinishRoom,
   WallFinishEditState,
-} from "./calculator";
+} from "./calculator-types";
 
 type WallFinishRoomEdit = WallFinishEditState["rooms"][number];
 

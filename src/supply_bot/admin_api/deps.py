@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from fastapi import HTTPException, Request
 
-from supply_bot.admin_api.auth import AdminSession, SESSION_COOKIE_NAME, read_admin_session_token
+from supply_bot.admin_api.auth import SESSION_COOKIE_NAME, AdminSession, read_admin_session_token
 from supply_bot.config import Settings
 from supply_bot.storage import BotStorage
 

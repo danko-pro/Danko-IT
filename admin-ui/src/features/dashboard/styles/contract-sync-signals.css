@@ -1,0 +1,171 @@
+/* Sync-состояния, уведомления и signal-блоки contract panel. */
+
+.dashboard-project-contract-sync {
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 0.72rem 0.9rem;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  animation: dashboard-project-contract-sync-appear var(--dashboard-motion-medium) var(--dashboard-motion-ease-soft);
+}
+
+.dashboard-project-contract-sync-compact-row {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.dashboard-project-contract-sync-compact {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 0.25rem 0.56rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  animation: dashboard-project-contract-sync-compact var(--dashboard-motion-medium) var(--dashboard-motion-ease-soft);
+}
+
+.dashboard-project-contract-sync-compact-info {
+  border-color: rgba(7, 248, 198, 0.18);
+  background: rgba(10, 31, 31, 0.56);
+  color: #9be9db;
+}
+
+.dashboard-project-contract-sync-compact-success {
+  border-color: rgba(125, 245, 182, 0.18);
+  background: rgba(13, 31, 24, 0.56);
+  color: #bef4cb;
+}
+
+.dashboard-project-contract-sync-compact-error {
+  border-color: rgba(255, 120, 120, 0.22);
+  background: rgba(40, 18, 18, 0.6);
+  color: #ffd0d0;
+}
+
+.dashboard-project-contract-sync-info {
+  border-color: rgba(7, 248, 198, 0.14);
+  background: rgba(10, 31, 31, 0.72);
+  color: #b9efe7;
+}
+
+.dashboard-project-contract-sync-success {
+  border-color: rgba(125, 245, 182, 0.16);
+  background: rgba(13, 31, 24, 0.78);
+  color: #c8f8d9;
+}
+
+.dashboard-project-contract-sync-error {
+  border-color: rgba(255, 120, 120, 0.2);
+  background: rgba(40, 18, 18, 0.8);
+  color: #ffcccc;
+}
+
+@keyframes dashboard-project-contract-sync-appear {
+  from {
+    opacity: 0;
+    transform: translateY(-3px) scale(0.992);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes dashboard-project-contract-sync-compact {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.dashboard-project-contract-signal {
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 0.95rem 1rem;
+  display: grid;
+  gap: 0.7rem;
+}
+
+.dashboard-project-contract-signal-due {
+  border-color: rgba(255, 209, 102, 0.18);
+  background: linear-gradient(180deg, rgba(48, 35, 12, 0.92), rgba(23, 19, 11, 0.98));
+}
+
+.dashboard-project-contract-signal-upcoming {
+  border-color: rgba(7, 248, 198, 0.14);
+  background: linear-gradient(180deg, rgba(11, 30, 31, 0.92), rgba(9, 17, 24, 0.98));
+}
+
+.dashboard-project-contract-signal-complete {
+  border-color: rgba(125, 245, 182, 0.12);
+  background: linear-gradient(180deg, rgba(12, 29, 24, 0.9), rgba(9, 17, 21, 0.98));
+}
+
+.dashboard-project-contract-signal-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.dashboard-project-contract-signal-title {
+  margin-top: 0.35rem;
+  font-size: 0.98rem;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  color: #f0fbff;
+}
+
+.dashboard-project-contract-signal-text {
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: #d3e0ea;
+}
+
+.dashboard-project-contract-signal-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.dashboard-project-contract-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 0.28rem 0.6rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.dashboard-project-contract-chip-due {
+  border-color: rgba(255, 209, 102, 0.2);
+  background: rgba(255, 209, 102, 0.1);
+  color: #ffd166;
+}
+
+.dashboard-project-contract-chip-upcoming {
+  border-color: rgba(7, 248, 198, 0.18);
+  background: rgba(7, 248, 198, 0.08);
+  color: #86f6df;
+}
+
+.dashboard-project-contract-chip-completed {
+  border-color: rgba(125, 245, 182, 0.15);
+  background: rgba(125, 245, 182, 0.08);
+  color: #b6ffd2;
+}

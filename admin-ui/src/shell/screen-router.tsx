@@ -1,10 +1,59 @@
-import { EditorScreen } from "../editor/ui/editor-screen";
-import { CalculatorScreen } from "../features/calculator/calculator";
-import { DashboardScreen } from "../features/dashboard/screen";
-import { MaterialsScreen } from "../features/materials/screen";
-import { RequestsScreen } from "../features/requests/screen";
-import { SettingsScreen } from "../features/settings/screen";
+import { Suspense, lazy, type ReactNode } from "react";
+
+import type { ScreenKey } from "../shared/types";
 import type { AdminAppController } from "./controller";
+
+// Экраны грузятся лениво, чтобы основной shell не тянул весь UI-срез сразу.
+const loadDashboardScreen = () => import("../features/dashboard/screen").then((module) => ({ default: module.DashboardScreen }));
+const loadRequestsScreen = () => import("../features/requests/screen").then((module) => ({ default: module.RequestsScreen }));
+const loadMaterialsScreen = () => import("../features/materials/screen").then((module) => ({ default: module.MaterialsScreen }));
+const loadCalculatorScreen = () => import("../features/calculator/calculator").then((module) => ({ default: module.CalculatorScreen }));
+const loadSettingsScreen = () => import("../features/settings/screen").then((module) => ({ default: module.SettingsScreen }));
+const loadEditorScreen = () => import("../editor/ui/editor-screen").then((module) => ({ default: module.EditorScreen }));
+
+const DashboardScreen = lazy(loadDashboardScreen);
+const RequestsScreen = lazy(loadRequestsScreen);
+const MaterialsScreen = lazy(loadMaterialsScreen);
+const CalculatorScreen = lazy(loadCalculatorScreen);
+const SettingsScreen = lazy(loadSettingsScreen);
+const EditorScreen = lazy(loadEditorScreen);
+
+const screenPreloaders: Record<ScreenKey, () => Promise<unknown>> = {
+  dashboard: loadDashboardScreen,
+  requests: loadRequestsScreen,
+  materials: loadMaterialsScreen,
+  calculator: loadCalculatorScreen,
+  settings: loadSettingsScreen,
+  editor: loadEditorScreen,
+};
+
+export function preloadAppScreen(screen: ScreenKey) {
+  return screenPreloaders[screen]();
+}
+
+function AppScreenLoader(props: { screen: ScreenKey }) {
+  const label =
+    props.screen === "dashboard"
+      ? "Загружаю workspace..."
+      : props.screen === "requests"
+        ? "Загружаю логистику..."
+        : props.screen === "materials"
+          ? "Загружаю каталог..."
+          : props.screen === "calculator"
+            ? "Загружаю калькулятор..."
+            : props.screen === "settings"
+              ? "Загружаю настройки..."
+              : "Загружаю редактор...";
+
+  return (
+    <section className="glass-panel flex min-h-[18rem] items-center justify-center p-5">
+      <div className="space-y-2 text-center">
+        <div className="eyebrow">Экран</div>
+        <div className="text-lg font-semibold text-slate-100">{label}</div>
+      </div>
+    </section>
+  );
+}
 
 export function AppScreenRouter(props: { controller: AdminAppController }) {
   const {
@@ -100,9 +149,11 @@ export function AppScreenRouter(props: { controller: AdminAppController }) {
     toggleDialogField,
   } = props.controller;
 
+  let screenNode: ReactNode;
+
   switch (screen) {
     case "requests":
-      return (
+      screenNode = (
         <RequestsScreen
           summary={summary}
           requests={requests}
@@ -129,9 +180,10 @@ export function AppScreenRouter(props: { controller: AdminAppController }) {
           onDeleteItem={handleDeleteRequestItem}
         />
       );
+      break;
 
     case "materials":
-      return (
+      screenNode = (
         <MaterialsScreen
           families={families}
           selectedFamilyId={selectedFamilyId}
@@ -163,9 +215,10 @@ export function AppScreenRouter(props: { controller: AdminAppController }) {
           onSearchCatalog={loadCatalogSearch}
         />
       );
+      break;
 
     case "calculator":
-      return (
+      screenNode = (
         <CalculatorScreen
           projects={calculatorProjects}
           projectDetail={calculatorProjectDetail}
@@ -203,9 +256,10 @@ export function AppScreenRouter(props: { controller: AdminAppController }) {
           onDeleteProjectDoorComponent={handleDeleteCalculatorProjectDoorComponent}
         />
       );
+      break;
 
     case "settings":
-      return (
+      screenNode = (
         <SettingsScreen
           deliveryForm={deliveryForm}
           groups={groups}
@@ -215,12 +269,17 @@ export function AppScreenRouter(props: { controller: AdminAppController }) {
           onSubmit={handleSaveDeliverySettings}
         />
       );
+      break;
 
     case "editor":
-      return <EditorScreen />;
+      screenNode = <EditorScreen />;
+      break;
 
     case "dashboard":
     default:
-      return <DashboardScreen />;
+      screenNode = <DashboardScreen />;
+      break;
   }
+
+  return <Suspense fallback={<AppScreenLoader screen={screen} />}>{screenNode}</Suspense>;
 }

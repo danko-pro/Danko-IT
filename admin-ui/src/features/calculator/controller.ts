@@ -1,14 +1,12 @@
-﻿import { type Dispatch, type SetStateAction, useEffect, useState } from "react";
-import type {
-  CalculatorProject,
-  CalculatorProjectDetail,
-  CalculatorRoomDetail,
-  CalculatorRoomPayload,
-} from "./calculator";
+import { type Dispatch, type SetStateAction, useEffect, useState } from "react";
+
+import type { CalculatorProject, CalculatorProjectDetail, CalculatorRoomDetail } from "./calculator-types";
 import type { ScreenKey } from "../../shared/types";
 import { createAdminCalculatorDoorsController } from "./doors-controller";
 import { createAdminCalculatorFinishesController } from "./finishes-controller";
-import { fetchJson } from "../../shared/utils";
+import { createAdminCalculatorLoadersController } from "./calculator-controller-loaders";
+import { createAdminCalculatorProjectActionsController } from "./calculator-controller-project-actions";
+import { createAdminCalculatorRoomActionsController } from "./calculator-controller-room-actions";
 
 type CalculatorControllerOptions = {
   screen: ScreenKey;
@@ -16,7 +14,9 @@ type CalculatorControllerOptions = {
   setSuccessMessage: Dispatch<SetStateAction<string | null>>;
 };
 
-// Контур проектного калькулятора: shell проектов и делегирование в подмодули.
+// Корневой runtime-контроллер проектного калькулятора.
+// Здесь остаётся только композиция состояния, lifecycle-эффекты и wiring подмодулей read/write контуров.
+
 export function useAdminCalculatorController(props: CalculatorControllerOptions) {
   const [calculatorProjects, setCalculatorProjects] = useState<CalculatorProject[]>([]);
   const [selectedCalculatorProjectId, setSelectedCalculatorProjectId] = useState<number | null>(null);
@@ -29,6 +29,40 @@ export function useAdminCalculatorController(props: CalculatorControllerOptions)
   const [calculatorRoomLoading, setCalculatorRoomLoading] = useState(false);
   const [calculatorBusyKey, setCalculatorBusyKey] = useState<string | null>(null);
   const [calculatorError, setCalculatorError] = useState<string | null>(null);
+
+  const { loadCalculatorProjects, loadCalculatorProjectDetail, loadCalculatorRoomDetail } = createAdminCalculatorLoadersController({
+    setCalculatorLoading,
+    setCalculatorProjectLoading,
+    setCalculatorRoomLoading,
+    setCalculatorProjects,
+    setCalculatorProjectDetail,
+    setCalculatorRoomDetail,
+    setCalculatorError,
+  });
+
+  const { handleCreateCalculatorProject, handleQuickCreateCalculatorProject } = createAdminCalculatorProjectActionsController({
+    setScreen: props.setScreen,
+    setSuccessMessage: props.setSuccessMessage,
+    setCalculatorBusyKey,
+    setCalculatorError,
+    setSelectedCalculatorProjectId,
+    setSelectedCalculatorRoomId,
+    setCalculatorProjectDetail,
+    loadCalculatorProjects,
+  });
+
+  const { handleCreateCalculatorRoom, handleSaveCalculatorRoom, handleDeleteCalculatorRoom } = createAdminCalculatorRoomActionsController({
+    setSuccessMessage: props.setSuccessMessage,
+    setCalculatorBusyKey,
+    setCalculatorError,
+    setSelectedCalculatorProjectId,
+    setSelectedCalculatorRoomId,
+    setCalculatorProjectDetail,
+    setCalculatorRoomDetail,
+    loadCalculatorProjects,
+    loadCalculatorProjectDetail,
+    loadCalculatorRoomDetail,
+  });
 
   useEffect(() => {
     if (!calculatorProjects.length) {
@@ -76,147 +110,6 @@ export function useAdminCalculatorController(props: CalculatorControllerOptions)
       void loadCalculatorRoomDetail(selectedCalculatorRoomId);
     }
   }, [selectedCalculatorRoomId]);
-
-  async function loadCalculatorProjects() {
-    try {
-      setCalculatorLoading(true);
-      const data = await fetchJson<CalculatorProject[]>("/api/calculator/projects");
-      setCalculatorProjects(data);
-      setCalculatorError(null);
-    } catch (loadError) {
-      setCalculatorError(loadError instanceof Error ? loadError.message : "Не удалось загрузить проекты калькулятора");
-    } finally {
-      setCalculatorLoading(false);
-    }
-  }
-
-  async function loadCalculatorProjectDetail(projectId: number) {
-    try {
-      setCalculatorProjectLoading(true);
-      const data = await fetchJson<CalculatorProjectDetail>(`/api/calculator/projects/${projectId}`);
-      setCalculatorProjectDetail(data);
-      setCalculatorError(null);
-    } catch (loadError) {
-      setCalculatorProjectDetail(null);
-      setCalculatorError(loadError instanceof Error ? loadError.message : "Не удалось загрузить проект калькулятора");
-    } finally {
-      setCalculatorProjectLoading(false);
-    }
-  }
-
-  async function loadCalculatorRoomDetail(roomId: number) {
-    try {
-      setCalculatorRoomLoading(true);
-      const data = await fetchJson<CalculatorRoomDetail>(`/api/calculator/rooms/${roomId}`);
-      setCalculatorRoomDetail(data);
-      setCalculatorError(null);
-    } catch (loadError) {
-      setCalculatorRoomDetail(null);
-      setCalculatorError(loadError instanceof Error ? loadError.message : "Не удалось загрузить комнату");
-    } finally {
-      setCalculatorRoomLoading(false);
-    }
-  }
-
-  async function handleCreateCalculatorProject(payload: { name: string; note: string }) {
-    try {
-      setCalculatorBusyKey("calculator-project-create");
-      const created = await fetchJson<CalculatorProjectDetail>("/api/calculator/projects", {
-        method: "POST",
-        body: JSON.stringify({
-          name: payload.name,
-          note: payload.note || null,
-        }),
-      });
-      await loadCalculatorProjects();
-      setSelectedCalculatorProjectId(created.project.id);
-      setCalculatorProjectDetail(created);
-      setSelectedCalculatorRoomId(created.rooms[0]?.id ?? null);
-      props.setSuccessMessage(`Проект калькулятора "${created.project.name}" создан.`);
-      setCalculatorError(null);
-    } catch (actionError) {
-      setCalculatorError(actionError instanceof Error ? actionError.message : "Не удалось создать проект калькулятора");
-    } finally {
-      setCalculatorBusyKey(null);
-    }
-  }
-
-  async function handleCreateCalculatorRoom(projectId: number) {
-    try {
-      setCalculatorBusyKey(`calculator-room-create-${projectId}`);
-      const created = await fetchJson<CalculatorRoomDetail>(`/api/calculator/projects/${projectId}/rooms`, {
-        method: "POST",
-        body: JSON.stringify({}),
-      });
-      await loadCalculatorProjectDetail(projectId);
-      setSelectedCalculatorRoomId(created.room.id);
-      setCalculatorRoomDetail(created);
-      props.setSuccessMessage(`Помещение "${created.room.name}" добавлено.`);
-      setCalculatorError(null);
-    } catch (actionError) {
-      setCalculatorError(actionError instanceof Error ? actionError.message : "Не удалось добавить помещение");
-    } finally {
-      setCalculatorBusyKey(null);
-    }
-  }
-
-  async function handleSaveCalculatorRoom(roomId: number, payload: CalculatorRoomPayload) {
-    try {
-      setCalculatorBusyKey(`calculator-room-save-${roomId}`);
-      const updated = await fetchJson<CalculatorRoomDetail>(`/api/calculator/rooms/${roomId}`, {
-        method: "PATCH",
-        body: JSON.stringify(payload),
-      });
-      setCalculatorRoomDetail(updated);
-      await loadCalculatorProjectDetail(updated.room.project_id);
-      await loadCalculatorProjects();
-      props.setSuccessMessage(`Помещение "${updated.room.name}" сохранено.`);
-      setCalculatorError(null);
-    } catch (actionError) {
-      setCalculatorError(actionError instanceof Error ? actionError.message : "Не удалось сохранить помещение");
-    } finally {
-      setCalculatorBusyKey(null);
-    }
-  }
-
-  async function handleDeleteCalculatorRoom(roomId: number) {
-    const confirmed = window.confirm(`Удалить помещение #${roomId} из проекта калькулятора?`);
-    if (!confirmed) {
-      return;
-    }
-    try {
-      setCalculatorBusyKey(`calculator-room-delete-${roomId}`);
-      const updatedProject = await fetchJson<CalculatorProjectDetail>(`/api/calculator/rooms/${roomId}`, {
-        method: "DELETE",
-      });
-      setCalculatorProjectDetail(updatedProject);
-      setSelectedCalculatorProjectId(updatedProject.project.id);
-      setSelectedCalculatorRoomId(updatedProject.rooms[0]?.id ?? null);
-      setCalculatorRoomDetail(null);
-      await loadCalculatorProjects();
-      if (updatedProject.rooms[0]) {
-        await loadCalculatorRoomDetail(updatedProject.rooms[0].id);
-      }
-      props.setSuccessMessage(`Помещение #${roomId} удалено.`);
-      setCalculatorError(null);
-    } catch (actionError) {
-      setCalculatorError(actionError instanceof Error ? actionError.message : "Не удалось удалить помещение");
-    } finally {
-      setCalculatorBusyKey(null);
-    }
-  }
-
-  async function handleQuickCreateCalculatorProject() {
-    const name = window.prompt("Название нового объекта / проекта:");
-    if (!name || !name.trim()) {
-      return;
-    }
-    props.setScreen("calculator");
-    await handleCreateCalculatorProject({
-      name: name.trim(),
-      note: "",
-    });
-  }
 
   const finishesController = createAdminCalculatorFinishesController({
     selectedCalculatorProjectId,
@@ -267,4 +160,3 @@ export function useAdminCalculatorController(props: CalculatorControllerOptions)
     ...doorsController,
   };
 }
-

@@ -1,14 +1,9 @@
 import type { ProjectCardLedgerEntry, ProjectCardLedgerStatus } from "./project-model";
-
-const moneyFormatter = new Intl.NumberFormat("ru-RU", {
-  style: "currency",
-  currency: "RUB",
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2,
-});
+import { formatDateRu } from "../../../shared/formatters/date";
+import { formatMoneyCurrency } from "../../../shared/formatters/money";
 
 export function formatMoney(value: number) {
-  return moneyFormatter.format(value);
+  return formatMoneyCurrency(value);
 }
 
 export function formatMoneyPerSquare(value: number) {
@@ -16,16 +11,7 @@ export function formatMoneyPerSquare(value: number) {
 }
 
 export function formatDisplayDate(value: string) {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-    return value;
-  }
-
-  const parsed = new Date(`${value}T00:00:00`);
-  if (Number.isNaN(parsed.getTime())) {
-    return value;
-  }
-
-  return parsed.toLocaleDateString("ru-RU");
+  return formatDateRu(value);
 }
 
 export function ledgerStatusView(status: ProjectCardLedgerStatus): {

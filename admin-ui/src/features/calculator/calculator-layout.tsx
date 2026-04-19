@@ -1,7 +1,8 @@
 import type { CSSProperties, PointerEvent as ReactPointerEvent } from "react";
 
+import { Button } from "../../shared/controls";
 import { MetricChip, formatArea, formatDateTime, formatMeters, formatMoney } from "./calculator-shared";
-import type { CalculatorProjectDetail, CalculatorStage } from "./calculator";
+import type { CalculatorProjectDetail, CalculatorStage } from "./calculator-types";
 
 type CalculatorHeaderSectionProps = {
   projectDetail: CalculatorProjectDetail | null;
@@ -55,9 +56,9 @@ export function CalculatorHeaderSection(props: CalculatorHeaderSectionProps) {
             </>
           ) : null}
         </div>
-        <button type="button" className="secondary-button" onClick={() => void onReload()}>
+        <Button type="button" variant="secondary" onClick={() => void onReload()}>
           Обновить
-        </button>
+        </Button>
       </div>
 
       {projectDetail ? (

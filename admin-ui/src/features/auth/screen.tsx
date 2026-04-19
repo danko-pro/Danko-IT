@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from "react";
+import { Button } from "../../shared/controls";
 
 export function AdminAuthScreen(props: {
   loading: boolean;
@@ -18,7 +19,7 @@ export function AdminAuthScreen(props: {
       <div className="glass-panel w-full max-w-[460px] px-6 py-6">
         <div className="space-y-2">
           <div className="eyebrow">Admin Access</div>
-          <h1 className="text-[2rem] font-semibold tracking-[-0.04em] text-slate-50">Вход в Данко IT</h1>
+          <h1 className="text-[2rem] font-semibold tracking-[-0.04em] text-slate-50">Вход в Danko IT</h1>
           <p className="text-sm leading-6 text-slate-400">
             Панель управления данными и проектами работает через серверную admin-сессию.
           </p>
@@ -45,9 +46,9 @@ export function AdminAuthScreen(props: {
 
           <div className="flex items-center justify-between gap-3 pt-1">
             <div className="text-xs uppercase tracking-[0.18em] text-slate-500">HttpOnly session</div>
-            <button type="submit" className="action-button min-w-[10.5rem]" disabled={props.loading || !password.trim()}>
+            <Button type="submit" className="min-w-[10.5rem]" disabled={props.loading || !password.trim()}>
               {props.loading ? "Вход..." : "Войти"}
-            </button>
+            </Button>
           </div>
         </form>
       </div>

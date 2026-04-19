@@ -1,4 +1,5 @@
 import type { DeliverySettings, GroupProfile, MaterialFamily, RecentRequest, StatusTone, Summary } from "../../shared/types";
+import { Button } from "../../shared/controls";
 import { SignalChip, StatusBadge, type SignalTone } from "../../shared/ui";
 import { formatDeliveryWindow, formatStatus, toneForStatus, waitingForLabel } from "../../shared/utils";
 
@@ -164,13 +165,14 @@ export function RequestsOverviewPanel(props: RequestsOverviewPanelProps) {
       {props.error ? (
         <div className="glass-panel flex items-center justify-between gap-3 border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
           <span>{props.error}</span>
-          <button
+          <Button
             type="button"
-            className="secondary-button px-3 py-2 text-xs"
+            variant="secondary"
+            className="px-3 py-2 text-xs"
             onClick={() => void props.onReloadOverview()}
           >
             Повторить
-          </button>
+          </Button>
         </div>
       ) : null}
 

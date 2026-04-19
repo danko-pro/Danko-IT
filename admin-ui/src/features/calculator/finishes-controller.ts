@@ -10,7 +10,7 @@ import {
   type CalculatorWallFinishPayload,
   type CalculatorWallFinishPreparationPayload,
   type CalculatorWarmFloorPayload,
-} from "./calculator";
+} from "./calculator-types";
 import { fetchJson } from "../../shared/utils";
 
 type CalculatorFinishesControllerOptions = {

@@ -10,7 +10,7 @@ import type {
   DoorComponentCatalogCreateState,
   ProjectDoorComponentState,
   ProjectDoorCreateState,
-} from "./calculator";
+} from "./calculator-types";
 import { DoorsCatalogPanel } from "./calculator-doors-stage-catalog";
 import { DoorsProjectPanel } from "./calculator-doors-stage-project";
 

@@ -7,7 +7,7 @@ import type {
   CalculatorFlooringPreparation,
   CalculatorFlooringRoom,
   FlooringEditState,
-} from "./calculator";
+} from "./calculator-types";
 
 type FlooringRoomEdit = FlooringEditState["rooms"][number];
 

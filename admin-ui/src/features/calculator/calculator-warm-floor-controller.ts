@@ -10,7 +10,7 @@ import {
   warmFloorDraftStorageKey,
   writeSessionValue,
 } from "./calculator-state";
-import type { CalculatorProjectDetail, CalculatorWarmFloorPayload, WarmFloorEditState } from "./calculator";
+import type { CalculatorProjectDetail, CalculatorWarmFloorPayload, WarmFloorEditState } from "./calculator-types";
 
 type WarmFloorControllerParams = {
   projectDetail: CalculatorProjectDetail | null;

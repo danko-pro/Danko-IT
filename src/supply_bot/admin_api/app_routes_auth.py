@@ -11,7 +11,7 @@ from supply_bot.admin_api.auth import (
     set_admin_session_cookie,
     verify_admin_password,
 )
-from supply_bot.admin_api.deps import get_optional_admin_session
+from supply_bot.admin_api.deps import get_optional_admin_session, get_settings
 from supply_bot.config import Settings
 
 
@@ -51,7 +51,7 @@ def register_auth_routes(
 ) -> None:
     @app.get("/api/auth/session")
     async def auth_session(request: Request) -> dict[str, Any]:
-        settings_obj: Settings = request.app.state.settings
+        settings_obj = get_settings(request)
         session = get_optional_admin_session(request)
         return _session_payload(settings_obj, session)
 
@@ -60,7 +60,7 @@ def register_auth_routes(
         response: Response,
         payload,
     ) -> dict[str, Any]:
-        settings_obj: Settings = request.app.state.settings
+        settings_obj = get_settings(request)
         if not settings_obj.admin_auth_enabled:
             return _session_payload(settings_obj, get_optional_admin_session(request))
 
@@ -83,7 +83,7 @@ def register_auth_routes(
 
     @app.post("/api/auth/logout")
     async def auth_logout(request: Request, response: Response) -> dict[str, Any]:
-        settings_obj: Settings = request.app.state.settings
+        settings_obj = get_settings(request)
         clear_admin_session_cookie(response)
         return _session_payload(
             settings_obj,

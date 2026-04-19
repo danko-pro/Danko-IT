@@ -1,12 +1,8 @@
 import { useState } from "react";
 import {
-  useLedgerPopoverDismiss,
-  ProjectAccountingLedgerPopoverResizeHandles,
-  ProjectAccountingLedgerPopoverShell,
-  useWorkspacePopover,
-} from "../overlay";
-import { useResizablePersistentPanel } from "../../../../shared/interactions/popovers";
-import { PanelResizeHandle } from "../../../../shared/ui/popovers";
+  ProjectAccountingLedgerBuilderPopover,
+  useProjectAccountingLedgerBuilderPopover,
+} from "./project-accounting-ledger-builder-popover";
 
 type ProjectAccountingLedgerOptionPickerProps = {
   value: string;
@@ -28,20 +24,21 @@ const CATEGORY_POPOVER_DEFAULT_SIZE = {
 export function ProjectAccountingLedgerOptionPicker(props: ProjectAccountingLedgerOptionPickerProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [draft, setDraft] = useState("");
-  const { rootRef, menuRef, menuPlacement, menuMaxHeight, menuMaxWidth, menuOffsetX, menuArrowOffsetX } = useWorkspacePopover(
-    isOpen,
-    360,
-    160,
-  );
   const activeValue = props.value || props.triggerFallback;
-  const resizablePanel = useResizablePersistentPanel({
-    enabled: Boolean(props.resizableStorageKey),
-    storageKey: props.resizableStorageKey ?? CATEGORY_POPOVER_STORAGE_KEY,
-    defaultSize: CATEGORY_POPOVER_DEFAULT_SIZE,
-    minWidth: 272,
-    minHeight: 200,
-    maxWidth: menuMaxWidth,
-    maxHeight: menuMaxHeight,
+  const popover = useProjectAccountingLedgerBuilderPopover({
+    isOpen,
+    onClose: () => setIsOpen(false),
+    preferredMaxHeight: 360,
+    minimumHeight: 160,
+    bodyClassName: props.resizableStorageKey ? "dashboard-ledger-item-cloud-body" : undefined,
+    resizable: props.resizableStorageKey
+      ? {
+          storageKey: props.resizableStorageKey ?? CATEGORY_POPOVER_STORAGE_KEY,
+          defaultSize: CATEGORY_POPOVER_DEFAULT_SIZE,
+          minWidth: 272,
+          minHeight: 200,
+        }
+      : undefined,
   });
 
   const commitDraft = () => {
@@ -56,11 +53,9 @@ export function ProjectAccountingLedgerOptionPicker(props: ProjectAccountingLedg
     setIsOpen(false);
   };
 
-  useLedgerPopoverDismiss(isOpen, rootRef, () => setIsOpen(false));
-
   return (
     <div
-      ref={rootRef}
+      ref={popover.rootRef}
       className={isOpen ? "dashboard-ledger-item-select dashboard-ledger-item-select-open" : "dashboard-ledger-item-select"}
     >
       <button
@@ -79,28 +74,10 @@ export function ProjectAccountingLedgerOptionPicker(props: ProjectAccountingLedg
       </button>
 
       {isOpen ? (
-        <ProjectAccountingLedgerPopoverShell
-          menuRef={menuRef}
-          placement={menuPlacement}
+        <ProjectAccountingLedgerBuilderPopover
+          popover={popover}
           ariaLabel={props.listAriaLabel}
           className="dashboard-ledger-item-cloud"
-          shellStyle={
-            menuOffsetX || menuArrowOffsetX !== null
-              ? {
-                  transform: menuOffsetX ? `translateX(${menuOffsetX}px)` : undefined,
-                  ["--dashboard-ledger-popover-arrow-left" as string]:
-                    menuArrowOffsetX !== null ? `${menuArrowOffsetX}px` : undefined,
-                }
-              : undefined
-          }
-          bodyClassName={
-            props.resizableStorageKey
-              ? resizablePanel.isResizing
-                ? "dashboard-ledger-resizable-cloud-body dashboard-ledger-item-cloud-body dashboard-ledger-popover-body-resizing"
-                : "dashboard-ledger-resizable-cloud-body dashboard-ledger-item-cloud-body"
-              : undefined
-          }
-          style={props.resizableStorageKey ? resizablePanel.panelStyle : { maxHeight: `${menuMaxHeight}px` }}
         >
           <div className="dashboard-ledger-item-cloud-layout">
             <div className="dashboard-ledger-item-list" role="listbox" aria-label={props.listAriaLabel}>
@@ -152,14 +129,7 @@ export function ProjectAccountingLedgerOptionPicker(props: ProjectAccountingLedg
               />
             </div>
           </div>
-
-          {props.resizableStorageKey ? (
-            <ProjectAccountingLedgerPopoverResizeHandles
-              placement={menuPlacement}
-              onResizeHandlePointerDown={resizablePanel.createResizeHandlePointerDown}
-            />
-          ) : null}
-        </ProjectAccountingLedgerPopoverShell>
+        </ProjectAccountingLedgerBuilderPopover>
       ) : null}
     </div>
   );

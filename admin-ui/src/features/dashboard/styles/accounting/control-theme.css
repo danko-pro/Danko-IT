@@ -139,8 +139,34 @@
 
 .dashboard-ledger-status-trigger-body {
   grid-template-columns: minmax(0, 1fr) max-content;
-  align-items: center;
-  gap: 0.36rem;
+  grid-template-rows: auto auto;
+  align-items: start;
+  gap: 0.08rem 0.36rem;
+}
+
+.dashboard-ledger-status-trigger-meta {
+  min-width: 0;
+  grid-column: 2;
+  grid-row: 2;
+  justify-self: end;
+  text-align: right;
+  font-size: 0.56rem;
+  line-height: 1.15;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dashboard-ledger-status-trigger-meta-neutral {
+  color: #7f95a8;
+}
+
+.dashboard-ledger-status-trigger-meta-positive {
+  color: #91e4c3;
+}
+
+.dashboard-ledger-status-trigger-meta-negative {
+  color: #f0b1c4;
 }
 
 .dashboard-ledger-counterparty-trigger-meta {
@@ -219,6 +245,9 @@
 }
 
 .dashboard-ledger-status-trigger-amount {
+  grid-column: 2;
+  grid-row: 1;
+  align-self: end;
   font-size: 0.9rem;
   font-weight: 700;
   line-height: 1.2;

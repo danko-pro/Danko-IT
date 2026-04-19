@@ -1,6 +1,6 @@
 /**
  * Вспомогательные view-helper'ы для общих метрик карточки.
- * Здесь только простое отображение чисел и CSS-тонов без договорной логики.
+ * Здесь только простое отображение чисел и CSS-тоны без договорной логики.
  */
 import { formatMoney } from "../model/project-accounting-format";
 import type { ProjectCardExpenseTone } from "../model/project-model";

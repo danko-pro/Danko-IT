@@ -34,13 +34,17 @@
 }
 
 .dashboard-ledger-status-trigger-body {
-  display: flex;
-  align-items: center;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-rows: auto auto;
+  align-items: start;
+  gap: 0.08rem 0.36rem;
   min-width: 0;
 }
 
 .dashboard-ledger-status-trigger-label {
   min-width: 0;
+  grid-column: 1;
   text-align: left;
   font-size: 0.72rem;
   font-weight: 600;
@@ -80,6 +84,32 @@
   font-weight: 600;
   line-height: 1;
   color: #a7bed0;
+}
+
+.dashboard-ledger-status-trigger-meta {
+  min-width: 0;
+  grid-column: 2;
+  grid-row: 2;
+  justify-self: end;
+  text-align: right;
+  font-size: 0.56rem;
+  line-height: 1.15;
+  color: #88a0b4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dashboard-ledger-status-trigger-meta-neutral {
+  color: #7f95a8;
+}
+
+.dashboard-ledger-status-trigger-meta-positive {
+  color: #91e4c3;
+}
+
+.dashboard-ledger-status-trigger-meta-negative {
+  color: #f0b1c4;
 }
 
 .dashboard-ledger-status-pill {
@@ -304,6 +334,10 @@
   gap: 0.5rem;
 }
 
+.dashboard-ledger-status-summary-head-secondary {
+  padding-top: 0.08rem;
+}
+
 .dashboard-ledger-status-summary-title {
   font-size: 0.72rem;
   font-weight: 700;
@@ -316,6 +350,16 @@
   font-size: 0.76rem;
   font-weight: 700;
   color: #f1fbff;
+}
+
+.dashboard-ledger-status-summary-title-secondary {
+  font-size: 0.62rem;
+  color: #9eb2c1;
+}
+
+.dashboard-ledger-status-summary-amount-secondary {
+  font-size: 0.66rem;
+  color: #d6e4ec;
 }
 
 .dashboard-ledger-status-summary-note {

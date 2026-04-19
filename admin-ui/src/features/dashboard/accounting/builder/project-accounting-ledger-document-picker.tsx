@@ -4,12 +4,9 @@ import type { ProjectCardLedgerDocument, ProjectCardLedgerStatus } from "../../m
 import type { LedgerDocumentKind } from "../project-accounting-ledger-config";
 import { requiresAct, requiresInvoice } from "../project-accounting-ledger-config";
 import {
-  useLedgerPopoverDismiss,
-  ProjectAccountingLedgerPopoverResizeHandles,
-  ProjectAccountingLedgerPopoverShell,
-  useWorkspacePopover,
-} from "../overlay";
-import { useResizablePersistentPanel } from "../../../../shared/interactions/popovers";
+  ProjectAccountingLedgerBuilderPopover,
+  useProjectAccountingLedgerBuilderPopover,
+} from "./project-accounting-ledger-builder-popover";
 import { parseLedgerAmountInput } from "./project-accounting-ledger-builder-utils";
 
 type ProjectAccountingLedgerDocumentPickerProps = {
@@ -87,11 +84,6 @@ function getDocumentFlagLabel(kind: LedgerDocumentKind, visualState: DocumentVis
 export function ProjectAccountingLedgerDocumentPicker(props: ProjectAccountingLedgerDocumentPickerProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [amountDraft, setAmountDraft] = useState(props.document?.amount ? String(props.document.amount) : "");
-  const { rootRef, menuRef, menuPlacement, menuMaxHeight, menuMaxWidth, menuOffsetX, menuArrowOffsetX } = useWorkspacePopover(
-    isOpen,
-    430,
-    220,
-  );
   const copy = DOCUMENT_COPY[props.kind];
   const isAvailable = props.kind === "invoice" ? requiresInvoice(props.status) : requiresAct(props.status);
   const visualState = getDocumentVisualState(isAvailable, props.document);
@@ -102,16 +94,21 @@ export function ProjectAccountingLedgerDocumentPicker(props: ProjectAccountingLe
   const triggerTitle = props.document?.title?.trim() || copy.title;
   const triggerMeta = getDocumentTriggerMeta(props.kind, visualState, props.document);
   const flagLabel = getDocumentFlagLabel(props.kind, visualState, hasDocument);
-  const resizablePanel = useResizablePersistentPanel({
-    storageKey: `dashboard-ledger:popover:document:${props.kind}`,
-    defaultSize: {
-      width: 388,
-      height: 332,
+  const popover = useProjectAccountingLedgerBuilderPopover({
+    isOpen,
+    onClose: () => setIsOpen(false),
+    preferredMaxHeight: 430,
+    minimumHeight: 220,
+    bodyClassName: "dashboard-ledger-document-cloud-body",
+    resizable: {
+      storageKey: `dashboard-ledger:popover:document:${props.kind}`,
+      defaultSize: {
+        width: 388,
+        height: 332,
+      },
+      minWidth: 340,
+      minHeight: 260,
     },
-    minWidth: 340,
-    minHeight: 260,
-    maxWidth: menuMaxWidth,
-    maxHeight: menuMaxHeight,
   });
 
   useEffect(() => {
@@ -124,11 +121,9 @@ export function ProjectAccountingLedgerDocumentPicker(props: ProjectAccountingLe
     }
   }, [isInteractive]);
 
-  useLedgerPopoverDismiss(isOpen, rootRef, () => setIsOpen(false));
-
   return (
     <div
-      ref={rootRef}
+      ref={popover.rootRef}
       className={isOpen ? "dashboard-ledger-document-select dashboard-ledger-document-select-open" : "dashboard-ledger-document-select"}
     >
       <button
@@ -154,26 +149,10 @@ export function ProjectAccountingLedgerDocumentPicker(props: ProjectAccountingLe
       </button>
 
       {isOpen ? (
-        <ProjectAccountingLedgerPopoverShell
-          menuRef={menuRef}
-          placement={menuPlacement}
+        <ProjectAccountingLedgerBuilderPopover
+          popover={popover}
           ariaLabel={copy.title}
           className="dashboard-ledger-document-cloud"
-          shellStyle={
-            menuOffsetX || menuArrowOffsetX !== null
-              ? {
-                  transform: menuOffsetX ? `translateX(${menuOffsetX}px)` : undefined,
-                  ["--dashboard-ledger-popover-arrow-left" as string]:
-                    menuArrowOffsetX !== null ? `${menuArrowOffsetX}px` : undefined,
-                }
-              : undefined
-          }
-          bodyClassName={
-            resizablePanel.isResizing
-              ? "dashboard-ledger-resizable-cloud-body dashboard-ledger-document-cloud-body dashboard-ledger-popover-body-resizing"
-              : "dashboard-ledger-resizable-cloud-body dashboard-ledger-document-cloud-body"
-          }
-          style={resizablePanel.panelStyle}
         >
           <div className="dashboard-ledger-document-upload-row">
             <label
@@ -259,12 +238,7 @@ export function ProjectAccountingLedgerDocumentPicker(props: ProjectAccountingLe
               </div>
             </div>
           ) : null}
-
-          <ProjectAccountingLedgerPopoverResizeHandles
-            placement={menuPlacement}
-            onResizeHandlePointerDown={resizablePanel.createResizeHandlePointerDown}
-          />
-        </ProjectAccountingLedgerPopoverShell>
+        </ProjectAccountingLedgerBuilderPopover>
       ) : null}
     </div>
   );

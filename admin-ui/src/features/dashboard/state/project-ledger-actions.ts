@@ -1,6 +1,6 @@
 /**
- * Ledger-операции вынесены отдельно, чтобы coordinator-hook не смешивал
- * project loaders, contract sync и детальную работу со строками учета и документами.
+ * Ledger-РѕРїРµСЂР°С†РёРё РІС‹РЅРµСЃРµРЅС‹ РѕС‚РґРµР»СЊРЅРѕ, С‡С‚РѕР±С‹ coordinator-hook РЅРµ СЃРјРµС€РёРІР°Р»
+ * project loaders, contract sync Рё РґРµС‚Р°Р»СЊРЅСѓСЋ СЂР°Р±РѕС‚Сѓ СЃРѕ СЃС‚СЂРѕРєР°РјРё СѓС‡РµС‚Р° Рё РґРѕРєСѓРјРµРЅС‚Р°РјРё.
  */
 import type { Dispatch, SetStateAction } from "react";
 import { buildProjectLedgerPayload } from "../api/project-payloads";
@@ -10,7 +10,11 @@ import {
   uploadProjectLedgerDocument,
 } from "../api/project-client";
 import { createEmptyLedgerEntry } from "../model/project-accounting-logic";
-import type { DashboardProjectCardData, ProjectCardLedgerDocument, ProjectCardLedgerEntry } from "../model/project-model";
+import type {
+  DashboardProjectCardData,
+  ProjectCardLedgerDocument,
+  ProjectCardLedgerEntry,
+} from "../model/project-model";
 import type { LedgerDocumentKind } from "./project-ledger-sync-helpers";
 import {
   applyOptimisticLedgerDocumentUpload,
@@ -27,6 +31,7 @@ type SetError = Dispatch<SetStateAction<string | null>>;
 
 export async function createDashboardProjectLedgerEntry(params: {
   activeProject: DashboardProjectCardData | null;
+  updateSelectedProjectLedger: UpdateSelectedProjectLedger;
   setProjects: SetProjects;
   setError: SetError;
 }) {
@@ -35,13 +40,28 @@ export async function createDashboardProjectLedgerEntry(params: {
   }
 
   const draftEntry = createEmptyLedgerEntry();
+  params.updateSelectedProjectLedger((entries) => [...entries, draftEntry]);
 
   try {
-    const result = await createProjectLedgerEntry(params.activeProject.id, buildProjectLedgerPayload(draftEntry));
-    params.setProjects((current) => mergeCreatedLedgerEntryState(current, params.activeProject!.id, result));
+    const result = await createProjectLedgerEntry(
+      params.activeProject.id,
+      buildProjectLedgerPayload(draftEntry),
+    );
+    params.setProjects((current) =>
+      mergeCreatedLedgerEntryState(current, params.activeProject!.id, result, {
+        optimisticEntryId: draftEntry.id,
+      }),
+    );
     params.setError(null);
   } catch (createError) {
-    params.setError(createError instanceof Error ? createError.message : "Не удалось добавить строку учета");
+    params.updateSelectedProjectLedger((entries) =>
+      entries.filter((entry) => entry.id !== draftEntry.id),
+    );
+    params.setError(
+      createError instanceof Error
+        ? createError.message
+        : "РќРµ СѓРґР°Р»РѕСЃСЊ РґРѕР±Р°РІРёС‚СЊ СЃС‚СЂРѕРєСѓ СѓС‡РµС‚Р°",
+    );
   }
 }
 
@@ -73,7 +93,11 @@ export async function deleteDashboardProjectLedgerEntry(params: {
     );
     params.setError(null);
   } catch (deleteError) {
-    params.setError(deleteError instanceof Error ? deleteError.message : "Не удалось удалить строку учета");
+    params.setError(
+      deleteError instanceof Error
+        ? deleteError.message
+        : "РќРµ СѓРґР°Р»РѕСЃСЊ СѓРґР°Р»РёС‚СЊ СЃС‚СЂРѕРєСѓ СѓС‡РµС‚Р°",
+    );
     await params.loadProjects();
   }
 }
@@ -83,14 +107,19 @@ export function patchDashboardProjectLedgerEntry(params: {
   entryId: string;
   patch: Partial<ProjectCardLedgerEntry>;
   updateSelectedProjectLedger: UpdateSelectedProjectLedger;
-  scheduleLedgerEntrySync: (projectId: string, entryId: string, patch: Partial<ProjectCardLedgerEntry>) => void;
+  scheduleLedgerEntrySync: (
+    projectId: string,
+    entryId: string,
+    patch: Partial<ProjectCardLedgerEntry>,
+  ) => void;
 }) {
   if (!params.activeProject) {
     return;
   }
 
   params.updateSelectedProjectLedger(
-    (entries) => entries.map((entry) => (entry.id === params.entryId ? { ...entry, ...params.patch } : entry)),
+    (entries) =>
+      entries.map((entry) => (entry.id === params.entryId ? { ...entry, ...params.patch } : entry)),
     { recomputeExpenses: true },
   );
   params.scheduleLedgerEntrySync(params.activeProject.id, params.entryId, params.patch);
@@ -113,14 +142,23 @@ export function patchDashboardProjectLedgerDocument(params: {
     return;
   }
 
-  const canSyncWithBackend = canSyncLedgerDocumentPatch(params.activeProject, params.entryId, params.kind);
+  const canSyncWithBackend = canSyncLedgerDocumentPatch(
+    params.activeProject,
+    params.entryId,
+    params.kind,
+  );
 
   params.updateSelectedProjectLedger((entries) =>
     patchLedgerDocumentState(entries, params.entryId, params.kind, params.patch),
   );
 
   if (canSyncWithBackend) {
-    params.scheduleLedgerDocumentSync(params.activeProject.id, params.entryId, params.kind, params.patch);
+    params.scheduleLedgerDocumentSync(
+      params.activeProject.id,
+      params.entryId,
+      params.kind,
+      params.patch,
+    );
   }
 }
 
@@ -130,7 +168,11 @@ export async function uploadDashboardProjectLedgerDocument(params: {
   kind: LedgerDocumentKind;
   file: File;
   updateSelectedProjectLedger: UpdateSelectedProjectLedger;
-  clearPendingLedgerDocumentSync: (projectId: string, entryId: string, kind: LedgerDocumentKind) => void;
+  clearPendingLedgerDocumentSync: (
+    projectId: string,
+    entryId: string,
+    kind: LedgerDocumentKind,
+  ) => void;
   loadProjectLedger: (projectId: string) => Promise<void>;
   setProjects: SetProjects;
   setError: SetError;
@@ -146,14 +188,23 @@ export async function uploadDashboardProjectLedgerDocument(params: {
   );
 
   try {
-    const result = await uploadProjectLedgerDocument(projectId, params.entryId, params.kind, params.file);
+    const result = await uploadProjectLedgerDocument(
+      projectId,
+      params.entryId,
+      params.kind,
+      params.file,
+    );
     params.setProjects((current) =>
       mergePatchedLedgerEntryState(current, projectId, params.entryId, { entry: result.entry }),
     );
     params.clearPendingLedgerDocumentSync(projectId, params.entryId, params.kind);
     params.setError(null);
   } catch (uploadError) {
-    params.setError(uploadError instanceof Error ? uploadError.message : "Не удалось загрузить документ");
+    params.setError(
+      uploadError instanceof Error
+        ? uploadError.message
+        : "РќРµ СѓРґР°Р»РѕСЃСЊ Р·Р°РіСЂСѓР·РёС‚СЊ РґРѕРєСѓРјРµРЅС‚",
+    );
     await params.loadProjectLedger(projectId);
   }
 }

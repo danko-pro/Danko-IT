@@ -1,4 +1,4 @@
-import { formatMoney } from "../../model/project-accounting-format";
+import { formatMoney, ledgerStatusView } from "../../model/project-accounting-format";
 import type {
   ProjectCardLedgerCounterparty,
   ProjectCardLedgerEntry,
@@ -19,12 +19,12 @@ export const EXPENSE_ITEM_OPTIONS = [
   "Подрядчик",
   "Доставка",
   "Прочие",
-  "Счет в Бау",
+  "Счёт в Бау",
   "Кеска",
   "Кондиционер",
   "Электрика (чш)",
   "Штукатурка",
-  "Алюминиевые профиля",
+  "Алюминиевые профили",
   "Напольные покрытия",
   "Двери",
   "ГКЛ",
@@ -34,7 +34,7 @@ export const EXPENSE_ITEM_OPTIONS = [
   "Влагоуловитель",
   "Натяжные потолки",
   "Розетки / выключатели",
-  "Чист (зеркала)",
+  "Чистка зеркал",
   "Мебель / индивидуал",
   "Бытовая техника",
   "Подоконники",
@@ -48,11 +48,73 @@ export const LEDGER_STATUS_OPTIONS: Array<{
   note: string;
 }> = [
   { value: "planned", note: "Есть только плановая сумма" },
-  { value: "invoice", note: "Счет получен от исполнителя" },
+  { value: "invoice", note: "Счёт получен от исполнителя" },
   { value: "waiting-payment", note: "Сумма подтверждена и ожидает оплаты контрагенту" },
   { value: "paid", note: "Оплата прошла, расход зафиксирован" },
   { value: "completed", note: "Позиция закрыта и больше не меняется" },
 ];
+
+type LedgerDeltaTone = "neutral" | "positive" | "negative";
+type LedgerSummaryTone = "neutral" | "ok" | "error";
+
+function formatTriggerAmountValue(value: number) {
+  return triggerAmountFormatter.format(value);
+}
+
+function getDisplayAmount(status: ProjectCardLedgerStatus, planAmount: number, actualAmount: number) {
+  if (status === "planned") {
+    return planAmount;
+  }
+
+  return actualAmount > 0 ? actualAmount : planAmount;
+}
+
+function getDeltaView(planAmount: number, actualAmount: number): {
+  shortLabel: string | null;
+  shortTone: LedgerDeltaTone;
+  summaryTitle: string;
+  summaryAmount: string;
+  summaryTone: LedgerSummaryTone;
+} {
+  if (actualAmount <= 0) {
+    return {
+      shortLabel: "без факта",
+      shortTone: "neutral",
+      summaryTitle: "Факт не внесён",
+      summaryAmount: "Отклонение появится после счёта",
+      summaryTone: "neutral",
+    };
+  }
+
+  const delta = actualAmount - planAmount;
+  if (Math.abs(delta) < 0.005) {
+    return {
+      shortLabel: "по плану",
+      shortTone: "neutral",
+      summaryTitle: "По плану",
+      summaryAmount: formatMoney(0),
+      summaryTone: "ok",
+    };
+  }
+
+  if (delta > 0) {
+    return {
+      shortLabel: `+${formatTriggerAmountValue(delta)} ₽`,
+      shortTone: "negative",
+      summaryTitle: "Перерасход",
+      summaryAmount: formatMoney(delta),
+      summaryTone: "error",
+    };
+  }
+
+  return {
+    shortLabel: `-${formatTriggerAmountValue(Math.abs(delta))} ₽`,
+    shortTone: "positive",
+    summaryTitle: "Экономия",
+    summaryAmount: formatMoney(Math.abs(delta)),
+    summaryTone: "ok",
+  };
+}
 
 export function createEmptyCounterpartyDetails(legalName = ""): ProjectCardLedgerCounterparty {
   return {
@@ -177,63 +239,31 @@ export function parseLedgerAmountInput(value: string) {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
-export function ledgerDeviationView(planAmount: number, actualAmount: number) {
-  if (actualAmount <= 0) {
-    return {
-      label: "Факт не внесен",
-      amountLabel: "Отклонение появится после счета",
-      tone: "neutral" as const,
-    };
-  }
-
-  const delta = actualAmount - planAmount;
-  if (Math.abs(delta) < 0.005) {
-    return {
-      label: "По плану",
-      amountLabel: formatMoney(0),
-      tone: "active" as const,
-    };
-  }
-
-  if (delta > 0) {
-    return {
-      label: "Перерасход",
-      amountLabel: formatMoney(delta),
-      tone: "error" as const,
-    };
-  }
+export function ledgerDeviationView(status: ProjectCardLedgerStatus, planAmount: number, actualAmount: number) {
+  const statusLabel = ledgerStatusView(status).label;
+  const delta = getDeltaView(planAmount, actualAmount);
 
   return {
-    label: "Экономия",
-    amountLabel: formatMoney(Math.abs(delta)),
-    tone: "ok" as const,
+    title: statusLabel,
+    amountLabel: formatMoney(getDisplayAmount(status, planAmount, actualAmount)),
+    deltaTitle: delta.summaryTitle,
+    deltaAmount: delta.summaryAmount,
+    tone: delta.summaryTone,
   };
 }
 
-function formatTriggerAmountValue(value: number) {
-  return triggerAmountFormatter.format(value);
-}
-
 export function ledgerTriggerAmountView(status: ProjectCardLedgerStatus, planAmount: number, actualAmount: number) {
-  if (status === "paid" || status === "completed") {
-    const delta = planAmount - actualAmount;
-    if (Math.abs(delta) < 0.005) {
-      return {
-        label: "0",
-        tone: "neutral" as const,
-      };
-    }
-
-    return {
-      label: `${delta > 0 ? "+" : "-"}${formatTriggerAmountValue(Math.abs(delta))}`,
-      tone: delta > 0 ? ("positive" as const) : ("negative" as const),
-    };
-  }
-
-  const amount = status === "planned" || actualAmount <= 0 ? planAmount : actualAmount;
+  const delta = getDeltaView(planAmount, actualAmount);
 
   return {
-    label: formatTriggerAmountValue(amount),
-    tone: status === "invoice" || status === "waiting-payment" ? ("accent" as const) : ("neutral" as const),
+    amountLabel: formatTriggerAmountValue(getDisplayAmount(status, planAmount, actualAmount)),
+    amountTone:
+      status === "invoice" || status === "waiting-payment"
+        ? ("accent" as const)
+        : status === "paid" || status === "completed"
+          ? ("positive" as const)
+          : ("neutral" as const),
+    metaLabel: status === "planned" ? null : delta.shortLabel,
+    metaTone: delta.shortTone,
   };
 }

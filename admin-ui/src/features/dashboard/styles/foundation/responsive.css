@@ -1,6 +1,11 @@
 @media (max-width: 1240px) {
+  .dashboard-project-overview {
+    width: 100%;
+  }
+
   .dashboard-project-metrics {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+    width: 100%;
   }
 
   .dashboard-project-layout {
@@ -36,6 +41,11 @@
   .dashboard-project-side-metrics,
   .dashboard-project-contract-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+  }
+
+  .dashboard-project-side-metrics {
+    padding-left: 0;
   }
 
   .dashboard-project-panel-meta {
@@ -139,6 +149,7 @@
   .dashboard-project-side-metrics,
   .dashboard-project-contract-grid {
     grid-template-columns: 1fr;
+    width: 100%;
   }
 
   .dashboard-ledger-table-head {

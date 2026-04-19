@@ -8,6 +8,7 @@ import type {
   ProjectCardLedgerDocument,
   ProjectCardLedgerEntry,
 } from "./project-model";
+import { normalizeDashboardText } from "./project-text-normalization";
 
 // Мапперы API -> UI модели для dashboard.
 // Эти функции не знают про React state и не выполняют side effects.
@@ -81,11 +82,18 @@ export function mapLedgerRecord(
 ): ProjectCardLedgerEntry {
   return {
     id: String(record.id),
-    category: record.category,
-    item: record.item,
+    category: normalizeDashboardText(record.category),
+    item: normalizeDashboardText(record.item),
     owner: record.owner,
-    counterparty: record.counterparty,
-    counterpartyDetails: record.counterparty_details ? { ...record.counterparty_details } : null,
+    counterparty: normalizeDashboardText(record.counterparty),
+    counterpartyDetails: record.counterparty_details
+      ? {
+          ...record.counterparty_details,
+          legalName: normalizeDashboardText(record.counterparty_details.legalName),
+          managerName: normalizeDashboardText(record.counterparty_details.managerName),
+          messenger: normalizeDashboardText(record.counterparty_details.messenger),
+        }
+      : null,
     status: record.status,
     invoiceDocument: record.invoice_document
       ? mapLedgerDocumentRecord(record.invoice_document)

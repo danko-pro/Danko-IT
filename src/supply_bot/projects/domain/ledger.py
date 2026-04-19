@@ -40,15 +40,19 @@ def _build_counterparty_values(details: Any | None) -> dict[str, Any]:
 
 
 def build_project_ledger_create_values(payload: Any) -> dict[str, Any]:
+    status = normalize_project_ledger_status(payload.status)
+    plan_amount = validate_project_metric(payload.plan_amount, field="Plan amount") or 0.0
+    actual_amount = validate_project_metric(payload.actual_amount, field="Actual amount") or 0.0
+
     return {
         "category": normalize_project_text(payload.category, default="Работы"),
         "item": normalize_project_text(payload.item),
         "owner": normalize_project_text(payload.owner),
         "counterparty": normalize_project_text(payload.counterparty),
         **_build_counterparty_values(payload.counterparty_details),
-        "status": normalize_project_ledger_status(payload.status),
-        "plan_amount": validate_project_metric(payload.plan_amount, field="Plan amount") or 0.0,
-        "actual_amount": validate_project_metric(payload.actual_amount, field="Actual amount") or 0.0,
+        "status": status,
+        "plan_amount": plan_amount,
+        "actual_amount": actual_amount,
         "control_date": normalize_project_text(payload.control_date),
     }
 
@@ -77,6 +81,7 @@ def build_project_ledger_update_values(
         updates["actual_amount"] = validate_project_metric(payload_data["actual_amount"], field="Actual amount")
     if "control_date" in payload_data:
         updates["control_date"] = normalize_project_text(payload_data["control_date"])
+
     return updates
 
 

@@ -2,12 +2,9 @@ import { useEffect, useState } from "react";
 import { ledgerStatusView } from "../../model/project-accounting-format";
 import type { ProjectCardLedgerStatus } from "../../model/project-model";
 import {
-  useLedgerPopoverDismiss,
-  ProjectAccountingLedgerPopoverResizeHandles,
-  ProjectAccountingLedgerPopoverShell,
-  useWorkspacePopover,
-} from "../overlay";
-import { useResizablePersistentPanel } from "../../../../shared/interactions/popovers";
+  ProjectAccountingLedgerBuilderPopover,
+  useProjectAccountingLedgerBuilderPopover,
+} from "./project-accounting-ledger-builder-popover";
 import {
   LEDGER_STATUS_OPTIONS,
   ledgerDeviationView,
@@ -28,26 +25,26 @@ export function ProjectAccountingLedgerStatusPicker(props: ProjectAccountingLedg
   const [isOpen, setIsOpen] = useState(false);
   const [planDraft, setPlanDraft] = useState(props.planAmount > 0 ? String(props.planAmount) : "");
   const [actualDraft, setActualDraft] = useState(props.actualAmount > 0 ? String(props.actualAmount) : "");
-  const { rootRef, menuRef, menuPlacement, menuMaxHeight, menuMaxWidth, menuOffsetX, menuArrowOffsetX } = useWorkspacePopover(
-    isOpen,
-    430,
-    240,
-  );
   const statusView = ledgerStatusView(props.status);
-  const deviation = ledgerDeviationView(props.planAmount, props.actualAmount);
+  const deviation = ledgerDeviationView(props.status, props.planAmount, props.actualAmount);
   const triggerAmount = ledgerTriggerAmountView(props.status, props.planAmount, props.actualAmount);
   const selectedStatusOption =
     LEDGER_STATUS_OPTIONS.find((option) => option.value === props.status) ?? LEDGER_STATUS_OPTIONS[0];
-  const resizablePanel = useResizablePersistentPanel({
-    storageKey: "dashboard-ledger:popover:status",
-    defaultSize: {
-      width: 368,
-      height: 336,
+  const popover = useProjectAccountingLedgerBuilderPopover({
+    isOpen,
+    onClose: () => setIsOpen(false),
+    preferredMaxHeight: 430,
+    minimumHeight: 240,
+    bodyClassName: "dashboard-ledger-status-cloud-body",
+    resizable: {
+      storageKey: "dashboard-ledger:popover:status",
+      defaultSize: {
+        width: 368,
+        height: 336,
+      },
+      minWidth: 320,
+      minHeight: 260,
     },
-    minWidth: 320,
-    minHeight: 260,
-    maxWidth: menuMaxWidth,
-    maxHeight: menuMaxHeight,
   });
 
   useEffect(() => {
@@ -58,11 +55,22 @@ export function ProjectAccountingLedgerStatusPicker(props: ProjectAccountingLedg
     setActualDraft(props.actualAmount > 0 ? String(props.actualAmount) : "");
   }, [props.actualAmount]);
 
-  useLedgerPopoverDismiss(isOpen, rootRef, () => setIsOpen(false));
+  const commitPlanAmount = (value: string) => {
+    props.onChangePlanAmount(parseLedgerAmountInput(value));
+  };
+
+  const commitActualAmount = (value: string) => {
+    const nextActualAmount = parseLedgerAmountInput(value);
+    props.onChangeActualAmount(nextActualAmount);
+  };
+
+  const handleStatusChange = (nextStatus: ProjectCardLedgerStatus) => {
+    props.onChangeStatus(nextStatus);
+  };
 
   return (
     <div
-      ref={rootRef}
+      ref={popover.rootRef}
       className={isOpen ? "dashboard-ledger-status-select dashboard-ledger-status-select-open" : "dashboard-ledger-status-select"}
     >
       <button
@@ -76,9 +84,14 @@ export function ProjectAccountingLedgerStatusPicker(props: ProjectAccountingLedg
           <span className={`dashboard-ledger-status-trigger-label dashboard-ledger-status-trigger-label-${statusView.tone}`}>
             {statusView.label}
           </span>
-          <span className={`dashboard-ledger-status-trigger-amount dashboard-ledger-status-trigger-amount-${triggerAmount.tone}`}>
-            {triggerAmount.label}
+          <span className={`dashboard-ledger-status-trigger-amount dashboard-ledger-status-trigger-amount-${triggerAmount.amountTone}`}>
+            {triggerAmount.amountLabel}
           </span>
+          {triggerAmount.metaLabel ? (
+            <span className={`dashboard-ledger-status-trigger-meta dashboard-ledger-status-trigger-meta-${triggerAmount.metaTone}`}>
+              {triggerAmount.metaLabel}
+            </span>
+          ) : null}
         </span>
         <span className="dashboard-ledger-status-trigger-icon" aria-hidden="true">
           ₽
@@ -86,26 +99,10 @@ export function ProjectAccountingLedgerStatusPicker(props: ProjectAccountingLedg
       </button>
 
       {isOpen ? (
-        <ProjectAccountingLedgerPopoverShell
-          menuRef={menuRef}
-          placement={menuPlacement}
+        <ProjectAccountingLedgerBuilderPopover
+          popover={popover}
           ariaLabel="Статус оплаты"
           className="dashboard-ledger-status-cloud"
-          shellStyle={
-            menuOffsetX || menuArrowOffsetX !== null
-              ? {
-                  transform: menuOffsetX ? `translateX(${menuOffsetX}px)` : undefined,
-                  ["--dashboard-ledger-popover-arrow-left" as string]:
-                    menuArrowOffsetX !== null ? `${menuArrowOffsetX}px` : undefined,
-                }
-              : undefined
-          }
-          bodyClassName={
-            resizablePanel.isResizing
-              ? "dashboard-ledger-resizable-cloud-body dashboard-ledger-status-cloud-body dashboard-ledger-popover-body-resizing"
-              : "dashboard-ledger-resizable-cloud-body dashboard-ledger-status-cloud-body"
-          }
-          style={resizablePanel.panelStyle}
         >
           <div className="dashboard-ledger-status-stage-list" role="listbox" aria-label="Этап оплаты">
             {LEDGER_STATUS_OPTIONS.map((option) => {
@@ -123,7 +120,7 @@ export function ProjectAccountingLedgerStatusPicker(props: ProjectAccountingLedg
                       ? "dashboard-ledger-status-stage dashboard-ledger-status-stage-selected"
                       : "dashboard-ledger-status-stage"
                   }
-                  onClick={() => props.onChangeStatus(option.value)}
+                  onClick={() => handleStatusChange(option.value)}
                 >
                   <span className={`dashboard-ledger-status-stage-pill dashboard-ledger-status-pill-${optionView.tone}`}>
                     {optionView.label}
@@ -145,10 +142,11 @@ export function ProjectAccountingLedgerStatusPicker(props: ProjectAccountingLedg
                   value={planDraft}
                   placeholder="23000"
                   onChange={(event) => setPlanDraft(event.target.value)}
+                  onBlur={() => commitPlanAmount(planDraft)}
                   onKeyDown={(event) => {
                     if (event.key === "Enter") {
                       event.preventDefault();
-                      props.onChangePlanAmount(parseLedgerAmountInput(planDraft));
+                      commitPlanAmount(planDraft);
                     }
                   }}
                 />
@@ -157,7 +155,7 @@ export function ProjectAccountingLedgerStatusPicker(props: ProjectAccountingLedg
             </label>
 
             <label className="dashboard-ledger-status-field">
-              <span className="dashboard-ledger-status-field-label">Счет / факт</span>
+              <span className="dashboard-ledger-status-field-label">Счёт / факт</span>
               <div className="dashboard-ledger-status-field-shell">
                 <input
                   type="text"
@@ -166,10 +164,11 @@ export function ProjectAccountingLedgerStatusPicker(props: ProjectAccountingLedg
                   value={actualDraft}
                   placeholder="25000"
                   onChange={(event) => setActualDraft(event.target.value)}
+                  onBlur={() => commitActualAmount(actualDraft)}
                   onKeyDown={(event) => {
                     if (event.key === "Enter") {
                       event.preventDefault();
-                      props.onChangeActualAmount(parseLedgerAmountInput(actualDraft));
+                      commitActualAmount(actualDraft);
                     }
                   }}
                 />
@@ -180,17 +179,20 @@ export function ProjectAccountingLedgerStatusPicker(props: ProjectAccountingLedg
 
           <div className={`dashboard-ledger-status-summary dashboard-ledger-status-summary-${deviation.tone}`}>
             <div className="dashboard-ledger-status-summary-head">
-              <span className="dashboard-ledger-status-summary-title">{deviation.label}</span>
+              <span className="dashboard-ledger-status-summary-title">{deviation.title}</span>
               <span className="dashboard-ledger-status-summary-amount">{deviation.amountLabel}</span>
+            </div>
+            <div className="dashboard-ledger-status-summary-head dashboard-ledger-status-summary-head-secondary">
+              <span className="dashboard-ledger-status-summary-title dashboard-ledger-status-summary-title-secondary">
+                {deviation.deltaTitle}
+              </span>
+              <span className="dashboard-ledger-status-summary-amount dashboard-ledger-status-summary-amount-secondary">
+                {deviation.deltaAmount}
+              </span>
             </div>
             <div className="dashboard-ledger-status-summary-note">{selectedStatusOption.note}</div>
           </div>
-
-          <ProjectAccountingLedgerPopoverResizeHandles
-            placement={menuPlacement}
-            onResizeHandlePointerDown={resizablePanel.createResizeHandlePointerDown}
-          />
-        </ProjectAccountingLedgerPopoverShell>
+        </ProjectAccountingLedgerBuilderPopover>
       ) : null}
     </div>
   );

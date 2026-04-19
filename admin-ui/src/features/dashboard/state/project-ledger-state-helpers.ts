@@ -31,13 +31,23 @@ export function mergeCreatedLedgerEntryState(
     project: DashboardProjectApiRecord;
     entry: DashboardProjectLedgerApiRecord;
   },
+  options?: {
+    optimisticEntryId?: string;
+  },
 ) {
   return currentProjects.map((candidate, index) => {
     if (candidate.id !== projectId) {
       return candidate;
     }
 
-    const nextEntries = [...candidate.ledgerEntries, mapLedgerRecord(result.entry)];
+    const createdEntry = mapLedgerRecord(result.entry);
+    const nextEntries = options?.optimisticEntryId
+      ? candidate.ledgerEntries.some((entry) => entry.id === options.optimisticEntryId)
+        ? candidate.ledgerEntries.map((entry) =>
+            entry.id === options.optimisticEntryId ? createdEntry : entry,
+          )
+        : [...candidate.ledgerEntries, createdEntry]
+      : [...candidate.ledgerEntries, createdEntry];
     return mergeProjectSummaryWithLedgerEntries(candidate, index, result.project, nextEntries);
   });
 }

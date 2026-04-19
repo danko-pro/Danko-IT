@@ -1,4 +1,9 @@
-import { formatMoney, sumLedgerActualByStatuses, sumLedgerPlanByStatuses } from "../model/project-accounting-format";
+import {
+  formatMoney,
+  sumLedgerCommittedByStatuses,
+  sumLedgerPaidByStatuses,
+  sumLedgerPlanByStatuses,
+} from "../model/project-accounting-format";
 import type { DashboardProjectCardData } from "../model/project-model";
 
 type StatusSummaryTone = "amber" | "cyan" | "emerald" | "slate" | "rose";
@@ -23,9 +28,9 @@ function StatusSummaryItem(props: { label: string; value: string; meta: string; 
 }
 
 export function ProjectAccountingStatusSummary(props: { project: DashboardProjectCardData }) {
-  const invoiceTotal = sumLedgerPlanByStatuses(props.project.ledgerEntries, ["invoice"]);
-  const waitingPaymentTotal = sumLedgerPlanByStatuses(props.project.ledgerEntries, ["waiting-payment"]);
-  const paidTotal = sumLedgerActualByStatuses(props.project.ledgerEntries, ["paid", "completed"]);
+  const invoiceTotal = sumLedgerCommittedByStatuses(props.project.ledgerEntries, ["invoice"]);
+  const waitingPaymentTotal = sumLedgerCommittedByStatuses(props.project.ledgerEntries, ["waiting-payment"]);
+  const paidTotal = sumLedgerPaidByStatuses(props.project.ledgerEntries, ["paid", "completed"]);
   const plannedTotal = sumLedgerPlanByStatuses(props.project.ledgerEntries, ["planned"]);
   const invoiceCount = countEntriesByStatuses(props.project, ["invoice"]);
   const waitingPaymentCount = countEntriesByStatuses(props.project, ["waiting-payment"]);
@@ -34,30 +39,15 @@ export function ProjectAccountingStatusSummary(props: { project: DashboardProjec
 
   return (
     <aside className="dashboard-ledger-status-summary">
-      <StatusSummaryItem
-        label="Счёт"
-        value={formatMoney(invoiceTotal)}
-        meta={`${invoiceCount} строк`}
-        tone="amber"
-      />
+      <StatusSummaryItem label="Счёт" value={formatMoney(invoiceTotal)} meta={`${invoiceCount} строк`} tone="amber" />
       <StatusSummaryItem
         label="Ожидает оплаты"
         value={formatMoney(waitingPaymentTotal)}
         meta={`${waitingPaymentCount} строк`}
         tone="cyan"
       />
-      <StatusSummaryItem
-        label="Оплачено"
-        value={formatMoney(paidTotal)}
-        meta={`${paidCount} строк`}
-        tone="emerald"
-      />
-      <StatusSummaryItem
-        label="План"
-        value={formatMoney(plannedTotal)}
-        meta={`${plannedCount} строк`}
-        tone="slate"
-      />
+      <StatusSummaryItem label="Оплачено" value={formatMoney(paidTotal)} meta={`${paidCount} строк`} tone="emerald" />
+      <StatusSummaryItem label="План" value={formatMoney(plannedTotal)} meta={`${plannedCount} строк`} tone="slate" />
     </aside>
   );
 }

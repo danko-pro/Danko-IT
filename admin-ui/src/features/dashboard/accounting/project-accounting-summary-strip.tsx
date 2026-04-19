@@ -1,5 +1,11 @@
 import { ProjectAccountingStatusSummary } from "./project-accounting-status-summary";
-import { formatMoney, formatMoneyPerSquare } from "../model/project-accounting-format";
+import {
+  formatMoney,
+  formatMoneyPerSquare,
+  ledgerCommittedAmount,
+  ledgerPlanBalanceAmount,
+  ledgerPlanBaselineAmount,
+} from "../model/project-accounting-format";
 import type { DashboardProjectCardData } from "../model/project-model";
 
 type StripTone = "amber" | "cyan" | "emerald" | "rose" | "slate";
@@ -114,7 +120,7 @@ function SummaryStripItem(props: {
               </div>
             </div>
           </div>
-          <div className="dashboard-ledger-strip-meta-row">
+          <div className="dashboard-ledger-strip-meta-stack">
             <div className="dashboard-ledger-strip-meta">{props.meta}</div>
             <div
               className={`dashboard-ledger-strip-delta dashboard-ledger-strip-delta-${props.chart.deltaTone}`}
@@ -134,10 +140,20 @@ function SummaryStripItem(props: {
 }
 
 export function ProjectAccountingSummaryStrip(props: { project: DashboardProjectCardData }) {
-  const plannedEntriesCount = countEntriesByStatuses(props.project, ["planned", "invoice", "waiting-payment"]);
+  const plannedEntriesCount = props.project.ledgerEntries.filter(
+    (entry) => Math.abs(ledgerPlanBalanceAmount(entry)) > 0.005,
+  ).length;
   const closedEntriesCount = countEntriesByStatuses(props.project, ["paid", "completed"]);
   const areaMeta = formatAreaMeta(props.project.areaM2);
-  const planFactChart = createPlanFactChart(props.project.plannedTotal, props.project.actualTotal);
+  const planBaselineTotal = props.project.ledgerEntries.reduce(
+    (total, entry) => total + ledgerPlanBaselineAmount(entry),
+    0,
+  );
+  const committedTotal = props.project.ledgerEntries.reduce(
+    (total, entry) => total + ledgerCommittedAmount(entry),
+    0,
+  );
+  const planFactChart = createPlanFactChart(planBaselineTotal, committedTotal);
 
   return (
     <section className="dashboard-ledger-topbar">
@@ -157,7 +173,7 @@ export function ProjectAccountingSummaryStrip(props: { project: DashboardProject
         <SummaryStripItem
           label="План"
           value={formatMoney(props.project.plannedTotal)}
-          meta={`${plannedEntriesCount} активн. строк`}
+          meta={`${plannedEntriesCount} строки с остатком`}
           tone="slate"
           chart={planFactChart}
         />
@@ -166,7 +182,6 @@ export function ProjectAccountingSummaryStrip(props: { project: DashboardProject
           value={formatMoney(props.project.actualTotal)}
           meta={`${closedEntriesCount} закрыт. строк`}
           tone="cyan"
-          chart={planFactChart}
         />
         <SummaryStripItem
           label="Работы"

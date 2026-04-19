@@ -2,11 +2,20 @@ export function SummaryMetric(props: {
   label: string;
   value: string;
   accent?: "cyan" | "amber" | "emerald";
+  valueTone?: "positive" | "negative" | "neutral";
 }) {
   return (
     <div className={`dashboard-project-metric ${props.accent ? `dashboard-project-metric-${props.accent}` : ""}`}>
       <div className="dashboard-project-metric-label">{props.label}</div>
-      <div className="dashboard-project-metric-value">{props.value}</div>
+      <div
+        className={
+          props.valueTone
+            ? `dashboard-project-metric-value dashboard-project-metric-value-${props.valueTone}`
+            : "dashboard-project-metric-value"
+        }
+      >
+        {props.value}
+      </div>
     </div>
   );
 }

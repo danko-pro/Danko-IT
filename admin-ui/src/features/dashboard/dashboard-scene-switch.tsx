@@ -42,7 +42,7 @@ const SCENE_OPTIONS: SceneOption[] = [
   },
   {
     view: "accounting",
-    label: "Таблица учета",
+    label: "Таблица учёта",
     icon: (
       <svg viewBox="0 0 24 24" className="h-4 w-4 fill-none stroke-current" strokeWidth="1.8">
         <rect x="4.5" y="5.5" width="15" height="13" rx="2.5" />
@@ -69,11 +69,11 @@ export function DashboardSceneSwitch(props: {
             type="button"
             className={
               isActive
-                ? "dashboard-scene-switch-button dashboard-scene-switch-button-active"
-                : "dashboard-scene-switch-button"
+                ? "dashboard-scene-switch-button dashboard-scene-switch-button-active ui-tooltip-anchor ui-tooltip-center dashboard-scene-switch-button-tooltip"
+                : "dashboard-scene-switch-button ui-tooltip-anchor ui-tooltip-center dashboard-scene-switch-button-tooltip"
             }
+            data-tooltip={option.label}
             aria-label={option.label}
-            title={option.label}
             onClick={() => props.onSelect(option.view)}
           >
             <span className="dashboard-scene-switch-glyph" aria-hidden="true">

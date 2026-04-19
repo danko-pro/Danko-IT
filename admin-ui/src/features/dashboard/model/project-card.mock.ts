@@ -4,6 +4,7 @@ import type {
   ProjectCardLedgerDocument,
   ProjectCardSourceFile,
 } from "./project-model";
+import { normalizeDashboardData } from "./project-text-normalization";
 
 function sourceFile(id: string, fileName: string, uploadedAt: string, mimeType = "application/pdf"): ProjectCardSourceFile {
   return { id, fileName, uploadedAt, mimeType };
@@ -49,7 +50,7 @@ function counterpartyDetails(
   };
 }
 
-export const firstProjectCardMock: DashboardProjectCardData = {
+const firstProjectCardMockRaw: DashboardProjectCardData = {
   id: "project-ib-22",
   code: "ИБ / 22",
   name: "Карточка объекта",
@@ -174,8 +175,10 @@ export const firstProjectCardMock: DashboardProjectCardData = {
   },
 };
 
+export const firstProjectCardMock: DashboardProjectCardData = normalizeDashboardData(firstProjectCardMockRaw);
+
 export function createEmptyProjectContract(): DashboardProjectCardData["contract"] {
-  return {
+  return normalizeDashboardData({
     fileName: "Договор не загружен",
     title: "Договор не загружен",
     number: "Без номера",
@@ -188,13 +191,13 @@ export function createEmptyProjectContract(): DashboardProjectCardData["contract
     sourceFile: null,
     downloadUrl: null,
     milestones: [],
-  };
+  });
 }
 
 export function createDashboardProjectDraft(sequence: number): DashboardProjectCardData {
   const codeNumber = String(sequence).padStart(2, "0");
 
-  return {
+  return normalizeDashboardData({
     id: `project-draft-${sequence}-${Date.now()}`,
     code: `НОВ / ${codeNumber}`,
     name: "Новый объект",
@@ -235,7 +238,7 @@ export function createDashboardProjectDraft(sequence: number): DashboardProjectC
       downloadUrl: null,
       milestones: [],
     },
-  };
+  });
 }
 
 export function cloneDashboardProjectData(project: DashboardProjectCardData): DashboardProjectCardData {

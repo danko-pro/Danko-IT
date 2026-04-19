@@ -1,12 +1,9 @@
 import { useState } from "react";
 import type { ProjectCardLedgerCounterparty } from "../../model/project-model";
 import {
-  useLedgerPopoverDismiss,
-  ProjectAccountingLedgerPopoverResizeHandles,
-  ProjectAccountingLedgerPopoverShell,
-  useWorkspacePopover,
-} from "../overlay";
-import { useResizablePersistentPanel } from "../../../../shared/interactions/popovers";
+  ProjectAccountingLedgerBuilderPopover,
+  useProjectAccountingLedgerBuilderPopover,
+} from "./project-accounting-ledger-builder-popover";
 import { counterpartyTriggerLabel, counterpartyTriggerMeta } from "./project-accounting-ledger-builder-utils";
 
 type ProjectAccountingLedgerCounterpartyPickerProps = {
@@ -21,30 +18,28 @@ export function ProjectAccountingLedgerCounterpartyPicker(
   props: ProjectAccountingLedgerCounterpartyPickerProps,
 ) {
   const [isOpen, setIsOpen] = useState(false);
-  const { rootRef, menuRef, menuPlacement, menuMaxHeight, menuMaxWidth, menuOffsetX, menuArrowOffsetX } = useWorkspacePopover(
-    isOpen,
-    430,
-    220,
-  );
   const activeLabel = counterpartyTriggerLabel(props.details, props.fallbackLabel);
   const activeMeta = counterpartyTriggerMeta(props.details);
-  const resizablePanel = useResizablePersistentPanel({
-    storageKey: "dashboard-ledger:popover:counterparty",
-    defaultSize: {
-      width: 432,
-      height: 340,
+  const popover = useProjectAccountingLedgerBuilderPopover({
+    isOpen,
+    onClose: () => setIsOpen(false),
+    preferredMaxHeight: 430,
+    minimumHeight: 220,
+    bodyClassName: "dashboard-ledger-counterparty-cloud-body",
+    resizable: {
+      storageKey: "dashboard-ledger:popover:counterparty",
+      defaultSize: {
+        width: 432,
+        height: 340,
+      },
+      minWidth: 360,
+      minHeight: 260,
     },
-    minWidth: 360,
-    minHeight: 260,
-    maxWidth: menuMaxWidth,
-    maxHeight: menuMaxHeight,
   });
-
-  useLedgerPopoverDismiss(isOpen, rootRef, () => setIsOpen(false));
 
   return (
     <div
-      ref={rootRef}
+      ref={popover.rootRef}
       className={
         isOpen ? "dashboard-ledger-counterparty-select dashboard-ledger-counterparty-select-open" : "dashboard-ledger-counterparty-select"
       }
@@ -70,26 +65,10 @@ export function ProjectAccountingLedgerCounterpartyPicker(
       </button>
 
       {isOpen ? (
-        <ProjectAccountingLedgerPopoverShell
-          menuRef={menuRef}
-          placement={menuPlacement}
+        <ProjectAccountingLedgerBuilderPopover
+          popover={popover}
           ariaLabel="Контрагент"
           className="dashboard-ledger-counterparty-cloud"
-          shellStyle={
-            menuOffsetX || menuArrowOffsetX !== null
-              ? {
-                  transform: menuOffsetX ? `translateX(${menuOffsetX}px)` : undefined,
-                  ["--dashboard-ledger-popover-arrow-left" as string]:
-                    menuArrowOffsetX !== null ? `${menuArrowOffsetX}px` : undefined,
-                }
-              : undefined
-          }
-          bodyClassName={
-            resizablePanel.isResizing
-              ? "dashboard-ledger-resizable-cloud-body dashboard-ledger-counterparty-cloud-body dashboard-ledger-popover-body-resizing"
-              : "dashboard-ledger-resizable-cloud-body dashboard-ledger-counterparty-cloud-body"
-          }
-          style={resizablePanel.panelStyle}
         >
           <div className="dashboard-ledger-counterparty-list" role="listbox" aria-label="Известные контрагенты">
             {props.options.map((option) => {
@@ -198,12 +177,7 @@ export function ProjectAccountingLedgerCounterpartyPicker(
               />
             </label>
           </div>
-
-          <ProjectAccountingLedgerPopoverResizeHandles
-            placement={menuPlacement}
-            onResizeHandlePointerDown={resizablePanel.createResizeHandlePointerDown}
-          />
-        </ProjectAccountingLedgerPopoverShell>
+        </ProjectAccountingLedgerBuilderPopover>
       ) : null}
     </div>
   );

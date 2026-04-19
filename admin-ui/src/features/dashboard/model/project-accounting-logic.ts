@@ -4,6 +4,7 @@ import type {
   ProjectCardExpenseTone,
   ProjectCardLedgerEntry,
 } from "./project-model";
+import { ledgerCommittedAmount, ledgerPaidAmount, ledgerPlanBalanceAmount } from "./project-accounting-format";
 
 const CATEGORY_ORDER = ["Работы", "Материалы", "Услуги", "Техника", "Мебель", "Двери", "Другое"];
 
@@ -26,7 +27,7 @@ function expenseToneForCategory(category: string): ProjectCardExpenseTone {
 }
 
 function expenseAmountForEntry(entry: ProjectCardLedgerEntry) {
-  return entry.actualAmount > 0 ? entry.actualAmount : entry.planAmount;
+  return ledgerCommittedAmount(entry);
 }
 
 function formatNextDeliveryLabel(controlDate: string | null) {
@@ -100,7 +101,12 @@ export function createEmptyLedgerEntry(): ProjectCardLedgerEntry {
 }
 
 export function recalculateProjectFromLedger(project: DashboardProjectCardData): DashboardProjectCardData {
-  const actualTotal = project.ledgerEntries.reduce((total, entry) => total + entry.actualAmount, 0);
+  const plannedTotal = project.ledgerEntries.reduce((total, entry) => total + ledgerPlanBalanceAmount(entry), 0);
+  const actualTotal = project.ledgerEntries.reduce((total, entry) => total + ledgerPaidAmount(entry), 0);
+  const deferredTotal = project.ledgerEntries.reduce(
+    (total, entry) => total + (entry.status === "waiting-payment" ? ledgerCommittedAmount(entry) : 0),
+    0,
+  );
   const expenses = buildExpenses(project.ledgerEntries);
   const workExpense = expenses.find((expense) => expense.label === "Работы")?.amount ?? 0;
   const materialsExpense = expenses.find((expense) => expense.label === "Материалы")?.amount ?? 0;
@@ -113,7 +119,9 @@ export function recalculateProjectFromLedger(project: DashboardProjectCardData):
 
   return {
     ...project,
+    plannedTotal,
     actualTotal,
+    deferredTotal,
     remainingTotal: project.receivedTotal - actualTotal,
     workPerM2: project.areaM2 > 0 ? workExpense / project.areaM2 : 0,
     materialsPerM2: project.areaM2 > 0 ? materialsExpense / project.areaM2 : 0,
@@ -126,9 +134,8 @@ export function applyLedgerEntriesToProject(
   project: DashboardProjectCardData,
   ledgerEntries: ProjectCardLedgerEntry[],
 ): DashboardProjectCardData {
-  return {
+  return recalculateProjectFromLedger({
     ...project,
     ledgerEntries,
-    expenses: buildExpenses(ledgerEntries),
-  };
+  });
 }

@@ -1,4 +1,7 @@
-import { ProjectAccountingLedgerPopoverShell, useLedgerPopoverDismiss, useWorkspacePopover } from "../overlay";
+import {
+  ProjectAccountingLedgerBuilderPopover,
+  useProjectAccountingLedgerBuilderPopover,
+} from "./project-accounting-ledger-builder-popover";
 
 type ProjectAccountingLedgerDeleteActionProps = {
   isOpen: boolean;
@@ -8,12 +11,16 @@ type ProjectAccountingLedgerDeleteActionProps = {
 };
 
 export function ProjectAccountingLedgerDeleteAction(props: ProjectAccountingLedgerDeleteActionProps) {
-  const { rootRef, menuRef, menuPlacement, menuMaxHeight } = useWorkspacePopover(props.isOpen, 180, 120);
-  useLedgerPopoverDismiss(props.isOpen, rootRef, props.onClose);
+  const popover = useProjectAccountingLedgerBuilderPopover({
+    isOpen: props.isOpen,
+    onClose: props.onClose,
+    preferredMaxHeight: 180,
+    minimumHeight: 120,
+  });
 
   return (
     <div
-      ref={rootRef}
+      ref={popover.rootRef}
       className={
         props.isOpen
           ? "dashboard-ledger-builder-delete-action dashboard-ledger-builder-delete-action-open"
@@ -61,12 +68,10 @@ export function ProjectAccountingLedgerDeleteAction(props: ProjectAccountingLedg
       </button>
 
       {props.isOpen ? (
-        <ProjectAccountingLedgerPopoverShell
-          menuRef={menuRef}
-          placement={menuPlacement}
+        <ProjectAccountingLedgerBuilderPopover
+          popover={popover}
           ariaLabel="Подтверждение удаления строки"
           className="dashboard-ledger-builder-delete-cloud"
-          style={{ maxHeight: `${menuMaxHeight}px` }}
         >
           <div className="dashboard-ledger-builder-delete-cloud-copy">Удалить строку?</div>
 
@@ -86,7 +91,7 @@ export function ProjectAccountingLedgerDeleteAction(props: ProjectAccountingLedg
               Отмена
             </button>
           </div>
-        </ProjectAccountingLedgerPopoverShell>
+        </ProjectAccountingLedgerBuilderPopover>
       ) : null}
     </div>
   );

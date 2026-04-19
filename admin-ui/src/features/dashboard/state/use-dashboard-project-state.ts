@@ -137,6 +137,7 @@ export function useDashboardProjectState() {
   async function addLedgerEntry() {
     await createDashboardProjectLedgerEntry({
       activeProject,
+      updateSelectedProjectLedger,
       setProjects,
       setError,
     });

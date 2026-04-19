@@ -126,6 +126,13 @@ export type DashboardProjectCardData = {
   id: string;
   code: string;
   name: string;
+  address: string;
+  apartment: string;
+  floor: string;
+  hasElevator: boolean;
+  siteAccess: string;
+  intercomCode: string;
+  responsiblePerson: string;
   stageLabel: string;
   stageTone: "ok" | "warn" | "neutral" | "active" | "error";
   areaM2: number;
@@ -149,6 +156,13 @@ export type DashboardProjectApiRecord = {
   id: number;
   code: string;
   name: string;
+  address: string;
+  apartment: string;
+  floor: string;
+  has_elevator: boolean;
+  site_access: string;
+  intercom_code: string;
+  responsible_person: string;
   stage_label: string;
   stage_tone: "ok" | "warn" | "neutral" | "active" | "error";
   estimate_project_id: number | null;

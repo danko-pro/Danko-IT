@@ -18,6 +18,10 @@
 }
 
 @media (max-width: 860px) {
+  .dashboard-scene-chrome {
+    gap: 0.8rem;
+  }
+
   .dashboard-ledger-header {
     grid-template-columns: 1fr;
   }
@@ -102,6 +106,20 @@
   .dashboard-project-advance-remove {
     grid-area: remove;
   }
+
+  .dashboard-passport-grid,
+  .dashboard-passport-grid-primary {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-passport-field-wide {
+    grid-column: span 1;
+  }
+
+  .dashboard-passport-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
 }
 
 @media (max-width: 620px) {
@@ -131,8 +149,13 @@
 @media (prefers-reduced-motion: reduce) {
   .dashboard-scene-stage,
   .dashboard-scene,
-  .dashboard-ledger-back-button,
+  .dashboard-scene-switch-button,
   .dashboard-project-header-cta,
+  .dashboard-project-header-cta::before,
+  .dashboard-project-header-cta-arrow,
+  .dashboard-ledger-back-button,
+  .dashboard-ledger-back-button::before,
+  .dashboard-ledger-back-button-icon,
   .dashboard-project-add-button,
   .dashboard-project-add-button-glyph,
   .dashboard-project-advance-form-shell,

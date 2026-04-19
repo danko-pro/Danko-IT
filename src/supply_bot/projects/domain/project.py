@@ -40,6 +40,13 @@ def build_project_create_values(
     return {
         "code": normalize_project_text(payload.code, default=default_code),
         "name": normalize_project_name(payload.name or default_name),
+        "address": normalize_project_text(payload.address),
+        "apartment": normalize_project_text(payload.apartment),
+        "floor": normalize_project_text(payload.floor),
+        "has_elevator": bool(payload.has_elevator),
+        "site_access": normalize_project_text(payload.site_access),
+        "intercom_code": normalize_project_text(payload.intercom_code),
+        "responsible_person": normalize_project_text(payload.responsible_person),
         "stage_label": normalize_project_stage_label(payload.stage_label),
         "stage_tone": normalize_project_stage_tone(payload.stage_tone),
         "estimate_project_id": payload.estimate_project_id,
@@ -66,6 +73,20 @@ def build_project_update_values(payload_data: Mapping[str, Any]) -> dict[str, An
         updates["code"] = normalized_code
     if "name" in payload_data:
         updates["name"] = normalize_project_name(payload_data["name"])
+    if "address" in payload_data:
+        updates["address"] = normalize_project_text(payload_data["address"])
+    if "apartment" in payload_data:
+        updates["apartment"] = normalize_project_text(payload_data["apartment"])
+    if "floor" in payload_data:
+        updates["floor"] = normalize_project_text(payload_data["floor"])
+    if "has_elevator" in payload_data:
+        updates["has_elevator"] = bool(payload_data["has_elevator"])
+    if "site_access" in payload_data:
+        updates["site_access"] = normalize_project_text(payload_data["site_access"])
+    if "intercom_code" in payload_data:
+        updates["intercom_code"] = normalize_project_text(payload_data["intercom_code"])
+    if "responsible_person" in payload_data:
+        updates["responsible_person"] = normalize_project_text(payload_data["responsible_person"])
     if "stage_label" in payload_data:
         updates["stage_label"] = normalize_project_stage_label(payload_data["stage_label"])
     if "stage_tone" in payload_data:
@@ -108,6 +129,13 @@ def build_project_payload(project: Mapping[str, Any]) -> dict[str, Any]:
         "id": int(project["id"]),
         "code": str(project["code"]),
         "name": str(project["name"]),
+        "address": str(project["address"] or ""),
+        "apartment": str(project["apartment"] or ""),
+        "floor": str(project["floor"] or ""),
+        "has_elevator": bool(project["has_elevator"]),
+        "site_access": str(project["site_access"] or ""),
+        "intercom_code": str(project["intercom_code"] or ""),
+        "responsible_person": str(project["responsible_person"] or ""),
         "stage_label": str(project["stage_label"]),
         "stage_tone": str(project["stage_tone"]),
         "estimate_project_id": (

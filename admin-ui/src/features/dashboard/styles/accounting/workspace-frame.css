@@ -25,6 +25,7 @@
   top: -5rem;
   height: 12rem;
   width: 12rem;
+  pointer-events: none;
   border-radius: 9999px;
   background: rgba(7, 248, 198, 0.08);
   filter: blur(72px);

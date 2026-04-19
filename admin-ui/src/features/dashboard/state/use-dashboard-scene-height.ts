@@ -1,13 +1,23 @@
 import { useLayoutEffect, useRef, useState } from "react";
+import type { DashboardSceneView } from "../dashboard-scene-types";
 
-export function useDashboardSceneHeight(activeScene: "card" | "accounting", watchValue: unknown) {
+export function useDashboardSceneHeight(activeScene: DashboardSceneView, watchValue: unknown) {
   const [stageHeight, setStageHeight] = useState<number | null>(null);
-  const cardSceneRef = useRef<HTMLDivElement | null>(null);
+  const overviewSceneRef = useRef<HTMLDivElement | null>(null);
+  const passportSceneRef = useRef<HTMLDivElement | null>(null);
+  const financeSceneRef = useRef<HTMLDivElement | null>(null);
   const accountingSceneRef = useRef<HTMLDivElement | null>(null);
 
   useLayoutEffect(() => {
     const updateStageHeight = () => {
-      const target = activeScene === "card" ? cardSceneRef.current : accountingSceneRef.current;
+      const refsByScene = {
+        overview: overviewSceneRef,
+        passport: passportSceneRef,
+        finance: financeSceneRef,
+        accounting: accountingSceneRef,
+      } as const;
+
+      const target = refsByScene[activeScene].current;
       if (!target) {
         return;
       }
@@ -22,12 +32,10 @@ export function useDashboardSceneHeight(activeScene: "card" | "accounting", watc
       updateStageHeight();
     });
 
-    if (cardSceneRef.current) {
-      observer.observe(cardSceneRef.current);
-    }
-
-    if (accountingSceneRef.current) {
-      observer.observe(accountingSceneRef.current);
+    for (const sceneRef of [overviewSceneRef, passportSceneRef, financeSceneRef, accountingSceneRef]) {
+      if (sceneRef.current) {
+        observer.observe(sceneRef.current);
+      }
     }
 
     window.addEventListener("resize", updateStageHeight);
@@ -40,7 +48,9 @@ export function useDashboardSceneHeight(activeScene: "card" | "accounting", watc
 
   return {
     stageHeight,
-    cardSceneRef,
+    overviewSceneRef,
+    passportSceneRef,
+    financeSceneRef,
     accountingSceneRef,
   };
 }

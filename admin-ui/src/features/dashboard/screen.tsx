@@ -1,14 +1,18 @@
 import { useState } from "react";
 import { ProjectAccountingWorkspace } from "./accounting/project-accounting-workspace";
-import { ProjectCard } from "./card/project-card";
+import type { DashboardSceneView } from "./dashboard-scene-types";
 import { DashboardProjectSwitcher } from "./project-switcher";
+import { DashboardFinanceScene } from "./scenes/dashboard-finance-scene";
+import { DashboardOverviewScene } from "./scenes/dashboard-overview-scene";
+import { DashboardPassportScene } from "./scenes/dashboard-passport-scene";
 import { useDashboardProjectState } from "./state/use-dashboard-project-state";
 import { useDashboardSceneHeight } from "./state/use-dashboard-scene-height";
 
 export function DashboardScreen() {
-  const [view, setView] = useState<"card" | "accounting">("card");
+  const [view, setView] = useState<DashboardSceneView>("overview");
   const { project, projects, selectedProjectId, loading, error, contractSyncState, actions } = useDashboardProjectState();
-  const { stageHeight, cardSceneRef, accountingSceneRef } = useDashboardSceneHeight(view, project);
+  const { stageHeight, overviewSceneRef, passportSceneRef, financeSceneRef, accountingSceneRef } =
+    useDashboardSceneHeight(view, project);
 
   return (
     <div className="dashboard-prototype-stack">
@@ -17,11 +21,11 @@ export function DashboardScreen() {
         selectedProjectId={selectedProjectId}
         onSelectProject={(projectId) => {
           actions.selectProject(projectId);
-          setView("card");
+          setView("overview");
         }}
         onAddProject={() => {
           actions.addProject();
-          setView("card");
+          setView("overview");
         }}
         onRenameProject={actions.renameProject}
         onDeleteProject={actions.deleteProject}
@@ -29,7 +33,7 @@ export function DashboardScreen() {
 
       {loading && !project ? (
         <section className="glass-panel p-5">
-          <div className="empty-state">Загружаю объекты...</div>
+          <div className="empty-state">Р—Р°РіСЂСѓР¶Р°СЋ РѕР±СЉРµРєС‚С‹...</div>
         </section>
       ) : null}
 
@@ -41,20 +45,51 @@ export function DashboardScreen() {
 
       {!loading && !project && !error ? (
         <section className="glass-panel p-5">
-          <div className="empty-state">Объектов пока нет. Добавьте новый справа в строке вкладок.</div>
+          <div className="empty-state">РћР±СЉРµРєС‚РѕРІ РїРѕРєР° РЅРµС‚. Р”РѕР±Р°РІСЊС‚Рµ РЅРѕРІС‹Р№ СЃРїСЂР°РІР° РІ СЃС‚СЂРѕРєРµ РІРєР»Р°РґРѕРє.</div>
         </section>
       ) : null}
 
       {project ? (
         <div className="dashboard-scene-stage" style={stageHeight ? { height: `${stageHeight}px` } : undefined}>
           <div
-            ref={cardSceneRef}
+            ref={overviewSceneRef}
             className={
-              view === "card" ? "dashboard-scene dashboard-scene-active" : "dashboard-scene dashboard-scene-card-hidden"
+              view === "overview"
+                ? "dashboard-scene dashboard-scene-active"
+                : "dashboard-scene dashboard-scene-card-hidden"
             }
           >
-            <ProjectCard
+            <DashboardOverviewScene project={project} activeView={view} onSelectView={setView} />
+          </div>
+
+          <div
+            ref={passportSceneRef}
+            className={
+              view === "passport"
+                ? "dashboard-scene dashboard-scene-active"
+                : "dashboard-scene dashboard-scene-card-hidden"
+            }
+          >
+            <DashboardPassportScene
               project={project}
+              activeView={view}
+              onSelectView={setView}
+              onSavePassport={actions.updateProjectPassport}
+            />
+          </div>
+
+          <div
+            ref={financeSceneRef}
+            className={
+              view === "finance"
+                ? "dashboard-scene dashboard-scene-active"
+                : "dashboard-scene dashboard-scene-card-hidden"
+            }
+          >
+            <DashboardFinanceScene
+              project={project}
+              activeView={view}
+              onSelectView={setView}
               onAddAdvance={actions.addAdvance}
               onDeleteAdvance={actions.deleteAdvance}
               onCompleteContractMilestone={actions.completeContractMilestone}
@@ -63,7 +98,6 @@ export function DashboardScreen() {
               onUpdateContract={actions.updateContract}
               onDeleteContract={actions.deleteContract}
               contractSyncState={contractSyncState}
-              onOpenAccounting={() => setView("accounting")}
             />
           </div>
 
@@ -77,7 +111,8 @@ export function DashboardScreen() {
           >
             <ProjectAccountingWorkspace
               project={project}
-              onBack={() => setView("card")}
+              activeView={view}
+              onSelectView={setView}
               onAddEntry={actions.addLedgerEntry}
               onDeleteEntry={actions.deleteLedgerEntry}
               onUpdateEntry={actions.updateLedgerEntry}

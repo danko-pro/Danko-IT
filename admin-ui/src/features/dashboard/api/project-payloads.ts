@@ -11,6 +11,13 @@ export function buildProjectCreatePayload(project: DashboardProjectCardData) {
   return {
     code: project.code,
     name: project.name,
+    address: project.address,
+    apartment: project.apartment,
+    floor: project.floor,
+    has_elevator: project.hasElevator,
+    site_access: project.siteAccess,
+    intercom_code: project.intercomCode,
+    responsible_person: project.responsiblePerson,
     stage_label: project.stageLabel,
     stage_tone: project.stageTone,
     estimate_source: project.estimateSource,
@@ -24,6 +31,35 @@ export function buildProjectCreatePayload(project: DashboardProjectCardData) {
     materials_per_m2: project.materialsPerM2,
     planned_margin_percent: project.plannedMarginPercent,
     next_delivery_label: project.nextDeliveryLabel,
+  };
+}
+
+export function buildProjectPassportPatchPayload(
+  patch: Pick<
+    DashboardProjectCardData,
+    | "name"
+    | "address"
+    | "apartment"
+    | "floor"
+    | "hasElevator"
+    | "siteAccess"
+    | "intercomCode"
+    | "responsiblePerson"
+    | "areaM2"
+    | "plannedMarginPercent"
+  >,
+) {
+  return {
+    name: patch.name,
+    address: patch.address,
+    apartment: patch.apartment,
+    floor: patch.floor,
+    has_elevator: patch.hasElevator,
+    site_access: patch.siteAccess,
+    intercom_code: patch.intercomCode,
+    responsible_person: patch.responsiblePerson,
+    area_m2: patch.areaM2,
+    planned_margin_percent: patch.plannedMarginPercent,
   };
 }
 

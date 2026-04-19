@@ -6,6 +6,13 @@ from pydantic import BaseModel, Field
 class ProjectCreatePayload(BaseModel):
     code: str | None = None
     name: str | None = None
+    address: str | None = None
+    apartment: str | None = None
+    floor: str | None = None
+    has_elevator: bool = False
+    site_access: str | None = None
+    intercom_code: str | None = None
+    responsible_person: str | None = None
     stage_label: str | None = None
     stage_tone: str | None = None
     estimate_project_id: int | None = None
@@ -25,6 +32,13 @@ class ProjectCreatePayload(BaseModel):
 class ProjectUpdatePayload(BaseModel):
     code: str | None = None
     name: str | None = None
+    address: str | None = None
+    apartment: str | None = None
+    floor: str | None = None
+    has_elevator: bool | None = None
+    site_access: str | None = None
+    intercom_code: str | None = None
+    responsible_person: str | None = None
     stage_label: str | None = None
     stage_tone: str | None = None
     estimate_project_id: int | None = None

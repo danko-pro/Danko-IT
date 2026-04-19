@@ -24,7 +24,13 @@ import {
   loadDashboardProjectLedger,
   loadDashboardProjects,
 } from "./project-loaders";
-import { createDashboardProject, deleteDashboardProject, renameDashboardProject } from "./project-record-actions";
+import {
+  createDashboardProject,
+  deleteDashboardProject,
+  renameDashboardProject,
+  updateDashboardProjectPassport,
+  type ProjectPassportPatch,
+} from "./project-record-actions";
 import { useDashboardProjectContractSync } from "./use-dashboard-project-contract-sync";
 import { type LedgerDocumentKind, useDashboardProjectLedgerSync } from "./use-dashboard-project-ledger-sync";
 
@@ -217,6 +223,19 @@ export function useDashboardProjectState() {
     });
   }
 
+  async function updateProjectPassport(passport: ProjectPassportPatch) {
+    if (!activeProject) {
+      return;
+    }
+
+    await updateDashboardProjectPassport({
+      projectId: activeProject.id,
+      passport,
+      setProjects,
+      setError,
+    });
+  }
+
   return {
     project: activeProject,
     projects,
@@ -230,6 +249,7 @@ export function useDashboardProjectState() {
       addProject,
       renameProject,
       deleteProject,
+      updateProjectPassport,
       addAdvance,
       deleteAdvance,
       completeContractMilestone,

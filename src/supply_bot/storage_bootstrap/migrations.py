@@ -9,6 +9,21 @@ from supply_bot.storage_bootstrap.contracts import ConnectionFactory
 
 async def apply_storage_migrations(connection_factory: ConnectionFactory) -> None:
     async with connection_factory() as db:
+        for column, definition in (
+            ("address", "TEXT NOT NULL DEFAULT ''"),
+            ("apartment", "TEXT NOT NULL DEFAULT ''"),
+            ("floor", "TEXT NOT NULL DEFAULT ''"),
+            ("has_elevator", "INTEGER NOT NULL DEFAULT 0"),
+            ("site_access", "TEXT NOT NULL DEFAULT ''"),
+            ("intercom_code", "TEXT NOT NULL DEFAULT ''"),
+            ("responsible_person", "TEXT NOT NULL DEFAULT ''"),
+        ):
+            await _ensure_column(
+                db,
+                table="projects",
+                column=column,
+                definition=definition,
+            )
         await _ensure_column(
             db,
             table="estimate_rooms",

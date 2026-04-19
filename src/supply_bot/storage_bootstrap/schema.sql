@@ -146,6 +146,13 @@ CREATE TABLE IF NOT EXISTS request_items (
 CREATE TABLE IF NOT EXISTS estimate_projects (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
+    address TEXT NOT NULL DEFAULT '',
+    apartment TEXT NOT NULL DEFAULT '',
+    floor TEXT NOT NULL DEFAULT '',
+    has_elevator INTEGER NOT NULL DEFAULT 0,
+    site_access TEXT NOT NULL DEFAULT '',
+    intercom_code TEXT NOT NULL DEFAULT '',
+    responsible_person TEXT NOT NULL DEFAULT '',
     note TEXT,
     group_chat_id INTEGER,
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,

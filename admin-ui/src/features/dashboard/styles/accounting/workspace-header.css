@@ -48,39 +48,6 @@
 
 .dashboard-ledger-back-button {
   justify-self: start;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.7rem;
-  border-radius: 9999px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.03);
-  padding: 0.7rem 1rem;
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: #e5f5ff;
-  transition:
-    transform var(--dashboard-motion-medium) var(--dashboard-motion-ease),
-    border-color var(--dashboard-motion-fast) var(--dashboard-motion-ease-soft),
-    background-color var(--dashboard-motion-fast) var(--dashboard-motion-ease-soft),
-    box-shadow var(--dashboard-motion-medium) var(--dashboard-motion-ease-soft);
-}
-
-.dashboard-ledger-back-button:hover {
-  transform: translateY(-1px);
-  border-color: rgba(7, 248, 198, 0.2);
-  background: rgba(7, 248, 198, 0.08);
-}
-
-.dashboard-ledger-back-button-icon {
-  display: inline-flex;
-  height: 2rem;
-  width: 2rem;
-  align-items: center;
-  justify-content: center;
-  border-radius: 9999px;
-  border: 1px solid rgba(7, 248, 198, 0.18);
-  background: rgba(7, 248, 198, 0.08);
-  color: #9ef7e1;
 }
 
 .dashboard-ledger-topbar {

@@ -1,0 +1,233 @@
+.dashboard-ledger-table {
+  width: 100%;
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+
+.dashboard-ledger-table-editable {
+  min-width: 74rem;
+  table-layout: fixed;
+}
+
+.dashboard-ledger-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: rgba(12, 18, 24, 0.96);
+  padding: 0.48rem 0.42rem;
+  text-align: left;
+  font-size: 0.56rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #7c93a5;
+  line-height: 1.18;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  border-right: 1px solid rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.dashboard-ledger-table thead th:last-child,
+.dashboard-ledger-row td:last-child {
+  border-right: none;
+}
+
+.dashboard-ledger-row td {
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  border-right: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.dashboard-ledger-cell {
+  padding: 0.46rem 0.44rem;
+  vertical-align: top;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.dashboard-ledger-cell-index {
+  width: 3rem;
+  padding-inline: 0.24rem;
+}
+
+.dashboard-ledger-index-slot {
+  display: flex;
+  min-height: 100%;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+.dashboard-ledger-index-chip {
+  display: inline-flex;
+  min-width: 2rem;
+  min-height: 2rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #a9bfce;
+}
+
+.dashboard-ledger-cell-doc {
+  min-width: 0;
+}
+
+.dashboard-ledger-cell-date {
+  min-width: 0;
+}
+
+.dashboard-ledger-cell-amount {
+  min-width: 0;
+}
+
+.dashboard-ledger-cell-action {
+  width: 2.7rem;
+  text-align: center;
+}
+
+.dashboard-ledger-cell-number {
+  text-align: right;
+}
+
+.dashboard-ledger-primary {
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: #edf7ff;
+}
+
+.dashboard-ledger-primary-cyan {
+  color: #7ef2df;
+}
+
+.dashboard-ledger-primary-amber {
+  color: #ffd26f;
+}
+
+.dashboard-ledger-primary-emerald {
+  color: #91efc0;
+}
+
+.dashboard-ledger-primary-rose {
+  color: #ff9ab8;
+}
+
+.dashboard-ledger-primary-slate {
+  color: #d8e4ef;
+}
+
+.dashboard-ledger-secondary {
+  margin-top: 0.14rem;
+  font-size: 0.64rem;
+  line-height: 1.25;
+  color: #8297aa;
+}
+
+.dashboard-ledger-field-stack {
+  display: grid;
+  gap: 0.34rem;
+  align-content: start;
+}
+
+.dashboard-ledger-field-stack-compact {
+  gap: 0.46rem;
+}
+
+.dashboard-ledger-stack-group {
+  display: grid;
+  gap: 0.22rem;
+}
+
+.dashboard-ledger-stack-label {
+  font-size: 0.56rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #6f8799;
+}
+
+.dashboard-ledger-input,
+.dashboard-ledger-select {
+  width: 100%;
+  min-width: 0;
+  min-height: 1.8rem;
+  border-radius: 2px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.025);
+  padding: 0.34rem 0.46rem;
+  font-size: 0.7rem;
+  line-height: 1.18;
+  color: #eef9ff;
+  white-space: normal;
+  transition:
+    border-color 180ms ease,
+    background-color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.dashboard-ledger-input[type="date"] {
+  padding-inline: 0.3rem;
+  font-size: 0.66rem;
+}
+
+.dashboard-ledger-input::placeholder {
+  color: #647a8d;
+}
+
+.dashboard-ledger-input:focus,
+.dashboard-ledger-select:focus {
+  border-color: rgba(7, 248, 198, 0.26);
+  background: rgba(7, 248, 198, 0.04);
+  box-shadow: 0 0 0 1px rgba(7, 248, 198, 0.1);
+}
+
+.dashboard-ledger-input:disabled,
+.dashboard-ledger-select:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.dashboard-ledger-status-editor {
+  display: grid;
+  gap: 0.3rem;
+  align-content: start;
+}
+
+.dashboard-ledger-status-select-ok {
+  border-color: rgba(110, 231, 183, 0.16);
+  background: rgba(110, 231, 183, 0.05);
+}
+
+.dashboard-ledger-status-select-warn {
+  border-color: rgba(255, 208, 102, 0.16);
+  background: rgba(255, 208, 102, 0.05);
+}
+
+.dashboard-ledger-status-select-neutral {
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.dashboard-ledger-status-note {
+  font-size: 0.6rem;
+  line-height: 1.18;
+  color: #72889c;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.dashboard-ledger-cell-muted {
+  font-size: 0.74rem;
+  line-height: 1.35;
+  color: #5d7183;
+}
+
+.dashboard-ledger-cell-warning {
+  font-size: 0.72rem;
+  line-height: 1.35;
+  color: #ffb36b;
+}
+

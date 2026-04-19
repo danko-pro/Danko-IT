@@ -1,0 +1,160 @@
+.dashboard-ledger-popover-shell {
+  position: absolute;
+  z-index: 24;
+  overflow: visible;
+}
+
+.dashboard-ledger-popover-shell::before {
+  content: "";
+  position: absolute;
+  left: var(--dashboard-ledger-popover-arrow-left, calc(50% - 6px));
+  filter: drop-shadow(0 3px 8px rgba(7, 248, 198, 0.18));
+}
+
+.dashboard-ledger-popover-shell-down {
+  top: calc(100% + 0.55rem);
+}
+
+.dashboard-ledger-popover-shell-down::before {
+  top: -6px;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-bottom: 6px solid rgba(7, 248, 198, 0.34);
+}
+
+.dashboard-ledger-popover-shell-up {
+  bottom: calc(100% + 0.55rem);
+}
+
+.dashboard-ledger-popover-shell-up::before {
+  bottom: -6px;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 6px solid rgba(7, 248, 198, 0.34);
+}
+
+.dashboard-ledger-popover-body {
+  --dashboard-ledger-popover-safe-gap: 0.78rem;
+  border-radius: 14px;
+  border: 1px solid rgba(7, 248, 198, 0.28);
+  background:
+    linear-gradient(180deg, rgba(18, 28, 34, 0.98), rgba(9, 15, 20, 0.99)),
+    radial-gradient(circle at top left, rgba(7, 248, 198, 0.12), transparent 55%);
+  padding: var(--dashboard-ledger-popover-safe-gap);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  box-shadow:
+    0 18px 34px rgba(0, 0, 0, 0.28),
+    0 0 0 1px rgba(7, 248, 198, 0.05),
+    0 0 22px rgba(7, 248, 198, 0.12);
+}
+
+.dashboard-ledger-popover-body-resizing {
+  user-select: none;
+}
+
+.dashboard-ledger-item-cloud,
+.dashboard-ledger-document-cloud,
+.dashboard-ledger-counterparty-cloud,
+.dashboard-ledger-status-cloud,
+.dashboard-ledger-builder-delete-cloud {
+  display: block;
+  border: none;
+  background: none;
+  padding: 0;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  overflow: visible;
+}
+
+.dashboard-ledger-item-cloud,
+.dashboard-ledger-document-cloud,
+.dashboard-ledger-status-cloud {
+  left: 0;
+}
+
+.dashboard-ledger-document-cloud {
+  z-index: 36;
+}
+
+.dashboard-ledger-counterparty-cloud {
+  left: 0;
+  z-index: 26;
+}
+
+.dashboard-ledger-builder-delete-cloud {
+  right: 0;
+  z-index: 28;
+}
+
+.dashboard-ledger-item-cloud .dashboard-ledger-popover-body {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: 0.45rem;
+  overflow: hidden;
+}
+
+.dashboard-ledger-item-cloud-body {
+  position: relative;
+  padding:
+    calc(var(--dashboard-ledger-popover-safe-gap) + 0.12rem)
+    calc(var(--dashboard-ledger-popover-safe-gap) + 0.12rem)
+    calc(var(--dashboard-ledger-popover-safe-gap) + 1.32rem)
+    calc(var(--dashboard-ledger-popover-safe-gap) + 0.12rem);
+}
+
+.dashboard-ledger-item-cloud-layout {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: 0.45rem;
+  min-height: 0;
+  height: 100%;
+}
+
+.dashboard-ledger-resizable-cloud-body {
+  position: relative;
+  padding:
+    calc(var(--dashboard-ledger-popover-safe-gap) + 0.12rem)
+    calc(var(--dashboard-ledger-popover-safe-gap) + 0.12rem)
+    calc(var(--dashboard-ledger-popover-safe-gap) + 1.32rem)
+    calc(var(--dashboard-ledger-popover-safe-gap) + 0.12rem);
+}
+
+.dashboard-ledger-resizable-cloud-resize {
+  z-index: 2;
+}
+
+.dashboard-ledger-resizable-cloud-resize-edge {
+  background: rgba(7, 248, 198, 0.08);
+}
+
+.dashboard-ledger-resizable-cloud-resize-edge:hover {
+  background: rgba(7, 248, 198, 0.16);
+}
+
+.dashboard-ledger-resizable-cloud-resize-right::before,
+.dashboard-ledger-resizable-cloud-resize-edge::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(7, 248, 198, 0.38), rgba(7, 248, 198, 0.08));
+  opacity: 0.82;
+}
+
+.dashboard-ledger-resizable-cloud-resize-edge::before {
+  background: linear-gradient(90deg, rgba(7, 248, 198, 0.38), rgba(7, 248, 198, 0.08));
+}
+
+.dashboard-ledger-resizable-cloud-resize-right:hover::before,
+.dashboard-ledger-resizable-cloud-resize-edge:hover::before {
+  opacity: 1;
+}
+
+.dashboard-ledger-document-cloud .dashboard-ledger-popover-body,
+.dashboard-ledger-status-cloud .dashboard-ledger-popover-body {
+  display: grid;
+  gap: 0.5rem;
+  overflow: hidden;
+}
+

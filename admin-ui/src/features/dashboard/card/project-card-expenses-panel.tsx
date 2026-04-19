@@ -1,12 +1,24 @@
+import { PanelResizeHandle } from "../../../shared/ui/popovers";
 import { formatMoney } from "../model/project-accounting-format";
 import { expenseToneClass } from "./project-card-metrics-view";
 import type { ProjectCardProps } from "./project-card-types";
+import { useProjectCardExpensesPanelResize } from "./use-project-card-expenses-panel-resize";
 
 type ProjectCardExpensesPanelProps = Pick<ProjectCardProps, "project">;
 
 export function ProjectCardExpensesPanel(props: ProjectCardExpensesPanelProps) {
+  const resizePanel = useProjectCardExpensesPanelResize();
+
   return (
-    <section className="dashboard-project-panel">
+    <section
+      ref={resizePanel.panelRef}
+      className={
+        resizePanel.isResizing
+          ? "dashboard-project-panel dashboard-project-panel-expenses dashboard-project-panel-expenses-resizing"
+          : "dashboard-project-panel dashboard-project-panel-expenses"
+      }
+      style={resizePanel.panelStyle}
+    >
       <div className="dashboard-project-panel-head">
         <div>
           <div className="eyebrow">Статьи</div>
@@ -26,6 +38,12 @@ export function ProjectCardExpensesPanel(props: ProjectCardExpensesPanelProps) {
           </div>
         ))}
       </div>
+
+      <PanelResizeHandle
+        variant="edge-right"
+        className="dashboard-project-panel-expenses-resize"
+        onPointerDown={resizePanel.createResizeHandlePointerDown("right")}
+      />
     </section>
   );
 }

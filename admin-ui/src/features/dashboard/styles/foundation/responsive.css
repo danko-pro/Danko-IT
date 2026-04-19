@@ -6,6 +6,15 @@
   .dashboard-project-layout {
     grid-template-columns: 1fr;
   }
+
+  .dashboard-project-panel-expenses {
+    width: 100%;
+    max-width: none;
+  }
+
+  .dashboard-project-panel-expenses-resize {
+    display: none;
+  }
 }
 
 @media (max-width: 860px) {

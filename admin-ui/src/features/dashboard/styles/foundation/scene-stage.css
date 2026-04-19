@@ -1,0 +1,40 @@
+.dashboard-scene-stage {
+  position: relative;
+  transition: height var(--dashboard-motion-panel) var(--dashboard-motion-ease);
+}
+
+.dashboard-scene {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  transition:
+    opacity var(--dashboard-motion-slow) var(--dashboard-motion-ease),
+    transform var(--dashboard-motion-slow) var(--dashboard-motion-ease),
+    filter var(--dashboard-motion-medium) var(--dashboard-motion-ease-soft);
+  will-change: opacity, transform, filter;
+}
+
+.dashboard-scene-active {
+  opacity: 1;
+  transform: translateX(0);
+  filter: blur(0);
+  pointer-events: auto;
+  z-index: 2;
+}
+
+.dashboard-scene-card-hidden {
+  opacity: 0;
+  transform: translateX(-64px);
+  filter: blur(10px);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.dashboard-scene-accounting-hidden {
+  opacity: 0;
+  transform: translateX(72px);
+  filter: blur(12px);
+  pointer-events: none;
+  z-index: 1;
+}

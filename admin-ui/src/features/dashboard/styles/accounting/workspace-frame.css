@@ -1,0 +1,31 @@
+.dashboard-ledger-workspace {
+  position: relative;
+  overflow: visible;
+  border-radius: 30px;
+  border: 1px solid rgba(110, 231, 255, 0.12);
+  background:
+    radial-gradient(circle at top right, rgba(7, 248, 198, 0.12), transparent 26%),
+    linear-gradient(180deg, rgba(16, 22, 30, 0.97), rgba(9, 14, 20, 0.995));
+  padding: 1.2rem;
+  box-shadow: 0 28px 70px rgba(0, 0, 0, 0.26);
+}
+
+.dashboard-ledger-workspace::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.dashboard-ledger-workspace__glow {
+  position: absolute;
+  left: -5rem;
+  top: -5rem;
+  height: 12rem;
+  width: 12rem;
+  border-radius: 9999px;
+  background: rgba(7, 248, 198, 0.08);
+  filter: blur(72px);
+}

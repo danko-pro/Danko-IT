@@ -1,0 +1,8 @@
+/**
+ * Facade for accounting builder styles.
+ * Keeps the original import point stable while builder sections live in smaller modules.
+ */
+@import "./builder-shell.css";
+@import "./builder-item-select.css";
+@import "./builder-entity-select.css";
+@import "./builder-status-select.css";

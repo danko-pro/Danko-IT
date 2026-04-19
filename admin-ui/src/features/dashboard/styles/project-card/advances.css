@@ -1,4 +1,4 @@
-/* Advances и expense-list внутри project card. */
+/* Advances inside project card. */
 
 .dashboard-project-advance-overlay {
   display: grid;
@@ -102,14 +102,9 @@
   gap: 0.6rem;
 }
 
-.dashboard-project-expense-list,
 .dashboard-project-advances {
   margin-top: 0.9rem;
   display: grid;
-  gap: 0.55rem;
-}
-
-.dashboard-project-advances {
   gap: 0.42rem;
 }
 
@@ -155,12 +150,11 @@
   overflow: hidden;
 }
 
-.dashboard-project-expense-row,
 .dashboard-project-advance-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(138px, 0.92fr) minmax(120px, 0.82fr) auto auto;
   align-items: center;
-  justify-content: space-between;
-  gap: 0.85rem;
+  gap: 0.9rem;
   border-radius: 16px;
   border: 1px solid rgba(255, 255, 255, 0.05);
   background: rgba(255, 255, 255, 0.02);
@@ -174,7 +168,6 @@
     box-shadow var(--dashboard-motion-medium) var(--dashboard-motion-ease-soft);
 }
 
-.dashboard-project-expense-row:hover,
 .dashboard-project-advance-row:hover {
   transform: translateY(-1px);
   border-color: rgba(255, 255, 255, 0.1);
@@ -182,67 +175,11 @@
   box-shadow: 0 14px 30px rgba(0, 0, 0, 0.16);
 }
 
-.dashboard-project-advance-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1.4fr) minmax(138px, 0.92fr) minmax(120px, 0.82fr) auto auto;
-  align-items: center;
-  gap: 0.9rem;
-  border-radius: 16px;
-  padding: 0.78rem 0.9rem;
-}
-
 .dashboard-project-advance-row-removing {
   opacity: 0.58;
   filter: saturate(0.72);
   transform: scale(0.985);
   box-shadow: none;
-}
-
-.dashboard-project-expense-name {
-  display: flex;
-  min-width: 0;
-  align-items: center;
-  gap: 0.6rem;
-  font-size: 0.92rem;
-  font-weight: 600;
-  color: #edf6fc;
-}
-
-.dashboard-project-expense-dot {
-  height: 0.5rem;
-  width: 0.5rem;
-  flex: 0 0 auto;
-  border-radius: 9999px;
-  background: currentColor;
-  box-shadow: 0 0 0 5px rgba(255, 255, 255, 0.05);
-}
-
-.dashboard-project-expense-amount,
-.dashboard-project-advance-amount {
-  font-size: 0.92rem;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  color: #f4fbff;
-}
-
-.dashboard-project-expense-cyan {
-  color: #07f8c6;
-}
-
-.dashboard-project-expense-emerald {
-  color: #7df5b6;
-}
-
-.dashboard-project-expense-amber {
-  color: #f6d36a;
-}
-
-.dashboard-project-expense-rose {
-  color: #ff8cab;
-}
-
-.dashboard-project-expense-slate {
-  color: #c4d7e7;
 }
 
 .dashboard-project-advance-title {
@@ -274,8 +211,11 @@
 .dashboard-project-advance-amount {
   justify-self: end;
   font-size: 0.92rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
   white-space: nowrap;
   text-align: right;
+  color: #f4fbff;
 }
 
 .dashboard-project-advance-remove {

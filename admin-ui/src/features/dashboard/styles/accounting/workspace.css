@@ -1,0 +1,7 @@
+/**
+ * Facade for accounting workspace layout styles.
+ * Keeps the workspace entrypoint stable while frame, header and summary live separately.
+ */
+@import "./workspace-frame.css";
+@import "./workspace-header.css";
+@import "./workspace-summary.css";

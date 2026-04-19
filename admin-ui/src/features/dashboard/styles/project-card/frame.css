@@ -1,0 +1,105 @@
+.dashboard-project-card {
+  position: relative;
+  overflow: visible;
+  border-radius: 30px;
+  border: 1px solid rgba(110, 231, 255, 0.12);
+  background:
+    radial-gradient(circle at top right, rgba(7, 248, 198, 0.12), transparent 28%),
+    linear-gradient(180deg, rgba(17, 22, 31, 0.96), rgba(9, 14, 20, 0.98));
+  padding: 1.2rem;
+  box-shadow: 0 28px 70px rgba(0, 0, 0, 0.26);
+}
+
+.dashboard-project-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.dashboard-project-card__glow {
+  position: absolute;
+  right: -5rem;
+  top: -5rem;
+  height: 12rem;
+  width: 12rem;
+  border-radius: 9999px;
+  background: rgba(7, 248, 198, 0.08);
+  filter: blur(72px);
+}
+
+.dashboard-project-panel {
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: linear-gradient(180deg, rgba(18, 24, 33, 0.9), rgba(10, 15, 22, 0.97));
+  padding: 1rem;
+}
+
+.dashboard-project-panel-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.dashboard-project-panel-head-actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+}
+
+.dashboard-project-panel-title {
+  margin-top: 0.35rem;
+  font-size: 1rem;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  color: #eef7ff;
+}
+
+.dashboard-project-add-button {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  height: 2rem;
+  width: 2rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  border: 1px solid rgba(7, 248, 198, 0.24);
+  background: rgba(7, 248, 198, 0.1);
+  color: #07f8c6;
+  font-size: 1.15rem;
+  line-height: 1;
+  transition:
+    transform var(--dashboard-motion-slow) var(--dashboard-motion-ease),
+    background-color var(--dashboard-motion-medium) var(--dashboard-motion-ease-soft),
+    border-color var(--dashboard-motion-medium) var(--dashboard-motion-ease-soft),
+    box-shadow var(--dashboard-motion-medium) var(--dashboard-motion-ease-soft);
+  will-change: transform;
+}
+
+.dashboard-project-add-button:hover {
+  transform: translateY(-1px);
+  background: rgba(7, 248, 198, 0.16);
+  border-color: rgba(7, 248, 198, 0.4);
+  box-shadow: 0 10px 26px rgba(7, 248, 198, 0.12);
+}
+
+.dashboard-project-add-button-open {
+  background: rgba(7, 248, 198, 0.16);
+  border-color: rgba(7, 248, 198, 0.4);
+}
+
+.dashboard-project-add-button-glyph {
+  display: inline-block;
+  transition: transform var(--dashboard-motion-slow) var(--dashboard-motion-ease);
+  will-change: transform;
+}
+
+.dashboard-project-add-button-glyph-open {
+  transform: rotate(135deg);
+}

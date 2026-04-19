@@ -1,0 +1,11 @@
+.dashboard-prototype-stack {
+  display: grid;
+  gap: 1rem;
+  --dashboard-motion-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --dashboard-motion-ease-soft: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --dashboard-motion-ease-emphasis: cubic-bezier(0.16, 1, 0.3, 1);
+  --dashboard-motion-fast: 220ms;
+  --dashboard-motion-medium: 340ms;
+  --dashboard-motion-slow: 520ms;
+  --dashboard-motion-panel: 620ms;
+}

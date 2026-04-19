@@ -1,0 +1,150 @@
+/**
+ * ????????? ????? accounting workspace.
+ * ???? ???? ???????? table-shell, toolbar, inline document editor ? ?????? ?????????.
+ */
+
+.dashboard-ledger-table-shell {
+  position: relative;
+  margin-top: 0.72rem;
+  overflow: hidden;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(10, 15, 22, 0.78);
+}
+
+.dashboard-ledger-table-scroll {
+  overflow-x: auto;
+  overflow-y: visible;
+}
+
+.dashboard-ledger-table-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.56rem 0.68rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.dashboard-ledger-table-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.dashboard-ledger-table-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--dashboard-ledger-button-height);
+  border-radius: var(--dashboard-ledger-button-radius);
+  border: 1px solid rgba(7, 248, 198, 0.16);
+  background: rgba(7, 248, 198, 0.05);
+  padding: var(--dashboard-ledger-button-padding-y) calc(var(--dashboard-ledger-button-padding-x) - 0.1rem);
+  font-size: var(--dashboard-ledger-button-font-size);
+  font-weight: var(--dashboard-ledger-button-font-weight);
+  letter-spacing: var(--dashboard-ledger-button-letter-spacing);
+  text-transform: uppercase;
+  color: #98efdf;
+  white-space: normal;
+  text-align: center;
+  line-height: 1.3;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.dashboard-ledger-toolbar-button,
+.dashboard-ledger-toolbar-secondary,
+.dashboard-ledger-document-upload-button,
+.dashboard-ledger-builder-delete-cloud-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--dashboard-ledger-button-height);
+  border-radius: var(--dashboard-ledger-button-radius);
+  padding: var(--dashboard-ledger-button-padding-y) var(--dashboard-ledger-button-padding-x);
+  font-size: var(--dashboard-ledger-button-font-size);
+  font-weight: var(--dashboard-ledger-button-font-weight);
+  letter-spacing: var(--dashboard-ledger-button-letter-spacing);
+  text-transform: uppercase;
+  white-space: normal;
+  text-align: center;
+  line-height: 1.3;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  transition:
+    border-color var(--dashboard-motion-fast) var(--dashboard-motion-ease-soft),
+    background-color var(--dashboard-motion-fast) var(--dashboard-motion-ease-soft),
+    color var(--dashboard-motion-fast) var(--dashboard-motion-ease-soft),
+    transform var(--dashboard-motion-fast) var(--dashboard-motion-ease-soft),
+    box-shadow var(--dashboard-motion-medium) var(--dashboard-motion-ease-soft);
+}
+
+.dashboard-ledger-toolbar-button {
+  border: 1px solid rgba(7, 248, 198, 0.24);
+  background: rgba(7, 248, 198, 0.08);
+  color: #e3ffff;
+}
+
+.dashboard-ledger-toolbar-button:hover {
+  transform: translateY(-1px);
+  border-color: rgba(7, 248, 198, 0.36);
+  background: rgba(7, 248, 198, 0.14);
+}
+
+.dashboard-ledger-toolbar-secondary {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  color: #d5e3ee;
+}
+
+.dashboard-ledger-toolbar-secondary:hover {
+  transform: translateY(-1px);
+  border-color: rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.dashboard-ledger-table-title {
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #dff6ff;
+}
+
+.dashboard-ledger-table-caption {
+  max-width: 24rem;
+  margin-top: 0.12rem;
+  font-size: 0.68rem;
+  line-height: 1.32;
+  color: #8298ab;
+}
+
+.dashboard-ledger-toolbar {
+  display: flex;
+  align-items: end;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  padding: 0.56rem 0.68rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.015);
+}
+
+.dashboard-ledger-toolbar-group {
+  display: grid;
+  gap: 0.22rem;
+  min-width: 9rem;
+}
+
+.dashboard-ledger-toolbar-group-grow {
+  flex: 1 1 16rem;
+}
+
+.dashboard-ledger-toolbar-label {
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #7f97aa;
+}
+

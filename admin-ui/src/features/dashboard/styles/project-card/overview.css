@@ -1,0 +1,82 @@
+.dashboard-project-metrics {
+  position: relative;
+  margin-top: 1rem;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+
+.dashboard-project-metric {
+  position: relative;
+  overflow: hidden;
+  border-radius: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: linear-gradient(180deg, rgba(20, 27, 36, 0.92), rgba(12, 17, 24, 0.98));
+  padding: 0.95rem 1rem;
+}
+
+.dashboard-project-metric::before {
+  content: "";
+  position: absolute;
+  inset-x: 0.85rem;
+  top: 0;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.dashboard-project-metric-cyan::before {
+  background: rgba(7, 248, 198, 0.75);
+}
+
+.dashboard-project-metric-amber::before {
+  background: rgba(251, 191, 36, 0.72);
+}
+
+.dashboard-project-metric-emerald::before {
+  background: rgba(52, 211, 153, 0.72);
+}
+
+.dashboard-project-metric-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #7f97aa;
+}
+
+.dashboard-project-metric-value {
+  margin-top: 0.75rem;
+  font-size: 1.18rem;
+  font-weight: 650;
+  letter-spacing: -0.03em;
+  color: #f4fbff;
+}
+
+.dashboard-project-side-metrics {
+  margin-top: 0.85rem;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.7rem;
+}
+
+.dashboard-project-side-metric {
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(13, 18, 26, 0.78);
+  padding: 0.82rem 0.95rem;
+}
+
+.dashboard-project-side-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: #7891a4;
+}
+
+.dashboard-project-side-value {
+  margin-top: 0.45rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #ecf9ff;
+}

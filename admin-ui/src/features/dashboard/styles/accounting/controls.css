@@ -1,0 +1,7 @@
+/**
+ * Facade for accounting control and popover styles.
+ * Keeps the original import point stable while shared controls live in focused modules.
+ */
+@import "./control-theme.css";
+@import "./popover-shell.css";
+@import "./popover-content.css";

@@ -2,7 +2,7 @@
  * Barrel accounting styles.
  * Порядок импортов сохраняет прежний каскад ledger workspace без изменения селекторов.
  */
-@import "./accounting-workspace.css";
-@import "./accounting-table.css";
-@import "./accounting-builder.css";
-@import "./accounting-controls.css";
+@import "./workspace.css";
+@import "./table.css";
+@import "./builder.css";
+@import "./controls.css";

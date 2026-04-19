@@ -1,4 +1,4 @@
-import { SignalChip, StatusBadge } from "../../../shared/ui";
+import { SignalChip } from "../../../shared/ui";
 import { getContractSummary } from "./project-card-contract-timeline";
 import { ContractHeaderIcon } from "./project-card-primitives";
 import type { ProjectCardProps } from "./project-card-types";
@@ -10,15 +10,6 @@ export function ProjectCardHeader(props: ProjectCardHeaderProps) {
 
   return (
     <header className="dashboard-project-header">
-      <div className="min-w-0">
-        <div className="eyebrow">Объект</div>
-        <div className="dashboard-project-title-row">
-          <h3 className="dashboard-project-title">{props.project.code}</h3>
-          <StatusBadge label={props.project.stageLabel} tone={props.project.stageTone} />
-        </div>
-        <div className="dashboard-project-subtitle">{props.project.name}</div>
-      </div>
-
       <button type="button" className="dashboard-project-header-cta" onClick={props.onOpenAccounting}>
         <span className="dashboard-project-header-cta-title">Перейти к таблице учета</span>
         <span className="dashboard-project-header-cta-arrow" aria-hidden="true">

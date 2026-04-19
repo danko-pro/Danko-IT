@@ -18,10 +18,8 @@
 }
 
 @media (max-width: 860px) {
-  .dashboard-project-header-cta {
-    max-width: none;
-    width: 100%;
-    order: 3;
+  .dashboard-ledger-header {
+    grid-template-columns: 1fr;
   }
 
   .dashboard-ledger-topbar {
@@ -51,9 +49,6 @@
     width: 100%;
   }
 
-  .dashboard-project-header-aside,
-  .dashboard-project-header-signals,
-  .dashboard-project-header-meta,
   .dashboard-project-panel-signals {
     justify-content: flex-start;
   }
@@ -116,8 +111,7 @@
     border-radius: 24px;
   }
 
-  .dashboard-ledger-title,
-  .dashboard-project-title {
+  .dashboard-ledger-title {
     font-size: 1.75rem;
   }
 
@@ -127,11 +121,6 @@
   .dashboard-project-side-metrics,
   .dashboard-project-contract-grid {
     grid-template-columns: 1fr;
-  }
-
-  .dashboard-ledger-back-button {
-    width: 100%;
-    justify-content: center;
   }
 
   .dashboard-ledger-table-head {

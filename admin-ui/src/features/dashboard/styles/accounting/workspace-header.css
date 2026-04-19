@@ -1,10 +1,9 @@
 .dashboard-ledger-header {
   position: relative;
-  display: flex;
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
   align-items: flex-start;
-  justify-content: space-between;
   gap: 1rem;
-  flex-wrap: wrap;
 }
 
 .dashboard-ledger-title-row {
@@ -39,13 +38,16 @@
 }
 
 .dashboard-ledger-header-actions {
+  min-width: 0;
   display: flex;
   align-items: center;
   gap: 0.75rem;
   flex-wrap: wrap;
+  justify-self: start;
 }
 
 .dashboard-ledger-back-button {
+  justify-self: start;
   display: inline-flex;
   align-items: center;
   gap: 0.7rem;

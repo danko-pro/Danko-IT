@@ -1,0 +1,38 @@
+@layer components {
+  .calculator-room-stats-summary {
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: center;
+    column-gap: 0.92rem;
+    row-gap: 0.42rem;
+    margin-top: 0.45rem;
+    margin-bottom: 1rem;
+    padding-block: 0.2rem;
+    display: flex;
+  }
+
+  .calculator-room-stat {
+    min-width: 0;
+    padding: 0.52rem 0.28rem;
+    text-align: center;
+  }
+
+  .calculator-room-stat-label {
+    color: var(--ui-soft);
+    letter-spacing: 0.16em;
+    font-size: 10px;
+    text-transform: uppercase;
+    font-weight: 600;
+    line-height: 1;
+  }
+
+  .calculator-room-stat-value {
+    color: rgba(var(--room-editor-accent-rgb), 0.85);
+    font-family: "Montserrat", "Segoe UI Variable Text", "Bahnschrift", "IBM Plex Sans", sans-serif;
+    margin-top: 0.08rem;
+    font-size: 1.56rem;
+    line-height: 1;
+    font-weight: 700;
+    text-shadow: 0 0 12px rgba(var(--room-editor-accent-rgb), 0.12);
+  }
+}

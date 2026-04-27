@@ -1,8 +1,4 @@
-/**
- * Главный hook для dashboard projects.
- * Здесь остаются только React state, загрузка срезов проекта и orchestration
- * между более узкими contract/ledger sync hook'ами и UI-экшенами.
- */
+// Главный hook dashboard projects: state, загрузка срезов и orchestration между sync hook'ами и UI-экшенами.
 import { useEffect, useState } from "react";
 import type { DashboardProjectCardData, ProjectCardLedgerDocument, ProjectCardLedgerEntry } from "../model/project-model";
 import {
@@ -19,18 +15,14 @@ import {
 } from "./project-ledger-actions";
 import { createDashboardProjectLocalState } from "./project-local-state";
 import {
-  loadDashboardProjectAdvances,
-  loadDashboardProjectContract,
-  loadDashboardProjectLedger,
-  loadDashboardProjects,
-} from "./project-loaders";
-import {
   createDashboardProject,
   deleteDashboardProject,
   renameDashboardProject,
   updateDashboardProjectPassport,
+  updateDashboardProjectPlannedMargin,
   type ProjectPassportPatch,
 } from "./project-record-actions";
+import { createProjectStateLoaders } from "./project-state-loaders";
 import { useDashboardProjectContractSync } from "./use-dashboard-project-contract-sync";
 import { type LedgerDocumentKind, useDashboardProjectLedgerSync } from "./use-dashboard-project-ledger-sync";
 
@@ -42,6 +34,13 @@ export function useDashboardProjectState() {
 
   const project = selectedProjectId ? projects.find((candidate) => candidate.id === selectedProjectId) ?? null : null;
   const activeProject = project ?? projects[0] ?? null;
+
+  const { loadProjects, loadProjectAdvances, loadProjectLedger, loadProjectContract } = createProjectStateLoaders({
+    setLoading,
+    setError,
+    setProjects,
+    setSelectedProjectId,
+  });
 
   useEffect(() => {
     void loadProjects();
@@ -58,36 +57,6 @@ export function useDashboardProjectState() {
       loadProjectContract(selectedProjectId),
     ]);
   }, [selectedProjectId]);
-
-  async function loadProjects() {
-    await loadDashboardProjects({
-      setLoading,
-      setError,
-      setProjects,
-      setSelectedProjectId,
-    });
-  }
-
-  async function loadProjectAdvances(projectId: string) {
-    await loadDashboardProjectAdvances(projectId, {
-      setError,
-      setProjects,
-    });
-  }
-
-  async function loadProjectLedger(projectId: string) {
-    await loadDashboardProjectLedger(projectId, {
-      setError,
-      setProjects,
-    });
-  }
-
-  async function loadProjectContract(projectId: string) {
-    await loadDashboardProjectContract(projectId, {
-      setError,
-      setProjects,
-    });
-  }
 
   const { updateSelectedProject, updateSelectedProjectLedger } = createDashboardProjectLocalState({
     activeProjectId: activeProject?.id ?? null,
@@ -106,15 +75,14 @@ export function useDashboardProjectState() {
     setProjects,
   });
 
-  const { contractSyncState, completeContractMilestone, deleteContract, extractContract, updateContract, uploadContract } =
-    useDashboardProjectContractSync({
-      activeProject,
-      selectedProjectId,
-      setError,
-      setProjects,
-      updateSelectedProject,
-      loadProjectContract,
-    });
+  const { contractSyncState, completeContractMilestone, deleteContract, extractContract, updateContract, uploadContract } = useDashboardProjectContractSync({
+    activeProject,
+    selectedProjectId,
+    setError,
+    setProjects,
+    updateSelectedProject,
+    loadProjectContract,
+  });
 
   async function addAdvance(payload: AdvancePayload) {
     await createDashboardProjectAdvance({
@@ -165,11 +133,7 @@ export function useDashboardProjectState() {
     });
   }
 
-  function updateLedgerDocument(
-    entryId: string,
-    kind: LedgerDocumentKind,
-    patch: Partial<ProjectCardLedgerDocument>,
-  ) {
+  function updateLedgerDocument(entryId: string, kind: LedgerDocumentKind, patch: Partial<ProjectCardLedgerDocument>) {
     patchDashboardProjectLedgerDocument({
       activeProject,
       entryId,
@@ -237,6 +201,19 @@ export function useDashboardProjectState() {
     });
   }
 
+  async function updatePlannedMarginPercent(plannedMarginPercent: number) {
+    if (!activeProject) {
+      return;
+    }
+
+    await updateDashboardProjectPlannedMargin({
+      projectId: activeProject.id,
+      plannedMarginPercent,
+      setProjects,
+      setError,
+    });
+  }
+
   return {
     project: activeProject,
     projects,
@@ -251,6 +228,7 @@ export function useDashboardProjectState() {
       renameProject,
       deleteProject,
       updateProjectPassport,
+      updatePlannedMarginPercent,
       addAdvance,
       deleteAdvance,
       completeContractMilestone,

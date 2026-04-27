@@ -1,4 +1,4 @@
-import type { CalculatorProject } from "../features/calculator/calculator";
+import type { CalculatorProject } from "../features/calculator";
 import { navigation, type NavigationScreenKey } from "./navigation";
 
 export function AppShellSidebar(props: {

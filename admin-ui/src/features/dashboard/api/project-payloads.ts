@@ -12,16 +12,21 @@ export function buildProjectCreatePayload(project: DashboardProjectCardData) {
     code: project.code,
     name: project.name,
     address: project.address,
+    entrance_section: project.entranceSection,
     apartment: project.apartment,
     floor: project.floor,
+    room_count: project.roomCount,
     has_elevator: project.hasElevator,
     site_access: project.siteAccess,
+    access_hours: project.accessHours,
     intercom_code: project.intercomCode,
     responsible_person: project.responsiblePerson,
+    comment: project.comment,
     stage_label: project.stageLabel,
     stage_tone: project.stageTone,
     estimate_source: project.estimateSource,
     area_m2: project.areaM2,
+    ceiling_height_m: project.ceilingHeightM,
     received_total: project.receivedTotal,
     remaining_total: project.remainingTotal,
     deferred_total: project.deferredTotal,
@@ -38,27 +43,39 @@ export function buildProjectPassportPatchPayload(
   patch: Pick<
     DashboardProjectCardData,
     | "name"
+    | "code"
     | "address"
+    | "entranceSection"
     | "apartment"
     | "floor"
+    | "roomCount"
     | "hasElevator"
     | "siteAccess"
+    | "accessHours"
     | "intercomCode"
     | "responsiblePerson"
+    | "comment"
     | "areaM2"
+    | "ceilingHeightM"
     | "plannedMarginPercent"
   >,
 ) {
   return {
+    code: patch.code,
     name: patch.name,
     address: patch.address,
+    entrance_section: patch.entranceSection,
     apartment: patch.apartment,
     floor: patch.floor,
+    room_count: patch.roomCount,
     has_elevator: patch.hasElevator,
     site_access: patch.siteAccess,
+    access_hours: patch.accessHours,
     intercom_code: patch.intercomCode,
     responsible_person: patch.responsiblePerson,
+    comment: patch.comment,
     area_m2: patch.areaM2,
+    ceiling_height_m: patch.ceilingHeightM,
     planned_margin_percent: patch.plannedMarginPercent,
   };
 }

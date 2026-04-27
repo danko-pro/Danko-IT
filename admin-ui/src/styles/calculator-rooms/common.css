@@ -1,0 +1,153 @@
+@layer components {
+  .calculator-room-section {
+    border-color: rgba(255,255,255,.07);
+    background: linear-gradient(180deg,#121821e6,#0c1117fc);
+    border-radius: 18px;
+    padding: .9rem;
+    box-shadow: inset 0 1px rgba(255,255,255,.04),0 12px 28px rgba(0,0,0,.12);
+  }
+
+  .calculator-room-section-head {
+    justify-content: space-between;
+    align-items: center;
+    gap: .75rem;
+    margin-bottom: .3rem;
+    display: flex;
+  }
+
+  .calculator-room-section-copy {
+    gap: .45rem;
+    min-width: 0;
+    display: grid;
+  }
+
+  .calculator-room-section-title {
+    color: #87a0b5;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  .calculator-room-section-meta {
+    flex-wrap: wrap;
+    gap: .45rem;
+    display: flex;
+  }
+
+  .calculator-room-section-summary {
+    border: 1px solid rgba(255,255,255,.07);
+    background: rgba(9,12,18,.72);
+    border-radius: 9999px;
+    padding: .28rem .55rem;
+    color: #95aabd;
+    font-size: 10px;
+    font-weight: 600;
+    line-height: 1;
+  }
+
+  .calculator-room-inline-pair {
+    align-items: start;
+    gap: .55rem;
+    display: flex;
+  }
+
+  .calculator-room-wall-remove,.calculator-room-floor-remove,.calculator-room-opening-remove {
+    color: #9eb2c4;
+    cursor: pointer;
+    background: rgba(255,255,255,.05);
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 9999px;
+    justify-content: center;
+    align-items: center;
+    width: 1.55rem;
+    height: 1.55rem;
+    padding: 0;
+    font-size: .9rem;
+    line-height: 1;
+    transition:
+      border-color var(--ui-motion-fast) var(--ui-motion-ease-soft),
+      color var(--ui-motion-fast) var(--ui-motion-ease-soft),
+      background-color var(--ui-motion-fast) var(--ui-motion-ease-soft),
+      transform var(--ui-motion-fast) var(--ui-motion-ease-soft);
+    display: inline-flex;
+  }
+
+  .calculator-room-wall-remove:hover,.calculator-room-floor-remove:hover,.calculator-room-opening-remove:hover {
+    color: #ffd8de;
+    background: rgba(248,113,113,.12);
+    border-color: rgba(248,113,113,.26);
+  }
+
+  .calculator-room-wall-input,.calculator-room-floor-input,.calculator-room-opening-input {
+    border: 1px solid rgba(255,255,255,.07);
+    background: linear-gradient(180deg,#0a0f15fc,#070b10ff);
+    border-radius: 14px;
+    align-items: center;
+    gap: .55rem;
+    min-height: 2.85rem;
+    padding: 0 .8rem;
+    transition:
+      border-color var(--ui-motion-fast) var(--ui-motion-ease-soft),
+      box-shadow var(--ui-motion-fast) var(--ui-motion-ease-soft);
+    display: flex;
+  }
+
+  .calculator-room-wall-input:focus-within,.calculator-room-floor-input:focus-within,.calculator-room-opening-input:focus-within {
+    border-color: rgba(var(--room-editor-accent-rgb),.26);
+    box-shadow: 0 0 0 3px rgba(var(--room-editor-accent-rgb),.08);
+  }
+
+  .calculator-room-wall-input-field,.calculator-room-floor-input-field,.calculator-room-opening-input-field {
+    width: 100%;
+    color: #edf6ff;
+    font-variant-numeric: tabular-nums;
+    background: transparent;
+    border: none;
+    outline: none;
+    padding: 0;
+    font-size: 1.02rem;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  .calculator-room-wall-input-field::placeholder,.calculator-room-floor-input-field::placeholder,.calculator-room-opening-input-field::placeholder {
+    color: #627688;
+    font-weight: 600;
+  }
+
+  .calculator-room-wall-unit,.calculator-room-floor-unit,.calculator-room-opening-unit {
+    color: #72879a;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  .calculator-room-floor-row {
+    grid-template-columns: minmax(0,1fr) minmax(0,1fr) auto;
+    gap: .75rem;
+    display: grid;
+  }
+
+  @media (max-width:760px) {
+    .calculator-room-floor-row,.calculator-room-floors-grid,.calculator-room-openings-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width:540px) {
+    .calculator-room-floor-fields,.calculator-room-opening-fields {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (prefers-reduced-motion:reduce) {
+    .calculator-room-wall-remove,.calculator-room-floor-remove,.calculator-room-opening-remove,
+    .calculator-room-wall-input,.calculator-room-floor-input,.calculator-room-opening-input {
+      transition: none;
+    }
+  }
+}

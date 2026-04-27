@@ -158,14 +158,14 @@ def _estimate_room_stats(
     door_area_m2: float,
 ) -> dict[str, Any]:
     if room.get("manual_floor_area_m2") is not None:
-        floor_area_m2 = float(room["manual_floor_area_m2"])
+        floor_area_m2 = max(0.0, float(room["manual_floor_area_m2"]))
     else:
         floor_area_m2 = sum(
-            float(section["length_m"]) * float(section["width_m"])
+            max(0.0, float(section["length_m"])) * max(0.0, float(section["width_m"]))
             for section in floor_sections
             if section.get("length_m") is not None and section.get("width_m") is not None
         )
-    measured_perimeter_m = sum(float(wall["length_m"]) for wall in walls if wall.get("length_m") is not None)
+    measured_perimeter_m = sum(max(0.0, float(wall["length_m"])) for wall in walls if wall.get("length_m") is not None)
     auto_perimeter_calc = bool(room.get("auto_perimeter_calc"))
     perimeter_factor = max(1.0, float(room.get("perimeter_factor") or 1.15))
     if measured_perimeter_m > 0:
@@ -177,7 +177,7 @@ def _estimate_room_stats(
     else:
         perimeter_m = 0.0
         perimeter_source = "missing"
-    ceiling_height_m = float(room.get("ceiling_height_m") or 0)
+    ceiling_height_m = max(0.0, float(room.get("ceiling_height_m") or 0))
     wall_area_gross_m2 = perimeter_m * ceiling_height_m
     openings_area_m2 = sum(_estimate_opening_area(opening) for opening in openings)
     wall_area_net_m2 = max(0.0, wall_area_gross_m2 - openings_area_m2 - door_area_m2)
@@ -195,10 +195,11 @@ def _estimate_room_stats(
 
 def _estimate_opening_area(opening: dict[str, Any]) -> float:
     if opening.get("area_m2") is not None:
-        return float(opening["area_m2"])
+        return max(0.0, float(opening["area_m2"]))
     width_m = opening.get("width_m")
     height_m = opening.get("height_m")
-    quantity = float(opening.get("quantity") or 1)
+    quantity_raw = opening.get("quantity")
+    quantity = 1.0 if quantity_raw is None else max(0.0, float(quantity_raw))
     if width_m is None or height_m is None:
         return 0.0
-    return float(width_m) * float(height_m) * quantity
+    return max(0.0, float(width_m)) * max(0.0, float(height_m)) * quantity

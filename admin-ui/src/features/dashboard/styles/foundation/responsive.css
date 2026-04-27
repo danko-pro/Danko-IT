@@ -122,8 +122,25 @@
     grid-template-columns: 1fr;
   }
 
+  .dashboard-passport-form {
+    width: min(100%, 37rem);
+  }
+
+  .dashboard-passport-layout {
+    grid-template-columns: 1fr;
+  }
+
   .dashboard-passport-field-wide {
     grid-column: span 1;
+  }
+
+  .dashboard-passport-field-span-2,
+  .dashboard-passport-field-full {
+    grid-column: span 1;
+  }
+
+  .dashboard-passport-grid-metrics {
+    grid-template-columns: 1fr 1fr;
   }
 
   .dashboard-passport-actions {

@@ -1,5 +1,5 @@
 import { type FormEvent, useEffect, useState } from "react";
-import { useAdminCalculatorController } from "../features/calculator/controller";
+import { useAdminCalculatorController } from "../features/calculator/app/use";
 import { useAdminMaterialsController } from "../features/materials/controller";
 import { useAdminRequestsController } from "../features/requests/controller";
 import type { AdminAuthSession, DeliverySettings, GroupProfile, ScreenKey, Summary } from "../shared/types";

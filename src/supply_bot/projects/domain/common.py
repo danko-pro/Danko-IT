@@ -66,6 +66,18 @@ def validate_project_metric(value: float | None, *, field: str, allow_none: bool
     return float(value)
 
 
+def validate_project_count(value: int | float | None, *, field: str, allow_none: bool = False) -> int | None:
+    if value is None:
+        if allow_none:
+            return None
+        raise ProjectValidationError(f"{field} is required")
+    if value < 0:
+        raise ProjectValidationError(f"{field} cannot be negative")
+    if int(value) != value:
+        raise ProjectValidationError(f"{field} must be a whole number")
+    return int(value)
+
+
 def normalize_project_date(value: str | None, *, field: str, required: bool = False) -> str:
     normalized = normalize_project_text(value)
     if not normalized:

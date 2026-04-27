@@ -1,0 +1,38 @@
+@layer components {
+  .calculator-object-form {
+    gap: .5rem;
+    display: grid;
+  }
+
+  .calculator-object-form-pair {
+    grid-template-columns: repeat(2,minmax(0,1fr));
+    gap: .5rem;
+    display: grid;
+  }
+
+  .calculator-object-form-pair-compact {
+    grid-template-columns: repeat(2,minmax(0,7.5rem));
+    justify-content: start;
+    width: fit-content;
+  }
+
+  .calculator-header .calculator-object-form .field-label {
+    letter-spacing: .16em;
+    margin-bottom: .35rem;
+    font-size: 9px;
+  }
+
+  .calculator-header .calculator-object-form .text-input {
+    border-radius: 14px;
+    min-height: 2.2rem;
+    padding: .55rem .75rem;
+    font-size: 12px;
+    line-height: 1rem;
+  }
+
+  @media (max-width:820px) {
+    .calculator-object-form-pair {
+      grid-template-columns: 1fr;
+    }
+  }
+}

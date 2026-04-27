@@ -154,14 +154,12 @@ class EstimateRoomGeometryStorageMixin:
                 quantity = opening.get("quantity")
                 area_m2 = opening.get("area_m2")
                 note = opening.get("note")
-                width_value = float(width_m) if width_m not in (None, "") else None
-                height_value = float(height_m) if height_m not in (None, "") else None
-                quantity_value = float(quantity) if quantity not in (None, "") else 1.0
-                area_value = float(area_m2) if area_m2 not in (None, "") else None
+                width_value = max(0.0, float(width_m)) if width_m not in (None, "") else None
+                height_value = max(0.0, float(height_m)) if height_m not in (None, "") else None
+                quantity_value = max(0.0, float(quantity)) if quantity not in (None, "") else 1.0
+                area_value = max(0.0, float(area_m2)) if area_m2 not in (None, "") else None
                 if area_value is None and (width_value is None or height_value is None):
                     continue
-                if quantity_value <= 0:
-                    quantity_value = 1.0
                 await db.execute(
                     """
                     INSERT INTO estimate_room_openings (

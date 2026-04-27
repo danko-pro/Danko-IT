@@ -1,0 +1,83 @@
+.dashboard-project-panel-finance-settings {
+  display: grid;
+  gap: 0.72rem;
+}
+
+.dashboard-project-finance-settings-copy {
+  display: grid;
+  gap: 0.16rem;
+}
+
+.dashboard-project-finance-settings-note {
+  font-size: 0.78rem;
+  color: #8aa0b2;
+}
+
+.dashboard-project-finance-settings-field {
+  display: grid;
+  gap: 0.36rem;
+}
+
+.dashboard-project-finance-settings-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #7e95a9;
+}
+
+.dashboard-project-finance-settings-input-shell {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.dashboard-project-finance-settings-input {
+  width: 100%;
+  min-height: 2.6rem;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  padding: 0.6rem 2.3rem 0.6rem 0.82rem;
+  font-size: 0.94rem;
+  font-weight: 600;
+  color: #edf9ff;
+  transition:
+    border-color var(--dashboard-motion-fast) var(--dashboard-motion-ease-soft),
+    box-shadow var(--dashboard-motion-fast) var(--dashboard-motion-ease-soft),
+    background-color var(--dashboard-motion-fast) var(--dashboard-motion-ease-soft);
+}
+
+.dashboard-project-finance-settings-input:focus {
+  outline: none;
+  border-color: rgba(7, 248, 198, 0.24);
+  box-shadow: 0 0 0 1px rgba(7, 248, 198, 0.08), 0 0 22px rgba(7, 248, 198, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.dashboard-project-finance-settings-input:disabled {
+  opacity: 0.7;
+}
+
+.dashboard-project-finance-settings-suffix {
+  position: absolute;
+  right: 0.86rem;
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: #88f1dd;
+  pointer-events: none;
+}
+
+.dashboard-project-finance-settings-status {
+  min-height: 1rem;
+  font-size: 0.76rem;
+  color: #7990a4;
+}
+
+.dashboard-project-finance-settings-status[data-state="saved"] {
+  color: #8ff0da;
+}
+
+.dashboard-project-finance-settings-status[data-state="error"] {
+  color: #f4b5c8;
+}

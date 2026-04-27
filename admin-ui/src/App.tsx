@@ -24,16 +24,24 @@ export default function App() {
   const currentScreenTitle = currentNavigationItem ? screenTitles[currentNavigationItem.key] : "";
 
   function handleScreenSelect(nextScreen: NavigationScreenKey) {
+    if (nextScreen === screen) {
+      return;
+    }
+
     void preloadAppScreen(nextScreen);
     controller.setScreen(nextScreen);
     setSuccessMessage(null);
 
     if (nextScreen === "calculator") {
-      void loadCalculatorProjects();
+      if (!controller.calculatorProjects.length && !controller.calculatorLoading) {
+        void loadCalculatorProjects();
+      }
       return;
     }
 
-    void loadOverview();
+    if (nextScreen === "dashboard" && !controller.loading) {
+      void loadOverview();
+    }
   }
 
   return (
@@ -67,18 +75,24 @@ export default function App() {
               onQuickCreateCalculatorProject={() => void controller.handleQuickCreateCalculatorProject()}
             />
 
-            <main className={isEditorScreen ? "" : "space-y-4"}>
-              {!isEditorScreen && currentNavigationItem ? (
-                <AppShellHeader
-                  screen={screen}
-                  eyebrow={currentNavigationItem.label}
-                  title={currentScreenTitle}
-                  unknownTermsCount={summary?.new_unknown_terms_count}
-                  successMessage={successMessage}
-                />
-              ) : null}
+            <main className="app-shell-main">
+              <div className="app-shell-screen-stage" data-screen={screen}>
+                {!isEditorScreen && currentNavigationItem ? (
+                  <div className="app-shell-screen-head">
+                    <AppShellHeader
+                      screen={screen}
+                      eyebrow={currentNavigationItem.label}
+                      title={currentScreenTitle}
+                      unknownTermsCount={summary?.new_unknown_terms_count}
+                      successMessage={successMessage}
+                    />
+                  </div>
+                ) : null}
 
-              <AppScreenRouter controller={controller} />
+                <div className={isEditorScreen ? "app-shell-screen-body app-shell-screen-body-editor" : "app-shell-screen-body"}>
+                  <AppScreenRouter controller={controller} />
+                </div>
+              </div>
             </main>
           </div>
         )}

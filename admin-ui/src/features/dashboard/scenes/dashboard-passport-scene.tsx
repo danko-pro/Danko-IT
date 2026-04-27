@@ -17,8 +17,8 @@ import {
 } from "./dashboard-passport-sections";
 
 // Сцена паспорта объекта.
-// Компонент хранит только orchestration формы, dirty-check и сценарий сохранения, а сами секции вынесены в отдельные UI-модули.
-
+// Компонент хранит только orchestration формы, dirty-check и сценарий сохранения,
+// а сами секции вынесены в отдельные UI-модули.
 export function DashboardPassportScene(props: {
   project: DashboardProjectCardData;
   activeView: DashboardSceneView;
@@ -35,6 +35,12 @@ export function DashboardPassportScene(props: {
 
   const baseDraft = useMemo(() => createPassportDraft(props.project), [props.project]);
   const isDirty = !samePassportDraft(draft, baseDraft);
+
+  useEffect(() => {
+    if (isDirty && saveState !== "saving") {
+      setSaveState("idle");
+    }
+  }, [isDirty, saveState]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -57,10 +63,17 @@ export function DashboardPassportScene(props: {
       <DashboardSceneChrome activeView={props.activeView} onSelect={props.onSelectView} />
 
       <form className="dashboard-passport-form" onSubmit={handleSubmit}>
-        <DashboardPassportIdentitySection draft={draft} setDraft={setDraft} />
-        <DashboardPassportAccessSection draft={draft} setDraft={setDraft} />
-        <DashboardPassportMetricsSection draft={draft} setDraft={setDraft} />
-        <DashboardPassportActions saveState={saveState} isDirty={isDirty} />
+        <div className="dashboard-passport-layout">
+          <div className="dashboard-passport-column">
+            <DashboardPassportIdentitySection draft={draft} setDraft={setDraft} />
+            <DashboardPassportAccessSection draft={draft} setDraft={setDraft} />
+            <DashboardPassportActions saveState={saveState} isDirty={isDirty} />
+          </div>
+
+          <div className="dashboard-passport-aside">
+            <DashboardPassportMetricsSection draft={draft} setDraft={setDraft} />
+          </div>
+        </div>
       </form>
     </article>
   );

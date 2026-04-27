@@ -19,6 +19,7 @@ from supply_bot.projects.domain.common import (
     normalize_project_stage_label,
     normalize_project_stage_tone,
     normalize_project_text,
+    validate_project_count,
     validate_project_metric,
 )
 
@@ -41,17 +42,22 @@ def build_project_create_values(
         "code": normalize_project_text(payload.code, default=default_code),
         "name": normalize_project_name(payload.name or default_name),
         "address": normalize_project_text(payload.address),
+        "entrance_section": normalize_project_text(payload.entrance_section),
         "apartment": normalize_project_text(payload.apartment),
         "floor": normalize_project_text(payload.floor),
+        "room_count": validate_project_count(payload.room_count or 0, field="Room count") or 0,
         "has_elevator": bool(payload.has_elevator),
         "site_access": normalize_project_text(payload.site_access),
+        "access_hours": normalize_project_text(payload.access_hours),
         "intercom_code": normalize_project_text(payload.intercom_code),
         "responsible_person": normalize_project_text(payload.responsible_person),
+        "comment": normalize_project_text(payload.comment),
         "stage_label": normalize_project_stage_label(payload.stage_label),
         "stage_tone": normalize_project_stage_tone(payload.stage_tone),
         "estimate_project_id": payload.estimate_project_id,
         "estimate_source": normalize_project_text(payload.estimate_source, default=DEFAULT_PROJECT_ESTIMATE_SOURCE),
         "area_m2": validate_project_metric(payload.area_m2, field="Area") or 0.0,
+        "ceiling_height_m": validate_project_metric(payload.ceiling_height_m, field="Ceiling height") or 0.0,
         "received_total": validate_project_metric(payload.received_total, field="Received total") or 0.0,
         "remaining_total": validate_project_metric(payload.remaining_total, field="Remaining total") or 0.0,
         "deferred_total": validate_project_metric(payload.deferred_total, field="Deferred total") or 0.0,
@@ -75,18 +81,26 @@ def build_project_update_values(payload_data: Mapping[str, Any]) -> dict[str, An
         updates["name"] = normalize_project_name(payload_data["name"])
     if "address" in payload_data:
         updates["address"] = normalize_project_text(payload_data["address"])
+    if "entrance_section" in payload_data:
+        updates["entrance_section"] = normalize_project_text(payload_data["entrance_section"])
     if "apartment" in payload_data:
         updates["apartment"] = normalize_project_text(payload_data["apartment"])
     if "floor" in payload_data:
         updates["floor"] = normalize_project_text(payload_data["floor"])
+    if "room_count" in payload_data:
+        updates["room_count"] = validate_project_count(payload_data["room_count"] or 0, field="Room count") or 0
     if "has_elevator" in payload_data:
         updates["has_elevator"] = bool(payload_data["has_elevator"])
     if "site_access" in payload_data:
         updates["site_access"] = normalize_project_text(payload_data["site_access"])
+    if "access_hours" in payload_data:
+        updates["access_hours"] = normalize_project_text(payload_data["access_hours"])
     if "intercom_code" in payload_data:
         updates["intercom_code"] = normalize_project_text(payload_data["intercom_code"])
     if "responsible_person" in payload_data:
         updates["responsible_person"] = normalize_project_text(payload_data["responsible_person"])
+    if "comment" in payload_data:
+        updates["comment"] = normalize_project_text(payload_data["comment"])
     if "stage_label" in payload_data:
         updates["stage_label"] = normalize_project_stage_label(payload_data["stage_label"])
     if "stage_tone" in payload_data:
@@ -100,6 +114,11 @@ def build_project_update_values(payload_data: Mapping[str, Any]) -> dict[str, An
         )
     if "area_m2" in payload_data:
         updates["area_m2"] = validate_project_metric(payload_data["area_m2"], field="Area")
+    if "ceiling_height_m" in payload_data:
+        updates["ceiling_height_m"] = validate_project_metric(
+            payload_data["ceiling_height_m"],
+            field="Ceiling height",
+        )
     if "received_total" in payload_data:
         updates["received_total"] = validate_project_metric(payload_data["received_total"], field="Received total")
     if "remaining_total" in payload_data:
@@ -130,12 +149,16 @@ def build_project_payload(project: Mapping[str, Any]) -> dict[str, Any]:
         "code": str(project["code"]),
         "name": str(project["name"]),
         "address": str(project["address"] or ""),
+        "entrance_section": str(project["entrance_section"] or ""),
         "apartment": str(project["apartment"] or ""),
         "floor": str(project["floor"] or ""),
+        "room_count": int(project["room_count"] or 0),
         "has_elevator": bool(project["has_elevator"]),
         "site_access": str(project["site_access"] or ""),
+        "access_hours": str(project["access_hours"] or ""),
         "intercom_code": str(project["intercom_code"] or ""),
         "responsible_person": str(project["responsible_person"] or ""),
+        "comment": str(project["comment"] or ""),
         "stage_label": str(project["stage_label"]),
         "stage_tone": str(project["stage_tone"]),
         "estimate_project_id": (
@@ -146,6 +169,7 @@ def build_project_payload(project: Mapping[str, Any]) -> dict[str, Any]:
         ),
         "estimate_source": str(project["estimate_source"] or ""),
         "area_m2": float(project["area_m2"] or 0),
+        "ceiling_height_m": float(project["ceiling_height_m"] or 0),
         "received_total": float(project["received_total"] or 0),
         "remaining_total": float(project["remaining_total"] or 0),
         "deferred_total": float(project["deferred_total"] or 0),

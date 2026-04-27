@@ -9,6 +9,21 @@ class CalculatorProjectCreatePayload(BaseModel):
     group_chat_id: int | None = None
 
 
+class CalculatorProjectUpdatePayload(BaseModel):
+    name: str
+    residential_complex: str | None = None
+    address: str | None = None
+    entrance_section: str | None = None
+    apartment: str | None = None
+    floor: str | None = None
+    lift_type: str | None = None
+    site_access: str | None = None
+    intercom_code: str | None = None
+    loading_zone: str | None = None
+    responsible_person: str | None = None
+    note: str | None = None
+
+
 class CalculatorRoomCreatePayload(BaseModel):
     name: str | None = None
     ceiling_height_m: float = 2.7

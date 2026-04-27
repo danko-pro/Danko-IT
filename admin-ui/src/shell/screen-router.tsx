@@ -1,5 +1,6 @@
 import { Suspense, lazy, type ReactNode } from "react";
 
+import { buildCalculatorScreenProps } from "../features/calculator/screen/props";
 import type { ScreenKey } from "../shared/types";
 import type { AdminAppController } from "./controller";
 
@@ -7,7 +8,7 @@ import type { AdminAppController } from "./controller";
 const loadDashboardScreen = () => import("../features/dashboard/screen").then((module) => ({ default: module.DashboardScreen }));
 const loadRequestsScreen = () => import("../features/requests/screen").then((module) => ({ default: module.RequestsScreen }));
 const loadMaterialsScreen = () => import("../features/materials/screen").then((module) => ({ default: module.MaterialsScreen }));
-const loadCalculatorScreen = () => import("../features/calculator/calculator").then((module) => ({ default: module.CalculatorScreen }));
+const loadCalculatorScreen = () => import("../features/calculator").then((module) => ({ default: module.CalculatorScreen }));
 const loadSettingsScreen = () => import("../features/settings/screen").then((module) => ({ default: module.SettingsScreen }));
 const loadEditorScreen = () => import("../editor/ui/editor-screen").then((module) => ({ default: module.EditorScreen }));
 
@@ -46,7 +47,7 @@ function AppScreenLoader(props: { screen: ScreenKey }) {
               : "Загружаю редактор...";
 
   return (
-    <section className="glass-panel flex min-h-[18rem] items-center justify-center p-5">
+    <section className="glass-panel app-screen-loader flex min-h-[18rem] items-center justify-center p-5">
       <div className="space-y-2 text-center">
         <div className="eyebrow">Экран</div>
         <div className="text-lg font-semibold text-slate-100">{label}</div>
@@ -69,13 +70,6 @@ export function AppScreenRouter(props: { controller: AdminAppController }) {
     selectedFamilyId,
     setSelectedFamilyId,
     familyDetail,
-    calculatorProjects,
-    selectedCalculatorProjectId,
-    setSelectedCalculatorProjectId,
-    calculatorProjectDetail,
-    selectedCalculatorRoomId,
-    setSelectedCalculatorRoomId,
-    calculatorRoomDetail,
     familyForm,
     setFamilyForm,
     variantForm,
@@ -93,9 +87,6 @@ export function AppScreenRouter(props: { controller: AdminAppController }) {
     requestDetailLoading,
     materialsLoading,
     familyDetailLoading,
-    calculatorLoading,
-    calculatorProjectLoading,
-    calculatorRoomLoading,
     savingFamily,
     savingVariant,
     savingSku,
@@ -103,38 +94,14 @@ export function AppScreenRouter(props: { controller: AdminAppController }) {
     savingDelivery,
     requestActionId,
     requestDetailBusyKey,
-    calculatorBusyKey,
     error,
     requestError,
     materialsError,
-    calculatorError,
     settingsError,
     loadRequests,
     loadOverview,
     loadFamilies,
     loadCatalogSearch,
-    loadCalculatorProjects,
-    handleCreateCalculatorProject,
-    handleCreateCalculatorRoom,
-    handleSaveCalculatorRoom,
-    handleDeleteCalculatorRoom,
-    handleSaveCalculatorWarmFloor,
-    handleSaveCalculatorFlooring,
-    handleCreateCalculatorFlooringCovering,
-    handleCreateCalculatorFlooringPreparation,
-    handleCreateCalculatorFlooringLayout,
-    handleSaveCalculatorWallFinish,
-    handleCreateCalculatorWallFinishCovering,
-    handleCreateCalculatorWallFinishPreparation,
-    handleCreateCalculatorWallFinishLayout,
-    handleCreateCalculatorDoorCatalogItem,
-    handleCreateCalculatorDoorComponentCatalogItem,
-    handleCreateCalculatorProjectDoor,
-    handleUpdateCalculatorProjectDoor,
-    handleDeleteCalculatorProjectDoor,
-    handleCreateCalculatorProjectDoorComponent,
-    handleUpdateCalculatorProjectDoorComponent,
-    handleDeleteCalculatorProjectDoorComponent,
     handleCreateFamily,
     handleCreateVariant,
     handleCreateSku,
@@ -217,46 +184,13 @@ export function AppScreenRouter(props: { controller: AdminAppController }) {
       );
       break;
 
-    case "calculator":
+    case "calculator": {
+      const calculatorScreenProps = buildCalculatorScreenProps(props.controller);
       screenNode = (
-        <CalculatorScreen
-          projects={calculatorProjects}
-          projectDetail={calculatorProjectDetail}
-          roomDetail={calculatorRoomDetail}
-          selectedProjectId={selectedCalculatorProjectId}
-          selectedRoomId={selectedCalculatorRoomId}
-          loading={calculatorLoading}
-          detailLoading={calculatorProjectLoading}
-          roomLoading={calculatorRoomLoading}
-          busyKey={calculatorBusyKey}
-          error={calculatorError}
-          onReload={loadCalculatorProjects}
-          onSelectProject={setSelectedCalculatorProjectId}
-          onSelectRoom={setSelectedCalculatorRoomId}
-          onCreateProject={handleCreateCalculatorProject}
-          onCreateRoom={handleCreateCalculatorRoom}
-          onSaveRoom={handleSaveCalculatorRoom}
-          onDeleteRoom={handleDeleteCalculatorRoom}
-          onSaveWarmFloor={handleSaveCalculatorWarmFloor}
-          onSaveFlooring={handleSaveCalculatorFlooring}
-          onCreateFlooringCovering={handleCreateCalculatorFlooringCovering}
-          onCreateFlooringPreparation={handleCreateCalculatorFlooringPreparation}
-          onCreateFlooringLayout={handleCreateCalculatorFlooringLayout}
-          onSaveWallFinish={handleSaveCalculatorWallFinish}
-          onCreateWallFinishCovering={handleCreateCalculatorWallFinishCovering}
-          onCreateWallFinishPreparation={handleCreateCalculatorWallFinishPreparation}
-          onCreateWallFinishLayout={handleCreateCalculatorWallFinishLayout}
-          onCreateDoorCatalogItem={handleCreateCalculatorDoorCatalogItem}
-          onCreateDoorComponentCatalogItem={handleCreateCalculatorDoorComponentCatalogItem}
-          onCreateProjectDoor={handleCreateCalculatorProjectDoor}
-          onUpdateProjectDoor={handleUpdateCalculatorProjectDoor}
-          onDeleteProjectDoor={handleDeleteCalculatorProjectDoor}
-          onCreateProjectDoorComponent={handleCreateCalculatorProjectDoorComponent}
-          onUpdateProjectDoorComponent={handleUpdateCalculatorProjectDoorComponent}
-          onDeleteProjectDoorComponent={handleDeleteCalculatorProjectDoorComponent}
-        />
+        <CalculatorScreen {...calculatorScreenProps} />
       );
       break;
+    }
 
     case "settings":
       screenNode = (

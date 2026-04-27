@@ -10,7 +10,10 @@ class EstimateProjectRecordsStorageMixin:
         async with self.connection() as db:
             cursor = await db.execute(
                 """
-                SELECT ep.id, ep.name, ep.note, ep.group_chat_id, ep.created_at, ep.updated_at,
+                SELECT ep.id, ep.name, ep.residential_complex, ep.address, ep.entrance_section,
+                       ep.apartment, ep.floor, ep.has_elevator, ep.lift_type, ep.site_access,
+                       ep.intercom_code, ep.loading_zone, ep.responsible_person, ep.note,
+                       ep.group_chat_id, ep.created_at, ep.updated_at,
                        COUNT(er.id) AS rooms_count
                 FROM estimate_projects ep
                 LEFT JOIN estimate_rooms er ON er.project_id = ep.id
@@ -43,7 +46,9 @@ class EstimateProjectRecordsStorageMixin:
         async with self.connection() as db:
             cursor = await db.execute(
                 """
-                SELECT id, name, note, group_chat_id, created_at, updated_at
+                SELECT id, name, residential_complex, address, entrance_section, apartment,
+                       floor, has_elevator, lift_type, site_access, intercom_code,
+                       loading_zone, responsible_person, note, group_chat_id, created_at, updated_at
                 FROM estimate_projects
                 WHERE id = ?
                 """,
@@ -51,6 +56,30 @@ class EstimateProjectRecordsStorageMixin:
             )
             row = await cursor.fetchone()
         return dict(row) if row else None
+
+    async def update_estimate_project(self, project_id: int, **updates: Any) -> bool:
+        if not updates:
+            return False
+
+        columns: list[str] = []
+        values: list[Any] = []
+        for field, value in updates.items():
+            columns.append(f"{field} = ?")
+            values.append(value)
+
+        values.append(project_id)
+        async with self.connection() as db:
+            cursor = await db.execute(
+                f"""
+                UPDATE estimate_projects
+                SET {", ".join(columns)},
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE id = ?
+                """,
+                tuple(values),
+            )
+            await db.commit()
+            return cursor.rowcount > 0
 
     async def touch_estimate_project(self, project_id: int) -> None:
         async with self.connection() as db:

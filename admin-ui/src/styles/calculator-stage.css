@@ -1,0 +1,289 @@
+@layer components {
+  .calculator-scene-stage {
+    min-width: 0;
+  }
+
+  .calculator-scene {
+    width: 100%;
+    min-width: 0;
+    will-change: opacity, transform, filter;
+  }
+
+  .calculator-scene-active {
+    opacity: 1;
+    filter: blur(0);
+  }
+
+  .calculator-scene-enter-forward {
+    animation: calculatorSceneEnterForward var(--ui-motion-medium) var(--ui-motion-ease-emphasis) both;
+  }
+
+  .calculator-scene-enter-backward {
+    animation: calculatorSceneEnterBackward var(--ui-motion-medium) var(--ui-motion-ease-emphasis) both;
+  }
+
+  @keyframes calculatorSceneEnterForward {
+    from {
+      opacity: 0;
+      transform: translateX(48px);
+      filter: blur(8px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateX(0);
+      filter: blur(0);
+    }
+  }
+
+  @keyframes calculatorSceneEnterBackward {
+    from {
+      opacity: 0;
+      transform: translateX(-42px);
+      filter: blur(8px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateX(0);
+      filter: blur(0);
+    }
+  }
+
+  .warmfloor-gear {
+    gap: calc(var(--spacing) * 2);
+  }
+
+  .warmfloor-gear-active {
+    color: #efffff;
+    background: linear-gradient(#0e332efa, #0a1016fa);
+    border-color: #07f8c652;
+  }
+
+  .warmfloor-settings-table-wrap {
+    border-style: var(--tw-border-style);
+    background: linear-gradient(#0b0f15db, #080b11fa);
+    border-width: 1px;
+    border-color: #ffffff0f;
+    border-radius: 20px;
+    overflow-x: auto;
+  }
+
+  .warmfloor-settings-table {
+    border-collapse: collapse;
+    width: 100%;
+    min-width: 520px;
+    font-size: var(--text-sm);
+    line-height: var(--tw-leading, var(--text-sm--line-height));
+  }
+
+  .warmfloor-settings-table th {
+    border-bottom-style: var(--tw-border-style);
+    width: 58%;
+    padding-inline: calc(var(--spacing) * 3);
+    padding-block: calc(var(--spacing) * 2);
+    text-align: left;
+    --tw-font-weight: var(--font-weight-semibold);
+    font-size: 12px;
+    font-weight: var(--font-weight-semibold);
+    color: #afc1d2;
+    border-color: #ffffff0f;
+    border-bottom-width: 1px;
+  }
+
+  .warmfloor-settings-table td {
+    border-bottom-style: var(--tw-border-style);
+    padding-inline: calc(var(--spacing) * 3);
+    padding-block: calc(var(--spacing) * 2);
+    border-color: #ffffff0f;
+    border-bottom-width: 1px;
+  }
+
+  .warmfloor-settings-table tr:last-child th,
+  .warmfloor-settings-table tr:last-child td {
+    border-bottom: none;
+  }
+
+  .flooring-stage .panel-title {
+    font-size: 0.92rem;
+  }
+
+  .flooring-stage .subpanel {
+    border-radius: 14px;
+  }
+
+  .flooring-stage .dense-row {
+    padding: 0.78rem 0.85rem;
+  }
+
+  .flooring-stage .field-label {
+    letter-spacing: 0.14em;
+    font-size: 10px;
+  }
+
+  .flooring-stage .text-input {
+    padding: 0.62rem 0.78rem;
+    font-size: 13px;
+  }
+
+  .flooring-stage .action-button,
+  .flooring-stage .secondary-button {
+    padding: 0.68rem 0.95rem;
+    font-size: 0.82rem;
+  }
+
+  .flooring-stage .stat-chip {
+    padding: 0.28rem 0.52rem;
+    font-size: 10px;
+  }
+
+  .flooring-stage .details-summary {
+    font-size: 11px;
+  }
+
+  .flooring-room-card {
+    overflow: hidden;
+  }
+
+  .flooring-room-header {
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: calc(var(--spacing) * 3);
+    cursor: pointer;
+    flex-wrap: wrap;
+    display: flex;
+  }
+
+  .flooring-room-title {
+    --tw-font-weight: var(--font-weight-semibold);
+    font-size: 13px;
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-slate-100);
+  }
+
+  .flooring-room-amount {
+    --tw-font-weight: var(--font-weight-semibold);
+    font-size: 13px;
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-cyan-100);
+  }
+
+  .flooring-room-chevron {
+    height: calc(var(--spacing) * 6);
+    width: calc(var(--spacing) * 6);
+    border-style: var(--tw-border-style);
+    border-width: 1px;
+    border-color: #00d2ef24;
+    border-radius: 3.40282e38px;
+    justify-content: center;
+    align-items: center;
+    display: inline-flex;
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .flooring-room-chevron {
+      border-color: color-mix(in oklab, var(--color-cyan-400) 14%, transparent);
+    }
+  }
+
+  .flooring-room-chevron {
+    background-color: #0f172bb8;
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .flooring-room-chevron {
+      background-color: color-mix(in oklab, var(--color-slate-900) 72%, transparent);
+    }
+  }
+
+  .flooring-room-chevron {
+    color: var(--color-slate-400);
+    transition:
+      transform var(--ui-motion-medium) var(--ui-motion-ease-soft),
+      border-color var(--ui-motion-fast) var(--ui-motion-ease-soft),
+      background-color var(--ui-motion-fast) var(--ui-motion-ease-soft),
+      color var(--ui-motion-fast) var(--ui-motion-ease-soft);
+    font-size: 13px;
+  }
+
+  .flooring-room-chevron-open {
+    transform: rotate(180deg);
+  }
+
+  .flooring-room-body {
+    opacity: 0;
+    grid-template-rows: 0fr;
+    margin-top: 0;
+    transition:
+      grid-template-rows var(--ui-motion-panel) var(--ui-motion-ease-emphasis),
+      opacity var(--ui-motion-fast) var(--ui-motion-ease-soft),
+      margin-top var(--ui-motion-medium) var(--ui-motion-ease);
+    display: grid;
+  }
+
+  .flooring-room-body-open {
+    opacity: 1;
+    grid-template-rows: 1fr;
+    margin-top: 0.65rem;
+  }
+
+  .flooring-room-body-inner {
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .warmfloor-stage .panel-title,
+  .doors-stage .panel-title {
+    font-size: 0.92rem;
+  }
+
+  .warmfloor-stage .subpanel,
+  .doors-stage .subpanel {
+    border-radius: 14px;
+  }
+
+  .warmfloor-stage .dense-row,
+  .doors-stage .dense-row {
+    padding: 0.78rem 0.85rem;
+  }
+
+  .warmfloor-stage .field-label,
+  .doors-stage .field-label {
+    letter-spacing: 0.14em;
+    font-size: 10px;
+  }
+
+  .warmfloor-stage .text-input,
+  .doors-stage .text-input {
+    padding: 0.62rem 0.78rem;
+    font-size: 13px;
+  }
+
+  .warmfloor-stage .action-button,
+  .warmfloor-stage .secondary-button,
+  .doors-stage .action-button,
+  .doors-stage .secondary-button {
+    padding: 0.68rem 0.95rem;
+    font-size: 0.82rem;
+  }
+
+  .warmfloor-stage .stat-chip,
+  .warmfloor-stage .slot-chip,
+  .doors-stage .stat-chip,
+  .doors-stage .slot-chip {
+    padding: 0.28rem 0.52rem;
+    font-size: 10px;
+  }
+
+  .warmfloor-stage .details-summary,
+  .doors-stage .details-summary {
+    font-size: 11px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .calculator-scene-enter-forward,
+    .calculator-scene-enter-backward {
+      animation: none;
+    }
+  }
+}

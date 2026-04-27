@@ -1,18 +1,24 @@
-﻿import { type Dispatch, type FormEvent, type SetStateAction, useEffect, useState } from "react";
+import { type Dispatch, type FormEvent, type SetStateAction, useEffect, useState } from "react";
 import type {
   AliasFormState,
   FamilyDetail,
   FamilyFormState,
   MaterialFamily,
   MaterialSearchResult,
-  MaterialSku,
-  MaterialVariant,
   ScreenKey,
   SkuFormState,
   VariantFormState,
 } from "../../shared/types";
 import { emptyAliasForm, emptyFamilyForm, emptySkuForm, emptyVariantForm } from "../../shared/types";
-import { fetchJson, toNullableNumber } from "../../shared/utils";
+import {
+  createMaterialAlias,
+  createMaterialFamily,
+  createMaterialSku,
+  createMaterialVariant,
+  fetchMaterialFamilies,
+  fetchMaterialFamilyDetail,
+  searchMaterialCatalog,
+} from "./api";
 
 type MaterialsControllerOptions = {
   setScreen: Dispatch<SetStateAction<ScreenKey>>;
@@ -63,7 +69,7 @@ export function useAdminMaterialsController(props: MaterialsControllerOptions) {
   async function loadFamilies() {
     try {
       setMaterialsLoading(true);
-      const data = await fetchJson<MaterialFamily[]>("/api/materials/families?limit=100");
+      const data = await fetchMaterialFamilies();
       setFamilies(data);
       setMaterialsError(null);
     } catch (loadError) {
@@ -76,7 +82,7 @@ export function useAdminMaterialsController(props: MaterialsControllerOptions) {
   async function loadFamilyDetail(familyId: number) {
     try {
       setFamilyDetailLoading(true);
-      const data = await fetchJson<FamilyDetail>(`/api/materials/families/${familyId}`);
+      const data = await fetchMaterialFamilyDetail(familyId);
       setFamilyDetail(data);
       setSkuForm((current) => ({
         ...current,
@@ -98,8 +104,7 @@ export function useAdminMaterialsController(props: MaterialsControllerOptions) {
       return;
     }
     try {
-      const encoded = encodeURIComponent(query.trim());
-      const results = await fetchJson<MaterialSearchResult[]>(`/api/materials/search?q=${encoded}`);
+      const results = await searchMaterialCatalog(query);
       setSearchResults(results);
       setMaterialsError(null);
     } catch (loadError) {
@@ -112,15 +117,7 @@ export function useAdminMaterialsController(props: MaterialsControllerOptions) {
     event.preventDefault();
     try {
       setSavingFamily(true);
-      const created = await fetchJson<MaterialFamily>("/api/materials/families", {
-        method: "POST",
-        body: JSON.stringify({
-          canonical_name: familyForm.canonical_name,
-          default_unit: familyForm.default_unit,
-          category: familyForm.category || null,
-          dialog_fields: familyForm.dialog_fields,
-        }),
-      });
+      const created = await createMaterialFamily(familyForm);
       await loadFamilies();
       setSelectedFamilyId(created.id);
       setFamilyForm(emptyFamilyForm);
@@ -141,13 +138,7 @@ export function useAdminMaterialsController(props: MaterialsControllerOptions) {
     }
     try {
       setSavingVariant(true);
-      await fetchJson<MaterialVariant>("/api/materials/variants", {
-        method: "POST",
-        body: JSON.stringify({
-          family_id: selectedFamilyId,
-          display_name: variantForm.display_name,
-        }),
-      });
+      await createMaterialVariant(selectedFamilyId, variantForm.display_name);
       await Promise.all([loadFamilies(), loadFamilyDetail(selectedFamilyId)]);
       setVariantForm(emptyVariantForm);
       props.setSuccessMessage("Вариант материала добавлен.");
@@ -166,20 +157,7 @@ export function useAdminMaterialsController(props: MaterialsControllerOptions) {
     }
     try {
       setSavingSku(true);
-      await fetchJson<MaterialSku>("/api/materials/skus", {
-        method: "POST",
-        body: JSON.stringify({
-          family_id: selectedFamilyId,
-          variant_id: skuForm.variant_id ? Number(skuForm.variant_id) : null,
-          title: skuForm.title,
-          article: skuForm.article || null,
-          brand: skuForm.brand || null,
-          unit: skuForm.unit,
-          thickness_mm: toNullableNumber(skuForm.thickness_mm),
-          length_mm: toNullableNumber(skuForm.length_mm),
-          width_mm: toNullableNumber(skuForm.width_mm),
-        }),
-      });
+      await createMaterialSku(selectedFamilyId, skuForm);
       await Promise.all([loadFamilies(), loadFamilyDetail(selectedFamilyId)]);
       setSkuForm(emptySkuForm(familyDetail?.family.default_unit ?? "шт"));
       props.setSuccessMessage("SKU добавлен в каталог.");
@@ -206,15 +184,7 @@ export function useAdminMaterialsController(props: MaterialsControllerOptions) {
 
     try {
       setSavingAlias(true);
-      await fetchJson<{ created_count: number }>("/api/materials/aliases", {
-        method: "POST",
-        body: JSON.stringify({
-          alias: aliasForm.alias,
-          family_id: aliasForm.target === "family" ? targetId : null,
-          variant_id: aliasForm.target === "variant" ? targetId : null,
-          sku_id: aliasForm.target === "sku" ? targetId : null,
-        }),
-      });
+      await createMaterialAlias(aliasForm);
       if (selectedFamilyId) {
         await Promise.all([loadFamilies(), loadFamilyDetail(selectedFamilyId)]);
       }
@@ -276,4 +246,3 @@ export function useAdminMaterialsController(props: MaterialsControllerOptions) {
     toggleDialogField,
   };
 }
-

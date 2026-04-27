@@ -4,6 +4,7 @@ from fastapi import FastAPI, HTTPException, Request
 
 from supply_bot.admin_api.calculator_payloads import _estimate_project_payload, _estimate_room_detail
 from supply_bot.admin_api.calculator_routes.shared import (
+    clamp_non_negative,
     clamp_minimum,
     get_calculator_route_storage,
     load_estimate_project_payload,
@@ -19,6 +20,7 @@ def register_calculator_core_routes(
     app: FastAPI,
     *,
     calculator_project_create_payload_model,
+    calculator_project_update_payload_model,
     calculator_room_create_payload_model,
     calculator_room_update_payload_model,
 ) -> None:
@@ -45,6 +47,34 @@ def register_calculator_core_routes(
         storage_obj = get_calculator_route_storage(request)
         project = await require_estimate_project(storage_obj, project_id)
         return await _estimate_project_payload(storage_obj, project)
+
+    @app.patch("/api/calculator/projects/{project_id}")
+    async def update_calculator_project(
+        request: Request,
+        project_id: int,
+        payload: calculator_project_update_payload_model,
+    ) -> dict[str, Any]:
+        storage_obj = get_calculator_route_storage(request)
+        await require_estimate_project(storage_obj, project_id)
+
+        lift_type = normalize_optional_text(payload.lift_type) or ""
+        await storage_obj.update_estimate_project(
+            project_id,
+            name=require_non_empty_text(payload.name, detail="Project name is required"),
+            residential_complex=normalize_optional_text(payload.residential_complex) or "",
+            address=normalize_optional_text(payload.address) or "",
+            entrance_section=normalize_optional_text(payload.entrance_section) or "",
+            apartment=normalize_optional_text(payload.apartment) or "",
+            floor=normalize_optional_text(payload.floor) or "",
+            has_elevator=0 if lift_type in {"", "none"} else 1,
+            lift_type=lift_type,
+            site_access=normalize_optional_text(payload.site_access) or "",
+            intercom_code=normalize_optional_text(payload.intercom_code) or "",
+            loading_zone=normalize_optional_text(payload.loading_zone) or "",
+            responsible_person=normalize_optional_text(payload.responsible_person) or "",
+            note=normalize_optional_text(payload.note),
+        )
+        return await load_estimate_project_payload(storage_obj, project_id, detail="Project update failed")
 
     @app.post("/api/calculator/projects/{project_id}/rooms")
     async def create_calculator_room(
@@ -100,8 +130,8 @@ def register_calculator_core_routes(
             room_id,
             [
                 {
-                    "length_m": float(section.length_m or 0),
-                    "width_m": float(section.width_m or 0),
+                    "length_m": clamp_non_negative(section.length_m),
+                    "width_m": clamp_non_negative(section.width_m),
                 }
                 for section in payload.floor_sections
             ],
@@ -111,10 +141,10 @@ def register_calculator_core_routes(
             [
                 {
                     "opening_type": section.opening_type,
-                    "width_m": section.width_m,
-                    "height_m": section.height_m,
-                    "quantity": section.quantity,
-                    "area_m2": section.area_m2,
+                    "width_m": clamp_non_negative(section.width_m) if section.width_m is not None else None,
+                    "height_m": clamp_non_negative(section.height_m) if section.height_m is not None else None,
+                    "quantity": clamp_non_negative(section.quantity) if section.quantity is not None else None,
+                    "area_m2": clamp_non_negative(section.area_m2) if section.area_m2 is not None else None,
                     "note": section.note,
                 }
                 for section in payload.openings

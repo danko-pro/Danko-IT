@@ -1,0 +1,444 @@
+{
+  "poll_interval_seconds": 2.0,
+  "severity_thresholds": [
+    {
+      "name": "critical",
+      "min_exceeded_by": 101
+    },
+    {
+      "name": "error",
+      "min_exceeded_by": 51
+    },
+    {
+      "name": "warn",
+      "min_exceeded_by": 21
+    },
+    {
+      "name": "note",
+      "min_exceeded_by": 1
+    }
+  ],
+  "exclude_patterns": [
+    ".git",
+    ".git/**",
+    ".tmp",
+    ".tmp/**",
+    ".pytest_cache",
+    ".pytest_cache/**",
+    ".ruff_cache",
+    ".ruff_cache/**",
+    "__pycache__",
+    "__pycache__/**",
+    "data",
+    "data/**",
+    "snapshots",
+    "snapshots/**",
+    "admin-ui/node_modules",
+    "admin-ui/node_modules/**",
+    "admin-ui/dist",
+    "admin-ui/dist/**",
+    "pytest-cache-files-*",
+    "pytest-cache-files-*/**"
+  ],
+  "layer_rules": [
+    {
+      "name": "frontend-shared-boundary",
+      "source_patterns": [
+        "admin-ui/src/shared/**/*.ts",
+        "admin-ui/src/shared/**/*.tsx"
+      ],
+      "forbidden_import_patterns": [
+        "admin-ui/src/features/**",
+        "admin-ui/src/editor/**"
+      ],
+      "severity": "error",
+      "message": "Shared frontend layer must not depend on features or editor slices."
+    },
+    {
+      "name": "backend-services-boundary",
+      "source_patterns": [
+        "src/supply_bot/services/**/*.py"
+      ],
+      "forbidden_import_patterns": [
+        "src/supply_bot/handlers/**",
+        "src/supply_bot/admin_api/**"
+      ],
+      "severity": "error",
+      "message": "Service layer must not depend on transport handlers or admin API modules."
+    },
+    {
+      "name": "backend-infrastructure-boundary",
+      "source_patterns": [
+        "src/supply_bot/storage.py",
+        "src/supply_bot/storage_projects/**/*.py"
+      ],
+      "forbidden_import_patterns": [
+        "src/supply_bot/handlers/**",
+        "src/supply_bot/admin_api/**",
+        "src/supply_bot/services/**"
+      ],
+      "severity": "error",
+      "message": "Infrastructure layer must stay independent from presentation and service layers."
+    },
+    {
+      "name": "calculator-payloads-boundary",
+      "source_patterns": [
+        "src/supply_bot/admin_api/calculator_payloads/**/*.py"
+      ],
+      "forbidden_import_patterns": [
+        "src/supply_bot/admin_api/calculator_routes/**"
+      ],
+      "severity": "warn",
+      "message": "Calculator payload builders must not depend on route modules."
+    }
+  ],
+  "topology_rules": [
+    {
+      "name": "python-runtime-root",
+      "directory_patterns": [
+        "src/supply_bot"
+      ],
+      "required_children": [
+        "admin_api",
+        "handlers",
+        "keyboards",
+        "projects",
+        "services",
+        "storage",
+        "storage_bootstrap",
+        "storage_catalog",
+        "storage_estimates",
+        "storage_projects",
+        "storage_requests",
+        "config.py",
+        "constants.py",
+        "main.py",
+        "states.py",
+        "utils.py"
+      ],
+      "allowed_children": [
+        "admin_api",
+        "handlers",
+        "keyboards",
+        "projects",
+        "services",
+        "storage",
+        "storage_bootstrap",
+        "storage_catalog",
+        "storage_estimates",
+        "storage_projects",
+        "storage_requests",
+        "config.py",
+        "constants.py",
+        "main.py",
+        "states.py",
+        "utils.py",
+        "__init__.py",
+        "__pycache__"
+      ],
+      "allow_extra_children": false,
+      "severity": "error",
+      "message": "Python runtime root must stay split into transport, shared core, and storage chapters."
+    },
+    {
+      "name": "admin-api-root",
+      "directory_patterns": [
+        "src/supply_bot/admin_api"
+      ],
+      "required_children": [
+        "app.py",
+        "auth.py",
+        "deps.py",
+        "route_registry.py",
+        "schemas",
+        "project_routes"
+      ],
+      "allowed_children": [
+        "app*.py",
+        "auth.py",
+        "deps.py",
+        "route_registry.py",
+        "calculator_payloads",
+        "calculator_routes",
+        "project_routes",
+        "schemas",
+        "__init__.py",
+        "__pycache__"
+      ],
+      "allow_extra_children": false,
+      "severity": "error",
+      "message": "Admin API root must keep explicit routing, payload, and schema zones."
+    },
+    {
+      "name": "projects-core-root",
+      "directory_patterns": [
+        "src/supply_bot/projects"
+      ],
+      "required_children": [
+        "access",
+        "domain",
+        "use_cases"
+      ],
+      "allowed_children": [
+        "access",
+        "domain",
+        "use_cases",
+        "contract_extraction.py",
+        "orchestration.py",
+        "service.py",
+        "__init__.py",
+        "__pycache__"
+      ],
+      "allow_extra_children": false,
+      "severity": "error",
+      "message": "Projects core must stay organized into access, domain, and use-case zones."
+    },
+    {
+      "name": "ui-root",
+      "directory_patterns": [
+        "admin-ui/src"
+      ],
+      "required_children": [
+        "App.tsx",
+        "main.tsx",
+        "features",
+        "shared",
+        "shell",
+        "styles.css"
+      ],
+      "allowed_children": [
+        "App.tsx",
+        "main.tsx",
+        "vite-env.d.ts",
+        "editor",
+        "features",
+        "shared",
+        "shell",
+        "styles",
+        "styles.css"
+      ],
+      "allow_extra_children": false,
+      "severity": "error",
+      "message": "UI root must keep the shell/shared/features split."
+    },
+    {
+      "name": "editor-root",
+      "directory_patterns": [
+        "admin-ui/src/editor"
+      ],
+      "required_children": [
+        "editor-shell.ts",
+        "model",
+        "state",
+        "ui"
+      ],
+      "allowed_children": [
+        "editor-shell.ts",
+        "model",
+        "state",
+        "ui"
+      ],
+      "allow_extra_children": false,
+      "severity": "warn",
+      "message": "Editor module must stay split into shell, model, state, and ui."
+    },
+    {
+      "name": "frontend-feature-entry",
+      "directory_patterns": [
+        "admin-ui/src/features/*"
+      ],
+      "required_any_of": [
+        "screen.tsx",
+        "index.tsx"
+      ],
+      "severity": "warn",
+      "message": "Every frontend feature must expose a clear screen or facade entrypoint."
+    },
+    {
+      "name": "calculator-feature-root",
+      "directory_patterns": [
+        "admin-ui/src/features/calculator"
+      ],
+      "required_children": [
+        "index.tsx",
+        "screen",
+        "model",
+        "shared"
+      ],
+      "allowed_children": [
+        "index.tsx",
+        "app",
+        "doors",
+        "flooring",
+        "model",
+        "project",
+        "room",
+        "rooms",
+        "screen",
+        "shared",
+        "stage",
+        "wall-finish",
+        "warm-floor"
+      ],
+      "allow_extra_children": false,
+      "severity": "error",
+      "message": "Calculator feature must grow through bounded slices around its facade."
+    },
+    {
+      "name": "dashboard-feature-root",
+      "directory_patterns": [
+        "admin-ui/src/features/dashboard"
+      ],
+      "required_children": [
+        "screen.tsx",
+        "api",
+        "model",
+        "scenes",
+        "state",
+        "styles"
+      ],
+      "allowed_children": [
+        "accounting",
+        "api",
+        "card",
+        "model",
+        "scenes",
+        "state",
+        "styles",
+        "screen.tsx",
+        "dashboard.css",
+        "dashboard-scene-*.*",
+        "project-switcher.tsx",
+        "*.md"
+      ],
+      "allow_extra_children": false,
+      "severity": "warn",
+      "message": "Dashboard feature root must stay focused on scene composition and declared submodules."
+    },
+    {
+      "name": "requests-feature-root",
+      "directory_patterns": [
+        "admin-ui/src/features/requests"
+      ],
+      "required_children": [
+        "screen.tsx",
+        "controller.ts"
+      ],
+      "severity": "warn",
+      "message": "Requests feature must expose both a screen and a controller."
+    },
+    {
+      "name": "materials-feature-root",
+      "directory_patterns": [
+        "admin-ui/src/features/materials"
+      ],
+      "required_children": [
+        "screen.tsx",
+        "controller.ts"
+      ],
+      "severity": "warn",
+      "message": "Materials feature must expose both a screen and a controller."
+    },
+    {
+      "name": "shared-root",
+      "directory_patterns": [
+        "admin-ui/src/shared"
+      ],
+      "required_children": [
+        "network.ts",
+        "types.ts",
+        "utils.ts"
+      ],
+      "allowed_children": [
+        "controls",
+        "formatters",
+        "interactions",
+        "ui",
+        "*.ts",
+        "*.tsx"
+      ],
+      "allow_extra_children": false,
+      "severity": "warn",
+      "message": "Shared UI root must stay a reusable foundation, not another feature tree."
+    },
+    {
+      "name": "shell-root",
+      "directory_patterns": [
+        "admin-ui/src/shell"
+      ],
+      "required_children": [
+        "controller.ts",
+        "navigation.ts",
+        "screen-router.tsx"
+      ],
+      "allowed_children": [
+        "*.ts",
+        "*.tsx"
+      ],
+      "allow_extra_children": false,
+      "severity": "warn",
+      "message": "App shell must stay centered on top-level routing and composition."
+    }
+  ],
+  "rules": [
+    {
+      "name": "tests-python",
+      "patterns": [
+        "tests/**/*.py"
+      ],
+      "max_lines": 500
+    },
+    {
+      "name": "frontend-feature-styles",
+      "patterns": [
+        "admin-ui/src/features/**/*.css"
+      ],
+      "max_lines": 400
+    },
+    {
+      "name": "frontend-mock-data",
+      "patterns": [
+        "admin-ui/src/**/*.mock.ts"
+      ],
+      "max_lines": 300
+    },
+    {
+      "name": "frontend-shared-types",
+      "patterns": [
+        "admin-ui/src/shared/types.ts"
+      ],
+      "max_lines": 300
+    },
+    {
+      "name": "frontend-react",
+      "patterns": [
+        "admin-ui/src/**/*.tsx"
+      ],
+      "max_lines": 250
+    },
+    {
+      "name": "frontend-logic",
+      "patterns": [
+        "admin-ui/src/**/*.ts"
+      ],
+      "max_lines": 250
+    },
+    {
+      "name": "frontend-styles",
+      "patterns": [
+        "admin-ui/src/**/*.css"
+      ],
+      "max_lines": 350
+    },
+    {
+      "name": "backend-python",
+      "patterns": [
+        "src/**/*.py",
+        "tools/**/*.py",
+        "run_admin.py",
+        "run_bot.py"
+      ],
+      "max_lines": 250
+    }
+  ]
+}

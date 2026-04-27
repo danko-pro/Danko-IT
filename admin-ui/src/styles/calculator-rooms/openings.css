@@ -1,0 +1,234 @@
+@layer components {
+  .calculator-room-openings-grid {
+    grid-template-columns: repeat(auto-fit,minmax(248px,1fr));
+    gap: .75rem;
+    display: grid;
+  }
+
+  .calculator-room-opening-card {
+    border: 1px solid rgba(255,255,255,.07);
+    background: linear-gradient(180deg,#0d131bf7,#090d13fe);
+    border-radius: 16px;
+    gap: .7rem;
+    padding: .8rem;
+    transition:
+      border-color var(--ui-motion-fast) var(--ui-motion-ease-soft),
+      box-shadow var(--ui-motion-fast) var(--ui-motion-ease-soft),
+      background-color var(--ui-motion-fast) var(--ui-motion-ease-soft),
+      transform var(--ui-motion-fast) var(--ui-motion-ease-soft);
+    display: grid;
+    box-shadow: inset 0 1px rgba(255,255,255,.03);
+  }
+
+  .calculator-room-opening-card:hover {
+    border-color: rgba(var(--room-editor-accent-rgb),.14);
+    transform: translateY(-1px);
+  }
+
+  .calculator-room-opening-card-active {
+    border-color: rgba(var(--room-editor-accent-rgb),.18);
+    box-shadow: inset 0 1px rgba(255,255,255,.04),0 0 0 1px rgba(var(--room-editor-accent-rgb),.04);
+  }
+
+  .calculator-room-opening-head {
+    justify-content: space-between;
+    align-items: start;
+    gap: .5rem;
+    display: flex;
+  }
+
+  .calculator-room-opening-copy {
+    gap: .35rem;
+    display: grid;
+  }
+
+  .calculator-room-opening-kicker {
+    color: #8399ad;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  .calculator-room-opening-summary {
+    color: #edf6ff;
+    font-variant-numeric: tabular-nums;
+    font-size: .9rem;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  .calculator-room-opening-fields {
+    grid-template-columns: repeat(2,minmax(0,1fr));
+    gap: .55rem;
+    display: grid;
+  }
+
+  .calculator-room-opening-field {
+    gap: .34rem;
+    display: grid;
+  }
+
+  .calculator-room-opening-field-wide {
+    grid-column: 1 / -1;
+  }
+
+  .calculator-room-opening-field-label {
+    color: #7d92a5;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    font-size: 9px;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  .calculator-room-opening-input-select {
+    position: relative;
+  }
+
+  .calculator-room-opening-select {
+    appearance: none;
+    width: 100%;
+    color: #edf6ff;
+    background: transparent;
+    border: none;
+    outline: none;
+    padding: 0;
+    font-size: 1.02rem;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  .calculator-room-opening-select option {
+    background: #0b1016;
+    color: #edf6ff;
+  }
+
+  .calculator-room-opening-caret {
+    color: #72879a;
+    pointer-events: none;
+    flex: 0 0 auto;
+    font-size: .82rem;
+    line-height: 1;
+  }
+
+  .calculator-room-opening-note-input {
+    min-height: 2.45rem;
+  }
+
+  .calculator-room-section-openings {
+    border-radius: 15px;
+    padding: .62rem;
+  }
+
+  .calculator-room-section-openings .calculator-room-section-head {
+    gap: .6rem;
+    margin-bottom: .15rem;
+  }
+
+  .calculator-room-section-openings .calculator-room-section-copy {
+    gap: .28rem;
+  }
+
+  .calculator-room-section-openings .calculator-room-section-title {
+    letter-spacing: .16em;
+    font-size: 10px;
+  }
+
+  .calculator-room-section-openings .calculator-room-section-meta {
+    gap: .32rem;
+  }
+
+  .calculator-room-section-openings .calculator-room-section-summary {
+    padding: .22rem .42rem;
+    font-size: 9px;
+  }
+
+  .calculator-room-section-openings .micro-action {
+    border-radius: 12px;
+    min-height: 1.95rem;
+    padding: .38rem .62rem;
+    font-size: 10px;
+  }
+
+  .calculator-room-section-openings .calculator-room-openings-grid {
+    grid-template-columns: repeat(auto-fill,220px);
+    justify-content: center;
+    gap: .55rem;
+  }
+
+  .calculator-room-section-openings .calculator-room-opening-card {
+    width: 220px;
+    min-width: 220px;
+    max-width: 220px;
+    border-radius: 13px;
+    gap: .52rem;
+    padding: .58rem;
+  }
+
+  .calculator-room-section-openings .calculator-room-opening-kicker {
+    letter-spacing: .14em;
+    font-size: 9px;
+  }
+
+  .calculator-room-section-openings .calculator-room-opening-summary {
+    font-size: .8rem;
+  }
+
+  .calculator-room-section-openings .calculator-room-opening-remove {
+    width: 1.28rem;
+    height: 1.28rem;
+    font-size: .78rem;
+  }
+
+  .calculator-room-section-openings .calculator-room-opening-fields {
+    gap: .46rem;
+  }
+
+  .calculator-room-section-openings .calculator-room-opening-field {
+    gap: .28rem;
+  }
+
+  .calculator-room-section-openings .calculator-room-opening-field-label {
+    letter-spacing: .13em;
+    font-size: 8px;
+  }
+
+  .calculator-room-section-openings .calculator-room-opening-input {
+    border-radius: 12px;
+    gap: .42rem;
+    min-height: 2.1rem;
+    padding: 0 .62rem;
+  }
+
+  .calculator-room-section-openings .calculator-room-opening-input-field,
+  .calculator-room-section-openings .calculator-room-opening-select {
+    font-size: .82rem;
+  }
+
+  .calculator-room-section-openings .calculator-room-opening-unit,
+  .calculator-room-section-openings .calculator-room-opening-caret {
+    letter-spacing: .14em;
+    font-size: 9px;
+  }
+
+  .calculator-room-section-openings .calculator-room-opening-note-input {
+    border-radius: 12px;
+    min-height: 2.1rem;
+    padding: .48rem .62rem;
+    font-size: .76rem;
+  }
+
+  @media (max-width:1279px) {
+    .calculator-room-openings-grid {
+      grid-template-columns: repeat(2,minmax(0,1fr));
+    }
+  }
+
+  @media (prefers-reduced-motion:reduce) {
+    .calculator-room-opening-card {
+      transition: none;
+    }
+  }
+}

@@ -2,6 +2,12 @@
   .glass-panel {
     position: relative;
     @apply rounded-[26px] border backdrop-blur-xl transition-[transform,box-shadow,border-color,background-color,opacity] duration-300 ease-out;
+    transition:
+      transform var(--ui-motion-medium) var(--ui-motion-ease),
+      box-shadow var(--ui-motion-medium) var(--ui-motion-ease-soft),
+      border-color var(--ui-motion-fast) var(--ui-motion-ease-soft),
+      background-color var(--ui-motion-fast) var(--ui-motion-ease-soft),
+      opacity var(--ui-motion-fast) var(--ui-motion-ease-soft);
     border-color: var(--ui-border);
     background:
       linear-gradient(180deg, var(--ui-panel-top), var(--ui-panel-bottom)),
@@ -41,7 +47,9 @@
     width: 2px;
     border-radius: 999px;
     background: transparent;
-    transition: background-color 180ms ease, box-shadow 180ms ease;
+    transition:
+      background-color var(--ui-motion-fast) var(--ui-motion-ease-soft),
+      box-shadow var(--ui-motion-fast) var(--ui-motion-ease-soft);
   }
 
   .nav-button:hover {
@@ -69,6 +77,8 @@
 
   .calculator-nav-panel {
     @apply space-y-2 rounded-[18px] border p-2.5;
+    animation: appSurfacePopIn var(--ui-motion-medium) var(--ui-motion-ease-soft) both;
+    transform-origin: top;
     border-color: rgba(255, 255, 255, 0.06);
     background: linear-gradient(180deg, rgba(14, 18, 25, 0.74), rgba(10, 13, 19, 0.94));
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);
@@ -80,6 +90,12 @@
 
   .calculator-nav-item {
     @apply flex w-full items-center justify-between gap-2 rounded-[14px] border px-2.5 py-2.5 text-left text-[12px] font-medium transition;
+    transition:
+      transform var(--ui-motion-fast) var(--ui-motion-ease-soft),
+      border-color var(--ui-motion-fast) var(--ui-motion-ease-soft),
+      background-color var(--ui-motion-fast) var(--ui-motion-ease-soft),
+      color var(--ui-motion-fast) var(--ui-motion-ease-soft),
+      box-shadow var(--ui-motion-medium) var(--ui-motion-ease-soft);
     border-color: rgba(255, 255, 255, 0.05);
     background: linear-gradient(180deg, rgba(22, 27, 35, 0.9), rgba(12, 16, 22, 0.96));
     color: #c5d4e5;
@@ -111,6 +127,12 @@
 
   .calculator-nav-add {
     @apply flex h-10 w-full items-center justify-center rounded-[14px] border text-lg font-semibold transition;
+    transition:
+      transform var(--ui-motion-fast) var(--ui-motion-ease-soft),
+      border-color var(--ui-motion-fast) var(--ui-motion-ease-soft),
+      background-color var(--ui-motion-fast) var(--ui-motion-ease-soft),
+      color var(--ui-motion-fast) var(--ui-motion-ease-soft),
+      box-shadow var(--ui-motion-medium) var(--ui-motion-ease-soft);
     border-color: rgba(7, 248, 198, 0.24);
     background: linear-gradient(180deg, rgba(19, 50, 55, 0.9), rgba(10, 22, 27, 0.98));
     color: #d8ffff;
@@ -143,6 +165,13 @@
 
   .action-button {
     @apply inline-flex items-center justify-center rounded-[16px] border px-4 py-2.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60;
+    transition:
+      transform var(--ui-motion-fast) var(--ui-motion-ease-soft),
+      border-color var(--ui-motion-fast) var(--ui-motion-ease-soft),
+      background-color var(--ui-motion-fast) var(--ui-motion-ease-soft),
+      color var(--ui-motion-fast) var(--ui-motion-ease-soft),
+      box-shadow var(--ui-motion-medium) var(--ui-motion-ease-soft),
+      opacity var(--ui-motion-fast) var(--ui-motion-ease-soft);
     border-color: rgba(7, 248, 198, 0.28);
     background: linear-gradient(180deg, rgba(20, 81, 74, 0.98), rgba(8, 33, 29, 0.98));
     color: #e3ffff;
@@ -159,6 +188,13 @@
 
   .secondary-button {
     @apply inline-flex items-center justify-center rounded-[16px] border px-4 py-2.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60;
+    transition:
+      transform var(--ui-motion-fast) var(--ui-motion-ease-soft),
+      border-color var(--ui-motion-fast) var(--ui-motion-ease-soft),
+      background-color var(--ui-motion-fast) var(--ui-motion-ease-soft),
+      color var(--ui-motion-fast) var(--ui-motion-ease-soft),
+      box-shadow var(--ui-motion-medium) var(--ui-motion-ease-soft),
+      opacity var(--ui-motion-fast) var(--ui-motion-ease-soft);
     border-color: rgba(255, 255, 255, 0.08);
     background: linear-gradient(180deg, rgba(24, 29, 37, 0.9), rgba(13, 17, 24, 0.97));
     color: #d9e6f3;
@@ -172,6 +208,10 @@
 
   .inline-add-button {
     @apply inline-flex items-center justify-center border-0 bg-transparent p-0 transition;
+    transition:
+      transform var(--ui-motion-fast) var(--ui-motion-ease-soft),
+      color var(--ui-motion-fast) var(--ui-motion-ease-soft),
+      opacity var(--ui-motion-fast) var(--ui-motion-ease-soft);
     min-width: 1rem;
     min-height: 2rem;
     color: #8fe9d4;
@@ -195,6 +235,12 @@
 
   .request-card {
     @apply block w-full rounded-[20px] border px-4 py-3.5 text-left transition;
+    transition:
+      transform var(--ui-motion-medium) var(--ui-motion-ease),
+      border-color var(--ui-motion-fast) var(--ui-motion-ease-soft),
+      background-color var(--ui-motion-fast) var(--ui-motion-ease-soft),
+      box-shadow var(--ui-motion-medium) var(--ui-motion-ease-soft),
+      color var(--ui-motion-fast) var(--ui-motion-ease-soft);
     border-color: rgba(255, 255, 255, 0.06);
     background: linear-gradient(180deg, rgba(20, 25, 33, 0.9), rgba(11, 15, 22, 0.97));
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);
@@ -213,6 +259,13 @@
 
   .dense-row {
     @apply block w-full rounded-[18px] border px-3.5 py-3 text-left transition-all duration-300;
+    transition:
+      transform var(--ui-motion-medium) var(--ui-motion-ease),
+      border-color var(--ui-motion-fast) var(--ui-motion-ease-soft),
+      background-color var(--ui-motion-fast) var(--ui-motion-ease-soft),
+      box-shadow var(--ui-motion-medium) var(--ui-motion-ease-soft),
+      color var(--ui-motion-fast) var(--ui-motion-ease-soft),
+      opacity var(--ui-motion-fast) var(--ui-motion-ease-soft);
     border-color: rgba(255, 255, 255, 0.05);
     background: linear-gradient(180deg, rgba(18, 23, 30, 0.92), rgba(10, 14, 20, 0.98));
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);

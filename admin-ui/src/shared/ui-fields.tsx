@@ -5,12 +5,16 @@ export function Field(props: {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
+  size?: "default" | "compact";
 }) {
+  const labelClassName = props.size === "compact" ? "field-label field-label-compact" : "field-label";
+  const inputClassName = props.size === "compact" ? "text-input text-input-compact" : "text-input";
+
   return (
     <label className="block">
-      <div className="field-label">{props.label}</div>
+      <div className={labelClassName}>{props.label}</div>
       <input
-        className="text-input"
+        className={inputClassName}
         value={props.value}
         onChange={(event) => props.onChange(event.target.value)}
         placeholder={props.placeholder}
@@ -24,11 +28,15 @@ export function SelectField(props: {
   value: string;
   onChange: (value: string) => void;
   options: Array<{ value: string; label: string }>;
+  size?: "default" | "compact";
 }) {
+  const labelClassName = props.size === "compact" ? "field-label field-label-compact" : "field-label";
+  const inputClassName = props.size === "compact" ? "text-input text-input-compact" : "text-input";
+
   return (
     <label className="block">
-      <div className="field-label">{props.label}</div>
-      <select className="text-input" value={props.value} onChange={(event) => props.onChange(event.target.value)}>
+      <div className={labelClassName}>{props.label}</div>
+      <select className={inputClassName} value={props.value} onChange={(event) => props.onChange(event.target.value)}>
         {props.options.map((option) => (
           <option key={option.value || "empty"} value={option.value}>
             {option.label}
@@ -43,13 +51,17 @@ export function TimeField(props: {
   label: string;
   value: string;
   onChange: (value: string) => void;
+  size?: "default" | "compact";
 }) {
+  const labelClassName = props.size === "compact" ? "field-label field-label-compact" : "field-label";
+  const inputClassName = props.size === "compact" ? "text-input text-input-compact" : "text-input";
+
   return (
     <label className="block">
-      <div className="field-label">{props.label}</div>
+      <div className={labelClassName}>{props.label}</div>
       <input
         type="time"
-        className="text-input"
+        className={inputClassName}
         value={props.value}
         onChange={(event) => props.onChange(event.target.value)}
       />

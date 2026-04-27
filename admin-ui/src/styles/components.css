@@ -1,5 +1,12 @@
-@import "./components-primitives.css";
+﻿@import "./components-primitives.css";
 @import "./components-tooltips.css";
 @import "./components-dashboard.css";
 @import "./components-forms.css";
-@import "./components-calculator.css";
+@import "./calculator.css";
+@import "./calculator-nav.css";
+@import "./calculator-header.css";
+@import "./calculator-project.css";
+@import "./calculator-object.css";
+@import "./calculator-stage.css";
+@import "./calculator-rooms.css";
+@import "./calculator-editor.css";

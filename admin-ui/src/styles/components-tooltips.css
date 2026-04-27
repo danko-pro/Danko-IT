@@ -9,8 +9,8 @@
     opacity: 0;
     pointer-events: none;
     transition:
-      opacity 180ms ease,
-      transform 180ms ease;
+      opacity var(--ui-motion-fast) var(--ui-motion-ease-soft),
+      transform var(--ui-motion-fast) var(--ui-motion-ease-soft);
     z-index: 40;
   }
 
@@ -88,7 +88,10 @@
     user-select: none;
     touch-action: none;
     opacity: 0.9;
-    transition: opacity 160ms ease, background-color 160ms ease, border-color 160ms ease;
+    transition:
+      opacity var(--ui-motion-fast) var(--ui-motion-ease-soft),
+      background-color var(--ui-motion-fast) var(--ui-motion-ease-soft),
+      border-color var(--ui-motion-fast) var(--ui-motion-ease-soft);
   }
 
   .ui-resizable-panel-handle:hover {

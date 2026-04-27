@@ -18,6 +18,7 @@ from supply_bot.admin_api.schemas import (
     CalculatorFlooringPreparationPayload,
     CalculatorFlooringUpdatePayload,
     CalculatorProjectCreatePayload,
+    CalculatorProjectUpdatePayload,
     CalculatorProjectDoorComponentPayload,
     CalculatorProjectDoorPayload,
     CalculatorRoomCreatePayload,
@@ -65,6 +66,7 @@ def register_admin_routes(app: FastAPI) -> None:
     register_calculator_routes(
         app,
         calculator_project_create_payload_model=CalculatorProjectCreatePayload,
+        calculator_project_update_payload_model=CalculatorProjectUpdatePayload,
         calculator_room_create_payload_model=CalculatorRoomCreatePayload,
         calculator_room_update_payload_model=CalculatorRoomUpdatePayload,
         calculator_warm_floor_update_payload_model=CalculatorWarmFloorUpdatePayload,

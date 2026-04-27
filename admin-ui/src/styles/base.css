@@ -13,6 +13,59 @@
   --ui-muted: #9aabbd;
   --ui-soft: #71869a;
   --ui-accent: #07f8c6;
+  --ui-motion-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --ui-motion-ease-soft: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ui-motion-ease-emphasis: cubic-bezier(0.16, 1, 0.3, 1);
+  --ui-motion-fast: 220ms;
+  --ui-motion-medium: 340ms;
+  --ui-motion-slow: 520ms;
+  --ui-motion-panel: 620ms;
+  --ui-motion-screen: 420ms;
+  --dashboard-motion-ease: var(--ui-motion-ease);
+  --dashboard-motion-ease-soft: var(--ui-motion-ease-soft);
+  --dashboard-motion-ease-emphasis: var(--ui-motion-ease-emphasis);
+  --dashboard-motion-fast: var(--ui-motion-fast);
+  --dashboard-motion-medium: var(--ui-motion-medium);
+  --dashboard-motion-slow: var(--ui-motion-slow);
+  --dashboard-motion-panel: var(--ui-motion-panel);
+}
+
+@keyframes appShellScreenHeadIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes appShellScreenBodyIn {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.988);
+    filter: blur(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+@keyframes appSurfacePopIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.985);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 html {
@@ -34,4 +87,40 @@ body {
 
 #root {
   min-height: 100vh;
+}
+
+.app-shell-main {
+  min-width: 0;
+}
+
+.app-shell-screen-stage {
+  min-width: 0;
+  gap: 1rem;
+  display: grid;
+}
+
+.app-shell-screen-head {
+  min-width: 0;
+  animation: appShellScreenHeadIn var(--ui-motion-medium) var(--ui-motion-ease-soft) both;
+}
+
+.app-shell-screen-body {
+  min-width: 0;
+  animation: appShellScreenBodyIn var(--ui-motion-screen) var(--ui-motion-ease-emphasis) both;
+}
+
+.app-shell-screen-body-editor {
+  animation-delay: 0ms;
+}
+
+.app-screen-loader {
+  animation: appSurfacePopIn var(--ui-motion-medium) var(--ui-motion-ease-soft) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-shell-screen-head,
+  .app-shell-screen-body,
+  .app-screen-loader {
+    animation: none;
+  }
 }

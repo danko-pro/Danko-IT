@@ -6,6 +6,11 @@
 
   .text-input {
     @apply w-full rounded-[16px] border px-3.5 py-2.5 text-sm outline-none transition;
+    transition:
+      border-color var(--ui-motion-fast) var(--ui-motion-ease-soft),
+      box-shadow var(--ui-motion-fast) var(--ui-motion-ease-soft),
+      background-color var(--ui-motion-fast) var(--ui-motion-ease-soft),
+      color var(--ui-motion-fast) var(--ui-motion-ease-soft);
     border-color: rgba(255, 255, 255, 0.08);
     background: linear-gradient(180deg, rgba(12, 16, 22, 0.95), rgba(9, 12, 18, 0.99));
     color: var(--ui-text);
@@ -19,8 +24,31 @@
       0 0 0 3px rgba(7, 248, 198, 0.11);
   }
 
+  .field-label-compact {
+    @apply mb-1.5 text-[9px];
+    letter-spacing: 0.18em;
+  }
+
+  .text-input-compact {
+    @apply rounded-[14px] px-3 py-2 text-[12px];
+    min-height: 2.4rem;
+    border-color: rgba(255, 255, 255, 0.07);
+    background: linear-gradient(180deg, rgba(11, 15, 20, 0.88), rgba(8, 11, 16, 0.98));
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
+  }
+
+  .text-input-compact::placeholder {
+    color: #6d8296;
+  }
+
   .chip {
     @apply rounded-full border px-3 py-1.5 text-xs font-medium transition;
+    transition:
+      transform var(--ui-motion-fast) var(--ui-motion-ease-soft),
+      border-color var(--ui-motion-fast) var(--ui-motion-ease-soft),
+      background-color var(--ui-motion-fast) var(--ui-motion-ease-soft),
+      color var(--ui-motion-fast) var(--ui-motion-ease-soft),
+      box-shadow var(--ui-motion-medium) var(--ui-motion-ease-soft);
     border-color: rgba(255, 255, 255, 0.08);
     background: linear-gradient(180deg, rgba(19, 24, 31, 0.92), rgba(10, 14, 20, 0.98));
     color: #c5d4e4;
@@ -53,6 +81,13 @@
 
   .micro-action {
     @apply inline-flex items-center justify-center rounded-[12px] border px-2.5 py-1.5 text-[11px] font-semibold transition disabled:cursor-not-allowed disabled:opacity-60;
+    transition:
+      transform var(--ui-motion-fast) var(--ui-motion-ease-soft),
+      border-color var(--ui-motion-fast) var(--ui-motion-ease-soft),
+      background-color var(--ui-motion-fast) var(--ui-motion-ease-soft),
+      color var(--ui-motion-fast) var(--ui-motion-ease-soft),
+      box-shadow var(--ui-motion-medium) var(--ui-motion-ease-soft),
+      opacity var(--ui-motion-fast) var(--ui-motion-ease-soft);
     border-color: rgba(255, 255, 255, 0.08);
     background: linear-gradient(180deg, rgba(20, 25, 33, 0.92), rgba(11, 15, 21, 0.98));
     color: #d9e6f2;
@@ -74,6 +109,13 @@
 
   .stage-tab {
     @apply inline-flex items-center justify-center rounded-[14px] border px-3 py-2 text-[12px] font-semibold transition-all duration-300;
+    transition:
+      transform var(--ui-motion-fast) var(--ui-motion-ease-soft),
+      border-color var(--ui-motion-fast) var(--ui-motion-ease-soft),
+      background-color var(--ui-motion-fast) var(--ui-motion-ease-soft),
+      color var(--ui-motion-fast) var(--ui-motion-ease-soft),
+      box-shadow var(--ui-motion-medium) var(--ui-motion-ease-soft),
+      opacity var(--ui-motion-fast) var(--ui-motion-ease-soft);
     border-color: rgba(255, 255, 255, 0.08);
     background: linear-gradient(180deg, rgba(20, 25, 32, 0.9), rgba(12, 16, 22, 0.98));
     color: #c1d0df;
@@ -92,7 +134,7 @@
   }
 
   .stage-panel {
-    animation: panelFadeSlide 260ms ease-out;
+    animation: panelFadeSlide var(--ui-motion-fast) var(--ui-motion-ease-soft);
   }
 
   .details-panel {
@@ -101,6 +143,9 @@
 
   .details-summary {
     @apply cursor-pointer list-none text-xs font-semibold uppercase tracking-[0.18em] transition;
+    transition:
+      color var(--ui-motion-fast) var(--ui-motion-ease-soft),
+      opacity var(--ui-motion-fast) var(--ui-motion-ease-soft);
     color: var(--ui-soft);
   }
 

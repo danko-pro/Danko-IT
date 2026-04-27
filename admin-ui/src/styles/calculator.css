@@ -1,0 +1,54 @@
+﻿@layer components {
+  .section-separator {
+    margin-block: calc(var(--spacing) * 1);
+    justify-content: center;
+    align-items: center;
+    display: flex;
+    position: relative;
+  }
+
+  .section-separator:before {
+    content: "";
+    background: linear-gradient(90deg,#22d3ee0a,#22d3ee4d,#22d3ee0a);
+    width: 100%;
+    height: 1px;
+    display: block;
+  }
+
+  .section-separator span {
+    border-style: var(--tw-border-style);
+    border-width: 1px;
+    border-color: #00d2ef1f;
+    border-radius: 3.40282e38px;
+    position: absolute;
+  }
+
+  @supports (color:color-mix(in lab,red,red)) {
+    .section-separator span {
+      border-color: color-mix(in oklab,var(--color-cyan-400) 12%,transparent);
+    }
+  }
+
+  .section-separator span {
+    background-color: #020618f5;
+  }
+
+  @supports (color:color-mix(in lab,red,red)) {
+    .section-separator span {
+      background-color: color-mix(in oklab,var(--color-slate-950) 96%,transparent);
+    }
+  }
+
+  .section-separator span {
+    padding-inline: calc(var(--spacing) * 3);
+    padding-block: calc(var(--spacing) * .5);
+    --tw-font-weight: var(--font-weight-semibold);
+    font-size: 10px;
+    font-weight: var(--font-weight-semibold);
+    --tw-tracking: .18em;
+    letter-spacing: .18em;
+    color: var(--color-slate-500);
+    text-transform: uppercase;
+  }
+}
+

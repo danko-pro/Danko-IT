@@ -13,6 +13,7 @@ def register_calculator_routes(
     app: FastAPI,
     *,
     calculator_project_create_payload_model,
+    calculator_project_update_payload_model,
     calculator_room_create_payload_model,
     calculator_room_update_payload_model,
     calculator_warm_floor_update_payload_model,
@@ -32,6 +33,7 @@ def register_calculator_routes(
     register_calculator_core_routes(
         app,
         calculator_project_create_payload_model=calculator_project_create_payload_model,
+        calculator_project_update_payload_model=calculator_project_update_payload_model,
         calculator_room_create_payload_model=calculator_room_create_payload_model,
         calculator_room_update_payload_model=calculator_room_update_payload_model,
     )

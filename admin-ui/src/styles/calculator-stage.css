@@ -23,31 +23,15 @@
   }
 
   @keyframes calculatorSceneEnterForward {
-    from {
-      opacity: 0;
-      transform: translateX(48px);
-      filter: blur(8px);
-    }
+    from { opacity: 0; transform: translateX(48px); filter: blur(8px); }
 
-    to {
-      opacity: 1;
-      transform: translateX(0);
-      filter: blur(0);
-    }
+    to { opacity: 1; transform: translateX(0); filter: blur(0); }
   }
 
   @keyframes calculatorSceneEnterBackward {
-    from {
-      opacity: 0;
-      transform: translateX(-42px);
-      filter: blur(8px);
-    }
+    from { opacity: 0; transform: translateX(-42px); filter: blur(8px); }
 
-    to {
-      opacity: 1;
-      transform: translateX(0);
-      filter: blur(0);
-    }
+    to { opacity: 1; transform: translateX(0); filter: blur(0); }
   }
 
   .warmfloor-gear {
@@ -60,6 +44,28 @@
     border-color: #07f8c652;
   }
 
+  .warmfloor-panel-scene-stage { position: relative; overflow: hidden; transition: height var(--ui-motion-medium) var(--ui-motion-ease); }
+
+  .warmfloor-panel-scene {
+    position: absolute;
+    inset: 0 auto auto 0;
+    width: 100%;
+    transition:
+      opacity var(--ui-motion-medium) var(--ui-motion-ease),
+      transform var(--ui-motion-medium) var(--ui-motion-ease);
+    backface-visibility: hidden;
+    will-change: opacity, transform;
+  }
+
+  .warmfloor-panel-scene-active { position: relative; opacity: 1; transform: translateX(0); pointer-events: auto; z-index: 2; }
+
+  .warmfloor-panel-scene-hidden-left,
+  .warmfloor-panel-scene-hidden-right { opacity: 0; pointer-events: none; z-index: 1; }
+
+  .warmfloor-panel-scene-hidden-left { transform: translateX(-28px); }
+
+  .warmfloor-panel-scene-hidden-right { transform: translateX(28px); }
+
   .warmfloor-settings-table-wrap {
     border-style: var(--tw-border-style);
     background: linear-gradient(#0b0f15db, #080b11fa);
@@ -69,19 +75,13 @@
     overflow-x: auto;
   }
 
-  .warmfloor-settings-table {
-    border-collapse: collapse;
-    width: 100%;
-    min-width: 520px;
-    font-size: var(--text-sm);
-    line-height: var(--tw-leading, var(--text-sm--line-height));
-  }
+  .warmfloor-settings-table { border-collapse: collapse; table-layout: fixed; width: 100%; min-width: 0; font-size: 12px; line-height: 1.25; }
 
   .warmfloor-settings-table th {
     border-bottom-style: var(--tw-border-style);
-    width: 58%;
-    padding-inline: calc(var(--spacing) * 3);
-    padding-block: calc(var(--spacing) * 2);
+    width: auto;
+    padding-inline: 0.75rem;
+    padding-block: 0.42rem;
     text-align: left;
     --tw-font-weight: var(--font-weight-semibold);
     font-size: 12px;
@@ -91,13 +91,65 @@
     border-bottom-width: 1px;
   }
 
-  .warmfloor-settings-table td {
-    border-bottom-style: var(--tw-border-style);
-    padding-inline: calc(var(--spacing) * 3);
-    padding-block: calc(var(--spacing) * 2);
-    border-color: #ffffff0f;
-    border-bottom-width: 1px;
+  .warmfloor-settings-table td { border-bottom-style: var(--tw-border-style); width: 10rem; padding-inline: 0.55rem; padding-block: 0.42rem; border-color: #ffffff0f; border-bottom-width: 1px; }
+
+  .warmfloor-settings-table .text-input { width: 9rem; max-width: 100%; min-height: 2rem; border-radius: 12px; padding: 0.38rem 0.65rem; font-size: 12px; line-height: 1.1; }
+
+  .warmfloor-estimate-panel { display: grid; gap: 0.75rem; }
+
+  .warmfloor-estimate-list { display: grid; gap: 0.45rem; }
+
+  .warmfloor-estimate-row-shell,
+  .warmfloor-estimate-total {
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 14px;
+    padding: 0.62rem 0.72rem;
+    background: rgba(8, 13, 19, 0.62);
   }
+
+  .warmfloor-estimate-row,
+  .warmfloor-estimate-total { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; }
+
+  .warmfloor-estimate-main,
+  .warmfloor-estimate-meta { display: grid; gap: 0.16rem; min-width: 0; }
+
+  .warmfloor-estimate-main strong { color: #e9f4ff; font-size: 12px; line-height: 1.25; }
+
+  .warmfloor-estimate-kind,
+  .warmfloor-estimate-meta span {
+    color: #7d95aa;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .warmfloor-estimate-meta { flex: 0 0 auto; text-align: right; }
+
+  .warmfloor-estimate-meta strong,
+  .warmfloor-estimate-total strong {
+    color: #f5fdff;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+
+  .warmfloor-estimate-total {
+    border-color: rgba(7, 248, 198, 0.18);
+    background: linear-gradient(180deg, rgba(14, 51, 46, 0.86), rgba(8, 16, 22, 0.96));
+    color: #c7fff4;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .warmfloor-estimate-empty { border: 1px dashed rgba(148, 163, 184, 0.28); border-radius: 14px; padding: 0.9rem; color: #8da4b8; text-align: center; font-size: 12px; }
+
+  .warmfloor-material-row-shell { max-height: 2.15rem; overflow: hidden; animation: warmfloorMaterialEnter var(--ui-motion-fast) var(--ui-motion-ease-soft) both; transform-origin: top; }
+  .warmfloor-material-row-removing { pointer-events: none; animation: warmfloorMaterialExit 180ms var(--ui-motion-ease-soft) both; }
+  .warmfloor-material-remove { transition: transform var(--ui-motion-fast) var(--ui-motion-ease-soft), border-color var(--ui-motion-fast) var(--ui-motion-ease-soft), background-color var(--ui-motion-fast) var(--ui-motion-ease-soft), color var(--ui-motion-fast) var(--ui-motion-ease-soft); }
+  .warmfloor-material-remove:hover, .warmfloor-material-remove:focus-visible { transform: scale(1.04); border-color: rgba(248, 113, 113, 0.38); background: rgba(248, 113, 113, 0.1); color: #ffe1e1; }
+  .warmfloor-material-remove:active { transform: scale(0.96); }
+  @keyframes warmfloorMaterialEnter { from { opacity: 0; max-height: 0; transform: translateY(-3px); } }
+  @keyframes warmfloorMaterialExit { to { opacity: 0; max-height: 0; transform: translateY(-3px); } }
 
   .warmfloor-settings-table tr:last-child th,
   .warmfloor-settings-table tr:last-child td {
@@ -166,6 +218,7 @@
     font-size: 13px;
     font-weight: var(--font-weight-semibold);
     color: var(--color-cyan-100);
+    white-space: nowrap;
   }
 
   .flooring-room-chevron {
@@ -282,8 +335,11 @@
 
   @media (prefers-reduced-motion: reduce) {
     .calculator-scene-enter-forward,
-    .calculator-scene-enter-backward {
+    .calculator-scene-enter-backward,
+    .warmfloor-panel-scene-stage,
+    .warmfloor-panel-scene {
       animation: none;
+      transition: none;
     }
   }
 }

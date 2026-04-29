@@ -3,14 +3,17 @@ import { FlooringStageLayoutCatalog } from "./";
 import { FlooringStagePreparationCatalog } from "./";
 import type { FlooringStageReadyProps } from "./";
 
-// Оркестратор catalog-блока flooring stage.
-// Собирает секции материалов, подготовки и layout-настроек в один совместимый panel-компонент.
-
 export function FlooringStageCatalogsPanel(props: FlooringStageReadyProps) {
   return (
-    <>
-      <div className="section-separator">
-        <span>Каталоги и параметры покрытий</span>
+    <div className="subpanel calculator-stage-section p-3 space-y-3">
+      <div className="calculator-stage-section-head">
+        <div>
+          <div className="calculator-stage-section-kicker">Справочники</div>
+          <div className="calculator-stage-section-title">Каталоги и параметры покрытий</div>
+        </div>
+        <div className="calculator-stage-section-note">
+          База материалов, подготовок и схем укладки, из которых затем собираются комнаты в расчёте.
+        </div>
       </div>
 
       <FlooringStageCoveringCatalog
@@ -35,6 +38,6 @@ export function FlooringStageCatalogsPanel(props: FlooringStageReadyProps) {
           submitFlooringLayout={props.submitFlooringLayout}
         />
       </div>
-    </>
+    </div>
   );
 }

@@ -20,10 +20,19 @@ export function WallFinishStageSummaryColumn(props: WallFinishStageReadyProps) {
   return (
     <div className="space-y-3">
       {wallFinishSettingsOpen ? (
-        <div className="subpanel p-3 space-y-3">
-          <div className="text-xs uppercase tracking-[0.16em] text-slate-500">Глобальные настройки по стенам</div>
+        <div className="subpanel calculator-stage-section p-3 space-y-3">
+          <div className="calculator-stage-section-head">
+            <div>
+              <div className="calculator-stage-section-kicker">Глобальные параметры</div>
+              <div className="calculator-stage-section-title">Настройки отделки стен</div>
+            </div>
+            <div className="calculator-stage-section-note">
+              Общие переключатели и базовая ставка демонтажа для всего блока стеновых работ.
+            </div>
+          </div>
+
           <div className="grid gap-2 md:grid-cols-2">
-            <label className="subpanel flex items-center gap-3 px-3 py-3">
+            <label className="subpanel calculator-stage-toggle-card flex items-center gap-3 px-3 py-3">
               <input
                 type="checkbox"
                 checked={wallFinishState.include_preparation}
@@ -33,7 +42,7 @@ export function WallFinishStageSummaryColumn(props: WallFinishStageReadyProps) {
               />
               <span className="text-sm font-semibold text-slate-100">Включать подготовку</span>
             </label>
-            <label className="subpanel flex items-center gap-3 px-3 py-3">
+            <label className="subpanel calculator-stage-toggle-card flex items-center gap-3 px-3 py-3">
               <input
                 type="checkbox"
                 checked={wallFinishState.include_demolition}
@@ -44,6 +53,7 @@ export function WallFinishStageSummaryColumn(props: WallFinishStageReadyProps) {
               <span className="text-sm font-semibold text-slate-100">Включать демонтаж</span>
             </label>
           </div>
+
           <div className="grid gap-2 md:grid-cols-2">
             <TextField
               label="Демонтаж, ₽/м²"
@@ -54,26 +64,43 @@ export function WallFinishStageSummaryColumn(props: WallFinishStageReadyProps) {
         </div>
       ) : null}
 
-      <div className="section-separator">
-        <span>Свод, техкарта и спецификация</span>
+      <div className="subpanel calculator-stage-section p-3 space-y-3">
+        <div className="calculator-stage-section-head">
+          <div>
+            <div className="calculator-stage-section-kicker">Свод по стенам</div>
+            <div className="calculator-stage-section-title">Площади, закупка и итоговые суммы</div>
+          </div>
+          <div className="calculator-stage-section-note">
+            Общий срез по выбранным комнатам, закупочной площади и цене за квадратный метр отделки.
+          </div>
+        </div>
+
+        <div className="calculator-stage-metric-grid md:grid-cols-2">
+          <MetricChip label="Помещений" value={String(wallFinishPreview.summary.rooms_count)} />
+          <MetricChip label="Площадь" value={formatArea(wallFinishPreview.summary.total_area_m2)} />
+          <MetricChip label="Закупка" value={formatArea(wallFinishPreview.summary.total_purchase_area_m2)} />
+          <MetricChip label="Работы" value={formatMoney(wallFinishPreview.summary.work_total)} />
+          <MetricChip label="Материалы" value={formatMoney(wallFinishPreview.summary.material_total)} />
+          <MetricChip label="Итого" value={formatMoney(wallFinishPreview.summary.grand_total)} />
+          <MetricChip
+            label="Цена за м²"
+            value={wallFinishPreview.summary.price_per_m2 === null ? "—" : formatMoney(wallFinishPreview.summary.price_per_m2)}
+          />
+        </div>
       </div>
 
-      <div className="grid gap-2 md:grid-cols-2">
-        <MetricChip label="Помещений" value={String(wallFinishPreview.summary.rooms_count)} />
-        <MetricChip label="Площадь" value={formatArea(wallFinishPreview.summary.total_area_m2)} />
-        <MetricChip label="Закупка" value={formatArea(wallFinishPreview.summary.total_purchase_area_m2)} />
-        <MetricChip label="Работы" value={formatMoney(wallFinishPreview.summary.work_total)} />
-        <MetricChip label="Материалы" value={formatMoney(wallFinishPreview.summary.material_total)} />
-        <MetricChip label="Итого" value={formatMoney(wallFinishPreview.summary.grand_total)} />
-        <MetricChip
-          label="Цена за м²"
-          value={wallFinishPreview.summary.price_per_m2 === null ? "—" : formatMoney(wallFinishPreview.summary.price_per_m2)}
-        />
-      </div>
+      <div className="subpanel calculator-stage-section p-3 space-y-3">
+        <div className="calculator-stage-section-head">
+          <div>
+            <div className="calculator-stage-section-kicker">Расходники</div>
+            <div className="calculator-stage-section-title">Свод материалов и инструмента</div>
+          </div>
+          <div className="calculator-stage-section-note">
+            Клей, грунт, шпаклёвка, сетка и инструмент в сумме по текущему набору комнат.
+          </div>
+        </div>
 
-      <div className="subpanel p-3 space-y-2">
-        <div className="text-xs uppercase tracking-[0.16em] text-slate-500">Свод расходников</div>
-        <div className="grid gap-2 md:grid-cols-2">
+        <div className="calculator-stage-metric-grid md:grid-cols-2">
           <MetricChip label="Клей" value={`${trimFloat(wallFinishPreview.summary.total_glue_qty)} ${wallFinishPreview.summary.glue_unit}`} />
           <MetricChip
             label="Грунт"
@@ -91,7 +118,7 @@ export function WallFinishStageSummaryColumn(props: WallFinishStageReadyProps) {
       <WallFinishStageTechMap wallFinishSelectedTechRooms={wallFinishSelectedTechRooms} />
       <WallFinishStageSpecification wallFinishPreview={wallFinishPreview} />
 
-      <div className="flex flex-wrap gap-2">
+      <div className="calculator-stage-action-row">
         <Button
           type="button"
           disabled={busyKey === `calculator-wall-finish-save-${projectDetail.project.id}`}

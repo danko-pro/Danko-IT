@@ -1,10 +1,4 @@
-import {
-  formatArea,
-  formatMeters,
-  formatMoney,
-  getUnderlayModeLabel,
-  trimFloat,
-} from "./";
+import { formatArea, formatMeters, formatMoney, getUnderlayModeLabel, trimFloat } from "./";
 import type { FlooringStageReadyProps } from "./";
 
 type FlooringStageTechMapProps = Pick<FlooringStageReadyProps, "flooringSelectedTechRooms">;
@@ -15,10 +9,17 @@ export function FlooringStageTechMap(props: FlooringStageTechMapProps) {
   }
 
   return (
-    <div className="subpanel p-3 space-y-3">
-      <div className="text-xs uppercase tracking-[0.16em] text-slate-500">
-        Технологическая карта по выбранным помещениям
+    <div className="subpanel calculator-stage-section p-3 space-y-3">
+      <div className="calculator-stage-section-head">
+        <div>
+          <div className="calculator-stage-section-kicker">Техкарта</div>
+          <div className="calculator-stage-section-title">Выбранные помещения и расходники</div>
+        </div>
+        <div className="calculator-stage-section-note">
+          Краткая карта по каждой выбранной комнате: площадь, закупка, запас и сопутствующие материалы.
+        </div>
       </div>
+
       <div className="space-y-2">
         {props.flooringSelectedTechRooms.map(({ room, covering }) => (
           <div key={room.room_id} className="dense-row">
@@ -54,7 +55,7 @@ export function FlooringStageTechMap(props: FlooringStageTechMapProps) {
                   </span>
                   <span className="stat-chip">Плинтус {room.plinth_m > 0 ? formatMeters(room.plinth_m) : "—"}</span>
                 </div>
-                {covering?.note ? <div className="mt-2 text-[12px] text-slate-400">{covering.note}</div> : null}
+                {covering?.note ? <div className="calculator-stage-note-line mt-2">{covering.note}</div> : null}
               </div>
               <div className="text-sm font-semibold text-cyan-100">{formatMoney(room.total_cost)}</div>
             </div>

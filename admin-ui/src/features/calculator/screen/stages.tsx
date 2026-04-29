@@ -93,13 +93,12 @@ function buildWarmFloorStageProps(props: CalculatorEstimateStagesFacadeProps): W
     warmFloorPreview: warmFloor.warmFloorPreview,
     warmFloorSettingsOpen: warmFloor.warmFloorSettingsOpen,
     setWarmFloorSettingsOpen: warmFloor.setWarmFloorSettingsOpen,
-    handleWarmFloorSubmit: warmFloor.handleWarmFloorSubmit,
     warmFloorRoomStateById: warmFloor.warmFloorRoomStateById,
     expandedWarmFloorRoomId: warmFloor.expandedWarmFloorRoomId,
     setExpandedWarmFloorRoomId: warmFloor.setExpandedWarmFloorRoomId,
     setWarmFloorState: warmFloor.setWarmFloorState,
     warmFloorState: warmFloor.warmFloorState,
-    busyKey: data.busyKey,
+    autosaveState: warmFloor.autosaveState,
     resetWarmFloorState: warmFloor.resetWarmFloorState,
   };
 }

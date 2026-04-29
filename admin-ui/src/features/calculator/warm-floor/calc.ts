@@ -1,4 +1,5 @@
 import { formatContourWord, toInteger, toNumber, trimFloat } from "./";
+import { materialItemsTotal, normalizeMaterialItems, normalizeWarmFloorConfig } from "./calc-materials";
 import type {
   CalculatorWarmFloorConfig,
   CalculatorWarmFloorDetail,
@@ -7,23 +8,28 @@ import type {
   WarmFloorEditState,
 } from "./";
 
-// Расчёты и нормализация draft-состояния для тёплого пола.
-// Здесь живёт только доменная математика warm-floor без примесей других calculator-срезов.
-
-export function buildWarmFloorState(detail: CalculatorWarmFloorDetail, draft: WarmFloorEditState | null = null): WarmFloorEditState {
+export function buildWarmFloorState(
+  detail: CalculatorWarmFloorDetail,
+  draft: WarmFloorEditState | null = null,
+): WarmFloorEditState {
+  const config = normalizeWarmFloorConfig(detail.config);
   const draftRooms = new Map((draft?.rooms ?? []).map((room) => [room.room_id, room]));
   return {
-    work_price_per_m2: draft?.work_price_per_m2 ?? trimFloat(detail.config.work_price_per_m2),
-    pipe_m_per_m2: draft?.pipe_m_per_m2 ?? trimFloat(detail.config.pipe_m_per_m2),
-    max_contour_area_m2: draft?.max_contour_area_m2 ?? trimFloat(detail.config.max_contour_area_m2),
-    small_zone_area_m2: draft?.small_zone_area_m2 ?? trimFloat(detail.config.small_zone_area_m2),
-    manifold_work_price: draft?.manifold_work_price ?? trimFloat(detail.config.manifold_work_price),
-    manifold_material_price: draft?.manifold_material_price ?? trimFloat(detail.config.manifold_material_price),
-    pump_work_price: draft?.pump_work_price ?? trimFloat(detail.config.pump_work_price),
-    pump_material_price: draft?.pump_material_price ?? trimFloat(detail.config.pump_material_price),
-    pipe_price_per_m: draft?.pipe_price_per_m ?? trimFloat(detail.config.pipe_price_per_m),
-    pump_rooms_threshold: draft?.pump_rooms_threshold ?? trimFloat(detail.config.pump_rooms_threshold),
-    pump_contours_threshold: draft?.pump_contours_threshold ?? trimFloat(detail.config.pump_contours_threshold),
+    work_price_per_m2: draft?.work_price_per_m2 ?? trimFloat(config.work_price_per_m2),
+    pipe_m_per_m2: draft?.pipe_m_per_m2 ?? trimFloat(config.pipe_m_per_m2),
+    max_contour_area_m2: draft?.max_contour_area_m2 ?? trimFloat(config.max_contour_area_m2),
+    small_zone_area_m2: draft?.small_zone_area_m2 ?? trimFloat(config.small_zone_area_m2),
+    manifold_work_price: draft?.manifold_work_price ?? trimFloat(config.manifold_work_price),
+    manifold_material_price: draft?.manifold_material_price ?? trimFloat(config.manifold_material_price),
+    pump_work_price: draft?.pump_work_price ?? trimFloat(config.pump_work_price),
+    pump_material_price: draft?.pump_material_price ?? trimFloat(config.pump_material_price),
+    pipe_price_per_m: draft?.pipe_price_per_m ?? trimFloat(config.pipe_price_per_m),
+    pipe_material_title: draft?.pipe_material_title ?? config.pipe_material_title,
+    manifold_material_items: draft?.manifold_material_items ?? config.manifold_material_items,
+    pump_material_items: draft?.pump_material_items ?? config.pump_material_items,
+    consumable_material_items: draft?.consumable_material_items ?? config.consumable_material_items,
+    pump_rooms_threshold: draft?.pump_rooms_threshold ?? trimFloat(config.pump_rooms_threshold),
+    pump_contours_threshold: draft?.pump_contours_threshold ?? trimFloat(config.pump_contours_threshold),
     rooms: detail.rooms.map((room) => {
       const draftRoom = draftRooms.get(room.room_id);
       return {
@@ -40,19 +46,27 @@ export function buildWarmFloorPreview(
   detail: CalculatorWarmFloorDetail,
   state: WarmFloorEditState,
 ): CalculatorWarmFloorDetail {
+  const detailConfig = normalizeWarmFloorConfig(detail.config);
+  const manifoldMaterialItems = normalizeMaterialItems(state.manifold_material_items, detailConfig.manifold_material_items);
+  const pumpMaterialItems = normalizeMaterialItems(state.pump_material_items, detailConfig.pump_material_items);
+  const consumableMaterialItems = normalizeMaterialItems(state.consumable_material_items, detailConfig.consumable_material_items);
   const config: CalculatorWarmFloorConfig = {
-    project_id: detail.config.project_id,
-    work_price_per_m2: Math.max(0, toNumber(state.work_price_per_m2) ?? detail.config.work_price_per_m2),
-    pipe_m_per_m2: Math.max(0, toNumber(state.pipe_m_per_m2) ?? detail.config.pipe_m_per_m2),
-    max_contour_area_m2: Math.max(0.1, toNumber(state.max_contour_area_m2) ?? detail.config.max_contour_area_m2),
-    small_zone_area_m2: Math.max(0, toNumber(state.small_zone_area_m2) ?? detail.config.small_zone_area_m2),
-    manifold_work_price: Math.max(0, toNumber(state.manifold_work_price) ?? detail.config.manifold_work_price),
-    manifold_material_price: Math.max(0, toNumber(state.manifold_material_price) ?? detail.config.manifold_material_price),
-    pump_work_price: Math.max(0, toNumber(state.pump_work_price) ?? detail.config.pump_work_price),
-    pump_material_price: Math.max(0, toNumber(state.pump_material_price) ?? detail.config.pump_material_price),
-    pipe_price_per_m: Math.max(0, toNumber(state.pipe_price_per_m) ?? detail.config.pipe_price_per_m),
-    pump_rooms_threshold: Math.max(1, toInteger(state.pump_rooms_threshold) ?? detail.config.pump_rooms_threshold),
-    pump_contours_threshold: Math.max(1, toInteger(state.pump_contours_threshold) ?? detail.config.pump_contours_threshold),
+    project_id: detailConfig.project_id,
+    work_price_per_m2: Math.max(0, toNumber(state.work_price_per_m2) ?? detailConfig.work_price_per_m2),
+    pipe_m_per_m2: Math.max(0, toNumber(state.pipe_m_per_m2) ?? detailConfig.pipe_m_per_m2),
+    max_contour_area_m2: Math.max(0.1, toNumber(state.max_contour_area_m2) ?? detailConfig.max_contour_area_m2),
+    small_zone_area_m2: Math.max(0, toNumber(state.small_zone_area_m2) ?? detailConfig.small_zone_area_m2),
+    manifold_work_price: Math.max(0, toNumber(state.manifold_work_price) ?? detailConfig.manifold_work_price),
+    manifold_material_price: materialItemsTotal(manifoldMaterialItems),
+    pump_work_price: Math.max(0, toNumber(state.pump_work_price) ?? detailConfig.pump_work_price),
+    pump_material_price: materialItemsTotal(pumpMaterialItems),
+    pipe_price_per_m: Math.max(0, toNumber(state.pipe_price_per_m) ?? detailConfig.pipe_price_per_m),
+    pipe_material_title: state.pipe_material_title.trim() || detailConfig.pipe_material_title,
+    manifold_material_items: manifoldMaterialItems,
+    pump_material_items: pumpMaterialItems,
+    consumable_material_items: consumableMaterialItems,
+    pump_rooms_threshold: Math.max(1, toInteger(state.pump_rooms_threshold) ?? detailConfig.pump_rooms_threshold),
+    pump_contours_threshold: Math.max(1, toInteger(state.pump_contours_threshold) ?? detailConfig.pump_contours_threshold),
   };
 
   const stateRooms = new Map(state.rooms.map((room) => [room.room_id, room]));
@@ -99,6 +113,7 @@ export function buildWarmFloorPreview(
     pump_needed: false,
     pump_work_total: 0,
     pump_material_total: 0,
+    consumable_material_total: 0,
     work_total: 0,
     material_total: 0,
     grand_total: 0,
@@ -112,11 +127,28 @@ export function buildWarmFloorPreview(
   summary.pump_needed = summary.rooms_count >= config.pump_rooms_threshold || summary.total_contours >= config.pump_contours_threshold;
   summary.pump_work_total = summary.pump_needed ? config.pump_work_price : 0;
   summary.pump_material_total = summary.pump_needed ? config.pump_material_price : 0;
+  summary.consumable_material_total = summary.total_area_m2 > 0 ? materialItemsTotal(config.consumable_material_items) : 0;
   summary.work_total = summary.floor_work_total + summary.manifold_work_total + summary.pump_work_total;
-  summary.material_total = summary.pipe_material_total + summary.manifold_material_total + summary.pump_material_total;
+  summary.material_total =
+    summary.pipe_material_total +
+    summary.manifold_material_total +
+    summary.pump_material_total +
+    summary.consumable_material_total;
   summary.grand_total = summary.work_total + summary.material_total;
   summary.price_per_m2 = summary.total_area_m2 > 0 ? summary.grand_total / summary.total_area_m2 : null;
 
+  return {
+    config,
+    rooms,
+    summary,
+    specification: buildSpecification(summary, config),
+  };
+}
+
+function buildSpecification(
+  summary: CalculatorWarmFloorSummary,
+  config: CalculatorWarmFloorConfig,
+): CalculatorWarmFloorSpecItem[] {
   const specification: CalculatorWarmFloorSpecItem[] = [];
   if (summary.total_area_m2 > 0) {
     specification.push({
@@ -132,7 +164,7 @@ export function buildWarmFloorPreview(
     specification.push({
       code: "pipe_material",
       kind: "material",
-      title: "Труба для водяного тёплого пола",
+      title: config.pipe_material_title,
       unit: "м.п.",
       quantity: summary.total_pipe_m,
       amount: summary.pipe_material_total,
@@ -154,6 +186,7 @@ export function buildWarmFloorPreview(
       unit: "компл.",
       quantity: 1,
       amount: summary.manifold_material_total,
+      children: config.manifold_material_items,
     });
   }
   if (summary.pump_needed) {
@@ -172,13 +205,19 @@ export function buildWarmFloorPreview(
       unit: "компл.",
       quantity: 1,
       amount: summary.pump_material_total,
+      children: config.pump_material_items,
     });
   }
-
-  return {
-    config,
-    rooms,
-    summary,
-    specification,
-  };
+  if (summary.consumable_material_total > 0) {
+    specification.push({
+      code: "consumable_material",
+      kind: "material",
+      title: "Расходные материалы тёплого пола",
+      unit: "компл.",
+      quantity: 1,
+      amount: summary.consumable_material_total,
+      children: config.consumable_material_items,
+    });
+  }
+  return specification;
 }

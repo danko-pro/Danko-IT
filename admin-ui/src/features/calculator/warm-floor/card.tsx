@@ -17,9 +17,15 @@ export const WarmFloorRoomCard = memo(function WarmFloorRoomCard(props: WarmFloo
   const selected = edit?.selected ?? room.selected;
 
   return (
-    <div className={selected ? "dense-row dense-row-active flooring-room-card" : "dense-row flooring-room-card"}>
+    <div
+      className={
+        selected
+          ? "dense-row dense-row-active flooring-room-card warmfloor-room-card"
+          : "dense-row flooring-room-card warmfloor-room-card"
+      }
+    >
       <div
-        className="flooring-room-header"
+        className="warmfloor-room-strip"
         role="button"
         tabIndex={0}
         onClick={() => setExpandedRoomId((current) => (current === room.room_id ? null : room.room_id))}
@@ -30,42 +36,56 @@ export const WarmFloorRoomCard = memo(function WarmFloorRoomCard(props: WarmFloo
           }
         }}
       >
-        <div className="flex min-w-0 flex-1 items-start gap-2.5">
-          <input
-            type="checkbox"
-            checked={selected}
-            onClick={(event) => event.stopPropagation()}
-            onChange={(event) =>
-              setWarmFloorState((current) => ({
-                ...current,
-                rooms: current.rooms.map((item) =>
-                  item.room_id === room.room_id ? { ...item, selected: event.target.checked } : item,
-                ),
-              }))
-            }
-          />
-          <div className="min-w-0 flex-1">
-            <div className="flooring-room-title">{room.room_name}</div>
-            <div className="mt-1 flex flex-wrap gap-1 text-[11px] text-slate-400">
-              <span className="stat-chip">Основа: {formatArea(room.base_floor_area_m2)}</span>
-              <span className="stat-chip">ТП: {formatArea(room.effective_area_m2)}</span>
-              <span className="stat-chip">Труба: {formatMeters(room.pipe_m)}</span>
-              <span className="stat-chip">Контуры: {room.contours}</span>
-              {room.zone_label ? <span className="slot-chip">{room.zone_label}</span> : null}
-            </div>
-          </div>
+        <div className="warmfloor-room-identity">
+          <label className="warmfloor-room-toggle" onClick={(event) => event.stopPropagation()}>
+            <input
+              className="warmfloor-room-toggle-input"
+              type="checkbox"
+              checked={selected}
+              onChange={(event) =>
+                setWarmFloorState((current) => ({
+                  ...current,
+                  rooms: current.rooms.map((item) =>
+                    item.room_id === room.room_id ? { ...item, selected: event.target.checked } : item,
+                  ),
+                }))
+              }
+            />
+            <span className="warmfloor-room-toggle-box" aria-hidden="true">
+              <span className="warmfloor-room-toggle-mark">✓</span>
+            </span>
+          </label>
+          <div className="flooring-room-title warmfloor-room-title">{room.room_name}</div>
         </div>
-        <div className="flex items-center gap-2">
+
+        <div className="warmfloor-room-metrics" aria-label="Показатели помещения">
+          <span>Основа {formatArea(room.base_floor_area_m2)}</span>
+          <span>ТП {formatArea(room.effective_area_m2)}</span>
+          <span>{formatMeters(room.pipe_m)}</span>
+          <span>{room.contours} конт.</span>
+          {room.zone_label ? <span>{room.zone_label}</span> : null}
+        </div>
+
+        <div className="warmfloor-room-actions">
           <div className="flooring-room-amount">{formatMoney(room.work_total)}</div>
-          <span className={expanded ? "flooring-room-chevron flooring-room-chevron-open" : "flooring-room-chevron"}>⌄</span>
+          <span
+            className={
+              expanded
+                ? "flooring-room-chevron flooring-room-chevron-open warmfloor-room-edit"
+                : "flooring-room-chevron warmfloor-room-edit"
+            }
+          >
+            ⌄
+          </span>
         </div>
       </div>
 
       <div className={expanded ? "flooring-room-body flooring-room-body-open" : "flooring-room-body"}>
         <div className="flooring-room-body-inner">
-          <div className="grid gap-2 md:grid-cols-2">
+          <div className="warmfloor-room-editor">
             <TextField
               label="Площадь ТП вручную, м²"
+              size="compact"
               value={edit?.area_m2_override ?? ""}
               onChange={(value) =>
                 setWarmFloorState((current) => ({
@@ -75,10 +95,11 @@ export const WarmFloorRoomCard = memo(function WarmFloorRoomCard(props: WarmFloo
                   ),
                 }))
               }
-              placeholder="Пусто = брать площадь комнаты"
+              placeholder="Пусто = площадь комнаты"
             />
             <TextField
               label="Примечание"
+              size="compact"
               value={edit?.note ?? ""}
               onChange={(value) =>
                 setWarmFloorState((current) => ({

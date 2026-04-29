@@ -15,10 +15,15 @@ export function WallFinishStageRoomsPanel(props: WallFinishStageReadyProps) {
   } = props;
 
   return (
-    <div className="subpanel p-3 space-y-2">
-      <div className="flex items-center justify-between gap-3">
-        <div className="text-xs uppercase tracking-[0.16em] text-slate-500">Помещения и отделка стен</div>
-        <div className="text-[12px] text-slate-400">Выберите комнаты, тип отделки, подготовку и способ монтажа</div>
+    <div className="subpanel calculator-stage-section p-3 space-y-3">
+      <div className="calculator-stage-section-head">
+        <div>
+          <div className="calculator-stage-section-kicker">Контур расчёта</div>
+          <div className="calculator-stage-section-title">Помещения и отделка стен</div>
+        </div>
+        <div className="calculator-stage-section-note">
+          Выберите комнаты, тип отделки, подготовку и способ монтажа для каждого помещения.
+        </div>
       </div>
 
       <div className="space-y-2">

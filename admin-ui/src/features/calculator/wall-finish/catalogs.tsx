@@ -3,14 +3,17 @@ import { WallFinishStageLayoutCatalog } from "./";
 import { WallFinishStagePreparationCatalog } from "./";
 import type { WallFinishStageReadyProps } from "./";
 
-// Оркестратор catalog-блока wall finish stage.
-// Собирает материалы отделки, подготовку стен и способы монтажа в один совместимый panel-компонент.
-
 export function WallFinishStageCatalogsPanel(props: WallFinishStageReadyProps) {
   return (
-    <>
-      <div className="section-separator">
-        <span>Каталоги и параметры отделки</span>
+    <div className="subpanel calculator-stage-section p-3 space-y-3">
+      <div className="calculator-stage-section-head">
+        <div>
+          <div className="calculator-stage-section-kicker">Справочники</div>
+          <div className="calculator-stage-section-title">Каталоги отделки стен</div>
+        </div>
+        <div className="calculator-stage-section-note">
+          База покрытий, подготовок и способов монтажа, которая используется при сборке расчёта по комнатам.
+        </div>
       </div>
 
       <WallFinishStageCoveringCatalog
@@ -34,6 +37,6 @@ export function WallFinishStageCatalogsPanel(props: WallFinishStageReadyProps) {
           submitWallFinishLayout={props.submitWallFinishLayout}
         />
       </div>
-    </>
+    </div>
   );
 }

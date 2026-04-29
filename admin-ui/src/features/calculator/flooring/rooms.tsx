@@ -15,11 +15,14 @@ export function FlooringStageRoomsPanel(props: FlooringStageReadyProps) {
   } = props;
 
   return (
-    <div className="subpanel p-3 space-y-2">
-      <div className="flex items-center justify-between gap-3">
-        <div className="text-xs uppercase tracking-[0.16em] text-slate-500">Помещения и типы покрытий</div>
-        <div className="text-[12px] text-slate-400">
-          Выберите комнаты, покрытие, подготовку и способ укладки
+    <div className="subpanel calculator-stage-section p-3 space-y-3">
+      <div className="calculator-stage-section-head">
+        <div>
+          <div className="calculator-stage-section-kicker">Контур расчёта</div>
+          <div className="calculator-stage-section-title">Помещения и типы покрытий</div>
+        </div>
+        <div className="calculator-stage-section-note">
+          Выберите комнаты, покрытие, подготовку и способ укладки для каждой зоны отдельно.
         </div>
       </div>
 

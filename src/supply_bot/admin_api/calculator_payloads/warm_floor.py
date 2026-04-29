@@ -3,6 +3,7 @@ from __future__ import annotations
 from math import ceil
 from typing import Any
 
+from supply_bot.admin_api.calculator_payloads.warm_floor_materials import items_total, load_material_items
 from supply_bot.storage import BotStorage
 
 
@@ -30,6 +31,7 @@ async def _estimate_warm_floor_payload(
         "pump_needed": False,
         "pump_work_total": 0.0,
         "pump_material_total": 0.0,
+        "consumable_material_total": 0.0,
         "work_total": 0.0,
         "material_total": 0.0,
         "grand_total": 0.0,
@@ -41,6 +43,28 @@ async def _estimate_warm_floor_payload(
     max_contour_area = max(0.1, float(config["max_contour_area_m2"]))
     small_zone_area = max(0.0, float(config["small_zone_area_m2"]))
     pipe_price = float(config["pipe_price_per_m"])
+    pipe_title = str(config.get("pipe_material_title") or "Труба PEX-a 16x2 для водяного тёплого пола")
+    manifold_items = load_material_items(
+        config.get("manifold_material_items_json"),
+        [
+            {"title": "Коллекторная группа с расходомерами", "unit": "компл.", "quantity": 1, "amount": 12000},
+            {"title": "Шкаф, крепёж и фитинги коллектора", "unit": "компл.", "quantity": 1, "amount": 8000},
+        ],
+    )
+    pump_items = load_material_items(
+        config.get("pump_material_items_json"),
+        [
+            {"title": "Насосно-смесительный узел", "unit": "компл.", "quantity": 1, "amount": 18000},
+            {"title": "Запорная арматура и фитинги насосного узла", "unit": "компл.", "quantity": 1, "amount": 7500},
+        ],
+    )
+    consumable_items = load_material_items(
+        config.get("consumable_material_items_json"),
+        [
+            {"title": "Крепёж трубы тёплого пола", "unit": "компл.", "quantity": 1, "amount": 2500},
+            {"title": "Демпферная лента и расходные фитинги", "unit": "компл.", "quantity": 1, "amount": 3500},
+        ],
+    )
 
     for room in room_payloads:
         room_id = int(room["id"])
@@ -90,18 +114,23 @@ async def _estimate_warm_floor_payload(
     summary["manifold_needed"] = summary["rooms_count"] > 1 or summary["total_contours"] >= 2
     if summary["manifold_needed"]:
         summary["manifold_work_total"] = float(config["manifold_work_price"])
-        summary["manifold_material_total"] = float(config["manifold_material_price"])
+        summary["manifold_material_total"] = items_total(manifold_items) or float(config["manifold_material_price"])
 
     summary["pump_needed"] = summary["rooms_count"] >= int(config["pump_rooms_threshold"]) or summary[
         "total_contours"
     ] >= int(config["pump_contours_threshold"])
     if summary["pump_needed"]:
         summary["pump_work_total"] = float(config["pump_work_price"])
-        summary["pump_material_total"] = float(config["pump_material_price"])
+        summary["pump_material_total"] = items_total(pump_items) or float(config["pump_material_price"])
+    if summary["total_area_m2"] > 0:
+        summary["consumable_material_total"] = items_total(consumable_items)
 
     summary["work_total"] = summary["floor_work_total"] + summary["manifold_work_total"] + summary["pump_work_total"]
     summary["material_total"] = (
-        summary["pipe_material_total"] + summary["manifold_material_total"] + summary["pump_material_total"]
+        summary["pipe_material_total"]
+        + summary["manifold_material_total"]
+        + summary["pump_material_total"]
+        + summary["consumable_material_total"]
     )
     summary["grand_total"] = summary["work_total"] + summary["material_total"]
     if summary["total_area_m2"] > 0:
@@ -171,6 +200,26 @@ async def _estimate_warm_floor_payload(
                     "amount": summary["pump_material_total"],
                 },
             ]
+        )
+
+    for item in specification:
+        if item.get("code") == "pipe_material":
+            item["title"] = pipe_title
+        elif item.get("code") == "manifold_material":
+            item["children"] = manifold_items
+        elif item.get("code") == "pump_material":
+            item["children"] = pump_items
+    if summary["consumable_material_total"] > 0:
+        specification.append(
+            {
+                "code": "consumable_material",
+                "kind": "material",
+                "title": "Расходные материалы тёплого пола",
+                "unit": "компл.",
+                "quantity": 1,
+                "amount": summary["consumable_material_total"],
+                "children": consumable_items,
+            }
         )
 
     return {

@@ -1,0 +1,108 @@
+@layer components {
+  .calculator-spec-sheet {
+    border-color: rgba(var(--calculator-stage-accent-rgb, 7, 248, 198), 0.14);
+    background: linear-gradient(180deg, rgba(16, 21, 29, 0.94), rgba(10, 14, 20, 0.98));
+  }
+
+  .calculator-spec-sheet-summary {
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.75rem;
+    display: flex;
+  }
+
+  .calculator-spec-sheet-summary-meta {
+    color: #8da4b8;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: none;
+  }
+
+  .calculator-spec-sheet-wrap {
+    border: 1px solid rgba(var(--calculator-stage-accent-rgb, 7, 248, 198), 0.14);
+    border-radius: 16px;
+    overflow-x: auto;
+    background: rgba(10, 14, 20, 0.64);
+  }
+
+  .calculator-spec-sheet-table {
+    width: 100%;
+    min-width: 640px;
+    border-collapse: collapse;
+  }
+
+  .calculator-spec-sheet-table th {
+    border-bottom: 1px solid rgba(var(--calculator-stage-accent-rgb, 7, 248, 198), 0.18);
+    padding: 0.75rem 0.85rem;
+    color: #8da4b8;
+    text-align: left;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    background: rgba(19, 26, 36, 0.74);
+  }
+
+  .calculator-spec-sheet-table td {
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    padding: 0.78rem 0.85rem;
+    color: #d8e5ef;
+    font-size: 13px;
+    vertical-align: top;
+  }
+
+  .calculator-spec-sheet-table th + th,
+  .calculator-spec-sheet-table td + td {
+    border-left: 1px solid rgba(var(--calculator-stage-accent-rgb, 7, 248, 198), 0.08);
+  }
+
+  .calculator-spec-sheet-table tbody tr:hover td {
+    background: rgba(255, 255, 255, 0.015);
+  }
+
+  .calculator-spec-sheet-col-kind {
+    width: 7.25rem;
+  }
+
+  .calculator-spec-sheet-col-qty {
+    width: 7rem;
+  }
+
+  .calculator-spec-sheet-col-unit {
+    width: 5rem;
+  }
+
+  .calculator-spec-sheet-col-amount {
+    width: 10rem;
+  }
+
+  .calculator-spec-sheet-cell-title,
+  .calculator-spec-sheet-cell-amount {
+    font-weight: 600;
+  }
+
+  .calculator-spec-sheet-cell-amount {
+    white-space: nowrap;
+    color: #eef6ff;
+  }
+
+  .calculator-spec-sheet-table tfoot td {
+    border-top: 1px solid rgba(var(--calculator-stage-accent-rgb, 7, 248, 198), 0.18);
+    color: #eef6ff;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    background: rgba(18, 24, 33, 0.82);
+  }
+
+  .calculator-spec-sheet-empty {
+    border: 1px dashed rgba(148, 163, 184, 0.32);
+    border-radius: 16px;
+    padding: 1rem 1.1rem;
+    color: #8da4b8;
+    text-align: center;
+    font-size: 13px;
+  }
+}

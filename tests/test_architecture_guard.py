@@ -169,6 +169,27 @@ def test_build_watch_events_tracks_layer_detect_and_clear(tmp_path: Path) -> Non
     assert cleared_events[0].severity == "error"
 
 
+def test_collect_snapshot_tracks_ui_motion_notes(tmp_path: Path) -> None:
+    config_path = tmp_path / "architecture_guard.json"
+    write_config(config_path)
+    write_file(
+        tmp_path / "admin-ui" / "src" / "features" / "panel.tsx",
+        "export function Panel() {\n"
+        "  const height = ref.current.getBoundingClientRect().height;\n"
+        "  new ResizeObserver(() => height);\n"
+        "  return <details style={{ height }}><summary>More</summary></details>;\n"
+        "}\n",
+    )
+
+    config = load_guard_config(tmp_path, config_path)
+    snapshot = collect_snapshot(config)
+
+    assert len(snapshot.ui_motion_violations) == 1
+    violation = next(iter(snapshot.ui_motion_violations.values()))
+    assert violation.rule_name == "expandable-motion-single-owner"
+    assert violation.severity == "note"
+
+
 def test_cli_check_refreshes_snapshot_files(tmp_path: Path) -> None:
     write_file(tmp_path / "src" / "app.py", "a\nb\nc\nd\n")
     config_path = tmp_path / "architecture_guard.json"

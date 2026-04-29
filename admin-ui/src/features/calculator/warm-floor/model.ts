@@ -11,8 +11,19 @@ export type CalculatorWarmFloorConfig = {
   pump_work_price: number;
   pump_material_price: number;
   pipe_price_per_m: number;
+  pipe_material_title: string;
+  manifold_material_items: WarmFloorMaterialItem[];
+  pump_material_items: WarmFloorMaterialItem[];
+  consumable_material_items: WarmFloorMaterialItem[];
   pump_rooms_threshold: number;
   pump_contours_threshold: number;
+};
+
+export type WarmFloorMaterialItem = {
+  title: string;
+  unit: string;
+  quantity: number;
+  amount: number;
 };
 
 export type CalculatorWarmFloorRoom = {
@@ -42,6 +53,7 @@ export type CalculatorWarmFloorSummary = {
   pump_needed: boolean;
   pump_work_total: number;
   pump_material_total: number;
+  consumable_material_total: number;
   work_total: number;
   material_total: number;
   grand_total: number;
@@ -55,6 +67,7 @@ export type CalculatorWarmFloorSpecItem = {
   unit: string;
   quantity: number;
   amount: number;
+  children?: WarmFloorMaterialItem[];
 };
 
 export type CalculatorWarmFloorDetail = {
@@ -74,6 +87,10 @@ export type CalculatorWarmFloorPayload = {
   pump_work_price: number;
   pump_material_price: number;
   pipe_price_per_m: number;
+  pipe_material_title: string;
+  manifold_material_items: WarmFloorMaterialItem[];
+  pump_material_items: WarmFloorMaterialItem[];
+  consumable_material_items: WarmFloorMaterialItem[];
   pump_rooms_threshold: number;
   pump_contours_threshold: number;
   rooms: Array<{
@@ -101,6 +118,10 @@ export type WarmFloorEditState = {
   pump_work_price: string;
   pump_material_price: string;
   pipe_price_per_m: string;
+  pipe_material_title: string;
+  manifold_material_items: WarmFloorMaterialItem[];
+  pump_material_items: WarmFloorMaterialItem[];
+  consumable_material_items: WarmFloorMaterialItem[];
   pump_rooms_threshold: string;
   pump_contours_threshold: string;
   rooms: WarmFloorRoomEditState[];

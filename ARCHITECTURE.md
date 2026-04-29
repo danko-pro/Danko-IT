@@ -354,6 +354,10 @@
      вынести ответственность по слоям и компонентам,
      при необходимости собрать фасады над controller/view/domain-срезами,
      чтобы дальнейшая UI-доработка не шла через разрастание экранных файлов.
+4. Довести UI расчетных вкладок `calculator` до финального проектного состояния:
+   - унифицировать правую раскрывающуюся `Сводку` для `warm-floor`, `flooring`, `wall-finish` и `doors`;
+   - перевести оставшиеся расчетные вкладки на autosave и убрать остаточные ручные action-кнопки;
+   - дополировать плотность, контраст и motion на живом экране, чтобы поведение совпадало со вкладкой `Помещения`.
 
 ### Завтра
 
@@ -417,3 +421,12 @@
 - `счет` и `акт` являются отдельными документными сущностями;
 - исходный файл счета и акта обязателен;
 - текущий прототип допустимо держать в `features/dashboard`, но целевой домен для него — `features/projects`.
+## 12. UI motion contract for expandable blocks
+
+Expandable UI blocks (`details`, accordions, nested parameter panels) must have one owner for height motion.
+
+- Keep the active expandable content in normal document flow.
+- Prefer CSS-owned expansion (`::details-content`, `grid-template-rows`, or an equivalent single-owner pattern).
+- Do not combine nested expandable content with a parent scene that also drives inline or measured JS height.
+- JS height measurement is acceptable for switching independent scenes or tabs, but the active scene needs a fluid mode when it contains expandable content.
+- `architecture_guard` reports this as `ui_motion` with `note` severity. Treat it as a design warning: fix it before the pattern spreads, unless the component has a deliberate local exception.

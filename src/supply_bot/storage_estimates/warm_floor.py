@@ -20,6 +20,10 @@ class EstimateWarmFloorStorageMixin:
                        pump_work_price,
                        pump_material_price,
                        pipe_price_per_m,
+                       pipe_material_title,
+                       manifold_material_items_json,
+                       pump_material_items_json,
+                       consumable_material_items_json,
                        pump_rooms_threshold,
                        pump_contours_threshold,
                        created_at,
@@ -58,6 +62,10 @@ class EstimateWarmFloorStorageMixin:
         pump_work_price: float,
         pump_material_price: float,
         pipe_price_per_m: float,
+        pipe_material_title: str,
+        manifold_material_items_json: str,
+        pump_material_items_json: str,
+        consumable_material_items_json: str,
         pump_rooms_threshold: int,
         pump_contours_threshold: int,
     ) -> None:
@@ -75,11 +83,15 @@ class EstimateWarmFloorStorageMixin:
                     pump_work_price,
                     pump_material_price,
                     pipe_price_per_m,
+                    pipe_material_title,
+                    manifold_material_items_json,
+                    pump_material_items_json,
+                    consumable_material_items_json,
                     pump_rooms_threshold,
                     pump_contours_threshold,
                     updated_at
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
                 ON CONFLICT(project_id) DO UPDATE SET
                     work_price_per_m2 = excluded.work_price_per_m2,
                     pipe_m_per_m2 = excluded.pipe_m_per_m2,
@@ -90,6 +102,10 @@ class EstimateWarmFloorStorageMixin:
                     pump_work_price = excluded.pump_work_price,
                     pump_material_price = excluded.pump_material_price,
                     pipe_price_per_m = excluded.pipe_price_per_m,
+                    pipe_material_title = excluded.pipe_material_title,
+                    manifold_material_items_json = excluded.manifold_material_items_json,
+                    pump_material_items_json = excluded.pump_material_items_json,
+                    consumable_material_items_json = excluded.consumable_material_items_json,
                     pump_rooms_threshold = excluded.pump_rooms_threshold,
                     pump_contours_threshold = excluded.pump_contours_threshold,
                     updated_at = CURRENT_TIMESTAMP
@@ -105,6 +121,10 @@ class EstimateWarmFloorStorageMixin:
                     pump_work_price,
                     pump_material_price,
                     pipe_price_per_m,
+                    pipe_material_title,
+                    manifold_material_items_json,
+                    pump_material_items_json,
+                    consumable_material_items_json,
                     pump_rooms_threshold,
                     pump_contours_threshold,
                 ),

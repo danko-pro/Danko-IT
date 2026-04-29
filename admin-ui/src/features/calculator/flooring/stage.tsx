@@ -1,13 +1,15 @@
+import { useState } from "react";
+
+import { Button, CalculatorStageRightPanelLayout, CalculatorStageShell } from "./";
 import { FlooringStageEditorColumn } from "./";
 import { FlooringStageSummaryColumn } from "./";
-import { CalculatorStageShell } from "./";
 import type { FlooringStageSectionProps } from "./";
 
 export type { FlooringStageReadyProps, FlooringStageSectionProps } from "./";
 
-// Keep the stage shell stable while the editor and summary columns evolve separately.
 export function FlooringStageSection(props: FlooringStageSectionProps) {
   const { projectDetail, flooringDetail, flooringPreview, flooringSettingsOpen, setFlooringSettingsOpen } = props;
+  const [summaryOpen, setSummaryOpen] = useState(true);
 
   return (
     <CalculatorStageShell
@@ -16,25 +18,38 @@ export function FlooringStageSection(props: FlooringStageSectionProps) {
       title="Покрытия, подготовка, раскладка и расходники"
       settingsOpen={flooringSettingsOpen}
       setSettingsOpen={setFlooringSettingsOpen}
+      actions={
+        <Button
+          type="button"
+          variant="secondary"
+          className={summaryOpen ? "calculator-stage-settings calculator-stage-settings-active" : "calculator-stage-settings"}
+          onClick={() => setSummaryOpen((current) => !current)}
+        >
+          Сводка
+        </Button>
+      }
       isReady={Boolean(projectDetail && flooringDetail && flooringPreview)}
     >
       {projectDetail && flooringDetail && flooringPreview ? (
-        <div className="space-y-3">
-          <div className="grid gap-3 xl:grid-cols-[1.08fr_0.92fr]">
+        <CalculatorStageRightPanelLayout
+          panelOpen={summaryOpen}
+          main={
             <FlooringStageEditorColumn
               {...props}
               projectDetail={projectDetail}
               flooringDetail={flooringDetail}
               flooringPreview={flooringPreview}
             />
+          }
+          panel={
             <FlooringStageSummaryColumn
               {...props}
               projectDetail={projectDetail}
               flooringDetail={flooringDetail}
               flooringPreview={flooringPreview}
             />
-          </div>
-        </div>
+          }
+        />
       ) : null}
     </CalculatorStageShell>
   );

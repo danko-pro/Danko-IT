@@ -24,3 +24,4 @@ export {
   underlayModeOptions,
 } from "./options";
 export type { SelectOption } from "./options";
+export { CalculatorSpecificationSheet } from "./spec-sheet";

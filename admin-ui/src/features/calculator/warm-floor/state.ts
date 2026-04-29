@@ -12,6 +12,19 @@ export const emptyWarmFloorState: WarmFloorEditState = {
   pump_work_price: "8000",
   pump_material_price: "25000",
   pipe_price_per_m: "170",
+  pipe_material_title: "Труба PEX-a 16x2 для водяного тёплого пола",
+  manifold_material_items: [
+    { title: "Коллекторная группа с расходомерами", unit: "компл.", quantity: 1, amount: 12000 },
+    { title: "Шкаф, крепёж и фитинги коллектора", unit: "компл.", quantity: 1, amount: 8000 },
+  ],
+  pump_material_items: [
+    { title: "Насосно-смесительный узел", unit: "компл.", quantity: 1, amount: 18000 },
+    { title: "Запорная арматура и фитинги насосного узла", unit: "компл.", quantity: 1, amount: 7500 },
+  ],
+  consumable_material_items: [
+    { title: "Крепёж трубы тёплого пола", unit: "компл.", quantity: 1, amount: 2500 },
+    { title: "Демпферная лента и расходные фитинги", unit: "компл.", quantity: 1, amount: 3500 },
+  ],
   pump_rooms_threshold: "3",
   pump_contours_threshold: "4",
   rooms: [],

@@ -69,7 +69,11 @@ export type CalculatorScreenActionProps = {
     payload: CalculatorProjectDoorComponentPayload,
   ) => Promise<void>;
   onDeleteProjectDoorComponent: (componentId: number) => Promise<void>;
-  onSaveWarmFloor: (projectId: number, payload: CalculatorWarmFloorPayload) => Promise<void>;
+  onSaveWarmFloor: (
+    projectId: number,
+    payload: CalculatorWarmFloorPayload,
+    options?: { silent?: boolean },
+  ) => Promise<void>;
   onSaveFlooring: (projectId: number, payload: CalculatorFlooringPayload) => Promise<void>;
   onCreateFlooringCovering: (payload: CalculatorFlooringCoveringPayload) => Promise<void>;
   onCreateFlooringPreparation: (payload: CalculatorFlooringPreparationPayload) => Promise<void>;

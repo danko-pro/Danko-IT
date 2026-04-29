@@ -1,6 +1,7 @@
 export { Button } from "../../../shared/controls";
 
 export * from "../shared";
+export { CalculatorStageRightPanelLayout } from "../stage/right-panel-layout";
 export { CalculatorStageShell } from "../stage/shell";
 export { buildIdMap, buildRoomStateById } from "../model/common";
 export {

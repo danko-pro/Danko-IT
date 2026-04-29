@@ -11,9 +11,16 @@ async def apply_storage_migrations(connection_factory: ConnectionFactory) -> Non
     async with connection_factory() as db:
         for column, definition in (
             ("residential_complex", "TEXT NOT NULL DEFAULT ''"),
+            ("address", "TEXT NOT NULL DEFAULT ''"),
             ("entrance_section", "TEXT NOT NULL DEFAULT ''"),
+            ("apartment", "TEXT NOT NULL DEFAULT ''"),
+            ("floor", "TEXT NOT NULL DEFAULT ''"),
+            ("has_elevator", "INTEGER NOT NULL DEFAULT 0"),
             ("lift_type", "TEXT NOT NULL DEFAULT ''"),
+            ("site_access", "TEXT NOT NULL DEFAULT ''"),
+            ("intercom_code", "TEXT NOT NULL DEFAULT ''"),
             ("loading_zone", "TEXT NOT NULL DEFAULT ''"),
+            ("responsible_person", "TEXT NOT NULL DEFAULT ''"),
         ):
             await _ensure_column(
                 db,
@@ -84,6 +91,18 @@ async def apply_storage_migrations(connection_factory: ConnectionFactory) -> Non
                 table=table_name,
                 column="sale_price",
                 definition="REAL",
+            )
+        for column, definition in (
+            ("pipe_material_title", "TEXT NOT NULL DEFAULT 'Труба PEX-a 16x2 для водяного тёплого пола'"),
+            ("manifold_material_items_json", "TEXT NOT NULL DEFAULT ''"),
+            ("pump_material_items_json", "TEXT NOT NULL DEFAULT ''"),
+            ("consumable_material_items_json", "TEXT NOT NULL DEFAULT ''"),
+        ):
+            await _ensure_column(
+                db,
+                table="estimate_warm_floor_configs",
+                column=column,
+                definition=definition,
             )
         await db.commit()
 

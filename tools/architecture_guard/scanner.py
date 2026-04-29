@@ -5,15 +5,18 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from .config import GuardConfig
+from .events import create_layer_event, create_size_event, create_topology_event, create_ui_motion_event
 from .layers import LayerViolation, collect_layer_violations
 from .models import FileMeasure, ScanSnapshot, Violation, ViolationEvent
 from .topology import TopologyViolation, collect_topology_violations
+from .ui_motion import UiMotionViolation, collect_ui_motion_violations
 
 
 def collect_snapshot(config: GuardConfig) -> ScanSnapshot:
     tracked_files: dict[str, FileMeasure] = {}
     violations: dict[str, Violation] = {}
     layer_violations: dict[str, LayerViolation] = {}
+    ui_motion_violations: dict[str, UiMotionViolation] = {}
     discovered_directories: set[str] = {"."}
 
     for current_root, dir_names, file_names in os.walk(config.root):
@@ -29,7 +32,8 @@ def collect_snapshot(config: GuardConfig) -> ScanSnapshot:
             relative_path = _join_posix(relative_dir, file_name)
             limit_rule = config.resolve_rule(relative_path)
             active_layer_rules = config.resolve_layer_rules(relative_path)
-            if limit_rule is None and not active_layer_rules:
+            should_scan_motion = _should_scan_ui_motion(relative_path)
+            if limit_rule is None and not active_layer_rules and not should_scan_motion:
                 continue
 
             absolute_path = current_root_path / file_name
@@ -64,6 +68,9 @@ def collect_snapshot(config: GuardConfig) -> ScanSnapshot:
                     )
                 )
 
+            if should_scan_motion:
+                ui_motion_violations.update(collect_ui_motion_violations(relative_path, absolute_path))
+
     topology_violations = collect_topology_violations(config, discovered_directories)
     return ScanSnapshot(
         scanned_at=now_iso(),
@@ -71,6 +78,7 @@ def collect_snapshot(config: GuardConfig) -> ScanSnapshot:
         violations=violations,
         layer_violations=layer_violations,
         topology_violations=topology_violations,
+        ui_motion_violations=ui_motion_violations,
     )
 
 
@@ -93,7 +101,14 @@ def build_initial_events(snapshot: ScanSnapshot) -> list[ViolationEvent]:
             key=lambda item: (item.relative_path, item.subject_path, item.rule_name),
         )
     ]
-    return size_events + layer_events + topology_events
+    motion_events = [
+        create_ui_motion_event("violation_present", violation)
+        for violation in sorted(
+            snapshot.ui_motion_violations.values(),
+            key=lambda item: (item.relative_path, item.line_number, item.rule_name),
+        )
+    ]
+    return size_events + layer_events + topology_events + motion_events
 
 
 def build_watch_events(previous: ScanSnapshot, current: ScanSnapshot) -> list[ViolationEvent]:
@@ -142,61 +157,16 @@ def build_watch_events(previous: ScanSnapshot, current: ScanSnapshot) -> list[Vi
     for key in sorted(current_keys - previous_keys):
         events.append(create_topology_event("violation_detected", current_topology[key]))
 
+    previous_motion = previous.ui_motion_violations
+    current_motion = current.ui_motion_violations
+    previous_keys = set(previous_motion)
+    current_keys = set(current_motion)
+    for key in sorted(previous_keys - current_keys):
+        events.append(create_ui_motion_event("violation_cleared", previous_motion[key]))
+    for key in sorted(current_keys - previous_keys):
+        events.append(create_ui_motion_event("violation_detected", current_motion[key]))
+
     return events
-
-
-def create_size_event(kind: str, violation: Violation) -> ViolationEvent:
-    return ViolationEvent(
-        category="size",
-        kind=kind,
-        recorded_at=now_iso(),
-        relative_path=violation.relative_path,
-        line_count=violation.line_count,
-        limit=violation.limit,
-        rule_name=violation.rule_name,
-        severity=violation.severity,
-        exceeded_by=violation.exceeded_by,
-        imported_path=None,
-        import_line=None,
-        subject_path=None,
-        message=None,
-    )
-
-
-def create_layer_event(kind: str, violation: LayerViolation) -> ViolationEvent:
-    return ViolationEvent(
-        category="layer",
-        kind=kind,
-        recorded_at=now_iso(),
-        relative_path=violation.relative_path,
-        line_count=None,
-        limit=None,
-        rule_name=violation.rule_name,
-        severity=violation.severity,
-        exceeded_by=None,
-        imported_path=violation.imported_path,
-        import_line=violation.import_line,
-        subject_path=None,
-        message=violation.message,
-    )
-
-
-def create_topology_event(kind: str, violation: TopologyViolation) -> ViolationEvent:
-    return ViolationEvent(
-        category="topology",
-        kind=kind,
-        recorded_at=now_iso(),
-        relative_path=violation.relative_path,
-        line_count=None,
-        limit=None,
-        rule_name=violation.rule_name,
-        severity=violation.severity,
-        exceeded_by=None,
-        imported_path=None,
-        import_line=None,
-        subject_path=violation.subject_path,
-        message=violation.message,
-    )
 
 
 def count_file_lines(path: Path) -> int:
@@ -238,3 +208,7 @@ def _group_layer_violations(snapshot: ScanSnapshot) -> dict[str, dict[str, Layer
 
 def _join_posix(left: str, right: str) -> str:
     return right if not left else f"{left}/{right}"
+
+
+def _should_scan_ui_motion(relative_path: str) -> bool:
+    return relative_path.startswith("admin-ui/src/") and relative_path.endswith((".tsx", ".css"))

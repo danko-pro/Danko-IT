@@ -7,14 +7,17 @@ type DoorsProjectListProps = Pick<
   "projectDetail" | "selectedDoor" | "setSelectedDoorId" | "busyKey" | "startDoorEdit" | "onDeleteProjectDoor"
 >;
 
-// Список проектных дверей и проёмов.
-// Панель отвечает только за выбор двери, краткий обзор позиции и действия edit/delete.
-
 export function DoorsProjectList(props: DoorsProjectListProps) {
   return (
-    <>
-      <div className="section-separator">
-        <span>Двери проекта</span>
+    <div className="subpanel calculator-stage-section p-3 space-y-3">
+      <div className="calculator-stage-section-head">
+        <div>
+          <div className="calculator-stage-section-kicker">Контур проекта</div>
+          <div className="calculator-stage-section-title">Двери и проёмы</div>
+        </div>
+        <div className="calculator-stage-section-note">
+          Выберите позицию слева, чтобы отредактировать состав, цены и связанный комплект.
+        </div>
       </div>
 
       <div className="space-y-2">
@@ -31,11 +34,9 @@ export function DoorsProjectList(props: DoorsProjectListProps) {
                   </span>
                   <span className="stat-chip">Комплект {formatMoney(door.components_sale_total ?? 0)}</span>
                   <span className="stat-chip">Итог {formatMoney(door.effective_sale_price ?? 0)}</span>
-                  {door.effective_install_price ? (
-                    <span className="stat-chip">Монтаж {formatMoney(door.effective_install_price)}</span>
-                  ) : null}
+                  {door.effective_install_price ? <span className="stat-chip">Монтаж {formatMoney(door.effective_install_price)}</span> : null}
                 </div>
-                {door.note ? <div className="mt-1 text-[12px] text-slate-500">{door.note}</div> : null}
+                {door.note ? <div className="calculator-stage-note-line mt-1">{door.note}</div> : null}
               </button>
               <div className="flex flex-wrap gap-2">
                 <Button type="button" variant="micro" onClick={() => props.startDoorEdit(door)}>
@@ -56,11 +57,11 @@ export function DoorsProjectList(props: DoorsProjectListProps) {
         ))}
 
         {!props.projectDetail.doors.length ? (
-          <div className="rounded-2xl border border-dashed border-slate-300 px-4 py-6 text-center text-sm text-slate-500">
-            Пока нет дверей и проемов для этого проекта.
+          <div className="calculator-stage-empty">
+            Пока нет дверей и проёмов для этого проекта.
           </div>
         ) : null}
       </div>
-    </>
+    </div>
   );
 }

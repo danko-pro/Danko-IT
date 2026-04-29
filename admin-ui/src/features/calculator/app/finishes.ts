@@ -27,7 +27,11 @@ type CalculatorFinishesControllerOptions = {
 
 // Отделочные подсекции калькулятора: тёплый пол, полы и отделка стен.
 export function createAdminCalculatorFinishesController(props: CalculatorFinishesControllerOptions) {
-  async function handleSaveCalculatorWarmFloor(projectId: number, payload: CalculatorWarmFloorPayload) {
+  async function handleSaveCalculatorWarmFloor(
+    projectId: number,
+    payload: CalculatorWarmFloorPayload,
+    options?: { silent?: boolean },
+  ) {
     try {
       props.setCalculatorBusyKey(`calculator-warm-floor-save-${projectId}`);
       const updatedProject = await fetchJson<CalculatorProjectDetail>(`/api/calculator/projects/${projectId}/warm-floor`, {
@@ -35,11 +39,13 @@ export function createAdminCalculatorFinishesController(props: CalculatorFinishe
         body: JSON.stringify(payload),
       });
       props.setCalculatorProjectDetail(updatedProject);
-      await props.loadCalculatorProjects();
-      if (props.selectedCalculatorRoomId !== null) {
-        await props.loadCalculatorRoomDetail(props.selectedCalculatorRoomId);
+      if (!options?.silent) {
+        await props.loadCalculatorProjects();
+        if (props.selectedCalculatorRoomId !== null) {
+          await props.loadCalculatorRoomDetail(props.selectedCalculatorRoomId);
+        }
+        props.setSuccessMessage(`Тёплый пол по проекту "${updatedProject.project.name}" сохранён.`);
       }
-      props.setSuccessMessage(`Тёплый пол по проекту "${updatedProject.project.name}" сохранён.`);
       props.setCalculatorError(null);
     } catch (actionError) {
       props.setCalculatorError(actionError instanceof Error ? actionError.message : "Не удалось сохранить тёплый пол");
@@ -210,4 +216,3 @@ export function createAdminCalculatorFinishesController(props: CalculatorFinishe
     handleCreateCalculatorWallFinishLayout,
   };
 }
-

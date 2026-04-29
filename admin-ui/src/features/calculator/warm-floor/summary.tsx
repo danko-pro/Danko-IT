@@ -1,108 +1,185 @@
-import { Button, MetricChip, formatArea, formatMeters, formatMoney } from "./";
-import type { WarmFloorEditState, WarmFloorStageReadyProps } from "./";
+import { useLayoutEffect, useRef, useState } from "react";
 
-type WarmFloorConfigField = Exclude<keyof WarmFloorEditState, "rooms">;
+import { MetricChip, WarmFloorSettingsPanel, formatArea, formatMeters, formatMoney, trimFloat } from "./";
+import type { CalculatorWarmFloorSpecItem, WarmFloorStageReadyProps } from "./";
 
-const WARM_FLOOR_SETTINGS_FIELDS: Array<{ key: WarmFloorConfigField; label: string }> = [
-  { key: "work_price_per_m2", label: "Работа за 1 м², ₽" },
-  { key: "pipe_m_per_m2", label: "Труба на 1 м², м.п." },
-  { key: "max_contour_area_m2", label: "Макс. площадь контура, м²" },
-  { key: "small_zone_area_m2", label: "Порог малой зоны, м²" },
-  { key: "manifold_work_price", label: "Работа по гребёнке, ₽" },
-  { key: "manifold_material_price", label: "Материал гребёнки, ₽" },
-  { key: "pump_work_price", label: "Работа по насосу, ₽" },
-  { key: "pump_material_price", label: "Материал насоса, ₽" },
-  { key: "pipe_price_per_m", label: "Цена трубы за 1 м.п., ₽" },
-  { key: "pump_rooms_threshold", label: "Порог помещений для насоса" },
-  { key: "pump_contours_threshold", label: "Порог контуров для насоса" },
-];
+type WarmFloorPanelMode = "settings" | "summary" | "estimate";
+type WarmFloorStageSummaryColumnProps = WarmFloorStageReadyProps & { panelMode: WarmFloorPanelMode };
 
-export function WarmFloorStageSummaryColumn(props: WarmFloorStageReadyProps) {
-  const {
-    projectDetail,
-    warmFloorPreview,
-    warmFloorSettingsOpen,
-    setWarmFloorSettingsOpen,
-    setWarmFloorState,
-    warmFloorState,
-    busyKey,
-    resetWarmFloorState,
-  } = props;
+function getAutosaveLabel(state: WarmFloorStageReadyProps["autosaveState"]): string {
+  switch (state) {
+    case "pending":
+      return "Сохранится автоматически";
+    case "saving":
+      return "Сохраняю...";
+    case "saved":
+      return "Сохранено";
+    case "error":
+      return "Ошибка сохранения";
+    default:
+      return "Автосохранение";
+  }
+}
+
+export function WarmFloorStageSummaryColumn(props: WarmFloorStageSummaryColumnProps) {
+  const { panelMode, warmFloorPreview, setWarmFloorState, warmFloorState, autosaveState } = props;
+  const summary = warmFloorPreview.summary;
+  const pricePerSquare = summary.price_per_m2 === null ? "—" : formatMoney(summary.price_per_m2);
+  const [stageHeight, setStageHeight] = useState<number | null>(null);
+  const previousHeightRef = useRef<number | null>(null);
+  const settingsRef = useRef<HTMLDivElement | null>(null);
+  const summaryRef = useRef<HTMLDivElement | null>(null);
+  const estimateRef = useRef<HTMLDivElement | null>(null);
+  const estimateTotal = warmFloorPreview.specification.reduce((sum, item) => sum + item.amount, 0);
+
+  useLayoutEffect(() => {
+    const refsByMode = { settings: settingsRef, summary: summaryRef, estimate: estimateRef };
+    const target = refsByMode[panelMode].current;
+    if (!target) return;
+    const nextHeight = Math.ceil(target.getBoundingClientRect().height);
+    const previousHeight = previousHeightRef.current;
+    previousHeightRef.current = nextHeight;
+    if (!previousHeight || previousHeight === nextHeight) {
+      setStageHeight(null);
+      return;
+    }
+    let frameId = window.requestAnimationFrame(() => setStageHeight(nextHeight));
+    setStageHeight(previousHeight);
+    const timeoutId = window.setTimeout(() => setStageHeight(null), 360);
+    return () => {
+      window.cancelAnimationFrame(frameId);
+      window.clearTimeout(timeoutId);
+    };
+  }, [panelMode]);
+
+  useLayoutEffect(() => {
+    let frameId: number | null = null;
+    const refsByMode = { settings: settingsRef, summary: summaryRef, estimate: estimateRef };
+    const target = refsByMode[panelMode].current;
+    if (!target) return;
+    const measureHeight = () => {
+      previousHeightRef.current = Math.ceil(target.getBoundingClientRect().height);
+    };
+    const scheduleMeasure = () => {
+      if (frameId !== null) window.cancelAnimationFrame(frameId);
+      frameId = window.requestAnimationFrame(measureHeight);
+    };
+    const observer = new ResizeObserver(scheduleMeasure);
+    observer.observe(target);
+    scheduleMeasure();
+    return () => {
+      observer.disconnect();
+      if (frameId !== null) window.cancelAnimationFrame(frameId);
+    };
+  }, [panelMode, warmFloorPreview.specification.length]);
+
+  function getSceneClass(mode: WarmFloorPanelMode): string {
+    if (panelMode === mode) return "warmfloor-panel-scene warmfloor-panel-scene-active";
+    if ((mode === "settings" && panelMode !== "settings") || (mode === "summary" && panelMode === "estimate")) {
+      return "warmfloor-panel-scene warmfloor-panel-scene-hidden-left";
+    }
+    return "warmfloor-panel-scene warmfloor-panel-scene-hidden-right";
+  }
 
   return (
-    <div className="space-y-3">
-      {warmFloorSettingsOpen ? (
-        <div className="subpanel p-3 space-y-2">
-          <div className="flex items-center justify-between gap-3">
+    <div className="warmfloor-panel-scene-stage" style={stageHeight ? { height: `${stageHeight}px` } : undefined}>
+      <div ref={settingsRef} className={getSceneClass("settings")}>
+        <WarmFloorSettingsPanel warmFloorState={warmFloorState} setWarmFloorState={setWarmFloorState} />
+      </div>
+
+      <div ref={summaryRef} className={getSceneClass("summary")}>
+        <div className="subpanel calculator-stage-section warmfloor-summary-panel p-3">
+          <div className="calculator-stage-section-head">
             <div>
-              <div className="text-xs uppercase tracking-[0.16em] text-slate-500">Таблица параметров</div>
-              <div className="mt-1 text-[12px] text-slate-400">
-                Здесь меняются цены, расход трубы и пороги по системе
+              <div className="calculator-stage-section-kicker">Свод по системе</div>
+              <div className="calculator-stage-section-title">Итог и объёмы системы</div>
+            </div>
+            <div className="calculator-stage-inline-status">
+              <span className="slot-chip">{getAutosaveLabel(autosaveState)}</span>
+            </div>
+          </div>
+
+          <div className="warmfloor-summary-total">
+            <div>
+              <div className="warmfloor-summary-label">Итого по тёплому полу</div>
+              <div className="warmfloor-summary-value">{formatMoney(summary.grand_total)}</div>
+            </div>
+            <div className="warmfloor-summary-rate">
+              <span>Цена за м²</span>
+              <strong>{pricePerSquare}</strong>
+            </div>
+          </div>
+
+          <div className="warmfloor-summary-strip">
+            <MetricChip label="Помещений" value={String(summary.rooms_count)} />
+            <MetricChip label="Площадь" value={formatArea(summary.total_area_m2)} />
+            <MetricChip label="Труба" value={formatMeters(summary.total_pipe_m)} />
+            <MetricChip label="Контуры" value={String(summary.total_contours)} />
+          </div>
+
+          <div className="warmfloor-summary-note">Пересчитывается от выбранных помещений и параметров системы.</div>
+        </div>
+      </div>
+
+      <div ref={estimateRef} className={getSceneClass("estimate")}>
+        <div className="subpanel calculator-stage-section warmfloor-estimate-panel p-3">
+          <div className="calculator-stage-section-head">
+            <div>
+              <div className="calculator-stage-section-kicker">Сметная ведомость</div>
+              <div className="calculator-stage-section-title">Работы и подробная спецификация материалов</div>
+            </div>
+            <div className="calculator-stage-section-note">
+              {warmFloorPreview.specification.length
+                ? `${warmFloorPreview.specification.length} позиций · ${formatMoney(estimateTotal)}`
+                : "Пока нет выбранных помещений."}
+            </div>
+          </div>
+
+          {warmFloorPreview.specification.length ? (
+            <div className="warmfloor-estimate-list">
+              {warmFloorPreview.specification.map((item, index) => (
+                <EstimateRow item={item} index={index} key={`${item.kind}-${item.title}-${index}`} />
+              ))}
+              <div className="warmfloor-estimate-total">
+                <span>Итого по ведомости</span>
+                <strong>{formatMoney(estimateTotal)}</strong>
               </div>
             </div>
-            <Button type="button" variant="micro" onClick={() => setWarmFloorSettingsOpen(false)}>
-              Скрыть
-            </Button>
-          </div>
+          ) : (
+            <div className="warmfloor-estimate-empty">Выберите помещения тёплого пола, чтобы собрать ведомость.</div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
 
-          <div className="warmfloor-settings-table-wrap">
-            <table className="warmfloor-settings-table">
-              <tbody>
-                {WARM_FLOOR_SETTINGS_FIELDS.map((field) => (
-                  <tr key={field.key}>
-                    <th>{field.label}</th>
-                    <td>
-                      <input
-                        className="text-input"
-                        value={warmFloorState[field.key]}
-                        onChange={(event) =>
-                          setWarmFloorState((current) => ({
-                            ...current,
-                            [field.key]: event.target.value,
-                          }))
-                        }
-                      />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+function EstimateRow(props: { item: CalculatorWarmFloorSpecItem; index: number }) {
+  const { item } = props;
+  return (
+    <div className="warmfloor-estimate-row-shell">
+      <div className="warmfloor-estimate-row">
+        <div className="warmfloor-estimate-main">
+          <span className="warmfloor-estimate-kind">{item.kind === "work" ? "Работы" : "Материалы"}</span>
+          <strong>{item.title}</strong>
+        </div>
+        <div className="warmfloor-estimate-meta">
+          <span>
+            {trimFloat(item.quantity)} {item.unit}
+          </span>
+          <strong>{formatMoney(item.amount)}</strong>
+        </div>
+      </div>
+      {item.children?.length ? (
+        <div className="warmfloor-estimate-children">
+          {item.children.map((child, childIndex) => (
+            <div className="warmfloor-estimate-child" key={`${child.title}-${childIndex}`}>
+              <span>{child.title}</span>
+              <strong>{formatMoney(child.amount)}</strong>
+            </div>
+          ))}
         </div>
       ) : null}
-
-      <div className="section-separator">
-        <span>Свод по тёплому полу</span>
-      </div>
-
-      <div className="grid gap-2 md:grid-cols-2">
-        <MetricChip label="Помещений ТП" value={String(warmFloorPreview.summary.rooms_count)} />
-        <MetricChip label="Площадь ТП" value={formatArea(warmFloorPreview.summary.total_area_m2)} />
-        <MetricChip label="Труба" value={formatMeters(warmFloorPreview.summary.total_pipe_m)} />
-        <MetricChip label="Контуры" value={String(warmFloorPreview.summary.total_contours)} />
-        <MetricChip label="Гребёнка" value={warmFloorPreview.summary.manifold_needed ? "Да" : "Нет"} />
-        <MetricChip label="Насос" value={warmFloorPreview.summary.pump_needed ? "Да" : "Нет"} />
-        <MetricChip label="Работы" value={formatMoney(warmFloorPreview.summary.work_total)} />
-        <MetricChip label="Материалы" value={formatMoney(warmFloorPreview.summary.material_total)} />
-        <MetricChip label="Итого" value={formatMoney(warmFloorPreview.summary.grand_total)} />
-        <MetricChip
-          label="Цена за м²"
-          value={
-            warmFloorPreview.summary.price_per_m2 === null ? "—" : formatMoney(warmFloorPreview.summary.price_per_m2)
-          }
-        />
-      </div>
-
-      <div className="flex flex-wrap gap-2">
-        <Button type="submit" disabled={busyKey === `calculator-warm-floor-save-${projectDetail.project.id}`}>
-          {busyKey === `calculator-warm-floor-save-${projectDetail.project.id}`
-            ? "Сохраняю..."
-            : "Сохранить тёплый пол"}
-        </Button>
-        <Button type="button" variant="secondary" onClick={resetWarmFloorState}>
-          Сбросить правки
-        </Button>
-      </div>
     </div>
   );
 }

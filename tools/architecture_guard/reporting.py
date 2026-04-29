@@ -8,6 +8,7 @@ from .paths import GuardRuntimePaths
 from .scanner import ScanSnapshot, Violation, ViolationEvent
 from .snapshot import serialize_event, serialize_snapshot, summarize_severity_counts, total_violation_count
 from .topology import TopologyViolation
+from .ui_motion import UiMotionViolation
 
 
 SEVERITY_LABELS = {
@@ -60,6 +61,7 @@ class GuardReporter:
             "size_violation_count": len(snapshot.violations) if snapshot is not None else 0,
             "layer_violation_count": len(snapshot.layer_violations) if snapshot is not None else 0,
             "topology_violation_count": len(snapshot.topology_violations) if snapshot is not None else 0,
+            "ui_motion_violation_count": len(snapshot.ui_motion_violations) if snapshot is not None else 0,
             "violation_count": total_violation_count(snapshot) if snapshot is not None else 0,
             "snapshot_json_path": str(self._paths.snapshot_json_path),
             "snapshot_text_path": str(self._paths.snapshot_text_path),
@@ -77,10 +79,11 @@ def render_snapshot_text(snapshot: ScanSnapshot) -> str:
         f"size_violation_count: {len(snapshot.violations)}",
         f"layer_violation_count: {len(snapshot.layer_violations)}",
         f"topology_violation_count: {len(snapshot.topology_violations)}",
+        f"ui_motion_violation_count: {len(snapshot.ui_motion_violations)}",
         f"violation_count: {total_violation_count(snapshot)}",
     ]
 
-    if not snapshot.violations and not snapshot.layer_violations and not snapshot.topology_violations:
+    if not snapshot.violations and not snapshot.layer_violations and not snapshot.topology_violations and not snapshot.ui_motion_violations:
         lines.append("No active architecture violations.")
         return "\n".join(lines)
 
@@ -106,12 +109,21 @@ def render_snapshot_text(snapshot: ScanSnapshot) -> str:
             key=lambda item: (item.relative_path, item.subject_path, item.rule_name),
         ):
             lines.append(format_topology_violation_line(violation))
+    if snapshot.ui_motion_violations:
+        lines.append("UI motion violations:")
+        for violation in sorted(
+            snapshot.ui_motion_violations.values(),
+            key=lambda item: (item.relative_path, item.line_number, item.rule_name),
+        ):
+            lines.append(format_ui_motion_violation_line(violation))
     return "\n".join(lines)
 
 
 def render_event_message(event: ViolationEvent) -> str:
     if event.category == "topology":
         return render_topology_event_message(event)
+    if event.category == "ui_motion":
+        return render_ui_motion_event_message(event)
     if event.category == "layer":
         return render_layer_event_message(event)
 
@@ -168,6 +180,18 @@ def render_topology_event_message(event: ViolationEvent) -> str:
     )
 
 
+def render_ui_motion_event_message(event: ViolationEvent) -> str:
+    if event.kind == "violation_cleared":
+        return f"[architecture-guard][INFO] UI motion restored: {event.relative_path} no longer violates {event.rule_name}."
+
+    prefix = "Existing UI motion violation" if event.kind == "violation_present" else "UI motion violation after save"
+    label = severity_label(event.severity)
+    return (
+        f"[architecture-guard][{label}] {prefix}: {event.relative_path} "
+        f"(line {event.import_line}), rule {event.rule_name}. {event.message}"
+    )
+
+
 def format_violation_line(violation: Violation) -> str:
     return (
         f"- {violation.relative_path}: {violation.line_count} lines | "
@@ -187,6 +211,13 @@ def format_layer_violation_line(violation: LayerViolation) -> str:
 def format_topology_violation_line(violation: TopologyViolation) -> str:
     return (
         f"- {violation.relative_path}: subject {violation.subject_path} | "
+        f"rule {violation.rule_name} | severity {violation.severity} | {violation.message}"
+    )
+
+
+def format_ui_motion_violation_line(violation: UiMotionViolation) -> str:
+    return (
+        f"- {violation.relative_path}: line {violation.line_number} | "
         f"rule {violation.rule_name} | severity {violation.severity} | {violation.message}"
     )
 

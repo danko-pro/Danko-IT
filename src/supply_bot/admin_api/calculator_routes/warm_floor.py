@@ -1,3 +1,4 @@
+import json
 from typing import Any
 
 from fastapi import FastAPI, HTTPException, Request
@@ -22,6 +23,13 @@ def register_calculator_warm_floor_routes(
     ) -> dict[str, Any]:
         storage_obj = get_calculator_route_storage(request)
         await require_estimate_project(storage_obj, project_id)
+
+        manifold_material_total = sum(max(0.0, float(item.amount)) for item in payload.manifold_material_items)
+        pump_material_total = sum(max(0.0, float(item.amount)) for item in payload.pump_material_items)
+        if payload.manifold_material_items:
+            payload.manifold_material_price = manifold_material_total
+        if payload.pump_material_items:
+            payload.pump_material_price = pump_material_total
 
         if payload.work_price_per_m2 < 0 or payload.pipe_m_per_m2 < 0 or payload.pipe_price_per_m < 0:
             raise HTTPException(status_code=400, detail="Warm floor prices and consumption must be non-negative")
@@ -69,6 +77,19 @@ def register_calculator_warm_floor_routes(
             pump_work_price=float(payload.pump_work_price),
             pump_material_price=float(payload.pump_material_price),
             pipe_price_per_m=float(payload.pipe_price_per_m),
+            pipe_material_title=payload.pipe_material_title.strip() or "Труба PEX-a 16x2 для водяного тёплого пола",
+            manifold_material_items_json=json.dumps(
+                [_material_item_payload(item) for item in payload.manifold_material_items],
+                ensure_ascii=False,
+            ),
+            pump_material_items_json=json.dumps(
+                [_material_item_payload(item) for item in payload.pump_material_items],
+                ensure_ascii=False,
+            ),
+            consumable_material_items_json=json.dumps(
+                [_material_item_payload(item) for item in payload.consumable_material_items],
+                ensure_ascii=False,
+            ),
             pump_rooms_threshold=int(payload.pump_rooms_threshold),
             pump_contours_threshold=int(payload.pump_contours_threshold),
         )
@@ -79,3 +100,12 @@ def register_calculator_warm_floor_routes(
             project_id,
             detail="Project not found after warm floor update",
         )
+
+
+def _material_item_payload(item: Any) -> dict[str, Any]:
+    return {
+        "title": item.title.strip(),
+        "unit": item.unit.strip() or "компл.",
+        "quantity": max(0.0, float(item.quantity)),
+        "amount": max(0.0, float(item.amount)),
+    }

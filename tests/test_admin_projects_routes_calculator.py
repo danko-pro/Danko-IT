@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import sqlite3
+from contextlib import closing
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import AsyncMock, patch
@@ -12,6 +14,37 @@ from tests.admin_projects_routes_case import AdminProjectsRouteCase
 
 
 class AdminProjectsCalculatorRouteTests(AdminProjectsRouteCase):
+    def test_legacy_estimate_project_schema_migrates_passport_columns(self) -> None:
+        with TemporaryDirectory() as tmp_dir:
+            root = Path(tmp_dir)
+            settings = load_settings(self._create_settings_file(root))
+
+            with closing(sqlite3.connect(settings.database_path)) as db:
+                db.execute(
+                    """
+                    CREATE TABLE estimate_projects (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        name TEXT NOT NULL,
+                        note TEXT,
+                        group_chat_id INTEGER,
+                        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+                    )
+                    """
+                )
+                db.execute("INSERT INTO estimate_projects (name) VALUES (?)", ("Legacy project",))
+                db.commit()
+
+            with TestClient(create_admin_app(settings)) as client:
+                response = client.get("/api/calculator/projects")
+
+            self.assertEqual(response.status_code, 200)
+            projects = response.json()
+            self.assertEqual(projects[0]["name"], "Legacy project")
+            self.assertEqual(projects[0]["address"], "")
+            self.assertEqual(projects[0]["apartment"], "")
+            self.assertFalse(projects[0]["has_elevator"])
+
     def test_calculator_routes_roundtrip(self) -> None:
         with TemporaryDirectory() as tmp_dir:
             root = Path(tmp_dir)

@@ -1,5 +1,3 @@
-"""Схемы калькулятора проекта и его подэтапов."""
-
 from pydantic import BaseModel, Field
 
 
@@ -62,8 +60,11 @@ class CalculatorWarmFloorRoomPayload(BaseModel):
     selected: bool = False
     area_m2_override: float | None = None
     note: str | None = None
-
-
+class CalculatorWarmFloorMaterialItemPayload(BaseModel):
+    title: str
+    unit: str = "компл."
+    quantity: float = 1
+    amount: float = 0
 class CalculatorWarmFloorUpdatePayload(BaseModel):
     work_price_per_m2: float = 1600
     pipe_m_per_m2: float = 6
@@ -74,11 +75,13 @@ class CalculatorWarmFloorUpdatePayload(BaseModel):
     pump_work_price: float = 8000
     pump_material_price: float = 25000
     pipe_price_per_m: float = 170
+    pipe_material_title: str = "Труба PEX-a 16x2 для водяного тёплого пола"
+    manifold_material_items: list[CalculatorWarmFloorMaterialItemPayload] = Field(default_factory=list)
+    pump_material_items: list[CalculatorWarmFloorMaterialItemPayload] = Field(default_factory=list)
+    consumable_material_items: list[CalculatorWarmFloorMaterialItemPayload] = Field(default_factory=list)
     pump_rooms_threshold: int = 3
     pump_contours_threshold: int = 4
     rooms: list[CalculatorWarmFloorRoomPayload] = Field(default_factory=list)
-
-
 class CalculatorFlooringCoveringPayload(BaseModel):
     title: str
     material_price_per_m2: float = 0

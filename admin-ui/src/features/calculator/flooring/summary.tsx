@@ -22,21 +22,19 @@ export function FlooringStageSummaryColumn(props: FlooringStageReadyProps) {
   return (
     <div className="space-y-3">
       {flooringSettingsOpen ? (
-        <div className="subpanel p-3 space-y-3">
-          <div className="flex items-center justify-between gap-3">
+        <div className="subpanel calculator-stage-section p-3 space-y-3">
+          <div className="calculator-stage-section-head">
             <div>
-              <div className="text-xs uppercase tracking-[0.16em] text-slate-500">Настройки проекта</div>
-              <div className="mt-1 text-[12px] text-slate-400">
-                Переключатели и цены, которые влияют на весь блок напольных покрытий
-              </div>
+              <div className="calculator-stage-section-kicker">Глобальные параметры</div>
+              <div className="calculator-stage-section-title">Настройки напольных покрытий</div>
             </div>
-            <Button type="button" variant="micro" onClick={() => setFlooringSettingsOpen(false)}>
-              Скрыть
-            </Button>
+            <div className="calculator-stage-section-note">
+              Переключатели и ставки, которые влияют на весь блок: подложка, плинтус, демонтаж и подготовка.
+            </div>
           </div>
 
           <div className="grid gap-2 md:grid-cols-2">
-            <label className="subpanel flex items-center gap-3 px-3 py-3">
+            <label className="subpanel calculator-stage-toggle-card flex items-center gap-3 px-3 py-3">
               <input
                 type="checkbox"
                 checked={flooringState.include_underlay}
@@ -46,7 +44,7 @@ export function FlooringStageSummaryColumn(props: FlooringStageReadyProps) {
               />
               <span className="text-sm font-semibold text-slate-100">Включать подложку</span>
             </label>
-            <label className="subpanel flex items-center gap-3 px-3 py-3">
+            <label className="subpanel calculator-stage-toggle-card flex items-center gap-3 px-3 py-3">
               <input
                 type="checkbox"
                 checked={flooringState.include_plinth}
@@ -56,7 +54,7 @@ export function FlooringStageSummaryColumn(props: FlooringStageReadyProps) {
               />
               <span className="text-sm font-semibold text-slate-100">Включать плинтус</span>
             </label>
-            <label className="subpanel flex items-center gap-3 px-3 py-3">
+            <label className="subpanel calculator-stage-toggle-card flex items-center gap-3 px-3 py-3">
               <input
                 type="checkbox"
                 checked={flooringState.include_demolition}
@@ -66,7 +64,7 @@ export function FlooringStageSummaryColumn(props: FlooringStageReadyProps) {
               />
               <span className="text-sm font-semibold text-slate-100">Включать демонтаж</span>
             </label>
-            <label className="subpanel flex items-center gap-3 px-3 py-3">
+            <label className="subpanel calculator-stage-toggle-card flex items-center gap-3 px-3 py-3">
               <input
                 type="checkbox"
                 checked={flooringState.include_preparation}
@@ -118,30 +116,53 @@ export function FlooringStageSummaryColumn(props: FlooringStageReadyProps) {
               }
             />
           </div>
+
+          <div className="calculator-stage-action-row">
+            <Button type="button" variant="secondary" onClick={() => setFlooringSettingsOpen(false)}>
+              Скрыть параметры
+            </Button>
+          </div>
         </div>
       ) : null}
 
-      <div className="section-separator">
-        <span>Свод, технологичка и спецификация</span>
+      <div className="subpanel calculator-stage-section p-3 space-y-3">
+        <div className="calculator-stage-section-head">
+          <div>
+            <div className="calculator-stage-section-kicker">Свод по покрытиям</div>
+            <div className="calculator-stage-section-title">Площади, закупка и итоговые суммы</div>
+          </div>
+          <div className="calculator-stage-section-note">
+            Быстрый срез по выбранным покрытиям, плинтусу и общей цене за квадратный метр.
+          </div>
+        </div>
+
+        <div className="calculator-stage-metric-grid md:grid-cols-2">
+          <MetricChip label="Помещений" value={String(flooringPreview.summary.rooms_count)} />
+          <MetricChip label="Площадь" value={formatArea(flooringPreview.summary.total_area_m2)} />
+          <MetricChip label="Закупка" value={formatArea(flooringPreview.summary.total_purchase_area_m2)} />
+          <MetricChip label="Плинтус" value={formatMeters(flooringPreview.summary.total_plinth_m)} />
+          <MetricChip label="Работы" value={formatMoney(flooringPreview.summary.work_total)} />
+          <MetricChip label="Материалы" value={formatMoney(flooringPreview.summary.material_total)} />
+          <MetricChip label="Итого" value={formatMoney(flooringPreview.summary.grand_total)} />
+          <MetricChip
+            label="Цена за м²"
+            value={flooringPreview.summary.price_per_m2 === null ? "—" : formatMoney(flooringPreview.summary.price_per_m2)}
+          />
+        </div>
       </div>
 
-      <div className="grid gap-2 md:grid-cols-2">
-        <MetricChip label="Помещений" value={String(flooringPreview.summary.rooms_count)} />
-        <MetricChip label="Площадь" value={formatArea(flooringPreview.summary.total_area_m2)} />
-        <MetricChip label="Закупка" value={formatArea(flooringPreview.summary.total_purchase_area_m2)} />
-        <MetricChip label="Плинтус" value={formatMeters(flooringPreview.summary.total_plinth_m)} />
-        <MetricChip label="Работы" value={formatMoney(flooringPreview.summary.work_total)} />
-        <MetricChip label="Материалы" value={formatMoney(flooringPreview.summary.material_total)} />
-        <MetricChip label="Итого" value={formatMoney(flooringPreview.summary.grand_total)} />
-        <MetricChip
-          label="Цена за м²"
-          value={flooringPreview.summary.price_per_m2 === null ? "—" : formatMoney(flooringPreview.summary.price_per_m2)}
-        />
-      </div>
+      <div className="subpanel calculator-stage-section p-3 space-y-3">
+        <div className="calculator-stage-section-head">
+          <div>
+            <div className="calculator-stage-section-kicker">Расходники</div>
+            <div className="calculator-stage-section-title">Свод материалов и инструмента</div>
+          </div>
+          <div className="calculator-stage-section-note">
+            Суммарные объёмы подложки, клея, грунта, СВП, затирки и инструмента по текущему набору комнат.
+          </div>
+        </div>
 
-      <div className="subpanel p-3 space-y-2">
-        <div className="text-xs uppercase tracking-[0.16em] text-slate-500">Свод расходников</div>
-        <div className="grid gap-2 md:grid-cols-2">
+        <div className="calculator-stage-metric-grid md:grid-cols-2">
           <MetricChip
             label="Подложка"
             value={`${trimFloat(flooringPreview.summary.total_underlay_qty)} ${flooringPreview.summary.underlay_unit}`}
@@ -164,15 +185,13 @@ export function FlooringStageSummaryColumn(props: FlooringStageReadyProps) {
       <FlooringStageCoveringsCatalog flooringDetail={props.flooringDetail} />
       <FlooringStageSpecification flooringPreview={flooringPreview} />
 
-      <div className="flex flex-wrap gap-2">
+      <div className="calculator-stage-action-row">
         <Button
           type="button"
           disabled={busyKey === `calculator-flooring-save-${projectDetail.project.id}`}
           onClick={() => void submitFlooring()}
         >
-          {busyKey === `calculator-flooring-save-${projectDetail.project.id}`
-            ? "Сохраняю..."
-            : "Сохранить напольные покрытия"}
+          {busyKey === `calculator-flooring-save-${projectDetail.project.id}` ? "Сохраняю..." : "Сохранить напольные покрытия"}
         </Button>
         <Button type="button" variant="secondary" onClick={resetFlooringState}>
           Сбросить правки

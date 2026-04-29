@@ -5,6 +5,7 @@ from pathlib import Path
 
 from .layers import LayerViolation
 from .topology import TopologyViolation
+from .ui_motion import UiMotionViolation
 
 
 @dataclass(frozen=True, slots=True)
@@ -52,3 +53,4 @@ class ScanSnapshot:
     violations: dict[str, Violation]
     layer_violations: dict[str, LayerViolation]
     topology_violations: dict[str, TopologyViolation]
+    ui_motion_violations: dict[str, UiMotionViolation]

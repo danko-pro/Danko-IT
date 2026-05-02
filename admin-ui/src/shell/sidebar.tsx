@@ -36,6 +36,7 @@ export function AppShellSidebar(props: {
                 <button
                   type="button"
                   title={item.note}
+                  data-testid={`nav-${item.key}`}
                   className={active ? "nav-button nav-button-active" : "nav-button"}
                   onClick={() => props.onScreenSelect(item.key)}
                 >
@@ -52,6 +53,7 @@ export function AppShellSidebar(props: {
                           <button
                             key={project.id}
                             type="button"
+                            data-testid={`calculator-project-${project.id}`}
                             className={projectActive ? "calculator-nav-item calculator-nav-item-active" : "calculator-nav-item"}
                             onClick={() => {
                               props.onSelectCalculatorProject(project.id);

@@ -7,6 +7,7 @@
     "predev": "python ../tools/project_guard.py frontend",
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
+    "smoke:ui": "playwright test",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -14,6 +15,7 @@
     "react-dom": "^19.2.5"
   },
   "devDependencies": {
+    "@playwright/test": "^1.59.1",
     "@tailwindcss/vite": "^4.2.2",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",

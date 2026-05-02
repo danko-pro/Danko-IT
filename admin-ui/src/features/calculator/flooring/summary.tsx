@@ -133,7 +133,9 @@ export function FlooringStageSummaryColumn(props: FlooringStageSummaryColumnProp
           <div className="warmfloor-summary-total">
             <div>
               <div className="warmfloor-summary-label">Итого по напольным покрытиям</div>
-              <div className="warmfloor-summary-value">{formatMoney(summary.grand_total)}</div>
+              <div className="warmfloor-summary-value" data-testid="flooring-summary-grand-total">
+                {formatMoney(summary.grand_total)}
+              </div>
             </div>
             <div className="warmfloor-summary-rate">
               <span>Цена за м2</span>
@@ -143,7 +145,9 @@ export function FlooringStageSummaryColumn(props: FlooringStageSummaryColumnProp
 
           <div className="warmfloor-summary-strip">
             <MetricChip label="Помещений" value={String(summary.rooms_count)} />
-            <MetricChip label="Площадь" value={formatArea(summary.total_area_m2)} />
+            <span data-testid="flooring-summary-area">
+              <MetricChip label="Площадь" value={formatArea(summary.total_area_m2)} />
+            </span>
             <MetricChip label="Закупка" value={formatArea(summary.total_purchase_area_m2)} />
             <MetricChip label="Плинтус" value={formatMeters(summary.total_plinth_m)} />
           </div>

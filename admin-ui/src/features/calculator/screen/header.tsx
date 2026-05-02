@@ -79,6 +79,7 @@ export function CalculatorHeaderSection(props: CalculatorHeaderSectionProps) {
                     : "calculator-stage-switch-button ui-tooltip-anchor ui-tooltip-center"
                 }
                 data-tooltip={option.label}
+                data-testid={`calculator-stage-${option.stage}`}
                 aria-label={option.label}
                 onClick={() => setActiveStage(option.stage)}
               >

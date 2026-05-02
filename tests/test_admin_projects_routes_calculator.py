@@ -307,3 +307,175 @@ class AdminProjectsCalculatorRouteTests(AdminProjectsRouteCase):
                 self.assertEqual(updated_room["stats"]["openings_area_m2"], 0)
                 self.assertAlmostEqual(updated_room["stats"]["wall_area_gross_m2"], 8.1)
                 self.assertAlmostEqual(updated_room["stats"]["wall_area_net_m2"], 8.1)
+
+    def test_flooring_zones_roundtrip_recalculates_project(self) -> None:
+        with TemporaryDirectory() as tmp_dir:
+            root = Path(tmp_dir)
+            settings = load_settings(self._create_settings_file(root))
+
+            with TestClient(create_admin_app(settings)) as client:
+                project_response = client.post(
+                    "/api/calculator/projects",
+                    json={"name": "Flooring zone smoke"},
+                )
+                self.assertEqual(project_response.status_code, 200)
+                project_id = int(project_response.json()["project"]["id"])
+
+                room_response = client.post(
+                    f"/api/calculator/projects/{project_id}/rooms",
+                    json={
+                        "name": "Room",
+                        "ceiling_height_m": 2.7,
+                        "auto_perimeter_calc": True,
+                        "perimeter_factor": 1.15,
+                    },
+                )
+                self.assertEqual(room_response.status_code, 200)
+                room_id = int(room_response.json()["room"]["id"])
+
+                update_room_response = client.patch(
+                    f"/api/calculator/rooms/{room_id}",
+                    json={
+                        "name": "Room",
+                        "ceiling_height_m": 2.7,
+                        "manual_floor_area_m2": 18.5,
+                        "auto_perimeter_calc": True,
+                        "perimeter_factor": 1.15,
+                        "note": "",
+                        "walls_m": [4.2, 4.2, 3.5, 3.5],
+                        "floor_sections": [],
+                        "openings": [],
+                    },
+                )
+                self.assertEqual(update_room_response.status_code, 200)
+
+                covering_response = client.post(
+                    "/api/calculator/flooring/coverings",
+                    json={
+                        "title": "Smoke covering",
+                        "material_price_per_m2": 1200,
+                        "labor_price_per_m2": 650,
+                        "base_waste_percent": 7,
+                        "underlay_mode": "area",
+                        "underlay_consumption_per_m2": 1,
+                        "glue_consumption_per_m2": 0.2,
+                        "glue_unit": "kg",
+                        "glue_price_per_unit": 180,
+                        "primer_consumption_per_m2": 0.1,
+                        "primer_unit": "l",
+                        "primer_price_per_unit": 220,
+                        "svp_consumption_per_m2": 1.5,
+                        "svp_unit": "pcs",
+                        "svp_price_per_unit": 4,
+                        "grout_consumption_per_m2": 0.05,
+                        "grout_unit": "kg",
+                        "grout_price_per_unit": 300,
+                        "custom_consumables": [
+                            {
+                                "title": "Smoke additive",
+                                "consumption_per_m2": 0.1,
+                                "unit": "pcs",
+                                "price_per_unit": 50,
+                            }
+                        ],
+                        "needs_plinth": True,
+                        "instrument_price_per_m2": 35,
+                    },
+                )
+                self.assertEqual(covering_response.status_code, 200)
+                covering_id = int(covering_response.json()["id"])
+
+                preparation_response = client.post(
+                    "/api/calculator/flooring/preparations",
+                    json={
+                        "title": "Smoke preparation",
+                        "labor_price_per_m2": 180,
+                        "material_price_per_m2": 90,
+                        "primer_consumption_per_m2": 0.05,
+                        "primer_unit": "l",
+                        "primer_price_per_unit": 200,
+                    },
+                )
+                self.assertEqual(preparation_response.status_code, 200)
+                preparation_id = int(preparation_response.json()["id"])
+
+                layout_response = client.post(
+                    "/api/calculator/flooring/layouts",
+                    json={
+                        "title": "Smoke layout",
+                        "labor_multiplier": 1.15,
+                        "extra_waste_percent": 3,
+                    },
+                )
+                self.assertEqual(layout_response.status_code, 200)
+                layout_id = int(layout_response.json()["id"])
+
+                flooring_response = client.patch(
+                    f"/api/calculator/projects/{project_id}/flooring",
+                    json={
+                        "include_underlay": True,
+                        "include_plinth": True,
+                        "include_demolition": True,
+                        "include_preparation": True,
+                        "default_preparation_id": preparation_id,
+                        "demolition_price_per_m2": 150,
+                        "underlay_price_per_m2": 120,
+                        "plinth_material_price_per_m": 180,
+                        "plinth_install_price_per_m": 250,
+                        "threshold_profile_count": 2,
+                        "threshold_profile_price": 900,
+                        "global_items": [
+                            {
+                                "kind": "work",
+                                "title": "Smoke fixed work",
+                                "mode": "fixed",
+                                "rate": 1234,
+                                "quantity": 1,
+                                "enabled": True,
+                            }
+                        ],
+                        "rooms": [
+                            {
+                                "room_id": room_id,
+                                "selected": True,
+                                "covering_id": covering_id,
+                                "preparation_id": preparation_id,
+                                "layout_id": layout_id,
+                                "area_m2_override": 18.5,
+                                "perimeter_m_override": 15.4,
+                                "plinth_m_override": 14.2,
+                                "note": "main room",
+                                "zones": [
+                                    {
+                                        "covering_id": covering_id,
+                                        "preparation_id": preparation_id,
+                                        "layout_id": layout_id,
+                                        "area_m2": 10.0,
+                                        "note": "zone A",
+                                    },
+                                    {
+                                        "covering_id": covering_id,
+                                        "preparation_id": preparation_id,
+                                        "layout_id": layout_id,
+                                        "area_m2": 8.5,
+                                        "note": "zone B",
+                                    },
+                                ],
+                            }
+                        ],
+                    },
+                )
+                self.assertEqual(flooring_response.status_code, 200)
+
+                project_readback_response = client.get(f"/api/calculator/projects/{project_id}")
+                self.assertEqual(project_readback_response.status_code, 200)
+                flooring = project_readback_response.json()["flooring"]
+                self.assertEqual(flooring["summary"]["rooms_count"], 1)
+                self.assertGreater(flooring["summary"]["grand_total"], 0)
+                self.assertEqual(len(flooring["rooms"]), 1)
+                self.assertEqual(len(flooring["rooms"][0]["zones"]), 2)
+                self.assertGreater(len(flooring["specification"]), 0)
+                self.assertAlmostEqual(
+                    sum(item["amount"] for item in flooring["specification"]),
+                    flooring["summary"]["grand_total"],
+                )

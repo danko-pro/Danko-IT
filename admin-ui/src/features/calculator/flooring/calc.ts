@@ -12,20 +12,21 @@ import { createFlooringSpecCollector, createFlooringSummary, finalizeFlooringSum
 // Основной модуль держит только orchestration flooring-логики.
 
 export function buildFlooringState(detail: CalculatorFlooringDetail, draft: FlooringEditState | null = null): FlooringEditState {
-  const draftRooms = new Map((draft?.rooms ?? []).map((room) => [room.room_id, room]));
+  const effectiveDraft = hasMeaningfulFlooringDraft(draft) ? draft : null;
+  const draftRooms = new Map((effectiveDraft?.rooms ?? []).map((room) => [room.room_id, room]));
   return {
-    include_underlay: draft?.include_underlay ?? Boolean(detail.config.include_underlay),
-    include_plinth: draft?.include_plinth ?? Boolean(detail.config.include_plinth),
-    include_demolition: draft?.include_demolition ?? Boolean(detail.config.include_demolition),
-    include_preparation: draft?.include_preparation ?? Boolean(detail.config.include_preparation),
+    include_underlay: effectiveDraft?.include_underlay ?? Boolean(detail.config.include_underlay),
+    include_plinth: effectiveDraft?.include_plinth ?? Boolean(detail.config.include_plinth),
+    include_demolition: effectiveDraft?.include_demolition ?? Boolean(detail.config.include_demolition),
+    include_preparation: effectiveDraft?.include_preparation ?? Boolean(detail.config.include_preparation),
     default_preparation_id: "",
-    demolition_price_per_m2: draft?.demolition_price_per_m2 ?? trimFloat(detail.config.demolition_price_per_m2),
-    underlay_price_per_m2: draft?.underlay_price_per_m2 ?? trimFloat(detail.config.underlay_price_per_m2),
-    plinth_material_price_per_m: draft?.plinth_material_price_per_m ?? trimFloat(detail.config.plinth_material_price_per_m),
-    plinth_install_price_per_m: draft?.plinth_install_price_per_m ?? trimFloat(detail.config.plinth_install_price_per_m),
-    threshold_profile_count: draft?.threshold_profile_count ?? trimFloat(detail.config.threshold_profile_count),
-    threshold_profile_price: draft?.threshold_profile_price ?? trimFloat(detail.config.threshold_profile_price),
-    global_items: draft?.global_items ?? parseGlobalItems(detail.config.global_items_json),
+    demolition_price_per_m2: effectiveDraft?.demolition_price_per_m2 ?? trimFloat(detail.config.demolition_price_per_m2),
+    underlay_price_per_m2: effectiveDraft?.underlay_price_per_m2 ?? trimFloat(detail.config.underlay_price_per_m2),
+    plinth_material_price_per_m: effectiveDraft?.plinth_material_price_per_m ?? trimFloat(detail.config.plinth_material_price_per_m),
+    plinth_install_price_per_m: effectiveDraft?.plinth_install_price_per_m ?? trimFloat(detail.config.plinth_install_price_per_m),
+    threshold_profile_count: effectiveDraft?.threshold_profile_count ?? trimFloat(detail.config.threshold_profile_count),
+    threshold_profile_price: effectiveDraft?.threshold_profile_price ?? trimFloat(detail.config.threshold_profile_price),
+    global_items: effectiveDraft?.global_items ?? parseGlobalItems(detail.config.global_items_json),
     rooms: detail.rooms.map((room) => {
       const draftRoom = draftRooms.get(room.room_id);
       return {
@@ -64,6 +65,41 @@ export function buildFlooringState(detail: CalculatorFlooringDetail, draft: Floo
       };
     }),
   };
+}
+
+function hasMeaningfulFlooringDraft(draft: FlooringEditState | null): draft is FlooringEditState {
+  if (!draft) {
+    return false;
+  }
+  if (draft.global_items.length > 0) {
+    return true;
+  }
+  if (
+    !draft.include_underlay ||
+    !draft.include_plinth ||
+    draft.include_demolition ||
+    !draft.include_preparation ||
+    draft.default_preparation_id ||
+    draft.demolition_price_per_m2 !== "150" ||
+    draft.underlay_price_per_m2 !== "120" ||
+    draft.plinth_material_price_per_m !== "180" ||
+    draft.plinth_install_price_per_m !== "250" ||
+    draft.threshold_profile_count !== "0" ||
+    draft.threshold_profile_price !== "900"
+  ) {
+    return true;
+  }
+  return draft.rooms.some(
+    (room) =>
+      room.selected ||
+      Boolean(room.covering_id || room.preparation_id || room.layout_id) ||
+      Boolean(room.area_m2_override || room.perimeter_m_override || room.plinth_m_override || room.note.trim()) ||
+      room.zones.some(
+        (zone) =>
+          Boolean(zone.covering_id || zone.preparation_id || zone.layout_id) ||
+          Boolean(zone.area_m2 || zone.note.trim()),
+      ),
+  );
 }
 
 export function buildFlooringPreview(detail: CalculatorFlooringDetail, state: FlooringEditState): CalculatorFlooringDetail {

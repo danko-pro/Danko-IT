@@ -30,6 +30,7 @@ export function useFlooringAutosave(params: FlooringAutosaveParams): FlooringAut
   const queuedPayloadRef = useRef<CalculatorFlooringPayload | null>(null);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const saveInFlightRef = useRef(false);
+  const stateHydratedProjectIdRef = useRef<number | null>(null);
   const onSaveFlooringRef = useRef(onSaveFlooring);
 
   useEffect(() => {
@@ -95,6 +96,7 @@ export function useFlooringAutosave(params: FlooringAutosaveParams): FlooringAut
     if (projectIdRef.current !== nextProjectId) {
       clearAutosaveTimer();
       projectIdRef.current = nextProjectId;
+      stateHydratedProjectIdRef.current = null;
       lastSyncedSignatureRef.current = nextSignature;
       currentDraftSignatureRef.current = nextSignature;
       currentDraftPayloadRef.current = nextPayload;
@@ -106,6 +108,7 @@ export function useFlooringAutosave(params: FlooringAutosaveParams): FlooringAut
     }
 
     if (!projectDetail?.flooring || nextPayload === null) {
+      stateHydratedProjectIdRef.current = null;
       setFlooringState(emptyFlooringState);
       setAutosaveState("idle");
       return;
@@ -128,6 +131,13 @@ export function useFlooringAutosave(params: FlooringAutosaveParams): FlooringAut
     if (!projectDetail?.flooring) return;
     const payload = buildFlooringPayload(flooringState);
     const signature = serializeFlooringPayload(payload);
+    if (stateHydratedProjectIdRef.current !== projectDetail.project.id) {
+      if (signature === lastSyncedSignatureRef.current) {
+        stateHydratedProjectIdRef.current = projectDetail.project.id;
+      } else {
+        return;
+      }
+    }
     currentDraftPayloadRef.current = payload;
     currentDraftSignatureRef.current = signature;
     if (signature === lastSyncedSignatureRef.current) {

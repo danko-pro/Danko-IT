@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from supply_bot.utils import normalize_text
 
+
 class DialogueSupportVariantMixin:
     def _pick_variant(self, text: str, variants: list[dict]) -> dict | None:
         normalized = normalize_text(text)

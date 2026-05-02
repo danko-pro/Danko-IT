@@ -4,6 +4,7 @@ from aiogram import Bot
 
 from supply_bot.utils import format_date
 
+
 class DialogueRequestFlowSummaryMixin:
     async def _build_summary(self, draft: dict, profile: dict, *, use_proposed: bool = False) -> str:
         items = await self.storage.list_request_items(draft["id"])

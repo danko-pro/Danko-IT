@@ -3,11 +3,11 @@ from __future__ import annotations
 from fastapi import FastAPI
 
 from supply_bot.admin_api.app_routes_auth import register_auth_routes
-from supply_bot.admin_api.calculator_routes import register_calculator_routes
 from supply_bot.admin_api.app_routes_materials import register_material_routes
 from supply_bot.admin_api.app_routes_projects import register_project_routes
 from supply_bot.admin_api.app_routes_requests import register_request_routes
 from supply_bot.admin_api.app_routes_support import register_support_routes
+from supply_bot.admin_api.calculator_routes import register_calculator_routes
 from supply_bot.admin_api.schemas import (
     AdminLoginPayload,
     AliasCreatePayload,
@@ -18,9 +18,9 @@ from supply_bot.admin_api.schemas import (
     CalculatorFlooringPreparationPayload,
     CalculatorFlooringUpdatePayload,
     CalculatorProjectCreatePayload,
-    CalculatorProjectUpdatePayload,
     CalculatorProjectDoorComponentPayload,
     CalculatorProjectDoorPayload,
+    CalculatorProjectUpdatePayload,
     CalculatorRoomCreatePayload,
     CalculatorRoomUpdatePayload,
     CalculatorWallFinishCoveringPayload,

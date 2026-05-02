@@ -11,7 +11,6 @@ from datetime import datetime, timezone
 
 from fastapi import Response
 
-
 SESSION_COOKIE_NAME = "supply_admin_session"
 PASSWORD_HASH_ALGORITHM = "pbkdf2_sha256"
 

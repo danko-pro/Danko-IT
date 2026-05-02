@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from supply_bot.constants import AFFIRMATIVE_WORDS, CANCEL_WORDS, NEGATIVE_WORDS
 from supply_bot.utils import normalize_text
+
 
 class DialogueMaterialReplyMixin:
     async def _handle_unknown_or_additional_materials(self, profile: dict, draft: dict, text: str) -> str | None:

@@ -8,7 +8,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Mapping, Sequence
+from typing import Any, Mapping
 
 from supply_bot.projects.domain.common import (
     ALLOWED_PROJECT_CONTRACT_EXTRACTION_STATUSES,
@@ -18,11 +18,21 @@ from supply_bot.projects.domain.common import (
 )
 from supply_bot.projects.domain.contract_milestones import (
     build_extracted_project_contract_milestones,
-    build_project_contract_milestone_payload,
-    build_project_contract_milestone_update_values,
-    build_project_contract_milestones_values,
-    normalize_project_contract_milestone_kind,
-    normalize_project_contract_milestone_status,
+)
+from supply_bot.projects.domain.contract_milestones import (
+    build_project_contract_milestone_payload as build_project_contract_milestone_payload,
+)
+from supply_bot.projects.domain.contract_milestones import (
+    build_project_contract_milestone_update_values as build_project_contract_milestone_update_values,
+)
+from supply_bot.projects.domain.contract_milestones import (
+    build_project_contract_milestones_values as build_project_contract_milestones_values,
+)
+from supply_bot.projects.domain.contract_milestones import (
+    normalize_project_contract_milestone_kind as normalize_project_contract_milestone_kind,
+)
+from supply_bot.projects.domain.contract_milestones import (
+    normalize_project_contract_milestone_status as normalize_project_contract_milestone_status,
 )
 
 

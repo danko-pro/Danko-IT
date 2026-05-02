@@ -10,9 +10,11 @@ from supply_bot.config import Settings
 from supply_bot.projects.access.contract_extraction_support import (
     CONTRACT_EXTRACTION_SCHEMA,
     CONTRACT_EXTRACTION_SYSTEM_PROMPT,
-    extract_contract_text,
     extract_json_content,
     normalize_contract_payload,
+)
+from supply_bot.projects.access.contract_extraction_support import (
+    extract_contract_text as extract_contract_text,
 )
 
 logger = logging.getLogger(__name__)

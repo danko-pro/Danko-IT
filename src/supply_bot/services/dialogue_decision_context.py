@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import re
+from typing import Any
 
 from supply_bot.constants import AFFIRMATIVE_WORDS, NEGATIVE_WORDS
 from supply_bot.utils import normalize_text
+
 
 class DialogueDecisionContextMixin:
     def _should_bypass_llm_for_waiting_answer(self, draft: dict | None, text: str) -> bool:

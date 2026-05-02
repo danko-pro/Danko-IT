@@ -11,7 +11,6 @@ from supply_bot.admin_api.route_registry import register_admin_routes
 from supply_bot.config import Settings, load_settings
 from supply_bot.storage import BotStorage
 
-
 ADMIN_API_CORS_ORIGINS = (
     "http://127.0.0.1:5173",
     "http://localhost:5173",

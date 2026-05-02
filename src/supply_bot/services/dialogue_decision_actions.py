@@ -2,6 +2,9 @@ from __future__ import annotations
 
 from aiogram import Bot
 
+from supply_bot.utils import normalize_text
+
+
 class DialogueDecisionActionMixin:
     async def _apply_llm_decision(
         self,

@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import date, datetime, timedelta
 from typing import Any
 
+
 class DialogueRequestFlowDeliveryMixin:
     async def _handle_delivery_message(self, profile: dict, draft: dict, text: str) -> str | None:
         parsed = self._parse_delivery(text)

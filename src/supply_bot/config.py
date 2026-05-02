@@ -167,6 +167,10 @@ def load_settings(config_path: Path | None = None) -> Settings:
         admin_password_hash=_optional_secret(env.get("ADMIN_PASSWORD_HASH")),
         admin_session_secret=_optional_secret(env.get("ADMIN_SESSION_SECRET")),
         admin_session_ttl_seconds=int(env.get("ADMIN_SESSION_TTL_SECONDS", "43200")),
-        project_documents_dir=_pick_path(base_dir, env.get("PROJECT_DOCUMENTS_DIR"), default="./data/project-documents"),
+        project_documents_dir=_pick_path(
+            base_dir,
+            env.get("PROJECT_DOCUMENTS_DIR"),
+            default="./data/project-documents",
+        ),
         config_path=path,
     )

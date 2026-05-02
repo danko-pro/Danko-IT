@@ -4,7 +4,6 @@ import json
 from pathlib import Path
 from typing import Any
 
-
 CONTRACT_EXTRACTION_SCHEMA = {
     "title": "string",
     "number": "string",

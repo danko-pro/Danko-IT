@@ -4,6 +4,7 @@ from supply_bot.constants import DIALOG_FIELDS, NEGATIVE_WORDS
 from supply_bot.services.dialogue_support import NO_COMMENT_SENTINEL
 from supply_bot.utils import normalize_text
 
+
 class DialogueRequestFlowItemMixin:
     async def _handle_material_matches(
         self,

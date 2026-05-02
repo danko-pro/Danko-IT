@@ -11,7 +11,6 @@ from tools.architecture_guard.config import load_guard_config
 from tools.architecture_guard.runtime import build_runtime_paths
 from tools.architecture_guard.scanner import collect_snapshot
 
-
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
 

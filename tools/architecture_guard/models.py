@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
+from .hygiene import HygieneViolation
 from .layers import LayerViolation
 from .topology import TopologyViolation
 from .ui_motion import UiMotionViolation
@@ -54,3 +55,4 @@ class ScanSnapshot:
     layer_violations: dict[str, LayerViolation]
     topology_violations: dict[str, TopologyViolation]
     ui_motion_violations: dict[str, UiMotionViolation]
+    hygiene_violations: dict[str, HygieneViolation]

@@ -179,6 +179,7 @@ def status_guard(root: Path, *, emit_json: bool = False) -> int:
         "layer_violation_count": snapshot.get("layer_violation_count", state.get("layer_violation_count", 0)),
         "topology_violation_count": snapshot.get("topology_violation_count", state.get("topology_violation_count", 0)),
         "ui_motion_violation_count": snapshot.get("ui_motion_violation_count", state.get("ui_motion_violation_count", 0)),
+        "hygiene_violation_count": snapshot.get("hygiene_violation_count", state.get("hygiene_violation_count", 0)),
         "violation_count": snapshot.get("violation_count", state.get("violation_count", 0)),
         "snapshot_json_path": str(paths.snapshot_json_path),
         "snapshot_text_path": str(paths.snapshot_text_path),
@@ -200,7 +201,8 @@ def status_guard(root: Path, *, emit_json: bool = False) -> int:
         f"[architecture-guard] Size violations: {payload['size_violation_count']} | "
         f"Layer violations: {payload['layer_violation_count']} | "
         f"Topology violations: {payload['topology_violation_count']} | "
-        f"UI motion violations: {payload['ui_motion_violation_count']}",
+        f"UI motion violations: {payload['ui_motion_violation_count']} | "
+        f"Hygiene violations: {payload['hygiene_violation_count']}",
         flush=True,
     )
     print(f"[architecture-guard] Snapshot: {paths.snapshot_text_path}", flush=True)

@@ -380,7 +380,48 @@
       "message": "App shell must stay centered on top-level routing and composition."
     }
   ],
+  "hygiene_rules": [
+    {
+      "name": "root-runtime-logs",
+      "path_patterns": [
+        "*.log",
+        ".vite-dev*.log"
+      ],
+      "severity": "warn",
+      "message": "Runtime logs belong in .tmp/runtime or external process output, not in the repository root."
+    },
+    {
+      "name": "temporary-installers",
+      "path_patterns": [
+        ".tmp/*.exe"
+      ],
+      "severity": "error",
+      "message": "Downloaded installers must not live inside the project workspace."
+    },
+    {
+      "name": "manual-lint-dump",
+      "path_patterns": [
+        "ruff_backend_check.txt"
+      ],
+      "severity": "warn",
+      "message": "One-off lint dumps should stay outside the repository root or be regenerated on demand."
+    }
+  ],
   "rules": [
+    {
+      "name": "architecture-guard-python",
+      "patterns": [
+        "tools/architecture_guard/**/*.py"
+      ],
+      "max_lines": 320
+    },
+    {
+      "name": "calculator-payload-support",
+      "patterns": [
+        "src/supply_bot/admin_api/calculator_payloads/*_support.py"
+      ],
+      "max_lines": 300
+    },
     {
       "name": "tests-python",
       "patterns": [

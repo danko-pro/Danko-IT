@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 
+from .hygiene import HygieneViolation
 from .layers import LayerViolation
 from .models import Violation, ViolationEvent
 from .topology import TopologyViolation
@@ -75,6 +76,24 @@ def create_ui_motion_event(kind: str, violation: UiMotionViolation) -> Violation
         exceeded_by=None,
         imported_path=None,
         import_line=violation.line_number,
+        subject_path=None,
+        message=violation.message,
+    )
+
+
+def create_hygiene_event(kind: str, violation: HygieneViolation) -> ViolationEvent:
+    return ViolationEvent(
+        category="hygiene",
+        kind=kind,
+        recorded_at=_now_iso(),
+        relative_path=violation.relative_path,
+        line_count=None,
+        limit=None,
+        rule_name=violation.rule_name,
+        severity=violation.severity,
+        exceeded_by=None,
+        imported_path=None,
+        import_line=None,
         subject_path=None,
         message=violation.message,
     )

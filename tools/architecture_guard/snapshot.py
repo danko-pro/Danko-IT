@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+from .hygiene import HygieneViolation
 from .layers import LayerViolation
+from .scanner import ScanSnapshot, Violation, ViolationEvent
 from .topology import TopologyViolation
 from .ui_motion import UiMotionViolation
-from .scanner import ScanSnapshot, Violation, ViolationEvent
 
 
 def serialize_snapshot(snapshot: ScanSnapshot) -> dict[str, object]:
@@ -32,6 +33,13 @@ def serialize_snapshot(snapshot: ScanSnapshot) -> dict[str, object]:
             key=lambda item: (item.relative_path, item.line_number, item.rule_name),
         )
     ]
+    hygiene_violations = [
+        serialize_hygiene_violation(violation)
+        for violation in sorted(
+            snapshot.hygiene_violations.values(),
+            key=lambda item: (item.relative_path, item.rule_name),
+        )
+    ]
     return {
         "scanned_at": snapshot.scanned_at,
         "tracked_file_count": len(snapshot.tracked_files),
@@ -39,6 +47,7 @@ def serialize_snapshot(snapshot: ScanSnapshot) -> dict[str, object]:
         "layer_violation_count": len(snapshot.layer_violations),
         "topology_violation_count": len(snapshot.topology_violations),
         "ui_motion_violation_count": len(snapshot.ui_motion_violations),
+        "hygiene_violation_count": len(snapshot.hygiene_violations),
         "violation_count": total_violation_count(snapshot),
         "severity_counts": summarize_severity_counts(snapshot),
         "violations": size_violations,
@@ -46,6 +55,7 @@ def serialize_snapshot(snapshot: ScanSnapshot) -> dict[str, object]:
         "layer_violations": layer_violations,
         "topology_violations": topology_violations,
         "ui_motion_violations": ui_motion_violations,
+        "hygiene_violations": hygiene_violations,
     }
 
 
@@ -95,6 +105,16 @@ def serialize_ui_motion_violation(violation: UiMotionViolation) -> dict[str, obj
     }
 
 
+def serialize_hygiene_violation(violation: HygieneViolation) -> dict[str, object]:
+    return {
+        "path": violation.relative_path,
+        "absolute_path": str(violation.absolute_path),
+        "rule_name": violation.rule_name,
+        "severity": violation.severity,
+        "message": violation.message,
+    }
+
+
 def serialize_event(event: ViolationEvent) -> dict[str, object]:
     return {
         "time": event.recorded_at,
@@ -123,6 +143,8 @@ def summarize_severity_counts(snapshot: ScanSnapshot) -> dict[str, int]:
         counts[violation.severity] = counts.get(violation.severity, 0) + 1
     for violation in snapshot.ui_motion_violations.values():
         counts[violation.severity] = counts.get(violation.severity, 0) + 1
+    for violation in snapshot.hygiene_violations.values():
+        counts[violation.severity] = counts.get(violation.severity, 0) + 1
 
     ordered_names = ("critical", "error", "warn", "note")
     ordered_counts = {name: counts[name] for name in ordered_names if name in counts}
@@ -138,4 +160,5 @@ def total_violation_count(snapshot: ScanSnapshot) -> int:
         + len(snapshot.layer_violations)
         + len(snapshot.topology_violations)
         + len(snapshot.ui_motion_violations)
+        + len(snapshot.hygiene_violations)
     )

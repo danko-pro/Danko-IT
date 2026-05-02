@@ -5,7 +5,8 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from .config import GuardConfig
-from .events import create_layer_event, create_size_event, create_topology_event, create_ui_motion_event
+from .events import create_hygiene_event, create_layer_event, create_size_event, create_topology_event, create_ui_motion_event
+from .hygiene import collect_hygiene_violations
 from .layers import LayerViolation, collect_layer_violations
 from .models import FileMeasure, ScanSnapshot, Violation, ViolationEvent
 from .topology import TopologyViolation, collect_topology_violations
@@ -72,6 +73,7 @@ def collect_snapshot(config: GuardConfig) -> ScanSnapshot:
                 ui_motion_violations.update(collect_ui_motion_violations(relative_path, absolute_path))
 
     topology_violations = collect_topology_violations(config, discovered_directories)
+    hygiene_violations = collect_hygiene_violations(config)
     return ScanSnapshot(
         scanned_at=now_iso(),
         tracked_files=tracked_files,
@@ -79,6 +81,7 @@ def collect_snapshot(config: GuardConfig) -> ScanSnapshot:
         layer_violations=layer_violations,
         topology_violations=topology_violations,
         ui_motion_violations=ui_motion_violations,
+        hygiene_violations=hygiene_violations,
     )
 
 
@@ -108,7 +111,14 @@ def build_initial_events(snapshot: ScanSnapshot) -> list[ViolationEvent]:
             key=lambda item: (item.relative_path, item.line_number, item.rule_name),
         )
     ]
-    return size_events + layer_events + topology_events + motion_events
+    hygiene_events = [
+        create_hygiene_event("violation_present", violation)
+        for violation in sorted(
+            snapshot.hygiene_violations.values(),
+            key=lambda item: (item.relative_path, item.rule_name),
+        )
+    ]
+    return size_events + layer_events + topology_events + motion_events + hygiene_events
 
 
 def build_watch_events(previous: ScanSnapshot, current: ScanSnapshot) -> list[ViolationEvent]:
@@ -165,6 +175,15 @@ def build_watch_events(previous: ScanSnapshot, current: ScanSnapshot) -> list[Vi
         events.append(create_ui_motion_event("violation_cleared", previous_motion[key]))
     for key in sorted(current_keys - previous_keys):
         events.append(create_ui_motion_event("violation_detected", current_motion[key]))
+
+    previous_hygiene = previous.hygiene_violations
+    current_hygiene = current.hygiene_violations
+    previous_keys = set(previous_hygiene)
+    current_keys = set(current_hygiene)
+    for key in sorted(previous_keys - current_keys):
+        events.append(create_hygiene_event("violation_cleared", previous_hygiene[key]))
+    for key in sorted(current_keys - previous_keys):
+        events.append(create_hygiene_event("violation_detected", current_hygiene[key]))
 
     return events
 

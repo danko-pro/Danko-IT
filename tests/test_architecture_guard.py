@@ -11,7 +11,6 @@ from tools.architecture_guard.config import load_guard_config
 from tools.architecture_guard.runtime import build_runtime_paths
 from tools.architecture_guard.scanner import build_watch_events, collect_snapshot
 
-
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -37,6 +36,14 @@ def write_config(path: Path) -> None:
                 "forbidden_import_patterns": ["admin-ui/src/features/**"],
                 "severity": "error",
                 "message": "Shared layer must not depend on features.",
+            }
+        ],
+        "hygiene_rules": [
+            {
+                "name": "root-logs",
+                "path_patterns": ["*.log"],
+                "severity": "warn",
+                "message": "Root logs are runtime artifacts.",
             }
         ],
         "rules": [
@@ -87,7 +94,10 @@ def test_collect_snapshot_applies_limits_by_rule(tmp_path: Path) -> None:
     write_file(tmp_path / "admin-ui" / "src" / "features" / "panel.css", "1\n2\n3\n4\n5\n")
     write_file(tmp_path / "admin-ui" / "src" / "features" / "panel.ts", "export const panel = true;\n")
     write_file(tmp_path / "admin-ui" / "src" / "shared" / "types.ts", "1\n2\n3\n4\n5\n6\n")
-    write_file(tmp_path / "admin-ui" / "src" / "shared" / "bad.ts", 'import "../features/panel.ts";\nexport const bad = true;\n')
+    write_file(
+        tmp_path / "admin-ui" / "src" / "shared" / "bad.ts",
+        'import "../features/panel.ts";\nexport const bad = true;\n',
+    )
     write_file(tmp_path / "admin-ui" / "src" / "model.mock.ts", "1\n2\n3\n4\n5\n6\n")
     write_file(tmp_path / ".tmp" / "ignored.py", "a\nb\nc\nd\ne\nf\n")
     config_path = tmp_path / "architecture_guard.json"
@@ -188,6 +198,21 @@ def test_collect_snapshot_tracks_ui_motion_notes(tmp_path: Path) -> None:
     violation = next(iter(snapshot.ui_motion_violations.values()))
     assert violation.rule_name == "expandable-motion-single-owner"
     assert violation.severity == "note"
+
+
+def test_collect_snapshot_reports_workspace_hygiene_artifacts(tmp_path: Path) -> None:
+    config_path = tmp_path / "architecture_guard.json"
+    write_config(config_path)
+    write_file(tmp_path / "app.log", "runtime output\n")
+
+    config = load_guard_config(tmp_path, config_path)
+    snapshot = collect_snapshot(config)
+
+    assert len(snapshot.hygiene_violations) == 1
+    violation = next(iter(snapshot.hygiene_violations.values()))
+    assert violation.relative_path == "app.log"
+    assert violation.rule_name == "root-logs"
+    assert violation.severity == "warn"
 
 
 def test_cli_check_refreshes_snapshot_files(tmp_path: Path) -> None:

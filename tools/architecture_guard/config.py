@@ -4,6 +4,7 @@ import json
 from dataclasses import dataclass
 from pathlib import Path
 
+from .hygiene import HygieneRule, load_hygiene_rules
 from .patterns import matches_any
 from .topology import TopologyRule, load_topology_rules
 
@@ -51,6 +52,7 @@ class GuardConfig:
     rules: tuple[LimitRule, ...]
     layer_rules: tuple[LayerRule, ...]
     topology_rules: tuple[TopologyRule, ...]
+    hygiene_rules: tuple[HygieneRule, ...]
     severity_thresholds: tuple[SeverityThreshold, ...]
 
     def is_excluded(self, relative_path: str) -> bool:
@@ -125,6 +127,11 @@ def load_guard_config(root: Path, config_path: Path | None = None) -> GuardConfi
         severity_names=severity_names,
         load_string_list=_load_string_list,
     )
+    hygiene_rules = load_hygiene_rules(
+        payload.get("hygiene_rules"),
+        severity_names=severity_names,
+        load_string_list=_load_string_list,
+    )
 
     return GuardConfig(
         root=resolved_root,
@@ -134,6 +141,7 @@ def load_guard_config(root: Path, config_path: Path | None = None) -> GuardConfi
         rules=tuple(rules),
         layer_rules=layer_rules,
         topology_rules=topology_rules,
+        hygiene_rules=hygiene_rules,
         severity_thresholds=severity_thresholds,
     )
 def _load_string_list(value: object, *, field_name: str) -> tuple[str, ...]:

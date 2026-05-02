@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 
 from .config import GuardConfig
+from .hygiene import HygieneViolation
 from .layers import LayerViolation
 from .paths import GuardRuntimePaths
 from .scanner import ScanSnapshot, Violation, ViolationEvent
@@ -62,6 +63,7 @@ class GuardReporter:
             "layer_violation_count": len(snapshot.layer_violations) if snapshot is not None else 0,
             "topology_violation_count": len(snapshot.topology_violations) if snapshot is not None else 0,
             "ui_motion_violation_count": len(snapshot.ui_motion_violations) if snapshot is not None else 0,
+            "hygiene_violation_count": len(snapshot.hygiene_violations) if snapshot is not None else 0,
             "violation_count": total_violation_count(snapshot) if snapshot is not None else 0,
             "snapshot_json_path": str(self._paths.snapshot_json_path),
             "snapshot_text_path": str(self._paths.snapshot_text_path),
@@ -80,10 +82,17 @@ def render_snapshot_text(snapshot: ScanSnapshot) -> str:
         f"layer_violation_count: {len(snapshot.layer_violations)}",
         f"topology_violation_count: {len(snapshot.topology_violations)}",
         f"ui_motion_violation_count: {len(snapshot.ui_motion_violations)}",
+        f"hygiene_violation_count: {len(snapshot.hygiene_violations)}",
         f"violation_count: {total_violation_count(snapshot)}",
     ]
 
-    if not snapshot.violations and not snapshot.layer_violations and not snapshot.topology_violations and not snapshot.ui_motion_violations:
+    if (
+        not snapshot.violations
+        and not snapshot.layer_violations
+        and not snapshot.topology_violations
+        and not snapshot.ui_motion_violations
+        and not snapshot.hygiene_violations
+    ):
         lines.append("No active architecture violations.")
         return "\n".join(lines)
 
@@ -116,6 +125,13 @@ def render_snapshot_text(snapshot: ScanSnapshot) -> str:
             key=lambda item: (item.relative_path, item.line_number, item.rule_name),
         ):
             lines.append(format_ui_motion_violation_line(violation))
+    if snapshot.hygiene_violations:
+        lines.append("Workspace hygiene violations:")
+        for violation in sorted(
+            snapshot.hygiene_violations.values(),
+            key=lambda item: (item.relative_path, item.rule_name),
+        ):
+            lines.append(format_hygiene_violation_line(violation))
     return "\n".join(lines)
 
 
@@ -124,6 +140,8 @@ def render_event_message(event: ViolationEvent) -> str:
         return render_topology_event_message(event)
     if event.category == "ui_motion":
         return render_ui_motion_event_message(event)
+    if event.category == "hygiene":
+        return render_hygiene_event_message(event)
     if event.category == "layer":
         return render_layer_event_message(event)
 
@@ -192,6 +210,18 @@ def render_ui_motion_event_message(event: ViolationEvent) -> str:
     )
 
 
+def render_hygiene_event_message(event: ViolationEvent) -> str:
+    if event.kind == "violation_cleared":
+        return f"[architecture-guard][INFO] Workspace hygiene restored: {event.relative_path} was removed."
+
+    prefix = "Existing workspace hygiene violation" if event.kind == "violation_present" else "Workspace hygiene violation"
+    label = severity_label(event.severity)
+    return (
+        f"[architecture-guard][{label}] {prefix}: {event.relative_path}, "
+        f"rule {event.rule_name}. {event.message}"
+    )
+
+
 def format_violation_line(violation: Violation) -> str:
     return (
         f"- {violation.relative_path}: {violation.line_count} lines | "
@@ -219,6 +249,13 @@ def format_ui_motion_violation_line(violation: UiMotionViolation) -> str:
     return (
         f"- {violation.relative_path}: line {violation.line_number} | "
         f"rule {violation.rule_name} | severity {violation.severity} | {violation.message}"
+    )
+
+
+def format_hygiene_violation_line(violation: HygieneViolation) -> str:
+    return (
+        f"- {violation.relative_path}: rule {violation.rule_name} | "
+        f"severity {violation.severity} | {violation.message}"
     )
 
 

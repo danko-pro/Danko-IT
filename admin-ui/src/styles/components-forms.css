@@ -29,6 +29,86 @@
     letter-spacing: 0.18em;
   }
 
+  .field-label-row {
+    display: flex;
+    align-items: center;
+    gap: 0.32rem;
+  }
+
+  .field-control-shell {
+    position: relative;
+    display: block;
+  }
+
+  .field-control-shell:has(.field-help-tooltip:hover),
+  .field-control-shell:has(.field-help-tooltip:focus-visible) {
+    z-index: 80;
+  }
+
+  .field-control-shell .text-input {
+    padding-right: 2rem;
+  }
+
+  .field-help-icon {
+    position: absolute;
+    top: 50%;
+    right: 0.56rem;
+    z-index: 82;
+    display: inline-flex;
+    width: 0.8rem;
+    height: 0.8rem;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(7, 248, 198, 0.22);
+    border-radius: 999px;
+    color: #9fe9de;
+    font-size: 8px;
+    font-weight: 900;
+    letter-spacing: 0;
+    text-transform: none;
+    transform: translateY(-50%);
+    cursor: help;
+  }
+
+  .field-help-tooltip::before {
+    top: auto;
+    right: 0;
+    bottom: calc(100% + 3px);
+    border-top: 6px solid rgba(7, 248, 198, 0.34);
+    border-right: 6px solid transparent;
+    border-bottom: 0;
+    border-left: 6px solid transparent;
+    transform: translateY(-6px);
+  }
+
+  .field-help-tooltip::after {
+    top: auto;
+    right: 0;
+    bottom: calc(100% + 9px);
+    min-width: min(18rem, 72vw);
+    max-width: min(18rem, 72vw);
+    transform: translateY(-6px);
+    z-index: 84;
+  }
+
+  .field-help-tooltip:hover::before,
+  .field-help-tooltip:hover::after,
+  .field-help-tooltip:focus-visible::before,
+  .field-help-tooltip:focus-visible::after {
+    transform: translateY(0);
+  }
+
+  .text-input-select-with-help {
+    appearance: none;
+    background-image:
+      linear-gradient(180deg, rgba(11, 15, 20, 0.88), rgba(8, 11, 16, 0.98)),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23b7c9db' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-position: 0 0, right 2.35rem center;
+    background-repeat: no-repeat;
+    padding-right: 3.4rem;
+  }
+
   .text-input-compact {
     @apply rounded-[14px] px-3 py-2 text-[12px];
     min-height: 2.4rem;
@@ -39,6 +119,18 @@
 
   .text-input-compact::placeholder {
     color: #6d8296;
+  }
+
+  select.text-input-select-with-help {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-image:
+      linear-gradient(180deg, rgba(11, 15, 20, 0.88), rgba(8, 11, 16, 0.98)),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23b7c9db' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-position: 0 0, right 2.85rem center;
+    background-repeat: no-repeat;
+    padding-right: 4rem;
   }
 
   .chip {

@@ -60,6 +60,41 @@ async def apply_storage_migrations(connection_factory: ConnectionFactory) -> Non
             column="perimeter_factor",
             definition="REAL NOT NULL DEFAULT 1.15",
         )
+        await _ensure_column(
+            db,
+            table="estimate_flooring_configs",
+            column="default_preparation_id",
+            definition="INTEGER REFERENCES estimate_flooring_preparations(id) ON DELETE SET NULL",
+        )
+        await _ensure_column(
+            db,
+            table="estimate_flooring_configs",
+            column="global_items_json",
+            definition="TEXT NOT NULL DEFAULT ''",
+        )
+        await _ensure_column(
+            db,
+            table="estimate_flooring_coverings",
+            column="custom_consumables_json",
+            definition="TEXT NOT NULL DEFAULT ''",
+        )
+        await db.execute(
+            """
+            CREATE TABLE IF NOT EXISTS estimate_flooring_room_zones (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                project_id INTEGER NOT NULL REFERENCES estimate_projects(id) ON DELETE CASCADE,
+                room_id INTEGER NOT NULL REFERENCES estimate_rooms(id) ON DELETE CASCADE,
+                covering_id INTEGER REFERENCES estimate_flooring_coverings(id) ON DELETE SET NULL,
+                preparation_id INTEGER REFERENCES estimate_flooring_preparations(id) ON DELETE SET NULL,
+                layout_id INTEGER REFERENCES estimate_flooring_layouts(id) ON DELETE SET NULL,
+                area_m2 REAL,
+                note TEXT,
+                sort_order INTEGER NOT NULL DEFAULT 100,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            )
+            """
+        )
         for table_name in ("estimate_door_catalog", "estimate_project_doors"):
             await _ensure_column(
                 db,

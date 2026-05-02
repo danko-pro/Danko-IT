@@ -1,12 +1,8 @@
 import type { Dispatch, SetStateAction } from "react";
 import { useDeferredValue, useEffect, useMemo, useState } from "react";
 
-import { buildFlooringPreview, buildFlooringState } from "./";
-import {
-  buildFlooringSelectedTechRooms,
-  buildIdMap,
-  buildRoomStateById,
-} from "./";
+import { buildFlooringPreview, buildFlooringState, useFlooringAutosave } from "./";
+import { buildFlooringSelectedTechRooms, buildIdMap, buildRoomStateById } from "./";
 import {
   buildFlooringCoveringPayload,
   buildFlooringLayoutPayload,
@@ -29,6 +25,7 @@ import type {
   CalculatorFlooringPayload,
   CalculatorFlooringPreparationPayload,
   CalculatorProjectDetail,
+  FlooringAutosaveState,
   FlooringCoveringCreateState,
   FlooringEditState,
   FlooringLayoutCreateState,
@@ -38,7 +35,11 @@ import type {
 type FlooringControllerParams = {
   projectDetail: CalculatorProjectDetail | null;
   isFlooringStage: boolean;
-  onSaveFlooring: (projectId: number, payload: CalculatorFlooringPayload) => Promise<void>;
+  onSaveFlooring: (
+    projectId: number,
+    payload: CalculatorFlooringPayload,
+    options?: { silent?: boolean },
+  ) => Promise<void>;
   onCreateFlooringCovering: (payload: CalculatorFlooringCoveringPayload) => Promise<void>;
   onCreateFlooringPreparation: (payload: CalculatorFlooringPreparationPayload) => Promise<void>;
   onCreateFlooringLayout: (payload: CalculatorFlooringLayoutPayload) => Promise<void>;
@@ -64,6 +65,7 @@ type FlooringControllerResult = {
   flooringPreparationById: Map<number, NonNullable<CalculatorProjectDetail["flooring"]>["preparations"][number]>;
   flooringLayoutById: Map<number, NonNullable<CalculatorProjectDetail["flooring"]>["layouts"][number]>;
   flooringSelectedTechRooms: ReturnType<typeof buildFlooringSelectedTechRooms>;
+  autosaveState: FlooringAutosaveState;
   submitFlooring: () => Promise<void>;
   submitFlooringCovering: () => Promise<void>;
   submitFlooringPreparation: () => Promise<void>;
@@ -83,23 +85,18 @@ export function useCalculatorFlooringController(
     onCreateFlooringLayout,
   } = params;
   const [flooringState, setFlooringState] = useState<FlooringEditState>(emptyFlooringState);
-  const [flooringCoveringState, setFlooringCoveringState] =
-    useState<FlooringCoveringCreateState>(emptyFlooringCoveringState);
-  const [flooringPreparationState, setFlooringPreparationState] =
-    useState<FlooringPreparationCreateState>(emptyFlooringPreparationState);
-  const [flooringLayoutState, setFlooringLayoutState] =
-    useState<FlooringLayoutCreateState>(emptyFlooringLayoutState);
+  const [flooringCoveringState, setFlooringCoveringState] = useState<FlooringCoveringCreateState>(emptyFlooringCoveringState);
+  const [flooringPreparationState, setFlooringPreparationState] = useState<FlooringPreparationCreateState>(emptyFlooringPreparationState);
+  const [flooringLayoutState, setFlooringLayoutState] = useState<FlooringLayoutCreateState>(emptyFlooringLayoutState);
   const [flooringSettingsOpen, setFlooringSettingsOpen] = useState(false);
   const [expandedFlooringRoomId, setExpandedFlooringRoomId] = useState<number | null>(null);
-
-  useEffect(() => {
-    if (!projectDetail?.flooring) {
-      setFlooringState(emptyFlooringState);
-      return;
-    }
-    const draft = readSessionValue<FlooringEditState>(flooringDraftStorageKey(projectDetail.project.id));
-    setFlooringState(buildFlooringState(projectDetail.flooring, draft));
-  }, [projectDetail?.project.id, projectDetail?.flooring]);
+  const autosaveState = useFlooringAutosave({
+    projectDetail,
+    isFlooringStage,
+    flooringState,
+    setFlooringState,
+    onSaveFlooring,
+  });
 
   useEffect(() => {
     if (!projectDetail?.flooring) {
@@ -239,6 +236,7 @@ export function useCalculatorFlooringController(
     flooringPreparationById,
     flooringLayoutById,
     flooringSelectedTechRooms,
+    autosaveState,
     submitFlooring,
     submitFlooringCovering,
     submitFlooringPreparation,

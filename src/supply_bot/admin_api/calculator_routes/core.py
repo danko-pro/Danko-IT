@@ -4,8 +4,8 @@ from fastapi import FastAPI, HTTPException, Request
 
 from supply_bot.admin_api.calculator_payloads import _estimate_project_payload, _estimate_room_detail
 from supply_bot.admin_api.calculator_routes.shared import (
-    clamp_non_negative,
     clamp_minimum,
+    clamp_non_negative,
     get_calculator_route_storage,
     load_estimate_project_payload,
     load_estimate_room_detail,

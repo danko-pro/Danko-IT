@@ -3,12 +3,21 @@ export type CalculatorFlooringPayload = {
   include_plinth: boolean;
   include_demolition: boolean;
   include_preparation: boolean;
+  default_preparation_id: number | null;
   demolition_price_per_m2: number;
   underlay_price_per_m2: number;
   plinth_material_price_per_m: number;
   plinth_install_price_per_m: number;
   threshold_profile_count: number;
   threshold_profile_price: number;
+  global_items: Array<{
+    kind: "work" | "material" | "consumable";
+    title: string;
+    mode: "fixed" | "area" | "perimeter" | "quantity";
+    rate: number;
+    quantity: number;
+    enabled: boolean;
+  }>;
   rooms: Array<{
     room_id: number;
     selected: boolean;
@@ -19,6 +28,13 @@ export type CalculatorFlooringPayload = {
     perimeter_m_override: number | null;
     plinth_m_override: number | null;
     note: string | null;
+    zones: Array<{
+      covering_id: number | null;
+      preparation_id: number | null;
+      layout_id: number | null;
+      area_m2: number | null;
+      note: string | null;
+    }>;
   }>;
 };
 
@@ -41,6 +57,12 @@ export type CalculatorFlooringCoveringPayload = {
   grout_consumption_per_m2: number;
   grout_unit: string;
   grout_price_per_unit: number;
+  custom_consumables: Array<{
+    title: string;
+    consumption_per_m2: number;
+    unit: string;
+    price_per_unit: number;
+  }>;
   needs_plinth: boolean;
   instrument_price_per_m2: number;
   note: string | null;

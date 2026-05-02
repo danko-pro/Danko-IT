@@ -1,202 +1,200 @@
-import { Button } from "./";
-import { MetricChip, TextField, formatArea, formatMeters, formatMoney, trimFloat } from "./";
-import { FlooringStageCoveringsCatalog } from "./";
-import { FlooringStageSpecification } from "./";
-import { FlooringStageTechMap } from "./";
+import {
+  FlooringEstimatePanel,
+  FlooringRoomParametersPanel,
+  FlooringSettingsPanel,
+  FlooringStageCoveringCatalog,
+  FlooringStageLayoutCatalog,
+  FlooringStagePreparationCatalog,
+} from "./";
+import { MetricChip, formatArea, formatMeters, formatMoney, trimFloat } from "./";
+import { useState, type ReactNode } from "react";
 import type { FlooringStageReadyProps } from "./";
 
-export function FlooringStageSummaryColumn(props: FlooringStageReadyProps) {
-  const {
-    projectDetail,
-    flooringPreview,
-    flooringSettingsOpen,
-    setFlooringSettingsOpen,
-    setFlooringState,
-    flooringState,
-    flooringSelectedTechRooms,
-    busyKey,
-    submitFlooring,
-    resetFlooringState,
-  } = props;
+type FlooringPanelMode = "room" | "settings" | "techmap" | "summary" | "estimate";
+type FlooringTechMapMode = "coverings" | "preparations" | "layouts";
+type FlooringStageSummaryColumnProps = FlooringStageReadyProps & { panelMode: FlooringPanelMode };
+
+function getAutosaveLabel(state: FlooringStageReadyProps["autosaveState"]): string {
+  switch (state) {
+    case "pending":
+      return "Сохранится автоматически";
+    case "saving":
+      return "Сохраняю...";
+    case "saved":
+      return "Сохранено";
+    case "error":
+      return "Ошибка сохранения";
+    default:
+      return "Автосохранение";
+  }
+}
+
+function getSceneClass(activeMode: FlooringPanelMode, mode: FlooringPanelMode): string {
+  if (activeMode === mode) return "warmfloor-panel-scene warmfloor-panel-scene-active";
+  if (
+    (mode === "room" && activeMode !== "room") ||
+    (mode === "settings" && (activeMode === "techmap" || activeMode === "summary" || activeMode === "estimate")) ||
+    (mode === "techmap" && (activeMode === "summary" || activeMode === "estimate")) ||
+    (mode === "summary" && activeMode === "estimate")
+  ) {
+    return "warmfloor-panel-scene warmfloor-panel-scene-hidden-left";
+  }
+  return "warmfloor-panel-scene warmfloor-panel-scene-hidden-right";
+}
+
+export function FlooringStageSummaryColumn(props: FlooringStageSummaryColumnProps) {
+  const { panelMode, flooringPreview, setFlooringState, flooringState, autosaveState } = props;
+  const [techMapMode, setTechMapMode] = useState<FlooringTechMapMode>("coverings");
+  const summary = flooringPreview.summary;
+  const pricePerSquare = summary.price_per_m2 === null ? "—" : formatMoney(summary.price_per_m2);
 
   return (
-    <div className="space-y-3">
-      {flooringSettingsOpen ? (
-        <div className="subpanel calculator-stage-section p-3 space-y-3">
+    <div className="warmfloor-panel-scene-stage">
+      <div className={getSceneClass(panelMode, "room")}>
+        <FlooringRoomParametersPanel
+          expandedFlooringRoomId={props.expandedFlooringRoomId}
+          flooringPreview={flooringPreview}
+          flooringDetail={props.flooringDetail}
+          flooringRoomStateById={props.flooringRoomStateById}
+          setFlooringState={setFlooringState}
+        />
+      </div>
+
+      <div className={getSceneClass(panelMode, "settings")}>
+        <FlooringSettingsPanel
+          flooringState={flooringState}
+          setFlooringState={setFlooringState}
+          resetFlooringState={props.resetFlooringState}
+        />
+      </div>
+
+      <div className={getSceneClass(panelMode, "techmap")}>
+        <CatalogPanel
+          title="Технологическая карта"
+          note="Справочники норм, материалов и способов, из которых собираются помещения."
+        >
+          <div className="flooring-techmap-tabs">
+            <TechMapTab active={techMapMode === "coverings"} onClick={() => setTechMapMode("coverings")}>
+              Покрытия
+            </TechMapTab>
+            <TechMapTab active={techMapMode === "preparations"} onClick={() => setTechMapMode("preparations")}>
+              Подготовка
+            </TechMapTab>
+            <TechMapTab active={techMapMode === "layouts"} onClick={() => setTechMapMode("layouts")}>
+              Укладка
+            </TechMapTab>
+          </div>
+
+          {techMapMode === "coverings" ? (
+            <FlooringStageCoveringCatalog
+              open
+              flooringDetail={props.flooringDetail}
+              flooringCoveringState={props.flooringCoveringState}
+              setFlooringCoveringState={props.setFlooringCoveringState}
+              busyKey={props.busyKey}
+              submitFlooringCovering={props.submitFlooringCovering}
+            />
+          ) : null}
+          {techMapMode === "preparations" ? (
+            <FlooringStagePreparationCatalog
+              open
+              flooringDetail={props.flooringDetail}
+              flooringPreparationState={props.flooringPreparationState}
+              setFlooringPreparationState={props.setFlooringPreparationState}
+              busyKey={props.busyKey}
+              submitFlooringPreparation={props.submitFlooringPreparation}
+            />
+          ) : null}
+          {techMapMode === "layouts" ? (
+            <FlooringStageLayoutCatalog
+              open
+              flooringDetail={props.flooringDetail}
+              flooringLayoutState={props.flooringLayoutState}
+              setFlooringLayoutState={props.setFlooringLayoutState}
+              busyKey={props.busyKey}
+              submitFlooringLayout={props.submitFlooringLayout}
+            />
+          ) : null}
+        </CatalogPanel>
+      </div>
+
+      <div className={getSceneClass(panelMode, "summary")}>
+        <div className="subpanel calculator-stage-section warmfloor-summary-panel flooring-summary-panel p-3">
           <div className="calculator-stage-section-head">
             <div>
-              <div className="calculator-stage-section-kicker">Глобальные параметры</div>
-              <div className="calculator-stage-section-title">Настройки напольных покрытий</div>
+              <div className="calculator-stage-section-kicker">Свод по покрытиям</div>
+              <div className="calculator-stage-section-title">Итог, площади и закупка</div>
             </div>
-            <div className="calculator-stage-section-note">
-              Переключатели и ставки, которые влияют на весь блок: подложка, плинтус, демонтаж и подготовка.
+            <div className="calculator-stage-inline-status">
+              <span className="slot-chip">{getAutosaveLabel(autosaveState)}</span>
             </div>
           </div>
 
-          <div className="grid gap-2 md:grid-cols-2">
-            <label className="subpanel calculator-stage-toggle-card flex items-center gap-3 px-3 py-3">
-              <input
-                type="checkbox"
-                checked={flooringState.include_underlay}
-                onChange={(event) =>
-                  setFlooringState((current) => ({ ...current, include_underlay: event.target.checked }))
-                }
-              />
-              <span className="text-sm font-semibold text-slate-100">Включать подложку</span>
-            </label>
-            <label className="subpanel calculator-stage-toggle-card flex items-center gap-3 px-3 py-3">
-              <input
-                type="checkbox"
-                checked={flooringState.include_plinth}
-                onChange={(event) =>
-                  setFlooringState((current) => ({ ...current, include_plinth: event.target.checked }))
-                }
-              />
-              <span className="text-sm font-semibold text-slate-100">Включать плинтус</span>
-            </label>
-            <label className="subpanel calculator-stage-toggle-card flex items-center gap-3 px-3 py-3">
-              <input
-                type="checkbox"
-                checked={flooringState.include_demolition}
-                onChange={(event) =>
-                  setFlooringState((current) => ({ ...current, include_demolition: event.target.checked }))
-                }
-              />
-              <span className="text-sm font-semibold text-slate-100">Включать демонтаж</span>
-            </label>
-            <label className="subpanel calculator-stage-toggle-card flex items-center gap-3 px-3 py-3">
-              <input
-                type="checkbox"
-                checked={flooringState.include_preparation}
-                onChange={(event) =>
-                  setFlooringState((current) => ({ ...current, include_preparation: event.target.checked }))
-                }
-              />
-              <span className="text-sm font-semibold text-slate-100">Включать подготовку</span>
-            </label>
+          <div className="warmfloor-summary-total">
+            <div>
+              <div className="warmfloor-summary-label">Итого по напольным покрытиям</div>
+              <div className="warmfloor-summary-value">{formatMoney(summary.grand_total)}</div>
+            </div>
+            <div className="warmfloor-summary-rate">
+              <span>Цена за м2</span>
+              <strong>{pricePerSquare}</strong>
+            </div>
           </div>
 
-          <div className="grid gap-2 md:grid-cols-2">
-            <TextField
-              label="Демонтаж, ₽/м²"
-              value={flooringState.demolition_price_per_m2}
-              onChange={(value) => setFlooringState((current) => ({ ...current, demolition_price_per_m2: value }))}
-            />
-            <TextField
-              label="Подложка, ₽/м²"
-              value={flooringState.underlay_price_per_m2}
-              onChange={(value) => setFlooringState((current) => ({ ...current, underlay_price_per_m2: value }))}
-            />
-            <TextField
-              label="Плинтус материал, ₽/м.п."
-              value={flooringState.plinth_material_price_per_m}
-              onChange={(value) =>
-                setFlooringState((current) => ({ ...current, plinth_material_price_per_m: value }))
-              }
-            />
-            <TextField
-              label="Монтаж плинтуса, ₽/м.п."
-              value={flooringState.plinth_install_price_per_m}
-              onChange={(value) =>
-                setFlooringState((current) => ({ ...current, plinth_install_price_per_m: value }))
-              }
-            />
-            <TextField
-              label="Порожки, шт"
-              value={flooringState.threshold_profile_count}
-              onChange={(value) =>
-                setFlooringState((current) => ({ ...current, threshold_profile_count: value }))
-              }
-            />
-            <TextField
-              label="Порожек, ₽/шт"
-              value={flooringState.threshold_profile_price}
-              onChange={(value) =>
-                setFlooringState((current) => ({ ...current, threshold_profile_price: value }))
-              }
-            />
+          <div className="warmfloor-summary-strip">
+            <MetricChip label="Помещений" value={String(summary.rooms_count)} />
+            <MetricChip label="Площадь" value={formatArea(summary.total_area_m2)} />
+            <MetricChip label="Закупка" value={formatArea(summary.total_purchase_area_m2)} />
+            <MetricChip label="Плинтус" value={formatMeters(summary.total_plinth_m)} />
           </div>
 
-          <div className="calculator-stage-action-row">
-            <Button type="button" variant="secondary" onClick={() => setFlooringSettingsOpen(false)}>
-              Скрыть параметры
-            </Button>
+          <div className="warmfloor-summary-two-column">
+            <MetricChip label="Работы" value={formatMoney(summary.work_total)} />
+            <MetricChip label="Материалы" value={formatMoney(summary.material_total)} />
+            <MetricChip label="Подложка" value={`${trimFloat(summary.total_underlay_qty)} ${summary.underlay_unit}`} />
+            <MetricChip label="Клей" value={`${trimFloat(summary.total_glue_qty)} ${summary.glue_unit}`} />
+            <MetricChip label="Грунт" value={`${trimFloat(summary.total_primer_qty)} ${summary.primer_unit}`} />
+            <MetricChip label="СВП" value={`${trimFloat(summary.total_svp_qty)} ${summary.svp_unit}`} />
+            <MetricChip label="Затирка" value={`${trimFloat(summary.total_grout_qty)} ${summary.grout_unit}`} />
+            <MetricChip label="Инструмент" value={formatMoney(summary.total_instrument_cost)} />
           </div>
-        </div>
-      ) : null}
 
-      <div className="subpanel calculator-stage-section p-3 space-y-3">
-        <div className="calculator-stage-section-head">
-          <div>
-            <div className="calculator-stage-section-kicker">Свод по покрытиям</div>
-            <div className="calculator-stage-section-title">Площади, закупка и итоговые суммы</div>
+          <div className="warmfloor-summary-note">
+            Пересчитывается от выбранных помещений, покрытия, подготовки и способа укладки.
           </div>
-          <div className="calculator-stage-section-note">
-            Быстрый срез по выбранным покрытиям, плинтусу и общей цене за квадратный метр.
-          </div>
-        </div>
-
-        <div className="calculator-stage-metric-grid md:grid-cols-2">
-          <MetricChip label="Помещений" value={String(flooringPreview.summary.rooms_count)} />
-          <MetricChip label="Площадь" value={formatArea(flooringPreview.summary.total_area_m2)} />
-          <MetricChip label="Закупка" value={formatArea(flooringPreview.summary.total_purchase_area_m2)} />
-          <MetricChip label="Плинтус" value={formatMeters(flooringPreview.summary.total_plinth_m)} />
-          <MetricChip label="Работы" value={formatMoney(flooringPreview.summary.work_total)} />
-          <MetricChip label="Материалы" value={formatMoney(flooringPreview.summary.material_total)} />
-          <MetricChip label="Итого" value={formatMoney(flooringPreview.summary.grand_total)} />
-          <MetricChip
-            label="Цена за м²"
-            value={flooringPreview.summary.price_per_m2 === null ? "—" : formatMoney(flooringPreview.summary.price_per_m2)}
-          />
         </div>
       </div>
 
-      <div className="subpanel calculator-stage-section p-3 space-y-3">
-        <div className="calculator-stage-section-head">
-          <div>
-            <div className="calculator-stage-section-kicker">Расходники</div>
-            <div className="calculator-stage-section-title">Свод материалов и инструмента</div>
-          </div>
-          <div className="calculator-stage-section-note">
-            Суммарные объёмы подложки, клея, грунта, СВП, затирки и инструмента по текущему набору комнат.
-          </div>
-        </div>
-
-        <div className="calculator-stage-metric-grid md:grid-cols-2">
-          <MetricChip
-            label="Подложка"
-            value={`${trimFloat(flooringPreview.summary.total_underlay_qty)} ${flooringPreview.summary.underlay_unit}`}
-          />
-          <MetricChip label="Клей" value={`${trimFloat(flooringPreview.summary.total_glue_qty)} ${flooringPreview.summary.glue_unit}`} />
-          <MetricChip
-            label="Грунт"
-            value={`${trimFloat(flooringPreview.summary.total_primer_qty)} ${flooringPreview.summary.primer_unit}`}
-          />
-          <MetricChip label="СВП" value={`${trimFloat(flooringPreview.summary.total_svp_qty)} ${flooringPreview.summary.svp_unit}`} />
-          <MetricChip
-            label="Затирка"
-            value={`${trimFloat(flooringPreview.summary.total_grout_qty)} ${flooringPreview.summary.grout_unit}`}
-          />
-          <MetricChip label="Инструмент" value={formatMoney(flooringPreview.summary.total_instrument_cost)} />
-        </div>
-      </div>
-
-      <FlooringStageTechMap flooringSelectedTechRooms={flooringSelectedTechRooms} />
-      <FlooringStageCoveringsCatalog flooringDetail={props.flooringDetail} />
-      <FlooringStageSpecification flooringPreview={flooringPreview} />
-
-      <div className="calculator-stage-action-row">
-        <Button
-          type="button"
-          disabled={busyKey === `calculator-flooring-save-${projectDetail.project.id}`}
-          onClick={() => void submitFlooring()}
-        >
-          {busyKey === `calculator-flooring-save-${projectDetail.project.id}` ? "Сохраняю..." : "Сохранить напольные покрытия"}
-        </Button>
-        <Button type="button" variant="secondary" onClick={resetFlooringState}>
-          Сбросить правки
-        </Button>
+      <div className={getSceneClass(panelMode, "estimate")}>
+        <FlooringEstimatePanel flooringPreview={flooringPreview} />
       </div>
     </div>
+  );
+}
+
+function CatalogPanel(props: { title: string; note: string; children: ReactNode }) {
+  return (
+    <div className="subpanel calculator-stage-section p-3 space-y-3 flooring-catalog-panel">
+      <div className="calculator-stage-section-head">
+        <div>
+          <div className="calculator-stage-section-kicker">Справочники</div>
+          <div className="calculator-stage-section-title">{props.title}</div>
+        </div>
+        <div className="calculator-stage-section-note">{props.note}</div>
+      </div>
+      {props.children}
+    </div>
+  );
+}
+
+function TechMapTab(props: { active: boolean; children: ReactNode; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      className={props.active ? "flooring-techmap-tab flooring-techmap-tab-active" : "flooring-techmap-tab"}
+      onClick={props.onClick}
+    >
+      {props.children}
+    </button>
   );
 }

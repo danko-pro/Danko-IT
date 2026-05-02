@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+﻿from pydantic import BaseModel, Field
 
 
 class CalculatorProjectCreatePayload(BaseModel):
@@ -60,11 +60,15 @@ class CalculatorWarmFloorRoomPayload(BaseModel):
     selected: bool = False
     area_m2_override: float | None = None
     note: str | None = None
+
+
 class CalculatorWarmFloorMaterialItemPayload(BaseModel):
     title: str
-    unit: str = "компл."
+    unit: str = "РєРѕРјРїР»."
     quantity: float = 1
     amount: float = 0
+
+
 class CalculatorWarmFloorUpdatePayload(BaseModel):
     work_price_per_m2: float = 1600
     pipe_m_per_m2: float = 6
@@ -75,78 +79,13 @@ class CalculatorWarmFloorUpdatePayload(BaseModel):
     pump_work_price: float = 8000
     pump_material_price: float = 25000
     pipe_price_per_m: float = 170
-    pipe_material_title: str = "Труба PEX-a 16x2 для водяного тёплого пола"
+    pipe_material_title: str = "РўСЂСѓР±Р° PEX-a 16x2 РґР»СЏ РІРѕРґСЏРЅРѕРіРѕ С‚С‘РїР»РѕРіРѕ РїРѕР»Р°"
     manifold_material_items: list[CalculatorWarmFloorMaterialItemPayload] = Field(default_factory=list)
     pump_material_items: list[CalculatorWarmFloorMaterialItemPayload] = Field(default_factory=list)
     consumable_material_items: list[CalculatorWarmFloorMaterialItemPayload] = Field(default_factory=list)
     pump_rooms_threshold: int = 3
     pump_contours_threshold: int = 4
     rooms: list[CalculatorWarmFloorRoomPayload] = Field(default_factory=list)
-class CalculatorFlooringCoveringPayload(BaseModel):
-    title: str
-    material_price_per_m2: float = 0
-    labor_price_per_m2: float = 0
-    base_waste_percent: float = 0
-    underlay_mode: str = "none"
-    underlay_consumption_per_m2: float = 1
-    glue_consumption_per_m2: float = 0
-    glue_unit: str = "кг"
-    glue_price_per_unit: float = 0
-    primer_consumption_per_m2: float = 0
-    primer_unit: str = "л"
-    primer_price_per_unit: float = 0
-    svp_consumption_per_m2: float = 0
-    svp_unit: str = "шт"
-    svp_price_per_unit: float = 0
-    grout_consumption_per_m2: float = 0
-    grout_unit: str = "кг"
-    grout_price_per_unit: float = 0
-    needs_plinth: bool = True
-    instrument_price_per_m2: float = 0
-    note: str | None = None
-
-
-class CalculatorFlooringPreparationPayload(BaseModel):
-    title: str
-    labor_price_per_m2: float = 0
-    material_price_per_m2: float = 0
-    primer_consumption_per_m2: float = 0
-    primer_unit: str = "л"
-    primer_price_per_unit: float = 0
-    note: str | None = None
-
-
-class CalculatorFlooringLayoutPayload(BaseModel):
-    title: str
-    labor_multiplier: float = 1
-    extra_waste_percent: float = 0
-    note: str | None = None
-
-
-class CalculatorFlooringRoomPayload(BaseModel):
-    room_id: int
-    selected: bool = False
-    covering_id: int | None = None
-    preparation_id: int | None = None
-    layout_id: int | None = None
-    area_m2_override: float | None = None
-    perimeter_m_override: float | None = None
-    plinth_m_override: float | None = None
-    note: str | None = None
-
-
-class CalculatorFlooringUpdatePayload(BaseModel):
-    include_underlay: bool = True
-    include_plinth: bool = True
-    include_demolition: bool = False
-    include_preparation: bool = True
-    demolition_price_per_m2: float = 150
-    underlay_price_per_m2: float = 120
-    plinth_material_price_per_m: float = 180
-    plinth_install_price_per_m: float = 250
-    threshold_profile_count: int = 0
-    threshold_profile_price: float = 900
-    rooms: list[CalculatorFlooringRoomPayload] = Field(default_factory=list)
 
 
 class CalculatorWallFinishCoveringPayload(BaseModel):
@@ -155,16 +94,16 @@ class CalculatorWallFinishCoveringPayload(BaseModel):
     labor_price_per_m2: float = 0
     base_waste_percent: float = 0
     glue_consumption_per_m2: float = 0
-    glue_unit: str = "кг"
+    glue_unit: str = "РєРі"
     glue_price_per_unit: float = 0
     primer_consumption_per_m2: float = 0
-    primer_unit: str = "л"
+    primer_unit: str = "Р»"
     primer_price_per_unit: float = 0
     putty_consumption_per_m2: float = 0
-    putty_unit: str = "кг"
+    putty_unit: str = "РєРі"
     putty_price_per_unit: float = 0
     mesh_consumption_per_m2: float = 0
-    mesh_unit: str = "м²"
+    mesh_unit: str = "РјВІ"
     mesh_price_per_unit: float = 0
     instrument_price_per_m2: float = 0
     note: str | None = None
@@ -175,7 +114,7 @@ class CalculatorWallFinishPreparationPayload(BaseModel):
     labor_price_per_m2: float = 0
     material_price_per_m2: float = 0
     primer_consumption_per_m2: float = 0
-    primer_unit: str = "л"
+    primer_unit: str = "Р»"
     primer_price_per_unit: float = 0
     note: str | None = None
 
@@ -233,7 +172,7 @@ class CalculatorProjectDoorPayload(BaseModel):
 class CalculatorDoorComponentCatalogPayload(BaseModel):
     category_code: str
     title: str
-    unit: str = "шт"
+    unit: str = "С€С‚"
     purchase_price: float | None = None
     sale_price: float | None = None
     note: str | None = None

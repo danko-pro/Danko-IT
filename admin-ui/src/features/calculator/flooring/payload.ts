@@ -19,12 +19,23 @@ export function buildFlooringPayload(state: FlooringEditState): CalculatorFloori
     include_plinth: state.include_plinth,
     include_demolition: state.include_demolition,
     include_preparation: state.include_preparation,
+    default_preparation_id: null,
     demolition_price_per_m2: Math.max(0, toNumber(state.demolition_price_per_m2) ?? 0),
     underlay_price_per_m2: Math.max(0, toNumber(state.underlay_price_per_m2) ?? 0),
     plinth_material_price_per_m: Math.max(0, toNumber(state.plinth_material_price_per_m) ?? 0),
     plinth_install_price_per_m: Math.max(0, toNumber(state.plinth_install_price_per_m) ?? 0),
     threshold_profile_count: Math.max(0, toInteger(state.threshold_profile_count) ?? 0),
     threshold_profile_price: Math.max(0, toNumber(state.threshold_profile_price) ?? 0),
+    global_items: state.global_items
+      .filter((item) => item.title.trim())
+      .map((item) => ({
+        kind: item.kind,
+        title: item.title.trim(),
+        mode: item.mode,
+        rate: Math.max(0, toNumber(item.rate) ?? 0),
+        quantity: Math.max(0, toNumber(item.quantity) ?? 0),
+        enabled: item.enabled,
+      })),
     rooms: state.rooms.map((room) => ({
       room_id: room.room_id,
       selected: room.selected,
@@ -35,6 +46,13 @@ export function buildFlooringPayload(state: FlooringEditState): CalculatorFloori
       perimeter_m_override: toNumber(room.perimeter_m_override),
       plinth_m_override: toNumber(room.plinth_m_override),
       note: room.note.trim() || null,
+      zones: (room.zones ?? []).map((zone) => ({
+        covering_id: toInteger(zone.covering_id),
+        preparation_id: toInteger(zone.preparation_id),
+        layout_id: toInteger(zone.layout_id),
+        area_m2: toNumber(zone.area_m2),
+        note: zone.note.trim() || null,
+      })),
     })),
   };
 }
@@ -68,6 +86,14 @@ export function buildFlooringCoveringPayload(
     grout_consumption_per_m2: Math.max(0, toNumber(state.grout_consumption_per_m2) ?? 0),
     grout_unit: state.grout_unit.trim() || "??",
     grout_price_per_unit: Math.max(0, toNumber(state.grout_price_per_unit) ?? 0),
+    custom_consumables: state.custom_consumables
+      .filter((item) => item.title.trim())
+      .map((item) => ({
+        title: item.title.trim(),
+        consumption_per_m2: Math.max(0, toNumber(item.consumption_per_m2) ?? 0),
+        unit: item.unit.trim() || "шт",
+        price_per_unit: Math.max(0, toNumber(item.price_per_unit) ?? 0),
+      })),
     needs_plinth: state.needs_plinth,
     instrument_price_per_m2: Math.max(0, toNumber(state.instrument_price_per_m2) ?? 0),
     note: state.note.trim() || null,

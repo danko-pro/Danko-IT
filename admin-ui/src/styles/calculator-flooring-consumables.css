@@ -1,0 +1,105 @@
+@layer components {
+  .flooring-techmap-consumable-list {
+    display: grid;
+    gap: 0.36rem;
+    min-width: 0;
+  }
+
+  .flooring-techmap-consumable-head,
+  .flooring-techmap-consumable-row {
+    display: grid;
+    grid-template-columns: minmax(5.3rem, 1fr) repeat(3, minmax(4.6rem, 0.78fr)) 1.75rem;
+    gap: 0.42rem;
+    align-items: center;
+    min-width: 0;
+  }
+
+  .flooring-techmap-consumable-head {
+    padding: 0 0.52rem 0.08rem;
+    color: #7890a5;
+    font-size: 8px;
+    font-weight: 850;
+    letter-spacing: 0.14em;
+    line-height: 1.1;
+    text-transform: uppercase;
+  }
+
+  .flooring-techmap-consumable-row {
+    border: 1px solid rgba(255, 255, 255, 0.065);
+    border-radius: 12px;
+    padding: 0.42rem;
+    background: rgba(5, 9, 14, 0.35);
+  }
+
+  .flooring-techmap-consumable-row > strong {
+    min-width: 0;
+    overflow: hidden;
+    color: #dcecff;
+    font-size: 10.5px;
+    font-weight: 850;
+    line-height: 1.1;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .flooring-techmap-consumable-row .text-input {
+    min-width: 0;
+    min-height: 1.85rem;
+    border-radius: 10px;
+    padding: 0.28rem 0.48rem;
+    font-size: 10.5px;
+  }
+
+  .flooring-techmap-consumable-row label.block .field-label-compact {
+    display: none;
+  }
+
+  .flooring-techmap-consumable-row label.block .text-input {
+    text-align: center;
+  }
+
+  .flooring-techmap-consumable-row > input:not(:first-child) {
+    text-align: center;
+  }
+
+  .flooring-techmap-consumable-row:not(.flooring-techmap-consumable-row-custom) > input {
+    text-align: center;
+  }
+
+  .flooring-techmap-consumable-row-custom {
+    border-color: rgba(var(--calculator-stage-accent-rgb), 0.16);
+    background: rgba(var(--calculator-stage-accent-rgb), 0.055);
+  }
+
+  .flooring-techmap-consumable-row-custom .warmfloor-material-remove {
+    justify-self: end;
+  }
+
+  .flooring-techmap-consumable-lock {
+    width: 0.42rem;
+    height: 0.42rem;
+    justify-self: center;
+    border-radius: 999px;
+    background: rgba(var(--calculator-stage-accent-rgb), 0.38);
+    box-shadow: 0 0 0 4px rgba(var(--calculator-stage-accent-rgb), 0.05);
+  }
+
+  .flooring-techmap-consumable-list .warmfloor-material-add {
+    margin-top: 0.08rem;
+  }
+
+  @container (max-width: 34rem) {
+    .flooring-techmap-consumable-head {
+      display: none;
+    }
+
+    .flooring-techmap-consumable-row {
+      grid-template-columns: minmax(0, 1fr) minmax(3.7rem, 0.7fr) 1.75rem;
+    }
+
+    .flooring-techmap-consumable-row > strong,
+    .flooring-techmap-consumable-row-custom input:first-child {
+      grid-column: 1 / -1;
+    }
+  }
+}

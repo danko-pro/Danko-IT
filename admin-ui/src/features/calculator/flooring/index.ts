@@ -13,17 +13,21 @@ export {
 export { buildFlooringSelectedTechRooms } from "../model/tech";
 export type { CalculatorProjectDetail } from "../project/model";
 
+export * from "./autosave";
 export * from "./calc";
 export * from "./card";
 export * from "./catalogs";
 export * from "./covering";
 export * from "./coverings";
 export * from "./edit";
+export * from "./estimate";
 export * from "./layout";
 export * from "./model";
 export * from "./payload";
 export * from "./prepare";
+export * from "./room-parameters";
 export * from "./rooms";
+export * from "./settings";
 export * from "./spec";
 export * from "./state";
 export * from "./summary";

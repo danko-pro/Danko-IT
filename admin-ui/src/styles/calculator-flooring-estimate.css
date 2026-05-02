@@ -1,0 +1,119 @@
+@layer components {
+  .flooring-estimate-document {
+    display: grid;
+    gap: 0.65rem;
+    min-width: 0;
+  }
+
+  .flooring-estimate-section {
+    display: grid;
+    gap: 0.48rem;
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 12px;
+    padding: 0.68rem;
+    background: rgba(7, 11, 16, 0.58);
+    min-width: 0;
+  }
+
+  .flooring-estimate-section-head,
+  .flooring-estimate-section-total,
+  .flooring-estimate-grand-total {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    min-width: 0;
+  }
+
+  .flooring-estimate-section-head strong {
+    color: #eef8ff;
+    font-size: 12px;
+  }
+
+  .flooring-estimate-section-head span,
+  .flooring-estimate-section-total span {
+    color: #7d95aa;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .flooring-estimate-table {
+    display: grid;
+    gap: 0.18rem;
+    min-width: 0;
+  }
+
+  .flooring-estimate-table-head,
+  .flooring-estimate-table-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(4.2rem, 0.28fr) minmax(3rem, 0.18fr) minmax(5.8rem, 0.34fr);
+    gap: 0.5rem;
+    align-items: center;
+    min-width: 0;
+  }
+
+  .flooring-estimate-table-head {
+    color: #7d95aa;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .flooring-estimate-table-row {
+    border-radius: 10px;
+    padding: 0.42rem 0.5rem;
+    background: rgba(255, 255, 255, 0.025);
+    color: #b9c8d8;
+    font-size: 11px;
+    line-height: 1.22;
+  }
+
+  .flooring-estimate-table-row span:first-child {
+    color: #e7f3ff;
+    font-weight: 800;
+  }
+
+  .flooring-estimate-table-row span,
+  .flooring-estimate-table-row strong {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .flooring-estimate-table-head span:not(:first-child),
+  .flooring-estimate-table-row span:not(:first-child),
+  .flooring-estimate-table-row strong {
+    text-align: right;
+  }
+
+  .flooring-estimate-section-total {
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    padding-top: 0.5rem;
+  }
+
+  .flooring-estimate-section-total strong,
+  .flooring-estimate-grand-total strong {
+    color: #f5fdff;
+    white-space: nowrap;
+  }
+
+  .flooring-estimate-grand-total {
+    border: 1px solid rgba(7, 248, 198, 0.18);
+    border-radius: 12px;
+    padding: 0.72rem;
+    background: linear-gradient(180deg, rgba(14, 51, 46, 0.86), rgba(8, 16, 22, 0.96));
+    color: #c7fff4;
+    font-size: 12px;
+    font-weight: 800;
+  }
+
+  @media (max-width: 720px) {
+    .flooring-estimate-table-head { display: none; }
+    .flooring-estimate-table-row { grid-template-columns: minmax(0, 1fr) minmax(5.8rem, auto); }
+    .flooring-estimate-table-row span:nth-child(2),
+    .flooring-estimate-table-row span:nth-child(3) { display: none; }
+  }
+}

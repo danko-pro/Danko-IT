@@ -45,6 +45,7 @@
   }
 
   .warmfloor-panel-scene-stage { position: relative; overflow: hidden; transition: height var(--ui-motion-medium) var(--ui-motion-ease); }
+  .flooring-stage .warmfloor-panel-scene-stage { overflow: visible; }
 
   .warmfloor-panel-scene {
     position: absolute;

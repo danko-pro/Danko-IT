@@ -15,12 +15,14 @@ class EstimateFlooringConfigStorageMixin:
                        include_plinth,
                        include_demolition,
                        include_preparation,
+                       default_preparation_id,
                        demolition_price_per_m2,
                        underlay_price_per_m2,
                        plinth_material_price_per_m,
                        plinth_install_price_per_m,
                        threshold_profile_count,
                        threshold_profile_price,
+                       global_items_json,
                        created_at,
                        updated_at
                 FROM estimate_flooring_configs
@@ -52,12 +54,14 @@ class EstimateFlooringConfigStorageMixin:
         include_plinth: bool,
         include_demolition: bool,
         include_preparation: bool,
+        default_preparation_id: int | None,
         demolition_price_per_m2: float,
         underlay_price_per_m2: float,
         plinth_material_price_per_m: float,
         plinth_install_price_per_m: float,
         threshold_profile_count: int,
         threshold_profile_price: float,
+        global_items_json: str,
     ) -> None:
         async with self.connection() as db:
             await db.execute(
@@ -68,27 +72,31 @@ class EstimateFlooringConfigStorageMixin:
                     include_plinth,
                     include_demolition,
                     include_preparation,
+                    default_preparation_id,
                     demolition_price_per_m2,
                     underlay_price_per_m2,
                     plinth_material_price_per_m,
                     plinth_install_price_per_m,
                     threshold_profile_count,
                     threshold_profile_price,
+                    global_items_json,
                     created_at,
                     updated_at
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
                 ON CONFLICT(project_id) DO UPDATE SET
                     include_underlay = excluded.include_underlay,
                     include_plinth = excluded.include_plinth,
                     include_demolition = excluded.include_demolition,
                     include_preparation = excluded.include_preparation,
+                    default_preparation_id = excluded.default_preparation_id,
                     demolition_price_per_m2 = excluded.demolition_price_per_m2,
                     underlay_price_per_m2 = excluded.underlay_price_per_m2,
                     plinth_material_price_per_m = excluded.plinth_material_price_per_m,
                     plinth_install_price_per_m = excluded.plinth_install_price_per_m,
                     threshold_profile_count = excluded.threshold_profile_count,
                     threshold_profile_price = excluded.threshold_profile_price,
+                    global_items_json = excluded.global_items_json,
                     updated_at = CURRENT_TIMESTAMP
                 """,
                 (
@@ -97,12 +105,14 @@ class EstimateFlooringConfigStorageMixin:
                     1 if include_plinth else 0,
                     1 if include_demolition else 0,
                     1 if include_preparation else 0,
+                    default_preparation_id,
                     demolition_price_per_m2,
                     underlay_price_per_m2,
                     plinth_material_price_per_m,
                     plinth_install_price_per_m,
                     threshold_profile_count,
                     threshold_profile_price,
+                    global_items_json,
                 ),
             )
             await self._touch_estimate_project(db, project_id)

@@ -26,12 +26,14 @@ export function FlooringStageCatalogsPanel(props: FlooringStageReadyProps) {
 
       <div className="grid gap-3 xl:grid-cols-2">
         <FlooringStagePreparationCatalog
+          flooringDetail={props.flooringDetail}
           flooringPreparationState={props.flooringPreparationState}
           setFlooringPreparationState={props.setFlooringPreparationState}
           busyKey={props.busyKey}
           submitFlooringPreparation={props.submitFlooringPreparation}
         />
         <FlooringStageLayoutCatalog
+          flooringDetail={props.flooringDetail}
           flooringLayoutState={props.flooringLayoutState}
           setFlooringLayoutState={props.setFlooringLayoutState}
           busyKey={props.busyKey}

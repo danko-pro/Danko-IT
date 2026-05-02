@@ -1,10 +1,14 @@
 import { FlooringRoomCard } from "./";
 import type { FlooringStageReadyProps } from "./";
 
-export function FlooringStageRoomsPanel(props: FlooringStageReadyProps) {
+export function FlooringStageRoomsPanel(
+  props: FlooringStageReadyProps & {
+    openFlooringRoomPanel: () => void;
+    openFlooringSummaryPanel: () => void;
+  },
+) {
   const {
     flooringPreview,
-    flooringDetail,
     flooringRoomStateById,
     expandedFlooringRoomId,
     setExpandedFlooringRoomId,
@@ -12,6 +16,9 @@ export function FlooringStageRoomsPanel(props: FlooringStageReadyProps) {
     flooringCoveringById,
     flooringPreparationById,
     flooringLayoutById,
+    flooringState,
+    openFlooringRoomPanel,
+    openFlooringSummaryPanel,
   } = props;
 
   return (
@@ -33,14 +40,14 @@ export function FlooringStageRoomsPanel(props: FlooringStageReadyProps) {
             room={room}
             edit={flooringRoomStateById.get(room.room_id)}
             expanded={expandedFlooringRoomId === room.room_id}
-            coverings={flooringDetail.coverings}
-            preparations={flooringDetail.preparations}
-            layouts={flooringDetail.layouts}
             coveringById={flooringCoveringById}
             preparationById={flooringPreparationById}
             layoutById={flooringLayoutById}
+            flooringState={flooringState}
             setExpandedRoomId={setExpandedFlooringRoomId}
             setFlooringState={setFlooringState}
+            openFlooringRoomPanel={openFlooringRoomPanel}
+            openFlooringSummaryPanel={openFlooringSummaryPanel}
           />
         ))}
       </div>

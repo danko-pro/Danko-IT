@@ -54,21 +54,31 @@ export function createAdminCalculatorFinishesController(props: CalculatorFinishe
     }
   }
 
-  async function handleSaveCalculatorFlooring(projectId: number, payload: CalculatorFlooringPayload) {
+  async function handleSaveCalculatorFlooring(
+    projectId: number,
+    payload: CalculatorFlooringPayload,
+    options?: { silent?: boolean },
+  ) {
     try {
-      props.setCalculatorBusyKey(`calculator-flooring-save-${projectId}`);
+      if (!options?.silent) {
+        props.setCalculatorBusyKey(`calculator-flooring-save-${projectId}`);
+      }
       const updatedProject = await fetchJson<CalculatorProjectDetail>(`/api/calculator/projects/${projectId}/flooring`, {
         method: "PATCH",
         body: JSON.stringify(payload),
       });
       props.setCalculatorProjectDetail(updatedProject);
-      await props.loadCalculatorProjects();
-      props.setSuccessMessage(`Напольные покрытия по проекту "${updatedProject.project.name}" сохранены.`);
+      if (!options?.silent) {
+        await props.loadCalculatorProjects();
+        props.setSuccessMessage(`Напольные покрытия по проекту "${updatedProject.project.name}" сохранены.`);
+      }
       props.setCalculatorError(null);
     } catch (actionError) {
       props.setCalculatorError(actionError instanceof Error ? actionError.message : "Не удалось сохранить напольные покрытия");
     } finally {
-      props.setCalculatorBusyKey(null);
+      if (!options?.silent) {
+        props.setCalculatorBusyKey(null);
+      }
     }
   }
 

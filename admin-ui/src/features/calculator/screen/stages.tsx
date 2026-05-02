@@ -127,6 +127,7 @@ function buildFlooringStageProps(props: CalculatorEstimateStagesFacadeProps): Fl
     flooringPreparationById: flooring.flooringPreparationById,
     flooringLayoutById: flooring.flooringLayoutById,
     flooringSelectedTechRooms: flooring.flooringSelectedTechRooms,
+    autosaveState: flooring.autosaveState,
     busyKey: data.busyKey,
     submitFlooring: flooring.submitFlooring,
     submitFlooringCovering: flooring.submitFlooringCovering,

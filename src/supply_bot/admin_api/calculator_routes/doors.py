@@ -89,7 +89,11 @@ def register_calculator_door_routes(
         await require_estimate_project(storage_obj, project_id)
         door_values = await resolve_project_door_values(storage_obj, payload)
         await storage_obj.create_estimate_project_door(project_id=project_id, **door_values)
-        return await load_estimate_project_payload(storage_obj, project_id, detail="Project not found after door creation")
+        return await load_estimate_project_payload(
+            storage_obj,
+            project_id,
+            detail="Project not found after door creation",
+        )
 
     @app.patch("/api/calculator/project-doors/{door_id}")
     async def update_calculator_project_door(
@@ -104,7 +108,11 @@ def register_calculator_door_routes(
         )
         if project_id is None:
             raise HTTPException(status_code=404, detail="Project door not found")
-        return await load_estimate_project_payload(storage_obj, project_id, detail="Project not found after door update")
+        return await load_estimate_project_payload(
+            storage_obj,
+            project_id,
+            detail="Project not found after door update",
+        )
 
     @app.delete("/api/calculator/project-doors/{door_id}")
     async def delete_calculator_project_door(request: Request, door_id: int) -> dict[str, Any]:
@@ -112,7 +120,11 @@ def register_calculator_door_routes(
         project_id = await storage_obj.delete_estimate_project_door(door_id)
         if project_id is None:
             raise HTTPException(status_code=404, detail="Project door not found")
-        return await load_estimate_project_payload(storage_obj, project_id, detail="Project not found after door deletion")
+        return await load_estimate_project_payload(
+            storage_obj,
+            project_id,
+            detail="Project not found after door deletion",
+        )
 
     @app.post("/api/calculator/project-doors/{door_id}/components")
     async def create_calculator_project_door_component(

@@ -1,0 +1,337 @@
+@layer components {
+  .flooring-room-parameter-chips {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.25rem;
+    overflow: hidden;
+  }
+
+  .flooring-room-parameter-chips span {
+    max-width: min(100%, 8.8rem);
+    overflow: hidden;
+    border: 1px solid rgba(var(--calculator-stage-accent-rgb), 0.18);
+    border-radius: 999px;
+    padding: 0.19rem 0.42rem;
+    background: rgba(var(--calculator-stage-accent-rgb), 0.075);
+    color: #c7fff4;
+    font-size: 9px;
+    font-weight: 850;
+    line-height: 1.05;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .flooring-room-parameter-chips .flooring-room-parameter-chip-muted {
+    border-color: rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.035);
+    color: #7d95aa;
+  }
+
+  @container (max-width: 36rem) {
+    .flooring-room-parameter-chips span {
+      max-width: min(100%, 10.5rem);
+      padding: 0.18rem 0.38rem;
+      font-size: 8.5px;
+    }
+  }
+
+  .flooring-global-item-row {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.4rem;
+    align-items: stretch;
+    min-width: 0;
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 12px;
+    padding: 0.42rem;
+    background: rgba(5, 9, 14, 0.42);
+  }
+
+  .flooring-global-item-title,
+  .flooring-global-item-controls {
+    display: grid;
+    gap: 0.4rem;
+    min-width: 0;
+  }
+
+  .flooring-global-item-title {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .flooring-global-item-controls {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(4.3rem, 0.82fr) minmax(4.3rem, 0.82fr);
+  }
+
+  .flooring-global-item-row .text-input {
+    min-width: 0;
+    min-height: 1.95rem;
+    border-radius: 11px;
+    padding: 0.32rem 0.5rem;
+    font-size: 10.5px;
+  }
+
+  @media (max-width: 720px) {
+    .flooring-global-item-controls { grid-template-columns: 1fr 1fr; }
+  }
+
+  .flooring-techmap-form,
+  .flooring-techmap-form-body {
+    display: grid;
+    gap: 0.5rem;
+    min-width: 0;
+  }
+
+  .flooring-techmap-form {
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 12px;
+    padding: 0.55rem;
+    background: rgba(8, 13, 19, 0.58); overflow: visible;
+  }
+
+  .flooring-techmap-form-head {
+    display: grid;
+    gap: 0.62rem;
+    min-width: 0;
+    margin-bottom: 0.28rem;
+    padding: 0.18rem 0 0.62rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.055);
+  }
+
+  .flooring-techmap-form-head > div:first-child {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.75rem;
+    color: #eff7ff;
+    font-size: 12px;
+    font-weight: 850;
+  }
+
+  .flooring-techmap-form-head > div:first-child span {
+    color: #7d95aa;
+    font-size: 10px;
+    font-weight: 750;
+    white-space: nowrap;
+  }
+
+  .flooring-techmap-chip-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.32rem;
+    min-width: 0;
+  }
+
+  .flooring-techmap-chip-list button {
+    max-width: min(100%, 9.5rem);
+    overflow: hidden;
+    border: 1px solid rgba(var(--calculator-stage-accent-rgb), 0.16);
+    border-radius: 999px;
+    padding: 0.18rem 0.42rem;
+    background: rgba(var(--calculator-stage-accent-rgb), 0.06);
+    color: #9fe9de;
+    font-size: 9px;
+    font-weight: 800;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    cursor: pointer;
+    transition:
+      border-color var(--ui-motion-fast) var(--ui-motion-ease-soft),
+      background-color var(--ui-motion-fast) var(--ui-motion-ease-soft),
+      color var(--ui-motion-fast) var(--ui-motion-ease-soft);
+  }
+
+  .flooring-techmap-chip-list button:hover,
+  .flooring-techmap-chip-list button:focus-visible,
+  .flooring-techmap-chip-list .flooring-techmap-chip-active {
+    border-color: rgba(var(--calculator-stage-accent-rgb), 0.32);
+    background: rgba(var(--calculator-stage-accent-rgb), 0.14);
+    color: #eaffff;
+  }
+
+  .flooring-techmap-chip-list .flooring-techmap-chip-add {
+    min-width: auto;
+    border-color: transparent;
+    padding: 0 0.2rem;
+    background: transparent;
+    color: #d8fffb;
+    box-shadow: none;
+    font-size: 13px;
+  }
+
+  .flooring-techmap-chip-list .flooring-techmap-chip-add:hover,
+  .flooring-techmap-chip-list .flooring-techmap-chip-add:focus-visible {
+    border-color: transparent;
+    background: transparent;
+    }
+
+  .flooring-techmap-step {
+    display: grid;
+    gap: 0.45rem;
+    min-width: 0;
+    border: 1px solid rgba(255, 255, 255, 0.065);
+    border-radius: 12px;
+    padding: 0.5rem;
+    background: rgba(5, 9, 14, 0.36); overflow: visible;
+  }
+
+  .flooring-techmap-form-body .flooring-techmap-step:first-child {
+    margin-top: 0.18rem;
+    border-color: rgba(var(--calculator-stage-accent-rgb), 0.17);
+    gap: 0.72rem;
+    padding: 1rem;
+    background: rgba(var(--calculator-stage-accent-rgb), 0.045);
+  }
+
+  .flooring-techmap-form-body .flooring-techmap-step:first-child .flooring-techmap-step-head {
+    display: grid;
+    gap: 0.28rem;
+    justify-content: stretch;
+  }
+
+  .flooring-techmap-form-body .flooring-techmap-step:first-child .flooring-techmap-step-head span {
+    margin-left: 5px;
+    text-align: left;
+  }
+
+  .flooring-techmap-step-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.5rem;
+    min-width: 0;
+  }
+
+  .flooring-techmap-step-head strong {
+    overflow: hidden;
+    color: #edf7ff;
+    font-size: 11px;
+    font-weight: 850;
+    line-height: 1.12;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .flooring-techmap-step-head span {
+    color: #7d95aa;
+    font-size: 9px;
+    font-weight: 750;
+    line-height: 1.1;
+    text-align: right;
+  }
+
+  .flooring-techmap-template-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    min-width: 0;
+  }
+
+  .flooring-techmap-grid { display: grid; gap: 0.38rem; justify-content: start; min-width: 0; }
+
+  .flooring-techmap-grid-main { grid-template-columns: repeat(auto-fill, minmax(min(100%, 7.2rem), 9.4rem)); }
+
+  .flooring-techmap-grid-consumables { grid-template-columns: repeat(3, minmax(4.6rem, 6.2rem)); }
+
+  .flooring-techmap-title-row { width: 100%; max-width: 100%; min-width: 0; }
+  .flooring-techmap-title-row label.block,
+  .flooring-techmap-title-row .text-input-compact { max-width: 100%; }
+  .flooring-techmap-rate-row {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    justify-content: stretch;
+    margin-top: 0;
+  }
+
+  .flooring-techmap-form label.block {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .flooring-techmap-form .flooring-techmap-title-row label.block { width: 100%; max-width: 100%; }
+
+  .flooring-techmap-form .field-label-compact {
+    margin-bottom: 0.24rem;
+    overflow: hidden;
+    color: #7f96aa;
+    font-size: 8px;
+    letter-spacing: 0.14em;
+    line-height: 1.08;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .flooring-techmap-form .text-input-compact {
+    width: 100%;
+    min-height: 1.95rem;
+    border-radius: 11px;
+    padding: 0.32rem 0.58rem;
+    font-size: 11px;
+    line-height: 1.1;
+  }
+
+  .flooring-techmap-form select.text-input-compact { background-position: 0 0, right 2.85rem center; padding-right: 4rem; text-overflow: ellipsis; }
+
+  .flooring-techmap-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+    min-height: 1.95rem;
+    max-width: 9.4rem;
+    border: 1px solid rgba(255, 255, 255, 0.075);
+    border-radius: 11px;
+    padding: 0.32rem 0.52rem;
+    background: rgba(5, 9, 14, 0.42);
+    color: #b7c9db;
+    font-size: 10px;
+    line-height: 1.12;
+    cursor: pointer;
+  }
+
+  .flooring-techmap-toggle input {
+    width: 0.9rem;
+    height: 0.9rem;
+    accent-color: rgb(var(--calculator-stage-accent-rgb));
+  }
+
+  .flooring-techmap-toggle strong {
+    display: block;
+    color: #eef7ff;
+    font-size: 10.5px;
+  }
+
+  .flooring-techmap-toggle span {
+    display: block;
+    margin-top: 0.12rem;
+    color: #7d95aa;
+  }
+
+  .flooring-techmap-actions {
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  @media (max-width: 760px) {
+    .flooring-techmap-consumable-row {
+      grid-template-columns: 1fr;
+      gap: 0.25rem;
+    }
+
+    .flooring-techmap-consumable-row > strong {
+      padding-bottom: 0;
+    }
+  }
+
+  @media (max-width: 560px) {
+    .flooring-techmap-step-head {
+      display: grid;
+    }
+
+    .flooring-techmap-step-head span {
+      text-align: left;
+    }
+
+    .flooring-techmap-grid-consumables {
+      grid-template-columns: 1fr;
+    }
+  }
+}

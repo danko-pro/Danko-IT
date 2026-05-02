@@ -4,7 +4,6 @@ import sqlite3
 from contextlib import closing
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from unittest.mock import AsyncMock, patch
 
 from fastapi.testclient import TestClient
 
@@ -176,7 +175,10 @@ class AdminProjectsCalculatorRouteTests(AdminProjectsRouteCase):
                     },
                 )
                 self.assertEqual(flooring_response.status_code, 200)
-                self.assertEqual(flooring_response.json()["flooring"]["summary"]["rooms_count"], 1)
+                flooring = flooring_response.json()["flooring"]
+                self.assertEqual(flooring["summary"]["rooms_count"], 1)
+                flooring_spec_total = sum(item["amount"] for item in flooring["specification"])
+                self.assertAlmostEqual(flooring_spec_total, flooring["summary"]["grand_total"])
 
                 wall_finish_covering_response = client.post(
                     "/api/calculator/wall-finishes/coverings",

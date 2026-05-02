@@ -23,6 +23,22 @@ class EstimateFlooringRoomsStorageMixin:
             rows = await cursor.fetchall()
         return [dict(row) for row in rows]
 
+    async def list_estimate_flooring_room_zones(self, project_id: int) -> list[dict[str, Any]]:
+        async with self.connection() as db:
+            cursor = await db.execute(
+                """
+                SELECT efrz.id, efrz.project_id, efrz.room_id,
+                       efrz.covering_id, efrz.preparation_id, efrz.layout_id,
+                       efrz.area_m2, efrz.note, efrz.sort_order, efrz.created_at, efrz.updated_at
+                FROM estimate_flooring_room_zones efrz
+                WHERE efrz.project_id = ?
+                ORDER BY efrz.sort_order, efrz.id
+                """,
+                (project_id,),
+            )
+            rows = await cursor.fetchall()
+        return [dict(row) for row in rows]
+
     async def replace_estimate_flooring_rooms(
         self,
         project_id: int,
@@ -57,6 +73,43 @@ class EstimateFlooringRoomsStorageMixin:
                         float(row["area_m2_override"]) if row.get("area_m2_override") is not None else None,
                         float(row["perimeter_m_override"]) if row.get("perimeter_m_override") is not None else None,
                         float(row["plinth_m_override"]) if row.get("plinth_m_override") is not None else None,
+                        row.get("note"),
+                        index * 10,
+                    ),
+                )
+            await self._touch_estimate_project(db, project_id)
+            await db.commit()
+
+    async def replace_estimate_flooring_room_zones(
+        self,
+        project_id: int,
+        zones: list[dict[str, Any]],
+    ) -> None:
+        async with self.connection() as db:
+            await db.execute("DELETE FROM estimate_flooring_room_zones WHERE project_id = ?", (project_id,))
+            for index, row in enumerate(zones, start=1):
+                await db.execute(
+                    """
+                    INSERT INTO estimate_flooring_room_zones (
+                        project_id,
+                        room_id,
+                        covering_id,
+                        preparation_id,
+                        layout_id,
+                        area_m2,
+                        note,
+                        sort_order,
+                        updated_at
+                    )
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                    """,
+                    (
+                        project_id,
+                        int(row["room_id"]),
+                        row.get("covering_id"),
+                        row.get("preparation_id"),
+                        row.get("layout_id"),
+                        float(row["area_m2"]) if row.get("area_m2") is not None else None,
                         row.get("note"),
                         index * 10,
                     ),

@@ -17,6 +17,7 @@ class EstimateFlooringCatalogStorageMixin:
                        primer_consumption_per_m2, primer_unit, primer_price_per_unit,
                        svp_consumption_per_m2, svp_unit, svp_price_per_unit,
                        grout_consumption_per_m2, grout_unit, grout_price_per_unit,
+                       custom_consumables_json,
                        needs_plinth, instrument_price_per_m2,
                        note, is_active, created_at, updated_at
                 FROM estimate_flooring_coverings
@@ -48,6 +49,7 @@ class EstimateFlooringCatalogStorageMixin:
         grout_consumption_per_m2: float,
         grout_unit: str,
         grout_price_per_unit: float,
+        custom_consumables_json: str,
         needs_plinth: bool,
         instrument_price_per_m2: float,
         note: str | None = None,
@@ -62,9 +64,10 @@ class EstimateFlooringCatalogStorageMixin:
                     primer_consumption_per_m2, primer_unit, primer_price_per_unit,
                     svp_consumption_per_m2, svp_unit, svp_price_per_unit,
                     grout_consumption_per_m2, grout_unit, grout_price_per_unit,
+                    custom_consumables_json,
                     needs_plinth, instrument_price_per_m2, note
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     title,
@@ -85,6 +88,7 @@ class EstimateFlooringCatalogStorageMixin:
                     grout_consumption_per_m2,
                     grout_unit,
                     grout_price_per_unit,
+                    custom_consumables_json,
                     1 if needs_plinth else 0,
                     instrument_price_per_m2,
                     note,

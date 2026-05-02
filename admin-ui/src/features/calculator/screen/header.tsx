@@ -49,6 +49,18 @@ export function CalculatorHeaderSection(props: CalculatorHeaderSectionProps) {
   } = props;
   const showHeaderMetrics = activeStage !== "project";
   const autosaveLabel = !showHeaderMetrics && projectDetail ? getAutosaveLabel(projectForm.autosaveState) : null;
+  const floorArea = projectDetail?.summary.floor_area_m2 ?? 0;
+  const doorSaleTotal = projectDetail?.summary.door_sale_total ?? 0;
+  const doorInstallTotal = projectDetail?.summary.door_install_total ?? 0;
+  const flooringTotal = headerFlooringWorkTotal + headerFlooringMaterialTotal;
+  const warmFloorTotal = headerWarmFloorWorkTotal + headerWarmFloorMaterialTotal;
+  const doorClientTotal = doorSaleTotal + doorInstallTotal;
+  const objectWorkTotal = headerFlooringWorkTotal + headerWarmFloorWorkTotal + doorInstallTotal;
+  const objectMaterialTotal = headerFlooringMaterialTotal + headerWarmFloorMaterialTotal + doorSaleTotal;
+  const objectEstimateTotal = objectWorkTotal + objectMaterialTotal;
+  const objectRate = floorArea > 0 ? objectEstimateTotal / floorArea : 0;
+  const objectWorkRate = floorArea > 0 ? objectWorkTotal / floorArea : 0;
+  const objectMaterialRate = floorArea > 0 ? objectMaterialTotal / floorArea : 0;
 
   return (
     <section className="glass-panel p-4 stage-panel calculator-header">
@@ -87,39 +99,75 @@ export function CalculatorHeaderSection(props: CalculatorHeaderSectionProps) {
       </div>
 
       {projectDetail ? (
-        <div className="calculator-header-stats mt-3">
-          <AnimatedHeaderGroup title={showHeaderMetrics ? "Объёмы" : undefined} empty={!showHeaderMetrics}>
-            {showHeaderMetrics ? (
-              <div className="calculator-header-group-grid">
-                <MetricChip label="Комнат" value={String(projectDetail.summary.rooms_count)} />
-                <MetricChip label="Полы" value={formatArea(projectDetail.summary.floor_area_m2)} />
-                <MetricChip label="Стены грязн." value={formatArea(projectDetail.summary.wall_area_gross_m2)} />
-                <MetricChip label="Стены чист." value={formatArea(projectDetail.summary.wall_area_net_m2)} />
-                <MetricChip label="Проёмы" value={formatArea(projectDetail.summary.openings_area_m2)} />
-                <MetricChip label="Периметр" value={formatMeters(projectDetail.summary.perimeter_m)} />
-                <MetricChip label="Дверей" value={String(projectDetail.summary.doors_count)} />
-              </div>
-            ) : (
-              <ObjectIdentityCard projectForm={projectForm} />
-            )}
-          </AnimatedHeaderGroup>
+        showHeaderMetrics ? (
+          <div className="calculator-header-stats calculator-header-stats-compact mt-3">
+            <AnimatedHeaderGroup title="Свод по объекту">
+              <div className="calculator-object-summary-compact">
+                <div className="calculator-object-summary-total">
+                  <div>
+                    <div className="calculator-object-summary-label">Итого по объекту</div>
+                    <div className="calculator-object-summary-value">{formatMoney(objectEstimateTotal)}</div>
+                  </div>
+                  <div className="calculator-object-summary-rate">
+                    <div className="calculator-object-rate-main">
+                      <span>Цена за м²</span>
+                      <strong>{objectRate > 0 ? formatMoney(objectRate) : "—"}</strong>
+                    </div>
+                    <div className="calculator-object-rate-split">
+                      <div>
+                        <span>Работы</span>
+                        <strong>{objectWorkRate > 0 ? formatMoney(objectWorkRate) : "—"}</strong>
+                      </div>
+                      <div>
+                        <span>Материалы</span>
+                        <strong>{objectMaterialRate > 0 ? formatMoney(objectMaterialRate) : "—"}</strong>
+                      </div>
+                    </div>
+                  </div>
+                </div>
 
-          <AnimatedHeaderGroup title={showHeaderMetrics ? "Суммы" : undefined} empty={!showHeaderMetrics}>
-            {showHeaderMetrics ? (
-              <div className="calculator-header-group-grid">
-                <MetricChip label="Полы: работы" value={formatMoney(headerFlooringWorkTotal)} />
-                <MetricChip label="Полы: материалы" value={formatMoney(headerFlooringMaterialTotal)} />
-                <MetricChip label="ТП: работы" value={formatMoney(headerWarmFloorWorkTotal)} />
-                <MetricChip label="ТП: материалы" value={formatMoney(headerWarmFloorMaterialTotal)} />
-                <MetricChip label="Двери: закуп" value={formatMoney(projectDetail.summary.door_purchase_total ?? 0)} />
-                <MetricChip label="Двери: продажа" value={formatMoney(projectDetail.summary.door_sale_total ?? 0)} />
-                <MetricChip label="Двери: монтаж" value={formatMoney(projectDetail.summary.door_install_total ?? 0)} />
+                <div className="calculator-object-compact-group">
+                  <div className="calculator-object-compact-title">Объёмы</div>
+                  <div className="calculator-object-compact-grid">
+                    <MetricChip label="Полы" value={formatArea(floorArea)} />
+                    <MetricChip label="Стены чист." value={formatArea(projectDetail.summary.wall_area_net_m2)} />
+                    <MetricChip label="Периметр" value={formatMeters(projectDetail.summary.perimeter_m)} />
+                    <MetricChip label="Комнат" value={String(projectDetail.summary.rooms_count)} />
+                    <MetricChip label="Дверей" value={String(projectDetail.summary.doors_count)} />
+                  </div>
+                </div>
+
+                <div className="calculator-object-compact-group calculator-object-money-group">
+                  <div className="calculator-object-compact-title">Суммы</div>
+                  <div className="calculator-object-money-list">
+                    <div className="calculator-object-money-row">
+                      <span>Напольные покрытия</span>
+                      <strong>{formatMoney(flooringTotal)}</strong>
+                    </div>
+                    <div className="calculator-object-money-row">
+                      <span>Тёплый пол</span>
+                      <strong>{formatMoney(warmFloorTotal)}</strong>
+                    </div>
+                    <div className="calculator-object-money-row">
+                      <span>Двери</span>
+                      <strong>{formatMoney(doorClientTotal)}</strong>
+                    </div>
+                  </div>
+                </div>
               </div>
-            ) : (
+            </AnimatedHeaderGroup>
+          </div>
+        ) : (
+          <div className="calculator-header-stats mt-3">
+            <AnimatedHeaderGroup empty>
+              <ObjectIdentityCard projectForm={projectForm} />
+            </AnimatedHeaderGroup>
+
+            <AnimatedHeaderGroup empty>
               <ObjectAccessCard projectForm={projectForm} />
-            )}
-          </AnimatedHeaderGroup>
-        </div>
+            </AnimatedHeaderGroup>
+          </div>
+        )
       ) : null}
     </section>
   );

@@ -12,12 +12,14 @@ export const emptyFlooringState: FlooringEditState = {
   include_plinth: true,
   include_demolition: false,
   include_preparation: true,
+  default_preparation_id: "",
   demolition_price_per_m2: "150",
   underlay_price_per_m2: "120",
   plinth_material_price_per_m: "180",
   plinth_install_price_per_m: "250",
   threshold_profile_count: "0",
   threshold_profile_price: "900",
+  global_items: [],
   rooms: [],
 };
 
@@ -40,6 +42,7 @@ export const emptyFlooringCoveringState: FlooringCoveringCreateState = {
   grout_consumption_per_m2: "",
   grout_unit: "кг",
   grout_price_per_unit: "",
+  custom_consumables: [],
   needs_plinth: true,
   instrument_price_per_m2: "",
   note: "",

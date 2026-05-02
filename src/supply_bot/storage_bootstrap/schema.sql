@@ -364,12 +364,14 @@ CREATE TABLE IF NOT EXISTS estimate_flooring_configs (
     include_plinth INTEGER NOT NULL DEFAULT 1,
     include_demolition INTEGER NOT NULL DEFAULT 0,
     include_preparation INTEGER NOT NULL DEFAULT 1,
+    default_preparation_id INTEGER REFERENCES estimate_flooring_preparations(id) ON DELETE SET NULL,
     demolition_price_per_m2 REAL NOT NULL DEFAULT 150,
     underlay_price_per_m2 REAL NOT NULL DEFAULT 120,
     plinth_material_price_per_m REAL NOT NULL DEFAULT 180,
     plinth_install_price_per_m REAL NOT NULL DEFAULT 250,
     threshold_profile_count INTEGER NOT NULL DEFAULT 0,
     threshold_profile_price REAL NOT NULL DEFAULT 900,
+    global_items_json TEXT NOT NULL DEFAULT '',
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -442,6 +444,20 @@ CREATE TABLE IF NOT EXISTS estimate_flooring_rooms (
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(project_id, room_id)
+);
+
+CREATE TABLE IF NOT EXISTS estimate_flooring_room_zones (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    project_id INTEGER NOT NULL REFERENCES estimate_projects(id) ON DELETE CASCADE,
+    room_id INTEGER NOT NULL REFERENCES estimate_rooms(id) ON DELETE CASCADE,
+    covering_id INTEGER REFERENCES estimate_flooring_coverings(id) ON DELETE SET NULL,
+    preparation_id INTEGER REFERENCES estimate_flooring_preparations(id) ON DELETE SET NULL,
+    layout_id INTEGER REFERENCES estimate_flooring_layouts(id) ON DELETE SET NULL,
+    area_m2 REAL,
+    note TEXT,
+    sort_order INTEGER NOT NULL DEFAULT 100,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS estimate_wall_finish_configs (

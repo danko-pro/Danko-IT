@@ -1,6 +1,9 @@
-import { Button } from "./";
-import { SelectField, TextField, underlayModeOptions } from "./";
-import type { FlooringStageReadyProps } from "./";
+import type { ReactNode } from "react";
+
+import { Button, TextField, emptyFlooringCoveringState } from "./";
+import { CoveringConsumablesEditor } from "./covering-consumables";
+import { coveringToState } from "./catalog-state";
+import type { CalculatorFlooringCovering, FlooringStageReadyProps } from "./";
 
 type FlooringStageCoveringCatalogProps = Pick<
   FlooringStageReadyProps,
@@ -9,150 +12,104 @@ type FlooringStageCoveringCatalogProps = Pick<
   | "setFlooringCoveringState"
   | "busyKey"
   | "submitFlooringCovering"
->;
-
-// Секция каталога напольных покрытий.
-// Здесь редактируется сам материал покрытия и его расходники без примесей подготовки и layout-настроек.
+> & {
+  open?: boolean;
+};
 
 export function FlooringStageCoveringCatalog(props: FlooringStageCoveringCatalogProps) {
   const { flooringDetail, flooringCoveringState, setFlooringCoveringState, busyKey, submitFlooringCovering } = props;
+  const underlayEnabled = flooringCoveringState.underlay_mode !== "none";
 
   return (
-    <details className="subpanel p-3 details-panel">
-      <summary className="details-summary">Справочник покрытий</summary>
-      <div className="mt-3 space-y-2">
-        <div className="grid gap-2 md:grid-cols-4">
-          <TextField
-            label="Название"
-            value={flooringCoveringState.title}
-            onChange={(value) => setFlooringCoveringState((current) => ({ ...current, title: value }))}
-            placeholder="Например, Ламинат 33 кл."
-          />
-          <TextField
-            label="Материал, ₽/м²"
-            value={flooringCoveringState.material_price_per_m2}
-            onChange={(value) => setFlooringCoveringState((current) => ({ ...current, material_price_per_m2: value }))}
-          />
-          <TextField
-            label="Работа, ₽/м²"
-            value={flooringCoveringState.labor_price_per_m2}
-            onChange={(value) => setFlooringCoveringState((current) => ({ ...current, labor_price_per_m2: value }))}
-          />
-          <TextField
-            label="Базовый запас, %"
-            value={flooringCoveringState.base_waste_percent}
-            onChange={(value) => setFlooringCoveringState((current) => ({ ...current, base_waste_percent: value }))}
-          />
-        </div>
-        <div className="grid gap-2 md:grid-cols-4">
-          <SelectField
-            label="Подложка"
-            value={flooringCoveringState.underlay_mode}
-            onChange={(value) => setFlooringCoveringState((current) => ({ ...current, underlay_mode: value }))}
-            options={underlayModeOptions}
-          />
-          <TextField
-            label="Расход подложки"
-            value={flooringCoveringState.underlay_consumption_per_m2}
-            onChange={(value) =>
-              setFlooringCoveringState((current) => ({ ...current, underlay_consumption_per_m2: value }))
-            }
-          />
-          <TextField
-            label="РРЅСЃС‚СЂСѓРјРµРЅС‚, ₽/м²"
-            value={flooringCoveringState.instrument_price_per_m2}
-            onChange={(value) => setFlooringCoveringState((current) => ({ ...current, instrument_price_per_m2: value }))}
-          />
-          <label className="subpanel flex items-center gap-3 px-3 py-3">
-            <input
-              type="checkbox"
-              checked={flooringCoveringState.needs_plinth}
-              onChange={(event) =>
-                setFlooringCoveringState((current) => ({ ...current, needs_plinth: event.target.checked }))
-              }
+    <div className="flooring-techmap-form">
+      <TechmapHeader
+        title="Сохраненные покрытия"
+        note={`${flooringDetail.coverings.length} позиций`}
+        activeTitle={flooringCoveringState.title}
+        items={flooringDetail.coverings}
+        onSelect={(item) => setFlooringCoveringState(coveringToState(item))}
+        onCreate={() => setFlooringCoveringState(emptyFlooringCoveringState)}
+      />
+
+      <div className="flooring-techmap-form-body">
+        <TechmapStep title="1. База покрытия" note="Название, ставки и запас">
+          <div className="flooring-techmap-title-row">
+            <TextField
+              label="Название покрытия"
+              size="compact"
+              value={flooringCoveringState.title}
+              onChange={(value) => setFlooringCoveringState((current) => ({ ...current, title: value }))}
+              placeholder="Например, кварцвинил"
             />
-            <div>
-              <div className="text-sm font-semibold text-slate-100">Считать плинтус</div>
-              <div className="mt-0.5 text-[12px] text-slate-400">Отключайте для плитки и зон без плинтуса</div>
-            </div>
-          </label>
-        </div>
-        <div className="grid gap-2 md:grid-cols-3">
-          <TextField
-            label="Клей: расход"
-            value={flooringCoveringState.glue_consumption_per_m2}
-            onChange={(value) => setFlooringCoveringState((current) => ({ ...current, glue_consumption_per_m2: value }))}
-          />
-          <TextField
-            label="Клей: ед."
-            value={flooringCoveringState.glue_unit}
-            onChange={(value) => setFlooringCoveringState((current) => ({ ...current, glue_unit: value }))}
-          />
-          <TextField
-            label="Клей: цена"
-            value={flooringCoveringState.glue_price_per_unit}
-            onChange={(value) => setFlooringCoveringState((current) => ({ ...current, glue_price_per_unit: value }))}
-          />
-          <TextField
-            label="Грунт: расход"
-            value={flooringCoveringState.primer_consumption_per_m2}
-            onChange={(value) => setFlooringCoveringState((current) => ({ ...current, primer_consumption_per_m2: value }))}
-          />
-          <TextField
-            label="Грунт: ед."
-            value={flooringCoveringState.primer_unit}
-            onChange={(value) => setFlooringCoveringState((current) => ({ ...current, primer_unit: value }))}
-          />
-          <TextField
-            label="Грунт: цена"
-            value={flooringCoveringState.primer_price_per_unit}
-            onChange={(value) => setFlooringCoveringState((current) => ({ ...current, primer_price_per_unit: value }))}
-          />
-          <TextField
-            label="СВП: расход"
-            value={flooringCoveringState.svp_consumption_per_m2}
-            onChange={(value) => setFlooringCoveringState((current) => ({ ...current, svp_consumption_per_m2: value }))}
-          />
-          <TextField
-            label="СВП: ед."
-            value={flooringCoveringState.svp_unit}
-            onChange={(value) => setFlooringCoveringState((current) => ({ ...current, svp_unit: value }))}
-          />
-          <TextField
-            label="СВП: цена"
-            value={flooringCoveringState.svp_price_per_unit}
-            onChange={(value) => setFlooringCoveringState((current) => ({ ...current, svp_price_per_unit: value }))}
-          />
-          <TextField
-            label="Затирка: расход"
-            value={flooringCoveringState.grout_consumption_per_m2}
-            onChange={(value) => setFlooringCoveringState((current) => ({ ...current, grout_consumption_per_m2: value }))}
-          />
-          <TextField
-            label="Затирка: ед."
-            value={flooringCoveringState.grout_unit}
-            onChange={(value) => setFlooringCoveringState((current) => ({ ...current, grout_unit: value }))}
-          />
-          <TextField
-            label="Затирка: цена"
-            value={flooringCoveringState.grout_price_per_unit}
-            onChange={(value) => setFlooringCoveringState((current) => ({ ...current, grout_price_per_unit: value }))}
-          />
-        </div>
-        <TextField
-          label="Примечание"
-          value={flooringCoveringState.note}
-          onChange={(value) => setFlooringCoveringState((current) => ({ ...current, note: value }))}
-          placeholder="Например, клеевой кварцвинил / плитка 600x600"
-        />
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex flex-wrap gap-1.5">
-            {flooringDetail.coverings.slice(0, 6).map((item) => (
-              <span key={item.id} className="stat-chip">
-                {item.title}
-              </span>
-            ))}
           </div>
+          <div className="flooring-techmap-grid flooring-techmap-grid-main flooring-techmap-rate-row">
+            <TextField
+              label="Материал, ₽/м²"
+              size="compact"
+              value={flooringCoveringState.material_price_per_m2}
+              onChange={(value) => setFlooringCoveringState((current) => ({ ...current, material_price_per_m2: value }))}
+            />
+            <TextField
+              label="Работа, ₽/м²"
+              size="compact"
+              value={flooringCoveringState.labor_price_per_m2}
+              onChange={(value) => setFlooringCoveringState((current) => ({ ...current, labor_price_per_m2: value }))}
+            />
+            <TextField
+              label="Базовый запас, %"
+              size="compact"
+              value={flooringCoveringState.base_waste_percent}
+              onChange={(value) => setFlooringCoveringState((current) => ({ ...current, base_waste_percent: value }))}
+            />
+          </div>
+        </TechmapStep>
+
+        <TechmapStep title="2. Подложка" note="Параметры, связанные с выбранным покрытием">
+          <div className="flooring-techmap-grid flooring-techmap-grid-main">
+            <label className="flooring-techmap-toggle">
+              <input
+                type="checkbox"
+                checked={underlayEnabled}
+                onChange={(event) =>
+                  setFlooringCoveringState((current) => ({
+                    ...current,
+                    underlay_mode: event.target.checked ? "required" : "none",
+                  }))
+                }
+              />
+              <span>
+                <strong>Подложка включена</strong>
+                <span>{underlayEnabled ? "Будет считаться в покрытии" : "Не участвует в расчете"}</span>
+              </span>
+            </label>
+            {underlayEnabled ? (
+              <TextField
+                label="Расход подложки"
+                size="compact"
+                value={flooringCoveringState.underlay_consumption_per_m2}
+                onChange={(value) =>
+                  setFlooringCoveringState((current) => ({ ...current, underlay_consumption_per_m2: value }))
+                }
+              />
+            ) : null}
+          </div>
+        </TechmapStep>
+
+        <TechmapStep title="3. Расходники покрытия" note="Заполняются только нужные позиции">
+          <CoveringConsumablesEditor state={flooringCoveringState} onChange={setFlooringCoveringState} />
+        </TechmapStep>
+
+        <TechmapStep title="4. Примечание" note="Уточнение для сметы">
+          <TextField
+            label="Комментарий"
+            size="compact"
+            value={flooringCoveringState.note}
+            onChange={(value) => setFlooringCoveringState((current) => ({ ...current, note: value }))}
+            placeholder="Например, клеевой кварцвинил / плитка 600x600"
+          />
+        </TechmapStep>
+
+        <div className="flooring-techmap-actions">
           <Button
             type="button"
             disabled={busyKey === "calculator-flooring-covering-create"}
@@ -162,6 +119,51 @@ export function FlooringStageCoveringCatalog(props: FlooringStageCoveringCatalog
           </Button>
         </div>
       </div>
-    </details>
+    </div>
+  );
+}
+
+function TechmapHeader(props: {
+  title: string;
+  note: string;
+  activeTitle: string;
+  items: CalculatorFlooringCovering[];
+  onSelect: (item: CalculatorFlooringCovering) => void;
+  onCreate: () => void;
+}) {
+  return (
+    <div className="flooring-techmap-form-head">
+      <div>
+        <strong>{props.title}</strong>
+        <span>{props.note}</span>
+      </div>
+      <div className="flooring-techmap-chip-list">
+        {props.items.slice(0, 8).map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            className={item.title === props.activeTitle ? "flooring-techmap-chip-active" : undefined}
+            onClick={() => props.onSelect(item)}
+          >
+            {item.title}
+          </button>
+        ))}
+        <button type="button" className="flooring-techmap-chip-add" onClick={props.onCreate} aria-label="Добавить покрытие">
+          +
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function TechmapStep(props: { title: string; note: string; children: ReactNode }) {
+  return (
+    <section className="flooring-techmap-step">
+      <div className="flooring-techmap-step-head">
+        <strong>{props.title}</strong>
+        <span>{props.note}</span>
+      </div>
+      {props.children}
+    </section>
   );
 }

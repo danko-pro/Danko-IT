@@ -99,22 +99,29 @@ def apply_wall_finish_room_selection(
         summary["mesh_unit"] = str(covering["mesh_unit"])
 
     layout_title = str(layout["title"]) if layout else "\u0411\u0430\u0437\u043e\u0432\u0430\u044f"
-    covering_title = str(covering["title"]) if covering else "\u041e\u0442\u0434\u0435\u043b\u043a\u0430 \u0441\u0442\u0435\u043d"
+    covering_title = str(covering["title"]) if covering else "Отделка стен"
     add_wall_finish_spec(
         spec_map,
         "work",
-        f"\u041e\u0442\u0434\u0435\u043b\u043a\u0430 \u0441\u0442\u0435\u043d: {covering_title}, {layout_title.lower()}",
+        f"Отделка стен: {covering_title}, {layout_title.lower()}",
         "\u043c\u00b2",
         room["effective_area_m2"],
         room["installation_cost"],
     )
-    add_wall_finish_spec(spec_map, "material", covering_title, "\u043c\u00b2", room["purchase_area_m2"], room["material_cost"])
+    add_wall_finish_spec(
+        spec_map,
+        "material",
+        covering_title,
+        "\u043c\u00b2",
+        room["purchase_area_m2"],
+        room["material_cost"],
+    )
     if preparation and bool(config["include_preparation"]):
         prep_title = str(preparation["title"])
         add_wall_finish_spec(
             spec_map,
             "work",
-            f"\u041f\u043e\u0434\u0433\u043e\u0442\u043e\u0432\u043a\u0430 \u0441\u0442\u0435\u043d: {prep_title}",
+            f"Подготовка стен: {prep_title}",
             "\u043c\u00b2",
             room["effective_area_m2"],
             room["preparation_work_cost"],
@@ -122,14 +129,30 @@ def apply_wall_finish_room_selection(
         add_wall_finish_spec(
             spec_map,
             "material",
-            f"\u041c\u0430\u0442\u0435\u0440\u0438\u0430\u043b\u044b \u043f\u043e\u0434\u0433\u043e\u0442\u043e\u0432\u043a\u0438 \u0441\u0442\u0435\u043d: {prep_title}",
+            f"Материалы подготовки стен: {prep_title}",
             "\u043c\u00b2",
             room["effective_area_m2"],
             room["preparation_material_cost"],
         )
-    add_wall_finish_spec(spec_map, "material", "\u041a\u043b\u0435\u0439", summary["glue_unit"], room["glue_qty"], room["glue_cost"])
-    add_wall_finish_spec(spec_map, "material", "\u0413\u0440\u0443\u043d\u0442\u043e\u0432\u043a\u0430", summary["primer_unit"], room["primer_qty"], room["primer_cost"])
-    add_wall_finish_spec(spec_map, "material", "\u0428\u043f\u0430\u043a\u043b\u0451\u0432\u043a\u0430", summary["putty_unit"], room["putty_qty"], room["putty_cost"])
+    add_wall_finish_spec(
+        spec_map, "material", "\u041a\u043b\u0435\u0439", summary["glue_unit"], room["glue_qty"], room["glue_cost"]
+    )
+    add_wall_finish_spec(
+        spec_map,
+        "material",
+        "\u0413\u0440\u0443\u043d\u0442\u043e\u0432\u043a\u0430",
+        summary["primer_unit"],
+        room["primer_qty"],
+        room["primer_cost"],
+    )
+    add_wall_finish_spec(
+        spec_map,
+        "material",
+        "\u0428\u043f\u0430\u043a\u043b\u0451\u0432\u043a\u0430",
+        summary["putty_unit"],
+        room["putty_qty"],
+        room["putty_cost"],
+    )
     add_wall_finish_spec(
         spec_map,
         "material",
@@ -141,7 +164,7 @@ def apply_wall_finish_room_selection(
     add_wall_finish_spec(
         spec_map,
         "work",
-        "\u0414\u0435\u043c\u043e\u043d\u0442\u0430\u0436 \u0441\u0442\u0430\u0440\u043e\u0439 \u043e\u0442\u0434\u0435\u043b\u043a\u0438 \u0441\u0442\u0435\u043d",
+        "Демонтаж старой отделки стен",
         "\u043c\u00b2",
         room["effective_area_m2"],
         room["demolition_cost"],

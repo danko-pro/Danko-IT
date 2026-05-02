@@ -7,7 +7,36 @@ type FlooringRoomEditState = {
   area_m2_override: string;
   perimeter_m_override: string;
   plinth_m_override: string;
+  plinth_type: string;
   note: string;
+  zones: FlooringRoomZoneEditState[];
+};
+
+export type FlooringRoomZoneEditState = {
+  id: string;
+  covering_id: string;
+  preparation_id: string;
+  layout_id: string;
+  area_m2: string;
+  note: string;
+};
+
+export type FlooringGlobalItemEditState = {
+  id: string;
+  kind: "work" | "material" | "consumable";
+  title: string;
+  mode: "fixed" | "area" | "perimeter" | "quantity";
+  rate: string;
+  quantity: string;
+  enabled: boolean;
+};
+
+export type FlooringCoveringConsumableEditState = {
+  id: string;
+  title: string;
+  consumption_per_m2: string;
+  unit: string;
+  price_per_unit: string;
 };
 
 export type FlooringEditState = {
@@ -15,12 +44,14 @@ export type FlooringEditState = {
   include_plinth: boolean;
   include_demolition: boolean;
   include_preparation: boolean;
+  default_preparation_id: string;
   demolition_price_per_m2: string;
   underlay_price_per_m2: string;
   plinth_material_price_per_m: string;
   plinth_install_price_per_m: string;
   threshold_profile_count: string;
   threshold_profile_price: string;
+  global_items: FlooringGlobalItemEditState[];
   rooms: FlooringRoomEditState[];
 };
 
@@ -43,6 +74,7 @@ export type FlooringCoveringCreateState = {
   grout_consumption_per_m2: string;
   grout_unit: string;
   grout_price_per_unit: string;
+  custom_consumables: FlooringCoveringConsumableEditState[];
   needs_plinth: boolean;
   instrument_price_per_m2: string;
   note: string;

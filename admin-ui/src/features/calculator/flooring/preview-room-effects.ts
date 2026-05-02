@@ -29,6 +29,8 @@ export type FlooringConsumables = {
   svpCost: number;
   groutQty: number;
   groutCost: number;
+  customItems: Array<{ title: string; unit: string; quantity: number; cost: number }>;
+  customCost: number;
 };
 
 export type FlooringPlinth = {
@@ -44,6 +46,7 @@ type FlooringSelectedRoomEffects = {
   preparation: CalculatorFlooringPreparation | null;
   layout: CalculatorFlooringLayout | null;
   effectiveArea: number;
+  effectivePerimeter: number;
   purchaseArea: number;
   materialCost: number;
   installationCost: number;
@@ -58,6 +61,7 @@ type FlooringSelectedRoomEffects = {
 export function updateSummary(summary: CalculatorFlooringSummary, values: FlooringSelectedRoomEffects) {
   summary.rooms_count += 1;
   summary.total_area_m2 += values.effectiveArea;
+  summary.total_perimeter_m += values.effectivePerimeter;
   summary.total_purchase_area_m2 += values.purchaseArea;
   summary.total_material_cost += values.materialCost;
   summary.total_installation_cost += values.installationCost;
@@ -74,6 +78,7 @@ export function updateSummary(summary: CalculatorFlooringSummary, values: Floori
   summary.total_svp_cost += values.consumables.svpCost;
   summary.total_grout_qty += values.consumables.groutQty;
   summary.total_grout_cost += values.consumables.groutCost;
+  summary.total_custom_consumables_cost += values.consumables.customCost;
   summary.total_plinth_m += values.plinth.meters;
   summary.total_plinth_material_cost += values.plinth.materialCost;
   summary.total_plinth_install_cost += values.plinth.installCost;
@@ -124,6 +129,9 @@ export function appendRoomSpec(specCollector: FlooringSpecCollector, values: Flo
   specCollector.addSpec("material", "Грунтовка", values.summary.primer_unit, values.consumables.primerQty, values.consumables.primerCost);
   specCollector.addSpec("material", "СВП", values.covering?.svp_unit ?? "шт", values.consumables.svpQty, values.consumables.svpCost);
   specCollector.addSpec("material", "Затирка", values.covering?.grout_unit ?? "кг", values.consumables.groutQty, values.consumables.groutCost);
+  values.consumables.customItems.forEach((item) => {
+    specCollector.addSpec("material", item.title, item.unit, item.quantity, item.cost);
+  });
   specCollector.addSpec("material", "Плинтус", "м.п.", values.plinth.meters, values.plinth.materialCost);
   specCollector.addSpec("work", "Монтаж плинтуса", "м.п.", values.plinth.meters, values.plinth.installCost);
   specCollector.addSpec("work", "Демонтаж напольного покрытия", "м²", values.effectiveArea, values.demolitionCost);

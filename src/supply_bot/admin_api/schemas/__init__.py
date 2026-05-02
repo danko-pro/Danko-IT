@@ -4,17 +4,12 @@ from supply_bot.admin_api.schemas.auth import AdminLoginPayload
 from supply_bot.admin_api.schemas.calculator import (
     CalculatorDoorCatalogPayload,
     CalculatorDoorComponentCatalogPayload,
-    CalculatorFlooringCoveringPayload,
-    CalculatorFlooringLayoutPayload,
-    CalculatorFlooringPreparationPayload,
-    CalculatorFlooringRoomPayload,
-    CalculatorFlooringUpdatePayload,
     CalculatorFloorSectionPayload,
     CalculatorOpeningPayload,
     CalculatorProjectCreatePayload,
-    CalculatorProjectUpdatePayload,
     CalculatorProjectDoorComponentPayload,
     CalculatorProjectDoorPayload,
+    CalculatorProjectUpdatePayload,
     CalculatorRoomCreatePayload,
     CalculatorRoomUpdatePayload,
     CalculatorWallFinishCoveringPayload,
@@ -24,6 +19,13 @@ from supply_bot.admin_api.schemas.calculator import (
     CalculatorWallFinishUpdatePayload,
     CalculatorWarmFloorRoomPayload,
     CalculatorWarmFloorUpdatePayload,
+)
+from supply_bot.admin_api.schemas.calculator_flooring import (
+    CalculatorFlooringCoveringPayload,
+    CalculatorFlooringLayoutPayload,
+    CalculatorFlooringPreparationPayload,
+    CalculatorFlooringRoomPayload,
+    CalculatorFlooringUpdatePayload,
 )
 from supply_bot.admin_api.schemas.materials import (
     AliasCreatePayload,

@@ -16,6 +16,7 @@ import type {
 // Общие типы stage-блока вынесены отдельно, чтобы shell, editor и summary
 // не зависели друг от друга по кругу.
 export type FlooringRoomEdit = FlooringEditState["rooms"][number];
+export type FlooringAutosaveState = "idle" | "pending" | "saving" | "saved" | "error";
 
 export type FlooringTechRoom = {
   room: CalculatorFlooringRoom;
@@ -45,6 +46,7 @@ export type FlooringStageSectionProps = {
   flooringPreparationById: Map<number, CalculatorFlooringPreparation>;
   flooringLayoutById: Map<number, CalculatorFlooringLayout>;
   flooringSelectedTechRooms: FlooringTechRoom[];
+  autosaveState: FlooringAutosaveState;
   busyKey: string | null;
   submitFlooring: () => Promise<void> | void;
   submitFlooringCovering: () => Promise<void> | void;

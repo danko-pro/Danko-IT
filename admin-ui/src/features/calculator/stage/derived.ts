@@ -37,13 +37,13 @@ export function buildCalculatorStageFlags(activeStage: CalculatorStage): Calcula
 
 export function buildCalculatorHeaderTotals(
   projectDetail: CalculatorProjectDetail | null,
-  warmFloorPreview: CalculatorWarmFloorDetail | null,
-  flooringPreview: CalculatorFlooringDetail | null,
+  _warmFloorPreview: CalculatorWarmFloorDetail | null,
+  _flooringPreview: CalculatorFlooringDetail | null,
 ): CalculatorHeaderTotals {
   return {
-    warmFloorWorkTotal: warmFloorPreview?.summary.work_total ?? projectDetail?.warm_floor.summary.work_total ?? 0,
-    warmFloorMaterialTotal: warmFloorPreview?.summary.material_total ?? projectDetail?.warm_floor.summary.material_total ?? 0,
-    flooringWorkTotal: flooringPreview?.summary.work_total ?? projectDetail?.flooring.summary.work_total ?? 0,
-    flooringMaterialTotal: flooringPreview?.summary.material_total ?? projectDetail?.flooring.summary.material_total ?? 0,
+    warmFloorWorkTotal: projectDetail?.warm_floor.summary.work_total ?? 0,
+    warmFloorMaterialTotal: projectDetail?.warm_floor.summary.material_total ?? 0,
+    flooringWorkTotal: projectDetail?.flooring.summary.work_total ?? 0,
+    flooringMaterialTotal: projectDetail?.flooring.summary.material_total ?? 0,
   };
 }

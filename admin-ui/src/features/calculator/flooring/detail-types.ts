@@ -4,12 +4,14 @@ export type CalculatorFlooringConfig = {
   include_plinth: number | boolean;
   include_demolition: number | boolean;
   include_preparation: number | boolean;
+  default_preparation_id: number | null;
   demolition_price_per_m2: number;
   underlay_price_per_m2: number;
   plinth_material_price_per_m: number;
   plinth_install_price_per_m: number;
   threshold_profile_count: number;
   threshold_profile_price: number;
+  global_items_json: string;
 };
 
 export type CalculatorFlooringCovering = {
@@ -32,10 +34,18 @@ export type CalculatorFlooringCovering = {
   grout_consumption_per_m2: number;
   grout_unit: string;
   grout_price_per_unit: number;
+  custom_consumables_json: string;
   needs_plinth: number | boolean;
   instrument_price_per_m2: number;
   note: string | null;
   is_active: number;
+};
+
+export type CalculatorFlooringCoveringConsumable = {
+  title: string;
+  consumption_per_m2: number;
+  unit: string;
+  price_per_unit: number;
 };
 
 export type CalculatorFlooringPreparation = {
@@ -104,10 +114,27 @@ export type CalculatorFlooringRoom = {
   grout_qty: number;
   grout_unit: string;
   grout_cost: number;
+  custom_consumables_cost: number;
   plinth_material_cost: number;
   plinth_install_cost: number;
   demolition_cost: number;
   instrument_cost: number;
+  total_cost: number;
+  note: string | null;
+  zones?: CalculatorFlooringRoomZone[];
+};
+
+export type CalculatorFlooringRoomZone = {
+  id: number;
+  covering_id: number | null;
+  covering_title: string | null;
+  preparation_id: number | null;
+  preparation_title: string | null;
+  layout_id: number | null;
+  layout_title: string | null;
+  area_m2: number | null;
+  effective_area_m2: number;
+  purchase_area_m2: number;
   total_cost: number;
   note: string | null;
 };
@@ -115,6 +142,7 @@ export type CalculatorFlooringRoom = {
 export type CalculatorFlooringSummary = {
   rooms_count: number;
   total_area_m2: number;
+  total_perimeter_m: number;
   total_purchase_area_m2: number;
   total_material_cost: number;
   total_installation_cost: number;
@@ -136,6 +164,7 @@ export type CalculatorFlooringSummary = {
   total_grout_qty: number;
   grout_unit: string;
   total_grout_cost: number;
+  total_custom_consumables_cost: number;
   total_plinth_m: number;
   total_plinth_material_cost: number;
   total_plinth_install_cost: number;
@@ -143,6 +172,8 @@ export type CalculatorFlooringSummary = {
   threshold_profile_count: number;
   threshold_profile_cost: number;
   total_instrument_cost: number;
+  global_work_cost: number;
+  global_material_cost: number;
   work_total: number;
   material_total: number;
   grand_total: number;
@@ -155,6 +186,15 @@ export type CalculatorFlooringSpecItem = {
   unit: string;
   quantity: number;
   amount: number;
+};
+
+export type CalculatorFlooringGlobalItem = {
+  kind: "work" | "material" | "consumable";
+  title: string;
+  mode: "fixed" | "area" | "perimeter" | "quantity";
+  rate: number;
+  quantity: number;
+  enabled: boolean;
 };
 
 export type CalculatorFlooringDetail = {

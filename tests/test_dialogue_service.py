@@ -56,7 +56,7 @@ class FakeStorage:
         return dict(draft)
 
 
-class TestDialogueService(RequestDialogueService):
+class DialogueServiceHarness(RequestDialogueService):
     def __init__(self, storage: FakeStorage) -> None:
         self.settings = SimpleNamespace(admin_ids=[], timezone="Europe/Berlin", llm_enabled=False)
         self.storage = storage
@@ -113,7 +113,7 @@ class TestDialogueService(RequestDialogueService):
 class DialogueServiceTests(IsolatedAsyncioTestCase):
     def setUp(self) -> None:
         self.storage = FakeStorage()
-        self.service = TestDialogueService(self.storage)
+        self.service = DialogueServiceHarness(self.storage)
         self.profile = {
             "title": "Объект",
             "object_name": "Объект",

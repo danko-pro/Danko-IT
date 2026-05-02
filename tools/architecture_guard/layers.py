@@ -51,6 +51,8 @@ def collect_layer_violations(
         if reference.resolved_path is None:
             continue
         for rule in rules:
+            if rule.allowed_source_patterns and matches_any(relative_path, rule.allowed_source_patterns):
+                continue
             if not matches_any(reference.resolved_path, rule.forbidden_import_patterns):
                 continue
             if rule.allowed_import_patterns and matches_any(reference.resolved_path, rule.allowed_import_patterns):

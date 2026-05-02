@@ -31,6 +31,7 @@ class LayerRule:
     source_patterns: tuple[str, ...]
     forbidden_import_patterns: tuple[str, ...]
     allowed_import_patterns: tuple[str, ...]
+    allowed_source_patterns: tuple[str, ...]
     severity: str
     message: str
 
@@ -232,6 +233,10 @@ def _load_layer_rules(
             item.get("allowed_import_patterns"),
             field_name=f"layer_rules[{index}].allowed_import_patterns",
         )
+        allowed_source_patterns = _load_string_list(
+            item.get("allowed_source_patterns"),
+            field_name=f"layer_rules[{index}].allowed_source_patterns",
+        )
 
         severity = str(item.get("severity", "error")).strip().lower()
         if severity not in severity_names:
@@ -246,6 +251,7 @@ def _load_layer_rules(
                 source_patterns=source_patterns,
                 forbidden_import_patterns=forbidden_import_patterns,
                 allowed_import_patterns=allowed_import_patterns,
+                allowed_source_patterns=allowed_source_patterns,
                 severity=severity,
                 message=message,
             )

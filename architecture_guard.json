@@ -90,6 +90,52 @@
       ],
       "severity": "warn",
       "message": "Calculator payload builders must not depend on route modules."
+    },
+    {
+      "name": "calculator-routes-payload-boundary",
+      "source_patterns": [
+        "src/supply_bot/admin_api/calculator_routes/*.py"
+      ],
+      "forbidden_import_patterns": [
+        "src/supply_bot/admin_api/calculator_payloads/**"
+      ],
+      "allowed_source_patterns": [
+        "src/supply_bot/admin_api/calculator_routes/shared.py",
+        "src/supply_bot/admin_api/calculator_routes/core.py",
+        "src/supply_bot/admin_api/calculator_routes/flooring.py"
+      ],
+      "severity": "warn",
+      "message": "Calculator routes should stay thin; route modules must use shared route helpers instead of direct payload coupling."
+    },
+    {
+      "name": "calculator-flooring-slice-boundary",
+      "source_patterns": [
+        "admin-ui/src/features/calculator/flooring/**/*.ts",
+        "admin-ui/src/features/calculator/flooring/**/*.tsx"
+      ],
+      "forbidden_import_patterns": [
+        "admin-ui/src/features/calculator/doors/**",
+        "admin-ui/src/features/calculator/wall-finish/**",
+        "admin-ui/src/features/calculator/warm-floor/**"
+      ],
+      "severity": "warn",
+      "message": "Flooring UI slice must not import sibling calculator feature slices directly."
+    },
+    {
+      "name": "calculator-estimate-slices-boundary",
+      "source_patterns": [
+        "admin-ui/src/features/calculator/doors/**/*.ts",
+        "admin-ui/src/features/calculator/doors/**/*.tsx",
+        "admin-ui/src/features/calculator/wall-finish/**/*.ts",
+        "admin-ui/src/features/calculator/wall-finish/**/*.tsx",
+        "admin-ui/src/features/calculator/warm-floor/**/*.ts",
+        "admin-ui/src/features/calculator/warm-floor/**/*.tsx"
+      ],
+      "forbidden_import_patterns": [
+        "admin-ui/src/features/calculator/flooring/**"
+      ],
+      "severity": "warn",
+      "message": "Estimator slices must communicate through calculator screen/app contracts, not direct sibling imports."
     }
   ],
   "topology_rules": [
@@ -405,6 +451,28 @@
       ],
       "severity": "warn",
       "message": "One-off lint dumps should stay outside the repository root or be regenerated on demand."
+    },
+    {
+      "name": "frontend-debug-logs",
+      "path_patterns": [
+        "admin-ui/npm-debug.log*",
+        "admin-ui/yarn-debug.log*",
+        "admin-ui/yarn-error.log*",
+        "admin-ui/pnpm-debug.log*"
+      ],
+      "severity": "warn",
+      "message": "Frontend package-manager debug logs are generated artifacts and should not stay in admin-ui."
+    },
+    {
+      "name": "frontend-test-artifacts",
+      "path_patterns": [
+        "admin-ui/playwright-report",
+        "admin-ui/playwright-report/**",
+        "admin-ui/test-results",
+        "admin-ui/test-results/**"
+      ],
+      "severity": "warn",
+      "message": "Browser test reports belong to transient CI/dev output, not the tracked workspace."
     }
   ],
   "rules": [

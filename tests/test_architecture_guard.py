@@ -179,6 +179,42 @@ def test_build_watch_events_tracks_layer_detect_and_clear(tmp_path: Path) -> Non
     assert cleared_events[0].severity == "error"
 
 
+def test_layer_rules_can_allow_specific_source_files(tmp_path: Path) -> None:
+    payload = {
+        "poll_interval_seconds": 0.2,
+        "exclude_patterns": [],
+        "layer_rules": [
+            {
+                "name": "shared-boundary",
+                "source_patterns": ["admin-ui/src/shared/**/*.ts"],
+                "forbidden_import_patterns": ["admin-ui/src/features/**"],
+                "allowed_source_patterns": ["admin-ui/src/shared/facade.ts"],
+                "severity": "error",
+                "message": "Shared files must not import features.",
+            }
+        ],
+        "rules": [
+            {
+                "name": "frontend-logic",
+                "patterns": ["admin-ui/src/**/*.ts"],
+                "max_lines": 20,
+            }
+        ],
+    }
+    config_path = tmp_path / "architecture_guard.json"
+    config_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    write_file(tmp_path / "admin-ui" / "src" / "features" / "panel.ts", "export const panel = true;\n")
+    write_file(tmp_path / "admin-ui" / "src" / "shared" / "facade.ts", 'import "../features/panel";\n')
+    write_file(tmp_path / "admin-ui" / "src" / "shared" / "bad.ts", 'import "../features/panel";\n')
+
+    config = load_guard_config(tmp_path, config_path)
+    snapshot = collect_snapshot(config)
+
+    assert len(snapshot.layer_violations) == 1
+    violation = next(iter(snapshot.layer_violations.values()))
+    assert violation.relative_path == "admin-ui/src/shared/bad.ts"
+
+
 def test_collect_snapshot_tracks_ui_motion_notes(tmp_path: Path) -> None:
     config_path = tmp_path / "architecture_guard.json"
     write_config(config_path)

@@ -98,7 +98,12 @@ export function useCalculatorScreenController(props: CalculatorScreenProps): Cal
       ),
     [stageFlags.isWallFinishStage, wallFinish.wallFinishState, wallFinishDetailView],
   );
-  const headerTotals = buildCalculatorHeaderTotals(projectDetailView, warmFloorPreviewView, flooringPreviewView);
+  const headerTotals = buildCalculatorHeaderTotals(
+    projectDetailView,
+    warmFloorPreviewView,
+    flooringPreviewView,
+    wallFinishPreviewView,
+  );
 
   return {
     activeStage,

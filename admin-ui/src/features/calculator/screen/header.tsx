@@ -14,6 +14,8 @@ type CalculatorHeaderSectionProps = {
   headerFlooringMaterialTotal: number;
   headerWarmFloorWorkTotal: number;
   headerWarmFloorMaterialTotal: number;
+  headerWallFinishWorkTotal: number;
+  headerWallFinishMaterialTotal: number;
   projectForm: CalculatorProjectForm;
   onReload: () => Promise<void> | void;
   activeStage: CalculatorStage;
@@ -42,6 +44,8 @@ export function CalculatorHeaderSection(props: CalculatorHeaderSectionProps) {
     headerFlooringMaterialTotal,
     headerWarmFloorWorkTotal,
     headerWarmFloorMaterialTotal,
+    headerWallFinishWorkTotal,
+    headerWallFinishMaterialTotal,
     projectForm,
     onReload,
     activeStage,
@@ -54,9 +58,12 @@ export function CalculatorHeaderSection(props: CalculatorHeaderSectionProps) {
   const doorInstallTotal = projectDetail?.summary.door_install_total ?? 0;
   const flooringTotal = headerFlooringWorkTotal + headerFlooringMaterialTotal;
   const warmFloorTotal = headerWarmFloorWorkTotal + headerWarmFloorMaterialTotal;
+  const wallFinishTotal = headerWallFinishWorkTotal + headerWallFinishMaterialTotal;
   const doorClientTotal = doorSaleTotal + doorInstallTotal;
-  const objectWorkTotal = headerFlooringWorkTotal + headerWarmFloorWorkTotal + doorInstallTotal;
-  const objectMaterialTotal = headerFlooringMaterialTotal + headerWarmFloorMaterialTotal + doorSaleTotal;
+  const objectWorkTotal =
+    headerFlooringWorkTotal + headerWarmFloorWorkTotal + headerWallFinishWorkTotal + doorInstallTotal;
+  const objectMaterialTotal =
+    headerFlooringMaterialTotal + headerWarmFloorMaterialTotal + headerWallFinishMaterialTotal + doorSaleTotal;
   const objectEstimateTotal = objectWorkTotal + objectMaterialTotal;
   const objectRate = floorArea > 0 ? objectEstimateTotal / floorArea : 0;
   const objectWorkRate = floorArea > 0 ? objectWorkTotal / floorArea : 0;
@@ -107,7 +114,9 @@ export function CalculatorHeaderSection(props: CalculatorHeaderSectionProps) {
                 <div className="calculator-object-summary-total">
                   <div>
                     <div className="calculator-object-summary-label">Итого по объекту</div>
-                    <div className="calculator-object-summary-value">{formatMoney(objectEstimateTotal)}</div>
+                    <div className="calculator-object-summary-value" data-testid="calculator-header-object-total">
+                      {formatMoney(objectEstimateTotal)}
+                    </div>
                   </div>
                   <div className="calculator-object-summary-rate">
                     <div className="calculator-object-rate-main">
@@ -141,15 +150,19 @@ export function CalculatorHeaderSection(props: CalculatorHeaderSectionProps) {
                 <div className="calculator-object-compact-group calculator-object-money-group">
                   <div className="calculator-object-compact-title">Суммы</div>
                   <div className="calculator-object-money-list">
-                    <div className="calculator-object-money-row">
+                    <div className="calculator-object-money-row" data-testid="calculator-header-flooring-total">
                       <span>Напольные покрытия</span>
                       <strong>{formatMoney(flooringTotal)}</strong>
                     </div>
-                    <div className="calculator-object-money-row">
+                    <div className="calculator-object-money-row" data-testid="calculator-header-warm-floor-total">
                       <span>Тёплый пол</span>
                       <strong>{formatMoney(warmFloorTotal)}</strong>
                     </div>
-                    <div className="calculator-object-money-row">
+                    <div className="calculator-object-money-row" data-testid="calculator-header-wall-finish-total">
+                      <span>Отделка стен</span>
+                      <strong>{formatMoney(wallFinishTotal)}</strong>
+                    </div>
+                    <div className="calculator-object-money-row" data-testid="calculator-header-doors-total">
                       <span>Двери</span>
                       <strong>{formatMoney(doorClientTotal)}</strong>
                     </div>

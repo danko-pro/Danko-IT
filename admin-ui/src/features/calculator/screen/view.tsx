@@ -110,6 +110,8 @@ export function CalculatorScreenContent(props: {
         headerFlooringMaterialTotal={headerTotals.flooringMaterialTotal}
         headerWarmFloorWorkTotal={headerTotals.warmFloorWorkTotal}
         headerWarmFloorMaterialTotal={headerTotals.warmFloorMaterialTotal}
+        headerWallFinishWorkTotal={headerTotals.wallFinishWorkTotal}
+        headerWallFinishMaterialTotal={headerTotals.wallFinishMaterialTotal}
         projectForm={project}
         onReload={actions.onReload}
         activeStage={activeStage}

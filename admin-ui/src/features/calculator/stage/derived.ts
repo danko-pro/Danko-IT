@@ -2,6 +2,7 @@ import type {
   CalculatorFlooringDetail,
   CalculatorProjectDetail,
   CalculatorStage,
+  CalculatorWallFinishDetail,
   CalculatorWarmFloorDetail,
 } from "../model/types";
 
@@ -22,6 +23,8 @@ export type CalculatorHeaderTotals = {
   warmFloorMaterialTotal: number;
   flooringWorkTotal: number;
   flooringMaterialTotal: number;
+  wallFinishWorkTotal: number;
+  wallFinishMaterialTotal: number;
 };
 
 export function buildCalculatorStageFlags(activeStage: CalculatorStage): CalculatorStageFlags {
@@ -37,13 +40,18 @@ export function buildCalculatorStageFlags(activeStage: CalculatorStage): Calcula
 
 export function buildCalculatorHeaderTotals(
   projectDetail: CalculatorProjectDetail | null,
-  _warmFloorPreview: CalculatorWarmFloorDetail | null,
-  _flooringPreview: CalculatorFlooringDetail | null,
+  warmFloorPreview: CalculatorWarmFloorDetail | null,
+  flooringPreview: CalculatorFlooringDetail | null,
+  wallFinishPreview: CalculatorWallFinishDetail | null,
 ): CalculatorHeaderTotals {
   return {
-    warmFloorWorkTotal: projectDetail?.warm_floor.summary.work_total ?? 0,
-    warmFloorMaterialTotal: projectDetail?.warm_floor.summary.material_total ?? 0,
-    flooringWorkTotal: projectDetail?.flooring.summary.work_total ?? 0,
-    flooringMaterialTotal: projectDetail?.flooring.summary.material_total ?? 0,
+    warmFloorWorkTotal: warmFloorPreview?.summary.work_total ?? projectDetail?.warm_floor.summary.work_total ?? 0,
+    warmFloorMaterialTotal:
+      warmFloorPreview?.summary.material_total ?? projectDetail?.warm_floor.summary.material_total ?? 0,
+    flooringWorkTotal: flooringPreview?.summary.work_total ?? projectDetail?.flooring.summary.work_total ?? 0,
+    flooringMaterialTotal: flooringPreview?.summary.material_total ?? projectDetail?.flooring.summary.material_total ?? 0,
+    wallFinishWorkTotal: wallFinishPreview?.summary.work_total ?? projectDetail?.wall_finishes.summary.work_total ?? 0,
+    wallFinishMaterialTotal:
+      wallFinishPreview?.summary.material_total ?? projectDetail?.wall_finishes.summary.material_total ?? 0,
   };
 }

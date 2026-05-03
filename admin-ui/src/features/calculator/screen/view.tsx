@@ -42,7 +42,7 @@ export function CalculatorScreenContent(props: {
   const sceneRef = useRef<HTMLDivElement | null>(null);
   const previousStage = previousStageRef.current;
   const stageDirection = getStageDirection(activeStage, previousStage);
-  const stageHeight = useCalculatorSceneHeight(activeStage, sceneRef);
+  const sceneHeightState = useCalculatorSceneHeight(activeStage, sceneRef);
 
   useEffect(() => {
     previousStageRef.current = activeStage;
@@ -121,7 +121,11 @@ export function CalculatorScreenContent(props: {
         setActiveStage={setActiveStage}
       />
 
-      <div className="calculator-scene-stage" style={stageHeight ? { height: `${stageHeight}px` } : undefined}>
+      <div
+        className="calculator-scene-stage"
+        data-height-motion={sceneHeightState.motion}
+        style={sceneHeightState.height ? { height: `${sceneHeightState.height}px` } : undefined}
+      >
         <div
           key={activeStage}
           ref={sceneRef}

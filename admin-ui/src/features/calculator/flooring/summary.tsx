@@ -60,14 +60,18 @@ export function FlooringStageSummaryColumn(props: FlooringStageSummaryColumnProp
     summary: summaryRef,
     estimate: estimateRef,
   };
-  const stageHeight = useCalculatorSceneHeight(
+  const sceneHeightState = useCalculatorSceneHeight(
     panelMode,
     refsByMode[panelMode],
     `${techMapMode}:${flooringPreview.rooms.length}:${flooringPreview.specification.length}`,
   );
 
   return (
-    <div className="warmfloor-panel-scene-stage" style={stageHeight ? { height: `${stageHeight}px` } : undefined}>
+    <div
+      className="warmfloor-panel-scene-stage"
+      data-height-motion={sceneHeightState.motion}
+      style={sceneHeightState.height ? { height: `${sceneHeightState.height}px` } : undefined}
+    >
       <div ref={roomRef} className={getSceneClass(panelMode, "room")}>
         <FlooringRoomParametersPanel
           expandedFlooringRoomId={props.expandedFlooringRoomId}

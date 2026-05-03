@@ -1,13 +1,23 @@
 import { useLayoutEffect, useRef, useState, type RefObject } from "react";
 
-const SCENE_HEIGHT_RESET_MS = 380;
+const SCENE_GROW_RESET_MS = 380;
+const SCENE_SHRINK_HOLD_MS = 90;
+const SCENE_SHRINK_RESET_MS = 660;
+
+export type CalculatorSceneHeightMotion = "grow" | "shrink" | "steady";
+
+export type CalculatorSceneHeightState = {
+  height: number | null;
+  motion: CalculatorSceneHeightMotion;
+};
 
 export function useCalculatorSceneHeight(
   activeKey: string,
   activeSceneRef: RefObject<HTMLElement | null>,
   refreshKey: string | number = "",
-): number | null {
+): CalculatorSceneHeightState {
   const [stageHeight, setStageHeight] = useState<number | null>(null);
+  const [motion, setMotion] = useState<CalculatorSceneHeightMotion>("steady");
   const previousHeightRef = useRef<number | null>(null);
 
   useLayoutEffect(() => {
@@ -19,14 +29,31 @@ export function useCalculatorSceneHeight(
     previousHeightRef.current = nextHeight;
     if (!previousHeight || previousHeight === nextHeight) {
       setStageHeight(null);
+      setMotion("steady");
       return;
     }
 
+    const isShrink = nextHeight < previousHeight;
     setStageHeight(previousHeight);
-    const frameId = window.requestAnimationFrame(() => setStageHeight(nextHeight));
-    const timeoutId = window.setTimeout(() => setStageHeight(null), SCENE_HEIGHT_RESET_MS);
+    setMotion(isShrink ? "shrink" : "grow");
+
+    let frameId: number | null = null;
+    const delayId = window.setTimeout(
+      () => {
+        frameId = window.requestAnimationFrame(() => setStageHeight(nextHeight));
+      },
+      isShrink ? SCENE_SHRINK_HOLD_MS : 0,
+    );
+    const timeoutId = window.setTimeout(
+      () => {
+        setStageHeight(null);
+        setMotion("steady");
+      },
+      isShrink ? SCENE_SHRINK_RESET_MS : SCENE_GROW_RESET_MS,
+    );
     return () => {
-      window.cancelAnimationFrame(frameId);
+      window.clearTimeout(delayId);
+      if (frameId !== null) window.cancelAnimationFrame(frameId);
       window.clearTimeout(timeoutId);
     };
   }, [activeKey, activeSceneRef, refreshKey]);
@@ -52,7 +79,7 @@ export function useCalculatorSceneHeight(
     };
   }, [activeKey, activeSceneRef, refreshKey]);
 
-  return stageHeight;
+  return { height: stageHeight, motion };
 }
 
 function measureHeight(target: HTMLElement): number {

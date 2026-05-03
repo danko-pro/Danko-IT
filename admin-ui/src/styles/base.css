@@ -19,8 +19,9 @@
   --ui-motion-fast: 220ms;
   --ui-motion-interactive: 180ms;
   --ui-motion-tab: 240ms;
-  --ui-motion-content: 300ms;
-  --ui-motion-stage: 320ms;
+  --ui-motion-content: 360ms;
+  --ui-motion-content-shrink: 560ms;
+  --ui-motion-stage: 380ms;
   --ui-motion-medium: 340ms;
   --ui-motion-slow: 520ms;
   --ui-motion-panel: 620ms;

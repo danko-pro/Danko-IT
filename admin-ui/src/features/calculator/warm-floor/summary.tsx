@@ -31,7 +31,7 @@ export function WarmFloorStageSummaryColumn(props: WarmFloorStageSummaryColumnPr
   const estimateRef = useRef<HTMLDivElement | null>(null);
   const estimateTotal = warmFloorPreview.specification.reduce((sum, item) => sum + item.amount, 0);
   const refsByMode = { settings: settingsRef, summary: summaryRef, estimate: estimateRef };
-  const stageHeight = useCalculatorSceneHeight(
+  const sceneHeightState = useCalculatorSceneHeight(
     panelMode,
     refsByMode[panelMode],
     warmFloorPreview.specification.length,
@@ -46,7 +46,11 @@ export function WarmFloorStageSummaryColumn(props: WarmFloorStageSummaryColumnPr
   }
 
   return (
-    <div className="warmfloor-panel-scene-stage" style={stageHeight ? { height: `${stageHeight}px` } : undefined}>
+    <div
+      className="warmfloor-panel-scene-stage"
+      data-height-motion={sceneHeightState.motion}
+      style={sceneHeightState.height ? { height: `${sceneHeightState.height}px` } : undefined}
+    >
       <div ref={settingsRef} className={getSceneClass("settings")}>
         <WarmFloorSettingsPanel warmFloorState={warmFloorState} setWarmFloorState={setWarmFloorState} />
       </div>

@@ -1,0 +1,130 @@
+@layer components {
+  .doors-workbench-panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    min-width: 0;
+  }
+
+  .doors-workbench-panel-head > div:first-child {
+    display: grid;
+    gap: 0.14rem;
+    min-width: 0;
+  }
+
+  .doors-workbench-panel-head .micro-action {
+    flex: 0 0 auto;
+  }
+
+  .doors-workbench-panel-head-compact { align-items: center; }
+
+  .doors-workbench-composer,
+  .doors-workbench-component-form {
+    display: grid;
+    gap: 0.65rem;
+    align-content: start;
+  }
+
+  .doors-workbench-field-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.45rem;
+    align-items: end;
+  }
+
+  .doors-workbench-field-grid-main { grid-template-columns: minmax(0, 1fr); }
+
+  .doors-workbench-field-grid-money,
+  .doors-workbench-component-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+  .doors-workbench-field-grid-money > :last-child,
+  .doors-workbench-component-grid > :nth-child(3),
+  .doors-workbench-component-grid > :last-child {
+    grid-column: 1 / -1;
+  }
+
+  .doors-workbench-field-grid-three { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .doors-workbench-field-grid-three > :last-child { grid-column: 1 / -1; }
+
+  .doors-workbench .field-label {
+    color: #88877f;
+    letter-spacing: 0.12em;
+  }
+
+  .doors-workbench .field-label-row {
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .doors-workbench .field-label-row span {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .doors-workbench .field-control-shell,
+  .doors-workbench .field-control-shell select,
+  .doors-workbench .field-control-shell input {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .doors-workbench .text-input {
+    border-color: rgba(244, 240, 231, 0.12);
+    border-radius: 7px;
+    background: #0c0d0f;
+    color: var(--door-ink);
+  }
+
+  .doors-workbench .text-input:focus {
+    border-color: rgba(121, 215, 173, 0.42);
+    box-shadow: 0 0 0 3px rgba(121, 215, 173, 0.12);
+  }
+
+  .doors-workbench .action-button,
+  .doors-workbench .secondary-button,
+  .doors-workbench .micro-action {
+    border-radius: 7px;
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  .doors-workbench .action-button,
+  .doors-workbench .secondary-button {
+    min-width: 7rem;
+    min-height: 2.35rem;
+    padding-inline: 1rem;
+  }
+
+  .doors-workbench .micro-action {
+    min-width: 4.1rem;
+    min-height: 2rem;
+    padding-inline: 0.7rem;
+  }
+
+  .doors-workbench-actions,
+  .doors-workbench-row-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.4rem;
+    min-width: 0;
+  }
+
+  .doors-workbench-actions { padding-top: 0.12rem; }
+  .doors-workbench-row-actions { position: relative; z-index: 1; }
+
+  .doors-workbench-door-card .doors-workbench-row-actions {
+    flex-wrap: nowrap;
+    margin-top: 0.1rem;
+    border-top: 1px solid rgba(244, 240, 231, 0.08);
+    padding-top: 0.5rem;
+  }
+
+  .doors-workbench-component-row .doors-workbench-row-actions {
+    flex-wrap: nowrap;
+  }
+}

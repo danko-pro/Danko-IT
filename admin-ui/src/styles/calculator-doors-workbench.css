@@ -155,16 +155,6 @@
   .doors-workbench-panel,
   .doors-workbench-composer { padding: 0.75rem; }
 
-  .doors-workbench-panel-head {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 0.75rem;
-    min-width: 0;
-  }
-
-  .doors-workbench-panel-head-compact { align-items: center; }
-
   .doors-workbench-count {
     border: 1px solid rgba(121, 215, 173, 0.2);
     border-radius: 999px;
@@ -174,32 +164,6 @@
     font-size: 11px;
     font-weight: 900;
     line-height: 1;
-  }
-
-  .doors-workbench-field-grid {
-    display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-    gap: 0.45rem;
-  }
-
-  .doors-workbench-field-grid-main { grid-template-columns: minmax(0, 1.1fr) 0.72fr minmax(0, 1fr); }
-  .doors-workbench-field-grid-money,
-  .doors-workbench-component-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-  .doors-workbench-field-grid-three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-
-  .doors-workbench .field-label { color: #88877f; letter-spacing: 0.12em; }
-  .doors-workbench .text-input { border-radius: 7px; border-color: rgba(244, 240, 231, 0.12); background: #0c0d0f; color: var(--door-ink); }
-  .doors-workbench .text-input:focus { border-color: rgba(121, 215, 173, 0.42); box-shadow: 0 0 0 3px rgba(121, 215, 173, 0.12); }
-  .doors-workbench .action-button,
-  .doors-workbench .secondary-button,
-  .doors-workbench .micro-action { border-radius: 7px; }
-
-  .doors-workbench-actions,
-  .doors-workbench-row-actions {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: flex-end;
-    gap: 0.4rem;
   }
 
   .doors-workbench-door-card,
@@ -215,6 +179,11 @@
     transition: border-color var(--ui-motion-interactive) var(--ui-motion-ease-soft), background-color var(--ui-motion-interactive) var(--ui-motion-ease-soft), transform var(--ui-motion-interactive) var(--ui-motion-ease-soft);
   }
 
+  .doors-workbench-door-card > :not(.doors-workbench-door-size-shadow) {
+    position: relative;
+    z-index: 1;
+  }
+
   .doors-workbench-door-card:hover { transform: translateY(-1px); border-color: rgba(229, 185, 107, 0.28); }
   .doors-workbench-door-card-active { border-color: rgba(121, 215, 173, 0.36); background: rgba(35, 43, 38, 0.56); }
 
@@ -222,6 +191,7 @@
     display: grid;
     gap: 0.18rem;
     min-width: 0;
+    width: 100%;
     border: 0;
     padding: 0;
     background: transparent;
@@ -248,6 +218,7 @@
     flex-wrap: wrap;
     gap: 0.34rem;
     align-items: center;
+    min-width: 0;
   }
 
   .doors-workbench-door-meta span,
@@ -273,8 +244,9 @@
 
   .doors-workbench-door-size-shadow {
     position: absolute;
-    right: -0.35rem;
-    bottom: -0.45rem;
+    z-index: 0;
+    right: -0.2rem;
+    bottom: -0.75rem;
     color: rgba(244, 240, 231, 0.035);
     font-size: 2.25rem;
     font-weight: 950;
@@ -284,7 +256,7 @@
 
   .doors-workbench-focus-top {
     display: grid;
-    grid-template-columns: auto minmax(0, 1fr) minmax(8rem, auto);
+    grid-template-columns: auto minmax(0, 1fr);
     gap: 0.85rem;
     align-items: stretch;
   }

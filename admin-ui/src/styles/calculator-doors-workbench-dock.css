@@ -6,13 +6,21 @@
   }
 
   .doors-workbench-dock-tab {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     min-height: 2rem;
+    min-width: 0;
     border: 1px solid rgba(244, 240, 231, 0.1);
     border-radius: 7px;
+    padding-inline: 0.45rem;
     background: rgba(8, 9, 10, 0.54);
     color: var(--door-muted);
     font-size: 11px;
     font-weight: 900;
+    line-height: 1;
+    text-align: center;
+    white-space: nowrap;
     cursor: pointer;
     transition: border-color var(--ui-motion-interactive) var(--ui-motion-ease-soft), color var(--ui-motion-interactive) var(--ui-motion-ease-soft), background-color var(--ui-motion-interactive) var(--ui-motion-ease-soft);
   }
@@ -40,8 +48,9 @@
   }
 
   .doors-workbench-component-row {
-    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-columns: minmax(0, 1fr) minmax(5.8rem, auto) minmax(8.6rem, auto);
     align-items: center;
+    column-gap: 0.65rem;
   }
 
   .doors-workbench-component-row > div:first-child {
@@ -61,7 +70,7 @@
   .doors-workbench-component-money {
     display: grid;
     gap: 0.22rem;
-    min-width: 6rem;
+    min-width: 5.8rem;
     text-align: right;
   }
 
@@ -73,12 +82,13 @@
   }
 
   .doors-workbench-focus-total {
-    display: grid;
-    align-content: center;
-    justify-items: end;
-    gap: 0.22rem;
-    border-left: 1px solid rgba(244, 240, 231, 0.1);
-    padding-left: 0.85rem;
+    display: flex;
+    grid-column: 1 / -1;
+    align-items: end;
+    justify-content: space-between;
+    gap: 0.75rem;
+    border-top: 1px solid rgba(244, 240, 231, 0.1);
+    padding-top: 0.75rem;
     min-width: 0;
   }
 
@@ -135,6 +145,19 @@
     }
 
     .doors-workbench-focus-total,
-    .doors-workbench-component-money { text-align: left; }
+    .doors-workbench-component-money {
+      justify-items: start;
+      text-align: left;
+    }
+
+    .doors-workbench-actions,
+    .doors-workbench-row-actions {
+      justify-content: stretch;
+    }
+
+    .doors-workbench-actions > *,
+    .doors-workbench-row-actions > * {
+      flex: 1 1 auto;
+    }
   }
 }

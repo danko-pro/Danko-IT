@@ -135,8 +135,15 @@
   .doors-workbench .text-input {
     border-color: rgba(244, 240, 231, 0.12);
     border-radius: 7px;
+    min-height: 2rem;
+    padding-block: 0.36rem;
     background: #0c0d0f;
     color: var(--door-ink);
+  }
+
+  .doors-workbench .text-input-compact {
+    min-height: 2rem;
+    padding-block: 0.36rem;
   }
 
   .doors-workbench .text-input:focus {

@@ -3,11 +3,10 @@ import { useState, type ReactNode } from "react";
 import {
   WallFinishRoomParametersPanel,
   WallFinishSettingsPanel,
+  WallFinishEstimatePanel,
   WallFinishStageCoveringCatalog,
   WallFinishStageLayoutCatalog,
   WallFinishStagePreparationCatalog,
-  WallFinishStageSpecification,
-  WallFinishStageTechMap,
 } from "./";
 import { MetricChip, formatArea, formatMoney, trimFloat } from "./";
 import type { WallFinishPanelMode } from "./stage";
@@ -15,6 +14,21 @@ import type { WallFinishStageReadyProps } from "./";
 
 type WallFinishTechMapMode = "coverings" | "preparations" | "layouts";
 type WallFinishStageSummaryColumnProps = WallFinishStageReadyProps & { panelMode: WallFinishPanelMode };
+
+function getAutosaveLabel(state: WallFinishStageReadyProps["autosaveState"]): string {
+  switch (state) {
+    case "pending":
+      return "Сохранится автоматически";
+    case "saving":
+      return "Сохраняю...";
+    case "saved":
+      return "Сохранено";
+    case "error":
+      return "Ошибка сохранения";
+    default:
+      return "Автосохранение";
+  }
+}
 
 function getSceneClass(activeMode: WallFinishPanelMode, mode: WallFinishPanelMode): string {
   if (activeMode === mode) return "warmfloor-panel-scene warmfloor-panel-scene-active";
@@ -30,7 +44,7 @@ function getSceneClass(activeMode: WallFinishPanelMode, mode: WallFinishPanelMod
 }
 
 export function WallFinishStageSummaryColumn(props: WallFinishStageSummaryColumnProps) {
-  const { panelMode, wallFinishPreview, setWallFinishState, wallFinishState } = props;
+  const { panelMode, wallFinishPreview, setWallFinishState, wallFinishState, autosaveState } = props;
   const [techMapMode, setTechMapMode] = useState<WallFinishTechMapMode>("coverings");
   const summary = wallFinishPreview.summary;
   const pricePerSquare = summary.price_per_m2 === null ? "—" : formatMoney(summary.price_per_m2);
@@ -74,6 +88,7 @@ export function WallFinishStageSummaryColumn(props: WallFinishStageSummaryColumn
 
           {techMapMode === "coverings" ? (
             <WallFinishStageCoveringCatalog
+              wallFinishDetail={props.wallFinishDetail}
               wallFinishCoveringState={props.wallFinishCoveringState}
               setWallFinishCoveringState={props.setWallFinishCoveringState}
               busyKey={props.busyKey}
@@ -82,6 +97,7 @@ export function WallFinishStageSummaryColumn(props: WallFinishStageSummaryColumn
           ) : null}
           {techMapMode === "preparations" ? (
             <WallFinishStagePreparationCatalog
+              wallFinishDetail={props.wallFinishDetail}
               wallFinishPreparationState={props.wallFinishPreparationState}
               setWallFinishPreparationState={props.setWallFinishPreparationState}
               busyKey={props.busyKey}
@@ -90,6 +106,7 @@ export function WallFinishStageSummaryColumn(props: WallFinishStageSummaryColumn
           ) : null}
           {techMapMode === "layouts" ? (
             <WallFinishStageLayoutCatalog
+              wallFinishDetail={props.wallFinishDetail}
               wallFinishLayoutState={props.wallFinishLayoutState}
               setWallFinishLayoutState={props.setWallFinishLayoutState}
               busyKey={props.busyKey}
@@ -105,6 +122,9 @@ export function WallFinishStageSummaryColumn(props: WallFinishStageSummaryColumn
             <div>
               <div className="calculator-stage-section-kicker">Свод по стенам</div>
               <div className="calculator-stage-section-title">Итог, площади и закупка</div>
+            </div>
+            <div className="calculator-stage-inline-status">
+              <span className="slot-chip">{getAutosaveLabel(autosaveState)}</span>
             </div>
           </div>
 
@@ -146,16 +166,7 @@ export function WallFinishStageSummaryColumn(props: WallFinishStageSummaryColumn
       </div>
 
       <div className={getSceneClass(panelMode, "estimate")}>
-        <div className="subpanel calculator-stage-section p-3 space-y-3 flooring-estimate-panel">
-          <div className="calculator-stage-section-head">
-            <div>
-              <div className="calculator-stage-section-kicker">Смета</div>
-              <div className="calculator-stage-section-title">Работы, материалы и расходники</div>
-            </div>
-          </div>
-          <WallFinishStageSpecification wallFinishPreview={wallFinishPreview} />
-          <WallFinishStageTechMap wallFinishSelectedTechRooms={props.wallFinishSelectedTechRooms} />
-        </div>
+        <WallFinishEstimatePanel wallFinishPreview={wallFinishPreview} />
       </div>
     </div>
   );

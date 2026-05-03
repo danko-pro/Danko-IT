@@ -161,6 +161,7 @@ function buildWallFinishStageProps(props: CalculatorEstimateStagesFacadeProps): 
     wallFinishPreparationById: wallFinish.wallFinishPreparationById,
     wallFinishLayoutById: wallFinish.wallFinishLayoutById,
     wallFinishSelectedTechRooms: wallFinish.wallFinishSelectedTechRooms,
+    autosaveState: wallFinish.autosaveState,
     busyKey: data.busyKey,
     submitWallFinish: wallFinish.submitWallFinish,
     submitWallFinishCovering: wallFinish.submitWallFinishCovering,

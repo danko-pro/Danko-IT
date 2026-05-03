@@ -17,6 +17,7 @@ export function WallFinishStageCatalogsPanel(props: WallFinishStageReadyProps) {
       </div>
 
       <WallFinishStageCoveringCatalog
+        wallFinishDetail={props.wallFinishDetail}
         wallFinishCoveringState={props.wallFinishCoveringState}
         setWallFinishCoveringState={props.setWallFinishCoveringState}
         busyKey={props.busyKey}
@@ -25,12 +26,14 @@ export function WallFinishStageCatalogsPanel(props: WallFinishStageReadyProps) {
 
       <div className="grid gap-3 xl:grid-cols-2">
         <WallFinishStagePreparationCatalog
+          wallFinishDetail={props.wallFinishDetail}
           wallFinishPreparationState={props.wallFinishPreparationState}
           setWallFinishPreparationState={props.setWallFinishPreparationState}
           busyKey={props.busyKey}
           submitWallFinishPreparation={props.submitWallFinishPreparation}
         />
         <WallFinishStageLayoutCatalog
+          wallFinishDetail={props.wallFinishDetail}
           wallFinishLayoutState={props.wallFinishLayoutState}
           setWallFinishLayoutState={props.setWallFinishLayoutState}
           busyKey={props.busyKey}

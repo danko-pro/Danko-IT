@@ -140,6 +140,9 @@ test("opens calculator flooring stage with seeded zoned estimate", async ({ page
   await expect(page.locator(".flooring-room-params-panel")).toBeVisible();
   await page.getByRole("button", { name: "Техкарта" }).click();
   await expect(page.locator(".flooring-catalog-panel")).toBeVisible();
+  await expect(page.locator(".flooring-techmap-form")).toBeVisible();
+  await page.getByRole("button", { name: "Смета" }).click();
+  await expect(page.locator(".flooring-estimate-document")).toBeVisible();
 });
 
 async function postJson(request: APIRequestContext, path: string, data: unknown) {

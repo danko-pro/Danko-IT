@@ -16,6 +16,7 @@ import type {
 // Общие типы stage-блока вынесены отдельно, чтобы shell, editor и summary
 // не зависели друг от друга по кругу.
 export type WallFinishRoomEdit = WallFinishEditState["rooms"][number];
+export type WallFinishAutosaveState = "idle" | "pending" | "saving" | "saved" | "error";
 
 export type WallFinishTechRoom = {
   room: CalculatorWallFinishRoom;
@@ -45,6 +46,7 @@ export type WallFinishStageSectionProps = {
   wallFinishPreparationById: Map<number, CalculatorWallFinishPreparation>;
   wallFinishLayoutById: Map<number, CalculatorWallFinishLayout>;
   wallFinishSelectedTechRooms: WallFinishTechRoom[];
+  autosaveState: WallFinishAutosaveState;
   busyKey: string | null;
   submitWallFinish: () => Promise<void> | void;
   submitWallFinishCovering: () => Promise<void> | void;

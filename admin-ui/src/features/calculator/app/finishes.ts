@@ -139,21 +139,31 @@ export function createAdminCalculatorFinishesController(props: CalculatorFinishe
     }
   }
 
-  async function handleSaveCalculatorWallFinish(projectId: number, payload: CalculatorWallFinishPayload) {
+  async function handleSaveCalculatorWallFinish(
+    projectId: number,
+    payload: CalculatorWallFinishPayload,
+    options?: { silent?: boolean },
+  ) {
     try {
-      props.setCalculatorBusyKey(`calculator-wall-finish-save-${projectId}`);
+      if (!options?.silent) {
+        props.setCalculatorBusyKey(`calculator-wall-finish-save-${projectId}`);
+      }
       const updatedProject = await fetchJson<CalculatorProjectDetail>(`/api/calculator/projects/${projectId}/wall-finishes`, {
         method: "PATCH",
         body: JSON.stringify(payload),
       });
       props.setCalculatorProjectDetail(updatedProject);
-      await props.loadCalculatorProjects();
-      props.setSuccessMessage(`Отделка стен по проекту "${updatedProject.project.name}" сохранена.`);
+      if (!options?.silent) {
+        await props.loadCalculatorProjects();
+        props.setSuccessMessage(`Отделка стен по проекту "${updatedProject.project.name}" сохранена.`);
+      }
       props.setCalculatorError(null);
     } catch (actionError) {
       props.setCalculatorError(actionError instanceof Error ? actionError.message : "Не удалось сохранить отделку стен");
     } finally {
-      props.setCalculatorBusyKey(null);
+      if (!options?.silent) {
+        props.setCalculatorBusyKey(null);
+      }
     }
   }
 

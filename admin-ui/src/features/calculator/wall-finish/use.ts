@@ -2,6 +2,7 @@ import type { Dispatch, SetStateAction } from "react";
 import { useDeferredValue, useEffect, useMemo, useState } from "react";
 
 import { buildIdMap, buildRoomStateById, buildWallFinishPreview, buildWallFinishSelectedTechRooms, buildWallFinishState } from "./";
+import { useWallFinishAutosave } from "./";
 import {
   buildWallFinishCoveringPayload,
   buildWallFinishLayoutPayload,
@@ -33,7 +34,11 @@ import type {
 type WallFinishControllerParams = {
   projectDetail: CalculatorProjectDetail | null;
   isWallFinishStage: boolean;
-  onSaveWallFinish: (projectId: number, payload: CalculatorWallFinishPayload) => Promise<void>;
+  onSaveWallFinish: (
+    projectId: number,
+    payload: CalculatorWallFinishPayload,
+    options?: { silent?: boolean },
+  ) => Promise<void>;
   onCreateWallFinishCovering: (payload: CalculatorWallFinishCoveringPayload) => Promise<void>;
   onCreateWallFinishPreparation: (payload: CalculatorWallFinishPreparationPayload) => Promise<void>;
   onCreateWallFinishLayout: (payload: CalculatorWallFinishLayoutPayload) => Promise<void>;
@@ -59,6 +64,7 @@ type WallFinishControllerResult = {
   wallFinishPreparationById: Map<number, NonNullable<CalculatorProjectDetail["wall_finishes"]>["preparations"][number]>;
   wallFinishLayoutById: Map<number, NonNullable<CalculatorProjectDetail["wall_finishes"]>["layouts"][number]>;
   wallFinishSelectedTechRooms: ReturnType<typeof buildWallFinishSelectedTechRooms>;
+  autosaveState: import("./").WallFinishAutosaveState;
   submitWallFinish: () => Promise<void>;
   submitWallFinishCovering: () => Promise<void>;
   submitWallFinishPreparation: () => Promise<void>;
@@ -87,14 +93,13 @@ export function useCalculatorWallFinishController(
   const [wallFinishSettingsOpen, setWallFinishSettingsOpen] = useState(false);
   const [expandedWallFinishRoomId, setExpandedWallFinishRoomId] = useState<number | null>(null);
 
-  useEffect(() => {
-    if (!projectDetail?.wall_finishes) {
-      setWallFinishState(emptyWallFinishState);
-      return;
-    }
-    const draft = readSessionValue<WallFinishEditState>(wallFinishDraftStorageKey(projectDetail.project.id));
-    setWallFinishState(buildWallFinishState(projectDetail.wall_finishes, draft));
-  }, [projectDetail?.project.id, projectDetail?.wall_finishes]);
+  const autosaveState = useWallFinishAutosave({
+    projectDetail,
+    isWallFinishStage,
+    wallFinishState,
+    setWallFinishState,
+    onSaveWallFinish,
+  });
 
   useEffect(() => {
     if (!projectDetail?.wall_finishes) {
@@ -234,6 +239,7 @@ export function useCalculatorWallFinishController(
     wallFinishPreparationById,
     wallFinishLayoutById,
     wallFinishSelectedTechRooms,
+    autosaveState,
     submitWallFinish,
     submitWallFinishCovering,
     submitWallFinishPreparation,

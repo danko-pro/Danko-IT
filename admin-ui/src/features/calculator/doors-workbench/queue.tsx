@@ -28,9 +28,7 @@ export function DoorWorkbenchQueue(props: DoorWorkbenchQueueProps) {
             disabled={createBusy || !canCreateDoor}
             onClick={() => void props.createBlankProjectDoor()}
           >
-            <span aria-hidden="true" className="doors-workbench-add-door-symbol">
-              {createBusy ? "..." : "+"}
-            </span>
+            <DoorAddIcon />
           </IconButton>
         </div>
       </div>
@@ -54,6 +52,24 @@ export function DoorWorkbenchQueue(props: DoorWorkbenchQueueProps) {
         ) : null}
       </div>
     </section>
+  );
+}
+
+function DoorAddIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      className="doors-workbench-add-door-icon"
+      focusable="false"
+      viewBox="0 0 24 24"
+    >
+      <path className="doors-workbench-add-door-frame" d="M6.35 3.25h8.5c0.86 0 1.55 0.69 1.55 1.55v14.95H6.35V3.25Z" />
+      <path className="doors-workbench-add-door-leaf" d="M8.25 5.35h6.05v12.35H8.25V5.35Z" />
+      <path className="doors-workbench-add-door-threshold" d="M5.25 19.75h11.15" />
+      <circle className="doors-workbench-add-door-handle" cx="12.95" cy="11.55" r="0.58" />
+      <circle className="doors-workbench-add-door-plus-bg" cx="17.15" cy="16.85" r="4.05" />
+      <path className="doors-workbench-add-door-plus" d="M17.15 14.65v4.4M14.95 16.85h4.4" />
+    </svg>
   );
 }
 

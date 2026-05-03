@@ -231,20 +231,53 @@
 
   .doors-workbench .doors-workbench-add-door {
     display: inline-grid;
-    width: 2rem;
-    min-width: 2rem;
-    height: 2rem;
-    min-height: 2rem;
+    width: 2.12rem;
+    min-width: 2.12rem;
+    height: 2.12rem;
+    min-height: 2.12rem;
     place-items: center;
     padding: 0;
-    font-size: 1.2rem;
-    font-weight: 900;
+    color: #bff8dd;
   }
 
-  .doors-workbench-add-door-symbol {
+  .doors-workbench-add-door-icon {
     display: block;
-    line-height: 1;
-    transform: translateY(-0.04rem);
+    width: 1.38rem;
+    height: 1.38rem;
+    overflow: visible;
+  }
+
+  .doors-workbench-add-door-frame,
+  .doors-workbench-add-door-threshold {
+    fill: none;
+    stroke: rgba(229, 185, 107, 0.9);
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.6;
+  }
+
+  .doors-workbench-add-door-leaf {
+    fill: rgba(121, 215, 173, 0.13);
+    stroke: rgba(244, 240, 231, 0.42);
+    stroke-linejoin: round;
+    stroke-width: 1.15;
+  }
+
+  .doors-workbench-add-door-handle {
+    fill: var(--door-amber);
+  }
+
+  .doors-workbench-add-door-plus-bg {
+    fill: #10231d;
+    stroke: rgba(121, 215, 173, 0.95);
+    stroke-width: 1.35;
+  }
+
+  .doors-workbench-add-door-plus {
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-width: 1.75;
   }
 
   .doors-workbench-queue .doors-workbench-door-card {

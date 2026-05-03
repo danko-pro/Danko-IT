@@ -80,6 +80,28 @@
 
   .doors-workbench-panel-head-compact { align-items: center; }
 
+  .doors-workbench-queue > .doors-workbench-panel-head {
+    align-items: flex-start;
+    padding-block: 0.28rem 0.6rem;
+  }
+
+  .doors-workbench-queue-title {
+    display: grid;
+    gap: 0.22rem;
+    min-width: 0;
+  }
+
+  .doors-workbench-queue-title .doors-workbench-kicker {
+    font-size: 9px;
+    letter-spacing: 0.2em;
+  }
+
+  .doors-workbench-queue-title h3 {
+    margin: 0;
+    font-size: 1rem;
+    line-height: 1.05;
+  }
+
   .doors-workbench-composer,
   .doors-workbench-component-form {
     display: grid;
@@ -208,7 +230,21 @@
   }
 
   .doors-workbench .doors-workbench-add-door {
-    min-width: 7.4rem;
+    display: inline-grid;
+    width: 2rem;
+    min-width: 2rem;
+    height: 2rem;
+    min-height: 2rem;
+    place-items: center;
+    padding: 0;
+    font-size: 1.2rem;
+    font-weight: 900;
+  }
+
+  .doors-workbench-add-door-symbol {
+    display: block;
+    line-height: 1;
+    transform: translateY(-0.04rem);
   }
 
   .doors-workbench-queue .doors-workbench-door-card {

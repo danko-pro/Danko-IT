@@ -1,4 +1,4 @@
-import { Button } from "../../../shared/controls";
+import { Button, IconButton } from "../../../shared/controls";
 import type { CalculatorProjectDoor } from "../doors/model";
 import type { DoorsStageReadyProps } from "../doors/types";
 import { doorKind, doorMoneyLine, doorRooms, doorSize, doorTitle } from "./helpers";
@@ -11,23 +11,27 @@ type DoorWorkbenchQueueProps = Pick<
 export function DoorWorkbenchQueue(props: DoorWorkbenchQueueProps) {
   const createBusy = props.busyKey === `calculator-project-door-create-${props.projectDetail.project.id}`;
   const canCreateDoor = props.projectDetail.rooms.length > 0;
+  const addDoorLabel = createBusy ? "Добавляю дверь" : canCreateDoor ? "Добавить дверь" : "Сначала добавьте помещение";
   return (
     <section className="doors-workbench-panel doors-workbench-queue" data-testid="doors-workbench-queue">
       <div className="doors-workbench-panel-head">
-        <div>
+        <div className="doors-workbench-queue-title">
           <div className="doors-workbench-kicker">Двери</div>
           <h3>Двери и проемы</h3>
         </div>
         <div className="doors-workbench-queue-head-actions">
-          <Button
+          <IconButton
             type="button"
             variant="micro"
+            ariaLabel={addDoorLabel}
             className="doors-workbench-add-door"
             disabled={createBusy || !canCreateDoor}
             onClick={() => void props.createBlankProjectDoor()}
           >
-            {createBusy ? "..." : "+ Добавить дверь"}
-          </Button>
+            <span aria-hidden="true" className="doors-workbench-add-door-symbol">
+              {createBusy ? "..." : "+"}
+            </span>
+          </IconButton>
         </div>
       </div>
 

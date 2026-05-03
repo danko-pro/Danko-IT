@@ -1,7 +1,12 @@
 import { WallFinishRoomCard } from "./";
 import type { WallFinishStageReadyProps } from "./";
 
-export function WallFinishStageRoomsPanel(props: WallFinishStageReadyProps) {
+export function WallFinishStageRoomsPanel(
+  props: WallFinishStageReadyProps & {
+    openWallFinishRoomPanel: () => void;
+    openWallFinishSummaryPanel: () => void;
+  },
+) {
   const {
     wallFinishPreview,
     wallFinishDetail,
@@ -12,17 +17,20 @@ export function WallFinishStageRoomsPanel(props: WallFinishStageReadyProps) {
     wallFinishCoveringById,
     wallFinishPreparationById,
     wallFinishLayoutById,
+    openWallFinishRoomPanel,
+    openWallFinishSummaryPanel,
   } = props;
 
   return (
     <div className="subpanel calculator-stage-section p-3 space-y-3">
       <div className="calculator-stage-section-head">
         <div>
-          <div className="calculator-stage-section-kicker">Контур расчёта</div>
+          <div className="calculator-stage-section-kicker">Контур расчета</div>
           <div className="calculator-stage-section-title">Помещения и отделка стен</div>
         </div>
         <div className="calculator-stage-section-note">
-          Выберите комнаты, тип отделки, подготовку и способ монтажа для каждого помещения.
+          Выберите комнаты, тип отделки, подготовку и способ монтажа. Детальные параметры выбранной комнаты вынесены в
+          правую колонку, как во вкладке напольных покрытий.
         </div>
       </div>
 
@@ -41,6 +49,8 @@ export function WallFinishStageRoomsPanel(props: WallFinishStageReadyProps) {
             layoutById={wallFinishLayoutById}
             setExpandedRoomId={setExpandedWallFinishRoomId}
             setWallFinishState={setWallFinishState}
+            openWallFinishRoomPanel={openWallFinishRoomPanel}
+            openWallFinishSummaryPanel={openWallFinishSummaryPanel}
           />
         ))}
       </div>

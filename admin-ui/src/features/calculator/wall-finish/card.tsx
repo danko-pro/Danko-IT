@@ -1,6 +1,6 @@
 import { memo, type Dispatch, type SetStateAction } from "react";
 
-import { SelectField, TextField, formatArea, formatMoney, toInteger } from "./";
+import { formatArea, formatMoney, toInteger } from "./";
 import type {
   CalculatorWallFinishCovering,
   CalculatorWallFinishLayout,
@@ -23,6 +23,8 @@ type WallFinishRoomCardProps = {
   layoutById: Map<number, CalculatorWallFinishLayout>;
   setExpandedRoomId: Dispatch<SetStateAction<number | null>>;
   setWallFinishState: Dispatch<SetStateAction<WallFinishEditState>>;
+  openWallFinishRoomPanel: () => void;
+  openWallFinishSummaryPanel: () => void;
 };
 
 export const WallFinishRoomCard = memo(function WallFinishRoomCard(props: WallFinishRoomCardProps) {
@@ -30,14 +32,13 @@ export const WallFinishRoomCard = memo(function WallFinishRoomCard(props: WallFi
     room,
     edit,
     expanded,
-    coverings,
-    preparations,
-    layouts,
     coveringById,
     preparationById,
     layoutById,
     setExpandedRoomId,
     setWallFinishState,
+    openWallFinishRoomPanel,
+    openWallFinishSummaryPanel,
   } = props;
   const selected = edit?.selected ?? room.selected;
   const coveringPreviewId = toInteger(edit?.covering_id ?? "");
@@ -50,128 +51,82 @@ export const WallFinishRoomCard = memo(function WallFinishRoomCard(props: WallFi
   const layoutPreviewTitle =
     (layoutPreviewId !== null ? layoutById.get(layoutPreviewId)?.title : null) ?? room.layout_title;
 
+  function selectRoom() {
+    if (expanded) {
+      setExpandedRoomId(null);
+      openWallFinishSummaryPanel();
+      return;
+    }
+    setExpandedRoomId(room.room_id);
+    openWallFinishRoomPanel();
+  }
+
   return (
-    <div className={selected ? "dense-row dense-row-active flooring-room-card" : "dense-row flooring-room-card"}>
+    <div
+      className={[
+        "dense-row flooring-room-card warmfloor-room-card",
+        selected ? "dense-row-active" : "",
+        expanded ? "flooring-room-card-current" : "",
+      ].join(" ")}
+    >
       <div
-        className="flooring-room-header"
+        className="warmfloor-room-strip flooring-room-strip"
         role="button"
         tabIndex={0}
-        onClick={() => setExpandedRoomId((current) => (current === room.room_id ? null : room.room_id))}
+        onClick={selectRoom}
         onKeyDown={(event) => {
           if (event.key === "Enter" || event.key === " ") {
             event.preventDefault();
-            setExpandedRoomId((current) => (current === room.room_id ? null : room.room_id));
+            selectRoom();
           }
         }}
       >
-        <div className="flex min-w-0 flex-1 items-start gap-2.5">
-          <input
-            type="checkbox"
-            checked={selected}
-            onClick={(event) => event.stopPropagation()}
-            onChange={(event) =>
-              setWallFinishState((current) => ({
-                ...current,
-                rooms: current.rooms.map((item) =>
-                  item.room_id === room.room_id ? { ...item, selected: event.target.checked } : item,
-                ),
-              }))
-            }
-          />
-          <div className="min-w-0 flex-1">
-            <div className="flooring-room-title">{room.room_name}</div>
-            <div className="mt-1 flex flex-wrap gap-1 text-[11px] text-slate-400">
-              <span className="stat-chip">Стены: {formatArea(room.base_area_m2)}</span>
-              {coveringPreviewTitle ? <span className="stat-chip">{coveringPreviewTitle}</span> : null}
-              {layoutPreviewTitle ? <span className="stat-chip">{layoutPreviewTitle}</span> : null}
-              {preparationPreviewTitle ? <span className="stat-chip">{preparationPreviewTitle}</span> : null}
-            </div>
-          </div>
+        <div className="warmfloor-room-identity">
+          <label className="warmfloor-room-toggle" onClick={(event) => event.stopPropagation()}>
+            <input
+              className="warmfloor-room-toggle-input"
+              type="checkbox"
+              checked={selected}
+              onChange={(event) =>
+                setWallFinishState((current) => ({
+                  ...current,
+                  rooms: current.rooms.map((item) =>
+                    item.room_id === room.room_id ? { ...item, selected: event.target.checked } : item,
+                  ),
+                }))
+              }
+            />
+            <span className="warmfloor-room-toggle-box" aria-hidden="true">
+              <span className="warmfloor-room-toggle-mark">✓</span>
+            </span>
+          </label>
+          <div className="flooring-room-title warmfloor-room-title">{room.room_name}</div>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="flooring-room-amount">{formatMoney(room.total_cost)}</div>
-          <span className={expanded ? "flooring-room-chevron flooring-room-chevron-open" : "flooring-room-chevron"}>⌄</span>
-        </div>
-      </div>
 
-      <div className={expanded ? "flooring-room-body flooring-room-body-open" : "flooring-room-body"}>
-        <div className="flooring-room-body-inner">
-          <div className="grid gap-2 xl:grid-cols-3">
-            <SelectField
-              label="Отделка"
-              value={edit?.covering_id ?? ""}
-              onChange={(value) =>
-                setWallFinishState((current) => ({
-                  ...current,
-                  rooms: current.rooms.map((item) =>
-                    item.room_id === room.room_id ? { ...item, covering_id: value } : item,
-                  ),
-                }))
-              }
-              options={[
-                { value: "", label: "Не выбрано" },
-                ...coverings.map((item) => ({ value: String(item.id), label: item.title })),
-              ]}
-            />
-            <SelectField
-              label="Подготовка"
-              value={edit?.preparation_id ?? ""}
-              onChange={(value) =>
-                setWallFinishState((current) => ({
-                  ...current,
-                  rooms: current.rooms.map((item) =>
-                    item.room_id === room.room_id ? { ...item, preparation_id: value } : item,
-                  ),
-                }))
-              }
-              options={[
-                { value: "", label: "Без выбора" },
-                ...preparations.map((item) => ({ value: String(item.id), label: item.title })),
-              ]}
-            />
-            <SelectField
-              label="Способ монтажа"
-              value={edit?.layout_id ?? ""}
-              onChange={(value) =>
-                setWallFinishState((current) => ({
-                  ...current,
-                  rooms: current.rooms.map((item) =>
-                    item.room_id === room.room_id ? { ...item, layout_id: value } : item,
-                  ),
-                }))
-              }
-              options={[
-                { value: "", label: "Базовый" },
-                ...layouts.map((item) => ({ value: String(item.id), label: item.title })),
-              ]}
-            />
-          </div>
-          <div className="mt-2 grid gap-2 md:grid-cols-2">
-            <TextField
-              label="Площадь вручную, м²"
-              value={edit?.area_m2_override ?? ""}
-              onChange={(value) =>
-                setWallFinishState((current) => ({
-                  ...current,
-                  rooms: current.rooms.map((item) =>
-                    item.room_id === room.room_id ? { ...item, area_m2_override: value } : item,
-                  ),
-                }))
-              }
-              placeholder="Пусто = чистая площадь стен"
-            />
-            <TextField
-              label="Примечание"
-              value={edit?.note ?? ""}
-              onChange={(value) =>
-                setWallFinishState((current) => ({
-                  ...current,
-                  rooms: current.rooms.map((item) => (item.room_id === room.room_id ? { ...item, note: value } : item)),
-                }))
-              }
-              placeholder="Например, только акцентная стена"
-            />
-          </div>
+        <div className="warmfloor-room-metrics flooring-room-metrics" aria-label="Показатели помещения">
+          <span>Стены {formatArea(room.base_area_m2)}</span>
+          <span>Расчет {formatArea(room.effective_area_m2)}</span>
+          {coveringPreviewTitle ? <span>{coveringPreviewTitle}</span> : null}
+          {layoutPreviewTitle ? <span>{layoutPreviewTitle}</span> : null}
+          {preparationPreviewTitle ? <span>{preparationPreviewTitle}</span> : null}
+        </div>
+
+        <div className="flooring-room-parameter-chips" aria-label="Включенные параметры помещения">
+          <span className={coveringPreviewTitle ? "" : "flooring-room-parameter-chip-muted"}>
+            {coveringPreviewTitle ?? "Отделка не выбрана"}
+          </span>
+          <span className={preparationPreviewTitle ? "" : "flooring-room-parameter-chip-muted"}>
+            {preparationPreviewTitle ?? "Без подготовки"}
+          </span>
+          <span className={layoutPreviewTitle ? "" : "flooring-room-parameter-chip-muted"}>
+            {layoutPreviewTitle ?? "Базовый монтаж"}
+          </span>
+          {edit?.area_m2_override ? <span>Ручная площадь</span> : null}
+        </div>
+
+        <div className="warmfloor-room-actions">
+          <div className="flooring-room-amount">{formatMoney(room.total_cost)}</div>
+          <span className={expanded ? "flooring-room-active-dot flooring-room-active-dot-on" : "flooring-room-active-dot"} />
         </div>
       </div>
     </div>
@@ -194,6 +149,7 @@ function areWallFinishRoomCardPropsEqual(prev: Readonly<WallFinishRoomCardProps>
     prev.room.preparation_title === next.room.preparation_title &&
     prev.room.layout_title === next.room.layout_title &&
     prev.room.base_area_m2 === next.room.base_area_m2 &&
+    prev.room.effective_area_m2 === next.room.effective_area_m2 &&
     prev.room.total_cost === next.room.total_cost &&
     prev.edit?.selected === next.edit?.selected &&
     prev.edit?.covering_id === next.edit?.covering_id &&

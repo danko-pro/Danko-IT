@@ -20,6 +20,7 @@ test("opens calculator flooring stage with seeded zoned estimate", async ({ page
   const coveringId = Number(project.flooring.coverings[0].id);
   const preparationId = Number(project.flooring.preparations[0].id);
   const layoutId = Number(project.flooring.layouts[0].id);
+  const wallFinishCoveringId = Number(project.wall_finishes.coverings[0].id);
 
   const room = await postJson(request, `/api/calculator/projects/${projectId}/rooms`, {
     name: "Smoke room",
@@ -94,6 +95,19 @@ test("opens calculator flooring stage with seeded zoned estimate", async ({ page
     ],
   });
 
+  await patchJson(request, `/api/calculator/projects/${projectId}/wall-finishes`, {
+    include_preparation: false,
+    include_demolition: false,
+    demolition_price_per_m2: 140,
+    rooms: [
+      {
+        room_id: roomId,
+        selected: true,
+        covering_id: wallFinishCoveringId,
+      },
+    ],
+  });
+
   await page.addInitScript(() => window.sessionStorage.clear());
   await page.goto("/");
   await expect(page.locator('[data-screen="dashboard"]')).toBeVisible();
@@ -118,6 +132,14 @@ test("opens calculator flooring stage with seeded zoned estimate", async ({ page
   await expect(page.locator(".calculator-stage-section-title").filter({ hasText: "Итог" })).toBeVisible();
   await expect(page.getByTestId("flooring-summary-area")).toContainText("18.5");
   await expect(page.getByTestId("flooring-summary-grand-total")).not.toHaveText("0 ₽");
+
+  await page.getByTestId("calculator-stage-wallfinish").click();
+  await expect(page.getByTestId("wall-finish-summary-area")).not.toContainText("0");
+  await expect(page.getByTestId("wall-finish-summary-grand-total")).not.toHaveText(/^0\s/);
+  await page.getByRole("button", { name: "Помещение" }).click();
+  await expect(page.locator(".flooring-room-params-panel")).toBeVisible();
+  await page.getByRole("button", { name: "Техкарта" }).click();
+  await expect(page.locator(".flooring-catalog-panel")).toBeVisible();
 });
 
 async function postJson(request: APIRequestContext, path: string, data: unknown) {

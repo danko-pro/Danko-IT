@@ -1,0 +1,77 @@
+@layer components {
+  .calculator-scene-stage {
+    min-width: 0;
+    overflow: clip;
+    transition: height var(--ui-motion-content) var(--ui-motion-ease-emphasis);
+    will-change: height;
+  }
+
+  .calculator-scene {
+    width: 100%;
+    min-width: 0;
+    transform-origin: top center;
+    will-change: opacity, transform;
+  }
+
+  .calculator-scene-active { opacity: 1; }
+
+  .calculator-scene-enter-forward,
+  .calculator-scene-enter-backward {
+    animation: calculatorSceneEnter var(--ui-motion-stage) var(--ui-motion-ease-emphasis) both;
+  }
+
+  @keyframes calculatorSceneEnter {
+    from { opacity: 0; transform: translateY(0.42rem) scale(0.996); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  .warmfloor-panel-scene-stage {
+    position: relative;
+    overflow: hidden;
+    transition: height var(--ui-motion-content) var(--ui-motion-ease-emphasis);
+    will-change: height;
+  }
+
+  .flooring-stage .warmfloor-panel-scene-stage,
+  .wallfinish-stage .warmfloor-panel-scene-stage { overflow: visible; }
+
+  .warmfloor-panel-scene {
+    position: absolute;
+    inset: 0 auto auto 0;
+    width: 100%;
+    transition:
+      opacity var(--ui-motion-content) var(--ui-motion-ease-soft),
+      transform var(--ui-motion-content) var(--ui-motion-ease-emphasis);
+    backface-visibility: hidden;
+    will-change: opacity, transform;
+  }
+
+  .warmfloor-panel-scene-active { position: relative; opacity: 1; transform: translateX(0); pointer-events: auto; z-index: 2; }
+
+  .warmfloor-panel-scene-hidden-left,
+  .warmfloor-panel-scene-hidden-right { opacity: 0; pointer-events: none; z-index: 1; }
+
+  .warmfloor-panel-scene-hidden-left { transform: translateX(-0.75rem); }
+  .warmfloor-panel-scene-hidden-right { transform: translateX(0.75rem); }
+
+  .calculator-tab-content-motion {
+    animation: calculatorTabContentIn var(--ui-motion-tab) var(--ui-motion-ease-soft) both;
+  }
+
+  @keyframes calculatorTabContentIn {
+    from { opacity: 0; transform: translateY(0.28rem); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .calculator-scene-enter-forward,
+    .calculator-scene-enter-backward,
+    .calculator-scene-stage,
+    .warmfloor-panel-scene-stage,
+    .warmfloor-panel-scene,
+    .calculator-tab-content-motion {
+      animation: none;
+      transition: none;
+    }
+  }
+}

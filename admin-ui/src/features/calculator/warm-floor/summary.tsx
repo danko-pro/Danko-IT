@@ -1,6 +1,7 @@
-import { useLayoutEffect, useRef, useState } from "react";
+import { useRef } from "react";
 
 import { MetricChip, WarmFloorSettingsPanel, formatArea, formatMeters, formatMoney, trimFloat } from "./";
+import { useCalculatorSceneHeight } from "../stage/use-scene-height";
 import type { CalculatorWarmFloorSpecItem, WarmFloorStageReadyProps } from "./";
 
 type WarmFloorPanelMode = "settings" | "summary" | "estimate";
@@ -25,53 +26,16 @@ export function WarmFloorStageSummaryColumn(props: WarmFloorStageSummaryColumnPr
   const { panelMode, warmFloorPreview, setWarmFloorState, warmFloorState, autosaveState } = props;
   const summary = warmFloorPreview.summary;
   const pricePerSquare = summary.price_per_m2 === null ? "—" : formatMoney(summary.price_per_m2);
-  const [stageHeight, setStageHeight] = useState<number | null>(null);
-  const previousHeightRef = useRef<number | null>(null);
   const settingsRef = useRef<HTMLDivElement | null>(null);
   const summaryRef = useRef<HTMLDivElement | null>(null);
   const estimateRef = useRef<HTMLDivElement | null>(null);
   const estimateTotal = warmFloorPreview.specification.reduce((sum, item) => sum + item.amount, 0);
-
-  useLayoutEffect(() => {
-    const refsByMode = { settings: settingsRef, summary: summaryRef, estimate: estimateRef };
-    const target = refsByMode[panelMode].current;
-    if (!target) return;
-    const nextHeight = Math.ceil(target.getBoundingClientRect().height);
-    const previousHeight = previousHeightRef.current;
-    previousHeightRef.current = nextHeight;
-    if (!previousHeight || previousHeight === nextHeight) {
-      setStageHeight(null);
-      return;
-    }
-    let frameId = window.requestAnimationFrame(() => setStageHeight(nextHeight));
-    setStageHeight(previousHeight);
-    const timeoutId = window.setTimeout(() => setStageHeight(null), 360);
-    return () => {
-      window.cancelAnimationFrame(frameId);
-      window.clearTimeout(timeoutId);
-    };
-  }, [panelMode]);
-
-  useLayoutEffect(() => {
-    let frameId: number | null = null;
-    const refsByMode = { settings: settingsRef, summary: summaryRef, estimate: estimateRef };
-    const target = refsByMode[panelMode].current;
-    if (!target) return;
-    const measureHeight = () => {
-      previousHeightRef.current = Math.ceil(target.getBoundingClientRect().height);
-    };
-    const scheduleMeasure = () => {
-      if (frameId !== null) window.cancelAnimationFrame(frameId);
-      frameId = window.requestAnimationFrame(measureHeight);
-    };
-    const observer = new ResizeObserver(scheduleMeasure);
-    observer.observe(target);
-    scheduleMeasure();
-    return () => {
-      observer.disconnect();
-      if (frameId !== null) window.cancelAnimationFrame(frameId);
-    };
-  }, [panelMode, warmFloorPreview.specification.length]);
+  const refsByMode = { settings: settingsRef, summary: summaryRef, estimate: estimateRef };
+  const stageHeight = useCalculatorSceneHeight(
+    panelMode,
+    refsByMode[panelMode],
+    warmFloorPreview.specification.length,
+  );
 
   function getSceneClass(mode: WarmFloorPanelMode): string {
     if (panelMode === mode) return "warmfloor-panel-scene warmfloor-panel-scene-active";

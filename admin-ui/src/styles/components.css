@@ -7,9 +7,12 @@
 @import "./calculator-header.css";
 @import "./calculator-project.css";
 @import "./calculator-object.css";
+@import "./calculator-stage-motion.css";
 @import "./calculator-stage.css";
+@import "./calculator-stage-actions.css";
 @import "./calculator-stage-theme.css";
 @import "./calculator-flooring-stage.css";
+@import "./calculator-flooring-tabs.css";
 @import "./calculator-flooring-estimate.css";
 @import "./calculator-flooring-room-card.css";
 @import "./calculator-flooring-consumables.css";

@@ -7,7 +7,8 @@ import {
   FlooringStagePreparationCatalog,
 } from "./";
 import { MetricChip, formatArea, formatMeters, formatMoney, trimFloat } from "./";
-import { useState, type ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
+import { useCalculatorSceneHeight } from "../stage/use-scene-height";
 import type { FlooringStageReadyProps } from "./";
 
 type FlooringPanelMode = "room" | "settings" | "techmap" | "summary" | "estimate";
@@ -47,10 +48,27 @@ export function FlooringStageSummaryColumn(props: FlooringStageSummaryColumnProp
   const [techMapMode, setTechMapMode] = useState<FlooringTechMapMode>("coverings");
   const summary = flooringPreview.summary;
   const pricePerSquare = summary.price_per_m2 === null ? "—" : formatMoney(summary.price_per_m2);
+  const roomRef = useRef<HTMLDivElement | null>(null);
+  const settingsRef = useRef<HTMLDivElement | null>(null);
+  const techmapRef = useRef<HTMLDivElement | null>(null);
+  const summaryRef = useRef<HTMLDivElement | null>(null);
+  const estimateRef = useRef<HTMLDivElement | null>(null);
+  const refsByMode = {
+    room: roomRef,
+    settings: settingsRef,
+    techmap: techmapRef,
+    summary: summaryRef,
+    estimate: estimateRef,
+  };
+  const stageHeight = useCalculatorSceneHeight(
+    panelMode,
+    refsByMode[panelMode],
+    `${techMapMode}:${flooringPreview.rooms.length}:${flooringPreview.specification.length}`,
+  );
 
   return (
-    <div className="warmfloor-panel-scene-stage">
-      <div className={getSceneClass(panelMode, "room")}>
+    <div className="warmfloor-panel-scene-stage" style={stageHeight ? { height: `${stageHeight}px` } : undefined}>
+      <div ref={roomRef} className={getSceneClass(panelMode, "room")}>
         <FlooringRoomParametersPanel
           expandedFlooringRoomId={props.expandedFlooringRoomId}
           flooringPreview={flooringPreview}
@@ -60,7 +78,7 @@ export function FlooringStageSummaryColumn(props: FlooringStageSummaryColumnProp
         />
       </div>
 
-      <div className={getSceneClass(panelMode, "settings")}>
+      <div ref={settingsRef} className={getSceneClass(panelMode, "settings")}>
         <FlooringSettingsPanel
           flooringState={flooringState}
           setFlooringState={setFlooringState}
@@ -68,7 +86,7 @@ export function FlooringStageSummaryColumn(props: FlooringStageSummaryColumnProp
         />
       </div>
 
-      <div className={getSceneClass(panelMode, "techmap")}>
+      <div ref={techmapRef} className={getSceneClass(panelMode, "techmap")}>
         <CatalogPanel
           title="Технологическая карта"
           note="Справочники норм, материалов и способов, из которых собираются помещения."
@@ -85,40 +103,42 @@ export function FlooringStageSummaryColumn(props: FlooringStageSummaryColumnProp
             </TechMapTab>
           </div>
 
-          {techMapMode === "coverings" ? (
-            <FlooringStageCoveringCatalog
-              open
-              flooringDetail={props.flooringDetail}
-              flooringCoveringState={props.flooringCoveringState}
-              setFlooringCoveringState={props.setFlooringCoveringState}
-              busyKey={props.busyKey}
-              submitFlooringCovering={props.submitFlooringCovering}
-            />
-          ) : null}
-          {techMapMode === "preparations" ? (
-            <FlooringStagePreparationCatalog
-              open
-              flooringDetail={props.flooringDetail}
-              flooringPreparationState={props.flooringPreparationState}
-              setFlooringPreparationState={props.setFlooringPreparationState}
-              busyKey={props.busyKey}
-              submitFlooringPreparation={props.submitFlooringPreparation}
-            />
-          ) : null}
-          {techMapMode === "layouts" ? (
-            <FlooringStageLayoutCatalog
-              open
-              flooringDetail={props.flooringDetail}
-              flooringLayoutState={props.flooringLayoutState}
-              setFlooringLayoutState={props.setFlooringLayoutState}
-              busyKey={props.busyKey}
-              submitFlooringLayout={props.submitFlooringLayout}
-            />
-          ) : null}
+          <div key={techMapMode} className="calculator-tab-content-motion">
+            {techMapMode === "coverings" ? (
+              <FlooringStageCoveringCatalog
+                open
+                flooringDetail={props.flooringDetail}
+                flooringCoveringState={props.flooringCoveringState}
+                setFlooringCoveringState={props.setFlooringCoveringState}
+                busyKey={props.busyKey}
+                submitFlooringCovering={props.submitFlooringCovering}
+              />
+            ) : null}
+            {techMapMode === "preparations" ? (
+              <FlooringStagePreparationCatalog
+                open
+                flooringDetail={props.flooringDetail}
+                flooringPreparationState={props.flooringPreparationState}
+                setFlooringPreparationState={props.setFlooringPreparationState}
+                busyKey={props.busyKey}
+                submitFlooringPreparation={props.submitFlooringPreparation}
+              />
+            ) : null}
+            {techMapMode === "layouts" ? (
+              <FlooringStageLayoutCatalog
+                open
+                flooringDetail={props.flooringDetail}
+                flooringLayoutState={props.flooringLayoutState}
+                setFlooringLayoutState={props.setFlooringLayoutState}
+                busyKey={props.busyKey}
+                submitFlooringLayout={props.submitFlooringLayout}
+              />
+            ) : null}
+          </div>
         </CatalogPanel>
       </div>
 
-      <div className={getSceneClass(panelMode, "summary")}>
+      <div ref={summaryRef} className={getSceneClass(panelMode, "summary")}>
         <div className="subpanel calculator-stage-section warmfloor-summary-panel flooring-summary-panel p-3">
           <div className="calculator-stage-section-head">
             <div>
@@ -169,7 +189,7 @@ export function FlooringStageSummaryColumn(props: FlooringStageSummaryColumnProp
         </div>
       </div>
 
-      <div className={getSceneClass(panelMode, "estimate")}>
+      <div ref={estimateRef} className={getSceneClass(panelMode, "estimate")}>
         <FlooringEstimatePanel flooringPreview={flooringPreview} />
       </div>
     </div>

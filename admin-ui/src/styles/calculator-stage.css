@@ -1,39 +1,4 @@
 @layer components {
-  .calculator-scene-stage {
-    min-width: 0;
-  }
-
-  .calculator-scene {
-    width: 100%;
-    min-width: 0;
-    will-change: opacity, transform, filter;
-  }
-
-  .calculator-scene-active {
-    opacity: 1;
-    filter: blur(0);
-  }
-
-  .calculator-scene-enter-forward {
-    animation: calculatorSceneEnterForward var(--ui-motion-medium) var(--ui-motion-ease-emphasis) both;
-  }
-
-  .calculator-scene-enter-backward {
-    animation: calculatorSceneEnterBackward var(--ui-motion-medium) var(--ui-motion-ease-emphasis) both;
-  }
-
-  @keyframes calculatorSceneEnterForward {
-    from { opacity: 0; transform: translateX(48px); filter: blur(8px); }
-
-    to { opacity: 1; transform: translateX(0); filter: blur(0); }
-  }
-
-  @keyframes calculatorSceneEnterBackward {
-    from { opacity: 0; transform: translateX(-42px); filter: blur(8px); }
-
-    to { opacity: 1; transform: translateX(0); filter: blur(0); }
-  }
-
   .warmfloor-gear {
     gap: calc(var(--spacing) * 2);
   }
@@ -43,29 +8,6 @@
     background: linear-gradient(#0e332efa, #0a1016fa);
     border-color: #07f8c652;
   }
-
-  .warmfloor-panel-scene-stage { position: relative; overflow: hidden; transition: height var(--ui-motion-medium) var(--ui-motion-ease); }
-  .flooring-stage .warmfloor-panel-scene-stage { overflow: visible; }
-
-  .warmfloor-panel-scene {
-    position: absolute;
-    inset: 0 auto auto 0;
-    width: 100%;
-    transition:
-      opacity var(--ui-motion-medium) var(--ui-motion-ease),
-      transform var(--ui-motion-medium) var(--ui-motion-ease);
-    backface-visibility: hidden;
-    will-change: opacity, transform;
-  }
-
-  .warmfloor-panel-scene-active { position: relative; opacity: 1; transform: translateX(0); pointer-events: auto; z-index: 2; }
-
-  .warmfloor-panel-scene-hidden-left,
-  .warmfloor-panel-scene-hidden-right { opacity: 0; pointer-events: none; z-index: 1; }
-
-  .warmfloor-panel-scene-hidden-left { transform: translateX(-28px); }
-
-  .warmfloor-panel-scene-hidden-right { transform: translateX(28px); }
 
   .warmfloor-settings-table-wrap {
     border-style: var(--tw-border-style);
@@ -334,13 +276,4 @@
     font-size: 11px;
   }
 
-  @media (prefers-reduced-motion: reduce) {
-    .calculator-scene-enter-forward,
-    .calculator-scene-enter-backward,
-    .warmfloor-panel-scene-stage,
-    .warmfloor-panel-scene {
-      animation: none;
-      transition: none;
-    }
-  }
 }

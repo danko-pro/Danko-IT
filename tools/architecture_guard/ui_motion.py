@@ -34,11 +34,34 @@ def _collect_ui_contract_violations(
     text: str,
 ) -> tuple[UiMotionViolation | None, ...]:
     return (
+        _broad_transition(relative_path, absolute_path, text),
         _details_with_js_height(relative_path, absolute_path, text),
         _css_details_height_transition(relative_path, absolute_path, text),
         _unscoped_form_control_css(relative_path, absolute_path, text),
         _flooring_techmap_raw_text_input(relative_path, absolute_path, text),
         _flooring_techmap_missing_compact_size(relative_path, absolute_path, text),
+    )
+
+
+def _broad_transition(relative_path: str, absolute_path: Path, text: str) -> UiMotionViolation | None:
+    if not relative_path.endswith((".css", ".tsx")):
+        return None
+    match = re.search(r"\btransition-all\b|transition\s*:\s*all\b", text)
+    if match is None:
+        return None
+
+    line_number = text.count("\n", 0, match.start()) + 1
+    return UiMotionViolation(
+        violation_id=f"ui-motion-explicit-transitions|{relative_path}|{line_number}",
+        relative_path=relative_path,
+        absolute_path=absolute_path,
+        line_number=line_number,
+        rule_name="ui-motion-explicit-transitions",
+        severity="warn",
+        message=(
+            "Avoid transition-all and transition: all in UI motion. "
+            "List animated properties explicitly so tabs and panels do not animate layout unexpectedly."
+        ),
     )
 
 

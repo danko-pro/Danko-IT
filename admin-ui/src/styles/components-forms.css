@@ -5,7 +5,7 @@
   }
 
   .text-input {
-    @apply w-full rounded-[16px] border px-3.5 py-2.5 text-sm outline-none transition;
+    @apply w-full rounded-[16px] border px-3.5 py-2.5 text-sm outline-none;
     transition:
       border-color var(--ui-motion-fast) var(--ui-motion-ease-soft),
       box-shadow var(--ui-motion-fast) var(--ui-motion-ease-soft),
@@ -134,7 +134,7 @@
   }
 
   .chip {
-    @apply rounded-full border px-3 py-1.5 text-xs font-medium transition;
+    @apply rounded-full border px-3 py-1.5 text-xs font-medium;
     transition:
       transform var(--ui-motion-fast) var(--ui-motion-ease-soft),
       border-color var(--ui-motion-fast) var(--ui-motion-ease-soft),
@@ -172,7 +172,7 @@
   }
 
   .micro-action {
-    @apply inline-flex items-center justify-center rounded-[12px] border px-2.5 py-1.5 text-[11px] font-semibold transition disabled:cursor-not-allowed disabled:opacity-60;
+    @apply inline-flex items-center justify-center rounded-[12px] border px-2.5 py-1.5 text-[11px] font-semibold disabled:cursor-not-allowed disabled:opacity-60;
     transition:
       transform var(--ui-motion-fast) var(--ui-motion-ease-soft),
       border-color var(--ui-motion-fast) var(--ui-motion-ease-soft),
@@ -200,7 +200,7 @@
   }
 
   .stage-tab {
-    @apply inline-flex items-center justify-center rounded-[14px] border px-3 py-2 text-[12px] font-semibold transition-all duration-300;
+    @apply inline-flex items-center justify-center rounded-[14px] border px-3 py-2 text-[12px] font-semibold;
     transition:
       transform var(--ui-motion-fast) var(--ui-motion-ease-soft),
       border-color var(--ui-motion-fast) var(--ui-motion-ease-soft),
@@ -234,7 +234,7 @@
   }
 
   .details-summary {
-    @apply cursor-pointer list-none text-xs font-semibold uppercase tracking-[0.18em] transition;
+    @apply cursor-pointer list-none text-xs font-semibold uppercase tracking-[0.18em];
     transition:
       color var(--ui-motion-fast) var(--ui-motion-ease-soft),
       opacity var(--ui-motion-fast) var(--ui-motion-ease-soft);

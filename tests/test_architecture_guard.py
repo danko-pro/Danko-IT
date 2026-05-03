@@ -236,6 +236,23 @@ def test_collect_snapshot_tracks_ui_motion_notes(tmp_path: Path) -> None:
     assert violation.severity == "note"
 
 
+def test_collect_snapshot_rejects_broad_ui_transitions(tmp_path: Path) -> None:
+    config_path = tmp_path / "architecture_guard.json"
+    write_config(config_path)
+    write_file(
+        tmp_path / "admin-ui" / "src" / "styles" / "motion.css",
+        ".tab-button { transition: all 300ms ease; }\n",
+    )
+
+    config = load_guard_config(tmp_path, config_path)
+    snapshot = collect_snapshot(config)
+
+    assert len(snapshot.ui_motion_violations) == 1
+    violation = next(iter(snapshot.ui_motion_violations.values()))
+    assert violation.rule_name == "ui-motion-explicit-transitions"
+    assert violation.severity == "warn"
+
+
 def test_collect_snapshot_reports_workspace_hygiene_artifacts(tmp_path: Path) -> None:
     config_path = tmp_path / "architecture_guard.json"
     write_config(config_path)

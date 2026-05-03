@@ -319,25 +319,6 @@
 
   .flooring-room-params-empty { color: #91a6b9; font-size: 13px; text-align: center; }
 
-  .flooring-techmap-tabs { display: flex; flex-wrap: wrap; gap: 0.45rem; }
-
-  .flooring-techmap-tab {
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 12px;
-    min-height: 2.15rem;
-    padding: 0.42rem 0.78rem;
-    background: linear-gradient(180deg, rgba(20, 25, 33, 0.92), rgba(11, 15, 21, 0.98));
-    color: #aebed0;
-    font-size: 12px;
-    font-weight: 800;
-  }
-
-  .flooring-techmap-tab-active {
-    border-color: rgba(var(--calculator-stage-accent-rgb), 0.32);
-    background: linear-gradient(180deg, rgba(14, 51, 46, 0.98), rgba(10, 16, 22, 0.98));
-    color: #efffff;
-  }
-
   @media (max-width: 720px) {
     .flooring-room-strip,
     .flooring-room-editor-grid,

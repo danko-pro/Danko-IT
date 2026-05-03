@@ -5,6 +5,7 @@ import { CalculatorHeaderSection } from "./header";
 import type { CalculatorStage } from "../model/types";
 import { CalculatorProjectRoomsStage } from "../project/flow";
 import type { CalculatorScreenProps, CalculatorScreenState } from "./types";
+import { useCalculatorSceneHeight } from "../stage/use-scene-height";
 
 const CALCULATOR_STAGE_ORDER: CalculatorStage[] = ["project", "rooms", "warmfloor", "flooring", "wallfinish", "doors"];
 
@@ -38,8 +39,10 @@ export function CalculatorScreenContent(props: {
     wallFinish,
   } = props.state;
   const previousStageRef = useRef(activeStage);
+  const sceneRef = useRef<HTMLDivElement | null>(null);
   const previousStage = previousStageRef.current;
   const stageDirection = getStageDirection(activeStage, previousStage);
+  const stageHeight = useCalculatorSceneHeight(activeStage, sceneRef);
 
   useEffect(() => {
     previousStageRef.current = activeStage;
@@ -118,8 +121,12 @@ export function CalculatorScreenContent(props: {
         setActiveStage={setActiveStage}
       />
 
-      <div className="calculator-scene-stage">
-        <div key={activeStage} className={`calculator-scene calculator-scene-active calculator-scene-enter-${stageDirection}`}>
+      <div className="calculator-scene-stage" style={stageHeight ? { height: `${stageHeight}px` } : undefined}>
+        <div
+          key={activeStage}
+          ref={sceneRef}
+          className={`calculator-scene calculator-scene-active calculator-scene-enter-${stageDirection}`}
+        >
           {stageNode}
         </div>
       </div>

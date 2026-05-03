@@ -283,12 +283,13 @@
     height: 2.4rem;
     padding: 0;
     transition:
-      transform var(--ui-motion-fast) var(--ui-motion-ease-soft),
-      border-color var(--ui-motion-fast) var(--ui-motion-ease-soft),
-      background-color var(--ui-motion-fast) var(--ui-motion-ease-soft),
-      color var(--ui-motion-fast) var(--ui-motion-ease-soft),
-      box-shadow var(--ui-motion-medium) var(--ui-motion-ease);
+      transform var(--ui-motion-interactive) var(--ui-motion-ease-soft),
+      border-color var(--ui-motion-interactive) var(--ui-motion-ease-soft),
+      background-color var(--ui-motion-interactive) var(--ui-motion-ease-soft),
+      color var(--ui-motion-interactive) var(--ui-motion-ease-soft),
+      box-shadow var(--ui-motion-tab) var(--ui-motion-ease);
     display: inline-flex;
+    transform: translateZ(0);
   }
 
   .calculator-stage-switch-button:hover {
@@ -303,6 +304,7 @@
     background: linear-gradient(#103636db,#091c20f5),radial-gradient(circle at 0 0,#07f8c61f,#0000 70%);
     border-color: #07f8c63d;
     box-shadow: 0 12px 26px #0000002e,0 0 0 1px #07f8c614,0 0 18px #07f8c614;
+    transform: translateY(0);
   }
 
   .calculator-stage-switch-glyph {

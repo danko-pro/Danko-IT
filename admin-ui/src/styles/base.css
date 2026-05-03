@@ -17,6 +17,10 @@
   --ui-motion-ease-soft: cubic-bezier(0.2, 0.8, 0.2, 1);
   --ui-motion-ease-emphasis: cubic-bezier(0.16, 1, 0.3, 1);
   --ui-motion-fast: 220ms;
+  --ui-motion-interactive: 180ms;
+  --ui-motion-tab: 240ms;
+  --ui-motion-content: 300ms;
+  --ui-motion-stage: 320ms;
   --ui-motion-medium: 340ms;
   --ui-motion-slow: 520ms;
   --ui-motion-panel: 620ms;

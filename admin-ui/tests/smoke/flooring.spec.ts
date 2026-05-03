@@ -1,7 +1,7 @@
 import { execFileSync } from "node:child_process";
 
 import { expect, test } from "@playwright/test";
-import type { APIRequestContext } from "@playwright/test";
+import type { APIRequestContext, Page } from "@playwright/test";
 
 const apiBaseUrl = process.env.ADMIN_API_BASE_URL ?? "http://127.0.0.1:8000";
 const smokeProjectPrefix = "SMOKE UI flooring";
@@ -117,6 +117,8 @@ test("opens calculator flooring stage with seeded zoned estimate", async ({ page
   await page.getByTestId(`calculator-project-${projectId}`).click();
   await expect(page.locator(".calculator-header")).toContainText("18.5");
   await page.getByTestId("calculator-stage-flooring").click();
+  await expectExplicitTransition(page, ".calculator-scene-stage", "height");
+  await expectExplicitTransition(page, ".calculator-stage-settings", "transform");
 
   await expect(page.getByTestId("calculator-header-flooring-total").locator("strong")).not.toHaveText(/^0\s/);
   await expect(page.getByTestId("calculator-header-object-total")).not.toHaveText(/^0\s/);
@@ -143,11 +145,19 @@ test("opens calculator flooring stage with seeded zoned estimate", async ({ page
   await page.getByRole("button", { name: "Техкарта" }).click();
   await expect(page.locator(".flooring-catalog-panel")).toBeVisible();
   await expect(page.locator(".flooring-techmap-form")).toBeVisible();
+  await expectExplicitTransition(page, ".warmfloor-panel-scene-stage", "height");
+  await expectExplicitTransition(page, ".flooring-techmap-tab", "transform");
   await page.locator(".flooring-techmap-form .calculator-nav-add.warmfloor-material-add").click();
   await expect(page.locator(".flooring-techmap-consumable-row-custom")).toBeVisible();
   await page.getByRole("button", { name: "Смета" }).click();
   await expect(page.locator(".flooring-estimate-document")).toBeVisible();
 });
+
+async function expectExplicitTransition(page: Page, selector: string, expectedProperty: string) {
+  const transitionProperty = await page.locator(selector).first().evaluate((element) => getComputedStyle(element).transitionProperty);
+  expect(transitionProperty).toContain(expectedProperty);
+  expect(transitionProperty).not.toContain("all");
+}
 
 async function postJson(request: APIRequestContext, path: string, data: unknown) {
   const response = await request.post(`${apiBaseUrl}${path}`, { data });

@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
 
 import {
   WallFinishRoomParametersPanel,
@@ -9,6 +9,7 @@ import {
   WallFinishStagePreparationCatalog,
 } from "./";
 import { MetricChip, formatArea, formatMoney, trimFloat } from "./";
+import { useCalculatorSceneHeight } from "../stage/use-scene-height";
 import type { WallFinishPanelMode } from "./stage";
 import type { WallFinishStageReadyProps } from "./";
 
@@ -48,10 +49,27 @@ export function WallFinishStageSummaryColumn(props: WallFinishStageSummaryColumn
   const [techMapMode, setTechMapMode] = useState<WallFinishTechMapMode>("coverings");
   const summary = wallFinishPreview.summary;
   const pricePerSquare = summary.price_per_m2 === null ? "—" : formatMoney(summary.price_per_m2);
+  const roomRef = useRef<HTMLDivElement | null>(null);
+  const settingsRef = useRef<HTMLDivElement | null>(null);
+  const techmapRef = useRef<HTMLDivElement | null>(null);
+  const summaryRef = useRef<HTMLDivElement | null>(null);
+  const estimateRef = useRef<HTMLDivElement | null>(null);
+  const refsByMode = {
+    room: roomRef,
+    settings: settingsRef,
+    techmap: techmapRef,
+    summary: summaryRef,
+    estimate: estimateRef,
+  };
+  const stageHeight = useCalculatorSceneHeight(
+    panelMode,
+    refsByMode[panelMode],
+    `${techMapMode}:${wallFinishPreview.rooms.length}:${wallFinishPreview.specification.length}`,
+  );
 
   return (
-    <div className="warmfloor-panel-scene-stage">
-      <div className={getSceneClass(panelMode, "room")}>
+    <div className="warmfloor-panel-scene-stage" style={stageHeight ? { height: `${stageHeight}px` } : undefined}>
+      <div ref={roomRef} className={getSceneClass(panelMode, "room")}>
         <WallFinishRoomParametersPanel
           expandedWallFinishRoomId={props.expandedWallFinishRoomId}
           wallFinishPreview={wallFinishPreview}
@@ -61,7 +79,7 @@ export function WallFinishStageSummaryColumn(props: WallFinishStageSummaryColumn
         />
       </div>
 
-      <div className={getSceneClass(panelMode, "settings")}>
+      <div ref={settingsRef} className={getSceneClass(panelMode, "settings")}>
         <WallFinishSettingsPanel
           wallFinishState={wallFinishState}
           setWallFinishState={setWallFinishState}
@@ -69,7 +87,7 @@ export function WallFinishStageSummaryColumn(props: WallFinishStageSummaryColumn
         />
       </div>
 
-      <div className={getSceneClass(panelMode, "techmap")}>
+      <div ref={techmapRef} className={getSceneClass(panelMode, "techmap")}>
         <CatalogPanel
           title="Технологическая карта"
           note="Справочники отделок, подготовок и способов монтажа, из которых собираются помещения."
@@ -86,37 +104,39 @@ export function WallFinishStageSummaryColumn(props: WallFinishStageSummaryColumn
             </TechMapTab>
           </div>
 
-          {techMapMode === "coverings" ? (
-            <WallFinishStageCoveringCatalog
-              wallFinishDetail={props.wallFinishDetail}
-              wallFinishCoveringState={props.wallFinishCoveringState}
-              setWallFinishCoveringState={props.setWallFinishCoveringState}
-              busyKey={props.busyKey}
-              submitWallFinishCovering={props.submitWallFinishCovering}
-            />
-          ) : null}
-          {techMapMode === "preparations" ? (
-            <WallFinishStagePreparationCatalog
-              wallFinishDetail={props.wallFinishDetail}
-              wallFinishPreparationState={props.wallFinishPreparationState}
-              setWallFinishPreparationState={props.setWallFinishPreparationState}
-              busyKey={props.busyKey}
-              submitWallFinishPreparation={props.submitWallFinishPreparation}
-            />
-          ) : null}
-          {techMapMode === "layouts" ? (
-            <WallFinishStageLayoutCatalog
-              wallFinishDetail={props.wallFinishDetail}
-              wallFinishLayoutState={props.wallFinishLayoutState}
-              setWallFinishLayoutState={props.setWallFinishLayoutState}
-              busyKey={props.busyKey}
-              submitWallFinishLayout={props.submitWallFinishLayout}
-            />
-          ) : null}
+          <div key={techMapMode} className="calculator-tab-content-motion">
+            {techMapMode === "coverings" ? (
+              <WallFinishStageCoveringCatalog
+                wallFinishDetail={props.wallFinishDetail}
+                wallFinishCoveringState={props.wallFinishCoveringState}
+                setWallFinishCoveringState={props.setWallFinishCoveringState}
+                busyKey={props.busyKey}
+                submitWallFinishCovering={props.submitWallFinishCovering}
+              />
+            ) : null}
+            {techMapMode === "preparations" ? (
+              <WallFinishStagePreparationCatalog
+                wallFinishDetail={props.wallFinishDetail}
+                wallFinishPreparationState={props.wallFinishPreparationState}
+                setWallFinishPreparationState={props.setWallFinishPreparationState}
+                busyKey={props.busyKey}
+                submitWallFinishPreparation={props.submitWallFinishPreparation}
+              />
+            ) : null}
+            {techMapMode === "layouts" ? (
+              <WallFinishStageLayoutCatalog
+                wallFinishDetail={props.wallFinishDetail}
+                wallFinishLayoutState={props.wallFinishLayoutState}
+                setWallFinishLayoutState={props.setWallFinishLayoutState}
+                busyKey={props.busyKey}
+                submitWallFinishLayout={props.submitWallFinishLayout}
+              />
+            ) : null}
+          </div>
         </CatalogPanel>
       </div>
 
-      <div className={getSceneClass(panelMode, "summary")}>
+      <div ref={summaryRef} className={getSceneClass(panelMode, "summary")}>
         <div className="subpanel calculator-stage-section warmfloor-summary-panel flooring-summary-panel p-3">
           <div className="calculator-stage-section-head">
             <div>
@@ -166,7 +186,7 @@ export function WallFinishStageSummaryColumn(props: WallFinishStageSummaryColumn
         </div>
       </div>
 
-      <div className={getSceneClass(panelMode, "estimate")}>
+      <div ref={estimateRef} className={getSceneClass(panelMode, "estimate")}>
         <WallFinishEstimatePanel wallFinishPreview={wallFinishPreview} />
       </div>
     </div>

@@ -1,0 +1,23 @@
+@layer components {
+  .calculator-stage-settings {
+    min-height: 2.25rem;
+    border-color: rgba(255, 255, 255, 0.08);
+    background: linear-gradient(180deg, rgba(20, 25, 33, 0.92), rgba(11, 15, 21, 0.98));
+    color: #d9e6f2;
+    white-space: nowrap;
+    transition:
+      transform var(--ui-motion-interactive) var(--ui-motion-ease-soft),
+      border-color var(--ui-motion-interactive) var(--ui-motion-ease-soft),
+      background-color var(--ui-motion-interactive) var(--ui-motion-ease-soft),
+      color var(--ui-motion-interactive) var(--ui-motion-ease-soft),
+      box-shadow var(--ui-motion-tab) var(--ui-motion-ease-soft),
+      opacity var(--ui-motion-interactive) var(--ui-motion-ease-soft);
+  }
+
+  .calculator-stage-settings-active {
+    border-color: rgba(var(--calculator-stage-accent-rgb), 0.28);
+    background: linear-gradient(180deg, rgba(14, 51, 46, 0.98), rgba(10, 16, 22, 0.98));
+    color: #efffff;
+    box-shadow: inset 0 0 0 1px rgba(var(--calculator-stage-accent-rgb), 0.12);
+  }
+}

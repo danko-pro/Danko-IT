@@ -2,6 +2,9 @@ from __future__ import annotations
 
 from typing import Any
 
+from supply_bot.admin_api.calculator_payloads.wall_finish_custom_consumables import (
+    parse_wall_finish_custom_consumables,
+)
 from supply_bot.admin_api.calculator_payloads.wall_finish_support import (
     apply_wall_finish_room_selection,
     build_wall_finish_summary,
@@ -100,6 +103,10 @@ async def _estimate_wall_finish_payload(
         putty_cost = putty_qty * float(covering["putty_price_per_unit"] or 0.0) if selected and covering else 0.0
         mesh_qty = purchase_area * float(covering["mesh_consumption_per_m2"] or 0.0) if selected and covering else 0.0
         mesh_cost = mesh_qty * float(covering["mesh_price_per_unit"] or 0.0) if selected and covering else 0.0
+        custom_consumables_cost = sum(
+            purchase_area * item["consumption_per_m2"] * item["price_per_unit"]
+            for item in parse_wall_finish_custom_consumables(covering if selected else None)
+        )
         demolition_cost = (
             effective_area * float(config["demolition_price_per_m2"] or 0.0)
             if selected and bool(config["include_demolition"])
@@ -116,6 +123,7 @@ async def _estimate_wall_finish_payload(
             + primer_cost
             + putty_cost
             + mesh_cost
+            + custom_consumables_cost
             + demolition_cost
             + instrument_cost
         )
@@ -136,6 +144,7 @@ async def _estimate_wall_finish_payload(
             "putty_cost": putty_cost,
             "mesh_qty": mesh_qty,
             "mesh_cost": mesh_cost,
+            "custom_consumables_cost": custom_consumables_cost,
             "demolition_cost": demolition_cost,
             "instrument_cost": instrument_cost,
         }
@@ -193,6 +202,7 @@ async def _estimate_wall_finish_payload(
                 "mesh_qty": mesh_qty,
                 "mesh_unit": summary["mesh_unit"],
                 "mesh_cost": mesh_cost,
+                "custom_consumables_cost": custom_consumables_cost,
                 "demolition_cost": demolition_cost,
                 "instrument_cost": instrument_cost,
                 "total_cost": total_cost,

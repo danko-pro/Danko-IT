@@ -78,6 +78,12 @@ async def apply_storage_migrations(connection_factory: ConnectionFactory) -> Non
             column="custom_consumables_json",
             definition="TEXT NOT NULL DEFAULT ''",
         )
+        await _ensure_column(
+            db,
+            table="estimate_wall_finish_coverings",
+            column="custom_consumables_json",
+            definition="TEXT NOT NULL DEFAULT ''",
+        )
         await db.execute(
             """
             CREATE TABLE IF NOT EXISTS estimate_flooring_room_zones (

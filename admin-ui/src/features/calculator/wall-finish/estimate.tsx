@@ -130,6 +130,7 @@ function RoomEstimateRow(props: { room: CalculatorWallFinishRoom }) {
         <CostChild title="Грунт" amount={room.primer_cost} detail={`${trimFloat(room.primer_qty)} ${room.primer_unit}`} />
         <CostChild title="Шпаклевка" amount={room.putty_cost} detail={`${trimFloat(room.putty_qty)} ${room.putty_unit}`} />
         <CostChild title="Сетка" amount={room.mesh_cost} detail={`${trimFloat(room.mesh_qty)} ${room.mesh_unit}`} />
+        <CostChild title="Доп. расходники" amount={room.custom_consumables_cost} />
         <CostChild title="Инструмент" amount={room.instrument_cost} />
         <CostChild title="Демонтаж" amount={room.demolition_cost} />
       </div>

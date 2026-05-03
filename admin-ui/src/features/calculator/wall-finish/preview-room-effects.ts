@@ -24,6 +24,8 @@ export type WallFinishConsumables = {
   puttyCost: number;
   meshQty: number;
   meshCost: number;
+  customItems: Array<{ title: string; unit: string; quantity: number; cost: number }>;
+  customCost: number;
 };
 
 type WallFinishSelectedRoomEffects = {
@@ -59,6 +61,7 @@ export function updateSummary(summary: CalculatorWallFinishSummary, values: Wall
   summary.total_putty_cost += values.consumables.puttyCost;
   summary.total_mesh_qty += values.consumables.meshQty;
   summary.total_mesh_cost += values.consumables.meshCost;
+  summary.total_custom_consumables_cost += values.consumables.customCost;
   summary.total_demolition_cost += values.demolitionCost;
   summary.total_instrument_cost += values.instrumentCost;
 }
@@ -105,6 +108,9 @@ export function appendRoomSpec(specCollector: WallFinishSpecCollector, values: W
   specCollector.addSpec("material", "Грунтовка", values.summary.primer_unit, values.consumables.primerQty, values.consumables.primerCost);
   specCollector.addSpec("material", "Шпаклёвка", values.summary.putty_unit, values.consumables.puttyQty, values.consumables.puttyCost);
   specCollector.addSpec("material", "Стеклохолст / сетка", values.summary.mesh_unit, values.consumables.meshQty, values.consumables.meshCost);
+  values.consumables.customItems.forEach((item) => {
+    specCollector.addSpec("material", item.title, item.unit, item.quantity, item.cost);
+  });
   specCollector.addSpec("work", "Демонтаж старой отделки стен", "м²", values.effectiveArea, values.demolitionCost);
   specCollector.addSpec("material", "Расход инструмента", "м²", values.effectiveArea, values.instrumentCost);
 }

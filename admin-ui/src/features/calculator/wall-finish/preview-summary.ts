@@ -27,6 +27,7 @@ export function createWallFinishSummary(): CalculatorWallFinishSummary {
     total_mesh_qty: 0,
     mesh_unit: "м²",
     total_mesh_cost: 0,
+    total_custom_consumables_cost: 0,
     total_demolition_cost: 0,
     total_instrument_cost: 0,
     work_total: 0,
@@ -70,6 +71,7 @@ export function finalizeWallFinishSummary(summary: CalculatorWallFinishSummary) 
     summary.total_primer_cost +
     summary.total_putty_cost +
     summary.total_mesh_cost +
+    summary.total_custom_consumables_cost +
     summary.total_instrument_cost;
   summary.grand_total = summary.work_total + summary.material_total;
   summary.price_per_m2 = summary.total_area_m2 > 0 ? summary.grand_total / summary.total_area_m2 : null;

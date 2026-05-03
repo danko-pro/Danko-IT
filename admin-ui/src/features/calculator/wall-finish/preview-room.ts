@@ -2,6 +2,7 @@ import { toInteger, toNumber } from "../shared";
 import type {
   CalculatorWallFinishConfig,
   CalculatorWallFinishCovering,
+  CalculatorWallFinishCoveringConsumable,
   CalculatorWallFinishDetail,
   CalculatorWallFinishPreparation,
   CalculatorWallFinishRoom,
@@ -65,6 +66,7 @@ export function buildWallFinishPreviewRooms(args: BuildWallFinishPreviewRoomsArg
       consumables.primerCost +
       consumables.puttyCost +
       consumables.meshCost +
+      consumables.customCost +
       demolitionCost +
       instrumentCost;
 
@@ -125,6 +127,7 @@ export function buildWallFinishPreviewRooms(args: BuildWallFinishPreviewRoomsArg
       mesh_qty: consumables.meshQty,
       mesh_unit: summary.mesh_unit,
       mesh_cost: consumables.meshCost,
+      custom_consumables_cost: consumables.customCost,
       demolition_cost: demolitionCost,
       instrument_cost: instrumentCost,
       total_cost: totalCost,
@@ -165,6 +168,7 @@ function calculateConsumables(
   const puttyCost = selected && covering ? puttyQty * covering.putty_price_per_unit : 0;
   const meshQty = selected && covering ? purchaseArea * covering.mesh_consumption_per_m2 : 0;
   const meshCost = selected && covering ? meshQty * covering.mesh_price_per_unit : 0;
+  const customItems = selected && covering ? calculateCustomConsumables(purchaseArea, covering) : [];
 
   return {
     glueQty,
@@ -175,5 +179,23 @@ function calculateConsumables(
     puttyCost,
     meshQty,
     meshCost,
+    customItems,
+    customCost: customItems.reduce((sum, item) => sum + item.cost, 0),
   };
+}
+
+function calculateCustomConsumables(purchaseArea: number, covering: CalculatorWallFinishCovering) {
+  return parseCustomConsumables(covering.custom_consumables_json).map((item) => {
+    const quantity = purchaseArea * item.consumption_per_m2;
+    return { title: item.title, unit: item.unit, quantity, cost: quantity * item.price_per_unit };
+  });
+}
+
+function parseCustomConsumables(raw: string): CalculatorWallFinishCoveringConsumable[] {
+  try {
+    const items = JSON.parse(raw || "[]") as CalculatorWallFinishCoveringConsumable[];
+    return items.filter((item) => item.title?.trim());
+  } catch {
+    return [];
+  }
 }

@@ -15,6 +15,14 @@ export type WallFinishEditState = {
   rooms: WallFinishRoomEditState[];
 };
 
+export type WallFinishCoveringConsumableEditState = {
+  id: string;
+  title: string;
+  consumption_per_m2: string;
+  unit: string;
+  price_per_unit: string;
+};
+
 export type WallFinishCoveringCreateState = {
   title: string;
   material_price_per_m2: string;
@@ -32,6 +40,7 @@ export type WallFinishCoveringCreateState = {
   mesh_consumption_per_m2: string;
   mesh_unit: string;
   mesh_price_per_unit: string;
+  custom_consumables: WallFinishCoveringConsumableEditState[];
   instrument_price_per_m2: string;
   note: string;
 };

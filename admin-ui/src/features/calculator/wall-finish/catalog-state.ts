@@ -25,9 +25,30 @@ export function wallFinishCoveringToState(item: CalculatorWallFinishCovering): W
     mesh_consumption_per_m2: String(item.mesh_consumption_per_m2),
     mesh_unit: item.mesh_unit,
     mesh_price_per_unit: String(item.mesh_price_per_unit),
+    custom_consumables: parseWallFinishCoveringConsumables(item.custom_consumables_json),
     instrument_price_per_m2: String(item.instrument_price_per_m2),
     note: item.note ?? "",
   };
+}
+
+function parseWallFinishCoveringConsumables(raw: string) {
+  try {
+    const items = JSON.parse(raw || "[]") as Array<{
+      title?: string;
+      consumption_per_m2?: number;
+      unit?: string;
+      price_per_unit?: number;
+    }>;
+    return items.map((item, index) => ({
+      id: `${Date.now()}-${index}`,
+      title: item.title ?? "",
+      consumption_per_m2: String(item.consumption_per_m2 || ""),
+      unit: item.unit || "шт",
+      price_per_unit: String(item.price_per_unit || ""),
+    }));
+  } catch {
+    return [];
+  }
 }
 
 export function wallFinishPreparationToState(item: CalculatorWallFinishPreparation): WallFinishPreparationCreateState {

@@ -23,9 +23,17 @@ export type CalculatorWallFinishCovering = {
   mesh_consumption_per_m2: number;
   mesh_unit: string;
   mesh_price_per_unit: number;
+  custom_consumables_json: string;
   instrument_price_per_m2: number;
   note: string | null;
   is_active: number;
+};
+
+export type CalculatorWallFinishCoveringConsumable = {
+  title: string;
+  consumption_per_m2: number;
+  unit: string;
+  price_per_unit: number;
 };
 
 export type CalculatorWallFinishPreparation = {
@@ -87,6 +95,7 @@ export type CalculatorWallFinishRoom = {
   mesh_qty: number;
   mesh_unit: string;
   mesh_cost: number;
+  custom_consumables_cost: number;
   demolition_cost: number;
   instrument_cost: number;
   total_cost: number;
@@ -114,6 +123,7 @@ export type CalculatorWallFinishSummary = {
   total_mesh_qty: number;
   mesh_unit: string;
   total_mesh_cost: number;
+  total_custom_consumables_cost: number;
   total_demolition_cost: number;
   total_instrument_cost: number;
   work_total: number;

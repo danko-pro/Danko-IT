@@ -1,5 +1,6 @@
 import { Button, TextField, emptyWallFinishCoveringState } from "./";
 import { WallFinishTechmapHeader, WallFinishTechmapStep, wallFinishCoveringToState } from "./";
+import { WallFinishCoveringConsumablesEditor } from "./covering-consumables";
 import type { WallFinishStageReadyProps } from "./";
 
 type WallFinishStageCoveringCatalogProps = Pick<
@@ -72,67 +73,10 @@ export function WallFinishStageCoveringCatalog(props: WallFinishStageCoveringCat
         </WallFinishTechmapStep>
 
         <WallFinishTechmapStep title="2. Расходники отделки" note="Заполняются только нужные позиции">
-          <div className="flooring-techmap-consumable-list">
-            <div className="flooring-techmap-consumable-head">
-              <span>Позиция</span>
-              <span>Расход</span>
-              <span>Ед.</span>
-              <span>Цена</span>
-              <span />
-            </div>
-            <ConsumableRow
-              title="Клей"
-              consumption={wallFinishCoveringState.glue_consumption_per_m2}
-              unit={wallFinishCoveringState.glue_unit}
-              price={wallFinishCoveringState.glue_price_per_unit}
-              onConsumptionChange={(value) =>
-                setWallFinishCoveringState((current) => ({ ...current, glue_consumption_per_m2: value }))
-              }
-              onUnitChange={(value) => setWallFinishCoveringState((current) => ({ ...current, glue_unit: value }))}
-              onPriceChange={(value) =>
-                setWallFinishCoveringState((current) => ({ ...current, glue_price_per_unit: value }))
-              }
-            />
-            <ConsumableRow
-              title="Грунт"
-              consumption={wallFinishCoveringState.primer_consumption_per_m2}
-              unit={wallFinishCoveringState.primer_unit}
-              price={wallFinishCoveringState.primer_price_per_unit}
-              onConsumptionChange={(value) =>
-                setWallFinishCoveringState((current) => ({ ...current, primer_consumption_per_m2: value }))
-              }
-              onUnitChange={(value) => setWallFinishCoveringState((current) => ({ ...current, primer_unit: value }))}
-              onPriceChange={(value) =>
-                setWallFinishCoveringState((current) => ({ ...current, primer_price_per_unit: value }))
-              }
-            />
-            <ConsumableRow
-              title="Шпаклевка"
-              consumption={wallFinishCoveringState.putty_consumption_per_m2}
-              unit={wallFinishCoveringState.putty_unit}
-              price={wallFinishCoveringState.putty_price_per_unit}
-              onConsumptionChange={(value) =>
-                setWallFinishCoveringState((current) => ({ ...current, putty_consumption_per_m2: value }))
-              }
-              onUnitChange={(value) => setWallFinishCoveringState((current) => ({ ...current, putty_unit: value }))}
-              onPriceChange={(value) =>
-                setWallFinishCoveringState((current) => ({ ...current, putty_price_per_unit: value }))
-              }
-            />
-            <ConsumableRow
-              title="Сетка"
-              consumption={wallFinishCoveringState.mesh_consumption_per_m2}
-              unit={wallFinishCoveringState.mesh_unit}
-              price={wallFinishCoveringState.mesh_price_per_unit}
-              onConsumptionChange={(value) =>
-                setWallFinishCoveringState((current) => ({ ...current, mesh_consumption_per_m2: value }))
-              }
-              onUnitChange={(value) => setWallFinishCoveringState((current) => ({ ...current, mesh_unit: value }))}
-              onPriceChange={(value) =>
-                setWallFinishCoveringState((current) => ({ ...current, mesh_price_per_unit: value }))
-              }
-            />
-          </div>
+          <WallFinishCoveringConsumablesEditor
+            state={wallFinishCoveringState}
+            onChange={setWallFinishCoveringState}
+          />
         </WallFinishTechmapStep>
 
         <WallFinishTechmapStep title="3. Инструмент и примечание" note="Дополнительная ставка и уточнение для сметы">
@@ -165,26 +109,6 @@ export function WallFinishStageCoveringCatalog(props: WallFinishStageCoveringCat
           </Button>
         </div>
       </div>
-    </div>
-  );
-}
-
-function ConsumableRow(props: {
-  title: string;
-  consumption: string;
-  unit: string;
-  price: string;
-  onConsumptionChange: (value: string) => void;
-  onUnitChange: (value: string) => void;
-  onPriceChange: (value: string) => void;
-}) {
-  return (
-    <div className="flooring-techmap-consumable-row">
-      <strong>{props.title}</strong>
-      <TextField label="Расход" size="compact" value={props.consumption} onChange={props.onConsumptionChange} />
-      <TextField label="Ед." size="compact" value={props.unit} onChange={props.onUnitChange} />
-      <TextField label="Цена" size="compact" value={props.price} onChange={props.onPriceChange} />
-      <span className="flooring-techmap-consumable-lock" aria-hidden="true" />
     </div>
   );
 }

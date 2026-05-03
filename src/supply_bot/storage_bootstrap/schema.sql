@@ -487,6 +487,7 @@ CREATE TABLE IF NOT EXISTS estimate_wall_finish_coverings (
     mesh_consumption_per_m2 REAL NOT NULL DEFAULT 0,
     mesh_unit TEXT NOT NULL DEFAULT 'м²',
     mesh_price_per_unit REAL NOT NULL DEFAULT 0,
+    custom_consumables_json TEXT NOT NULL DEFAULT '',
     instrument_price_per_m2 REAL NOT NULL DEFAULT 0,
     note TEXT,
     is_active INTEGER NOT NULL DEFAULT 1,

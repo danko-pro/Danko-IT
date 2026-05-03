@@ -54,6 +54,14 @@ export function buildWallFinishCoveringPayload(
     mesh_consumption_per_m2: Math.max(0, toNumber(state.mesh_consumption_per_m2) ?? 0),
     mesh_unit: state.mesh_unit.trim() || "??",
     mesh_price_per_unit: Math.max(0, toNumber(state.mesh_price_per_unit) ?? 0),
+    custom_consumables: state.custom_consumables
+      .filter((item) => item.title.trim())
+      .map((item) => ({
+        title: item.title.trim(),
+        consumption_per_m2: Math.max(0, toNumber(item.consumption_per_m2) ?? 0),
+        unit: item.unit.trim() || "шт",
+        price_per_unit: Math.max(0, toNumber(item.price_per_unit) ?? 0),
+      })),
     instrument_price_per_m2: Math.max(0, toNumber(state.instrument_price_per_m2) ?? 0),
     note: state.note.trim() || null,
   };

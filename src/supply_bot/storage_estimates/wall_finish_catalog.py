@@ -16,6 +16,7 @@ class EstimateWallFinishCatalogStorageMixin:
                        primer_consumption_per_m2, primer_unit, primer_price_per_unit,
                        putty_consumption_per_m2, putty_unit, putty_price_per_unit,
                        mesh_consumption_per_m2, mesh_unit, mesh_price_per_unit,
+                       custom_consumables_json,
                        instrument_price_per_m2,
                        note, is_active, created_at, updated_at
                 FROM estimate_wall_finish_coverings
@@ -46,6 +47,7 @@ class EstimateWallFinishCatalogStorageMixin:
         mesh_unit: str,
         mesh_price_per_unit: float,
         instrument_price_per_m2: float,
+        custom_consumables_json: str = "",
         note: str | None = None,
     ) -> int:
         async with self.connection() as db:
@@ -57,9 +59,10 @@ class EstimateWallFinishCatalogStorageMixin:
                     primer_consumption_per_m2, primer_unit, primer_price_per_unit,
                     putty_consumption_per_m2, putty_unit, putty_price_per_unit,
                     mesh_consumption_per_m2, mesh_unit, mesh_price_per_unit,
+                    custom_consumables_json,
                     instrument_price_per_m2, note
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     title,
@@ -78,6 +81,7 @@ class EstimateWallFinishCatalogStorageMixin:
                     mesh_consumption_per_m2,
                     mesh_unit,
                     mesh_price_per_unit,
+                    custom_consumables_json,
                     instrument_price_per_m2,
                     note,
                 ),

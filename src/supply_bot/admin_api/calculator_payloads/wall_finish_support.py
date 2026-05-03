@@ -2,6 +2,10 @@ from __future__ import annotations
 
 from typing import Any
 
+from supply_bot.admin_api.calculator_payloads.wall_finish_custom_consumables import (
+    parse_wall_finish_custom_consumables,
+)
+
 WallFinishSpecMap = dict[tuple[str, str, str], dict[str, Any]]
 
 
@@ -27,6 +31,7 @@ def build_wall_finish_summary() -> dict[str, Any]:
         "total_mesh_qty": 0.0,
         "mesh_unit": "\u043c\u00b2",
         "total_mesh_cost": 0.0,
+        "total_custom_consumables_cost": 0.0,
         "total_demolition_cost": 0.0,
         "total_instrument_cost": 0.0,
         "work_total": 0.0,
@@ -85,6 +90,7 @@ def apply_wall_finish_room_selection(
     summary["total_putty_cost"] += room["putty_cost"]
     summary["total_mesh_qty"] += room["mesh_qty"]
     summary["total_mesh_cost"] += room["mesh_cost"]
+    summary["total_custom_consumables_cost"] += room.get("custom_consumables_cost", 0.0)
     summary["total_demolition_cost"] += room["demolition_cost"]
     summary["total_instrument_cost"] += room["instrument_cost"]
     if covering and covering.get("glue_unit"):
@@ -161,6 +167,9 @@ def apply_wall_finish_room_selection(
         room["mesh_qty"],
         room["mesh_cost"],
     )
+    for item in parse_wall_finish_custom_consumables(covering):
+        qty = room["purchase_area_m2"] * item["consumption_per_m2"]
+        add_wall_finish_spec(spec_map, "material", item["title"], item["unit"], qty, qty * item["price_per_unit"])
     add_wall_finish_spec(
         spec_map,
         "work",
@@ -190,6 +199,7 @@ def finalize_wall_finish_summary(summary: dict[str, Any]) -> None:
         + summary["total_primer_cost"]
         + summary["total_putty_cost"]
         + summary["total_mesh_cost"]
+        + summary["total_custom_consumables_cost"]
         + summary["total_instrument_cost"]
     )
     summary["grand_total"] = summary["work_total"] + summary["material_total"]

@@ -3,6 +3,7 @@ from typing import Any
 from fastapi import FastAPI, HTTPException, Request
 
 from supply_bot.admin_api.calculator_routes.shared import (
+    catalog_consumables_to_json,
     clamp_minimum,
     clamp_non_negative,
     get_calculator_route_storage,
@@ -45,6 +46,7 @@ def register_calculator_wall_finish_routes(
             mesh_consumption_per_m2=clamp_non_negative(payload.mesh_consumption_per_m2),
             mesh_unit=payload.mesh_unit.strip() or "м²",
             mesh_price_per_unit=clamp_non_negative(payload.mesh_price_per_unit),
+            custom_consumables_json=catalog_consumables_to_json(payload.custom_consumables),
             instrument_price_per_m2=clamp_non_negative(payload.instrument_price_per_m2),
             note=normalize_optional_text(payload.note),
         )

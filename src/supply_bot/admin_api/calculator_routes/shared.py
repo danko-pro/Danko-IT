@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from typing import Any, Awaitable, Callable, Mapping, Sequence, TypeVar
 
 from fastapi import HTTPException, Request
@@ -33,6 +34,22 @@ def clamp_non_negative(value: float | int | None) -> float:
 
 def clamp_minimum(value: float | int, minimum: float) -> float:
     return max(float(minimum), float(value))
+
+
+def catalog_consumables_to_json(items: Sequence[Any]) -> str:
+    return json.dumps(
+        [
+            {
+                "title": str(getattr(item, "title", "")).strip(),
+                "consumption_per_m2": clamp_non_negative(getattr(item, "consumption_per_m2", 0)),
+                "unit": str(getattr(item, "unit", "")).strip() or "шт",
+                "price_per_unit": clamp_non_negative(getattr(item, "price_per_unit", 0)),
+            }
+            for item in items
+            if str(getattr(item, "title", "")).strip()
+        ],
+        ensure_ascii=False,
+    )
 
 
 def require_positive_number(value: float | int | None, *, detail: str) -> float:

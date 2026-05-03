@@ -156,6 +156,7 @@ export function WallFinishStageSummaryColumn(props: WallFinishStageSummaryColumn
             <MetricChip label="Грунт" value={`${trimFloat(summary.total_primer_qty)} ${summary.primer_unit}`} />
             <MetricChip label="Шпаклевка" value={`${trimFloat(summary.total_putty_qty)} ${summary.putty_unit}`} />
             <MetricChip label="Сетка" value={`${trimFloat(summary.total_mesh_qty)} ${summary.mesh_unit}`} />
+            <MetricChip label="Доп. расходники" value={formatMoney(summary.total_custom_consumables_cost)} />
             <MetricChip label="Инструмент" value={formatMoney(summary.total_instrument_cost)} />
           </div>
 

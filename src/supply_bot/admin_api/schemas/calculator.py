@@ -88,23 +88,31 @@ class CalculatorWarmFloorUpdatePayload(BaseModel):
     rooms: list[CalculatorWarmFloorRoomPayload] = Field(default_factory=list)
 
 
+class CalculatorWallFinishCoveringConsumablePayload(BaseModel):
+    title: str = ""
+    consumption_per_m2: float = 0
+    unit: str = "шт"
+    price_per_unit: float = 0
+
+
 class CalculatorWallFinishCoveringPayload(BaseModel):
     title: str
     material_price_per_m2: float = 0
     labor_price_per_m2: float = 0
     base_waste_percent: float = 0
     glue_consumption_per_m2: float = 0
-    glue_unit: str = "РєРі"
+    glue_unit: str = "кг"
     glue_price_per_unit: float = 0
     primer_consumption_per_m2: float = 0
-    primer_unit: str = "Р»"
+    primer_unit: str = "л"
     primer_price_per_unit: float = 0
     putty_consumption_per_m2: float = 0
-    putty_unit: str = "РєРі"
+    putty_unit: str = "кг"
     putty_price_per_unit: float = 0
     mesh_consumption_per_m2: float = 0
-    mesh_unit: str = "РјВІ"
+    mesh_unit: str = "м²"
     mesh_price_per_unit: float = 0
+    custom_consumables: list[CalculatorWallFinishCoveringConsumablePayload] = Field(default_factory=list)
     instrument_price_per_m2: float = 0
     note: str | None = None
 
@@ -114,7 +122,7 @@ class CalculatorWallFinishPreparationPayload(BaseModel):
     labor_price_per_m2: float = 0
     material_price_per_m2: float = 0
     primer_consumption_per_m2: float = 0
-    primer_unit: str = "Р»"
+    primer_unit: str = "л"
     primer_price_per_unit: float = 0
     note: str | None = None
 

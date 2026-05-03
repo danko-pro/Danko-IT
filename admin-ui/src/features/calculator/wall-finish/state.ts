@@ -31,6 +31,7 @@ export const emptyWallFinishCoveringState: WallFinishCoveringCreateState = {
   mesh_consumption_per_m2: "",
   mesh_unit: "м²",
   mesh_price_per_unit: "",
+  custom_consumables: [],
   instrument_price_per_m2: "",
   note: "",
 };

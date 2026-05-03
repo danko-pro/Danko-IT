@@ -139,6 +139,7 @@
     padding-block: 0.36rem;
     background: #0c0d0f;
     color: var(--door-ink);
+    font-family: "Montserrat", "Segoe UI Variable Text", "Bahnschrift", "IBM Plex Sans", sans-serif;
     font-variation-settings: "wght" 300;
     font-weight: 300;
   }

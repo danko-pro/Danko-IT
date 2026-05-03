@@ -19,7 +19,6 @@ export function DoorWorkbenchQueue(props: DoorWorkbenchQueueProps) {
           <h3>Двери и проемы</h3>
         </div>
         <div className="doors-workbench-queue-head-actions">
-          <span className="doors-workbench-count">{props.projectDetail.doors.length}</span>
           <Button
             type="button"
             variant="micro"

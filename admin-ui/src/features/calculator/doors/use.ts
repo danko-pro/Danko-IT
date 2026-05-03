@@ -62,12 +62,17 @@ export function useCalculatorDoorsController(
   useEffect(() => {
     if (!projectDetail?.doors.length) {
       setSelectedDoorId(null);
+      setEditingDoorId(null);
+      setProjectDoorState(emptyProjectDoorState);
       setEditingDoorComponentId(null);
       setProjectDoorComponentState(emptyProjectDoorComponentState);
       return;
     }
     if (selectedDoorId === null || !projectDetail.doors.some((door) => door.id === selectedDoorId)) {
-      setSelectedDoorId(projectDetail.doors[0].id);
+      const firstDoor = projectDetail.doors[0];
+      setSelectedDoorId(firstDoor.id);
+      setEditingDoorId(firstDoor.id);
+      setProjectDoorState(buildProjectDoorStateFromDoor(firstDoor));
     }
   }, [projectDetail?.doors, selectedDoorId]);
 
@@ -90,6 +95,23 @@ export function useCalculatorDoorsController(
     () => buildDoorsStageSpecification(projectDetail?.doors),
     [projectDetail?.doors],
   );
+
+  function buildProjectDoorStateFromDoor(door: CalculatorProjectDoor): ProjectDoorCreateState {
+    return {
+      door_catalog_id: door.door_catalog_id === null ? "" : String(door.door_catalog_id),
+      opening_kind: door.opening_kind,
+      title: door.title ?? door.catalog_title ?? "",
+      width_mm: door.width_mm === null ? "" : trimFloat(door.width_mm),
+      height_mm: door.height_mm === null ? "" : trimFloat(door.height_mm),
+      thickness_mm: door.thickness_mm === null ? "" : trimFloat(door.thickness_mm),
+      purchase_price: door.purchase_price === null ? "" : trimFloat(door.purchase_price),
+      sale_price: door.sale_price === null ? "" : trimFloat(door.sale_price),
+      install_price: door.install_price === null ? "" : trimFloat(door.install_price),
+      room_a_id: door.room_a_id === null ? "" : String(door.room_a_id),
+      room_b_id: door.room_b_id === null ? "" : String(door.room_b_id),
+      note: door.note ?? "",
+    };
+  }
 
   async function handleDoorCatalogSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -119,11 +141,34 @@ export function useCalculatorDoorsController(
     const payload = buildProjectDoorPayload(projectDoorState);
     if (editingDoorId !== null) {
       await onUpdateProjectDoor(editingDoorId, payload);
+      return;
     } else {
       await onCreateProjectDoor(projectDetail.project.id, payload);
     }
     setEditingDoorId(null);
     setProjectDoorState(emptyProjectDoorState);
+  }
+
+  async function createBlankProjectDoor() {
+    if (!projectDetail || projectDetail.rooms.length === 0) {
+      return;
+    }
+    const payload = buildProjectDoorPayload({
+      ...emptyProjectDoorState,
+      title: `Дверь ${projectDetail.doors.length + 1}`,
+      width_mm: "800",
+      height_mm: "2000",
+      thickness_mm: "40",
+      room_a_id: String(projectDetail.rooms[0]?.id ?? ""),
+    });
+    const existingDoorIds = new Set(projectDetail.doors.map((door) => door.id));
+    const updatedProject = await onCreateProjectDoor(projectDetail.project.id, payload);
+    const createdDoor =
+      updatedProject?.doors.find((door) => !existingDoorIds.has(door.id)) ??
+      updatedProject?.doors[updatedProject.doors.length - 1];
+    if (createdDoor) {
+      startDoorEdit(createdDoor);
+    }
   }
 
   async function handleProjectDoorComponentSubmit(event: FormEvent<HTMLFormElement>) {
@@ -145,20 +190,7 @@ export function useCalculatorDoorsController(
     setActiveStage("doors");
     setEditingDoorId(door.id);
     setSelectedDoorId(door.id);
-    setProjectDoorState({
-      door_catalog_id: door.door_catalog_id === null ? "" : String(door.door_catalog_id),
-      opening_kind: door.opening_kind,
-      title: door.title ?? door.catalog_title ?? "",
-      width_mm: door.width_mm === null ? "" : trimFloat(door.width_mm),
-      height_mm: door.height_mm === null ? "" : trimFloat(door.height_mm),
-      thickness_mm: door.thickness_mm === null ? "" : trimFloat(door.thickness_mm),
-      purchase_price: door.purchase_price === null ? "" : trimFloat(door.purchase_price),
-      sale_price: door.sale_price === null ? "" : trimFloat(door.sale_price),
-      install_price: door.install_price === null ? "" : trimFloat(door.install_price),
-      room_a_id: door.room_a_id === null ? "" : String(door.room_a_id),
-      room_b_id: door.room_b_id === null ? "" : String(door.room_b_id),
-      note: door.note ?? "",
-    });
+    setProjectDoorState(buildProjectDoorStateFromDoor(door));
   }
 
   function resetDoorForm() {
@@ -204,6 +236,7 @@ export function useCalculatorDoorsController(
     handleDoorCatalogSubmit,
     handleDoorComponentCatalogSubmit,
     handleProjectDoorSubmit,
+    createBlankProjectDoor,
     handleProjectDoorComponentSubmit,
     startDoorEdit,
     resetDoorForm,

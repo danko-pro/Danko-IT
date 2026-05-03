@@ -24,6 +24,7 @@ export type DoorsProjectPanelProps = {
   doorsStageSpecification: CalculatorDoorSpecItem[];
   busyKey: string | null;
   handleProjectDoorComponentSubmit: (event: FormEvent<HTMLFormElement>) => Promise<void> | void;
+  createBlankProjectDoor: () => Promise<void> | void;
   startDoorEdit: (door: CalculatorProjectDoor) => void;
   startDoorComponentEdit: (component: CalculatorProjectDoorComponent) => void;
   resetDoorComponentForm: () => void;

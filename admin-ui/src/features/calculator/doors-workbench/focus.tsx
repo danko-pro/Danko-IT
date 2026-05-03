@@ -2,17 +2,22 @@ import { Button } from "../../../shared/controls";
 import { formatMoney, trimFloat } from "../shared";
 import type { CalculatorProjectDoorComponent } from "../doors/model";
 import type { DoorsStageReadyProps } from "../doors/types";
-import { DoorWorkbenchComponentComposer } from "./composers";
+import { DoorWorkbenchComponentComposer, DoorWorkbenchDoorComposer } from "./composers";
 import { componentLabel, doorArea, doorMarginText, doorMoneyLine, doorRooms, doorSize, doorTitle } from "./helpers";
 
 type DoorWorkbenchFocusProps = Pick<
   DoorsStageReadyProps,
   | "projectDetail"
   | "selectedDoor"
+  | "projectDoorState"
+  | "setProjectDoorState"
+  | "editingDoorId"
   | "projectDoorComponentState"
   | "setProjectDoorComponentState"
   | "editingDoorComponentId"
   | "busyKey"
+  | "handleProjectDoorSubmit"
+  | "resetDoorForm"
   | "handleProjectDoorComponentSubmit"
   | "startDoorComponentEdit"
   | "resetDoorComponentForm"
@@ -21,6 +26,7 @@ type DoorWorkbenchFocusProps = Pick<
 
 export function DoorWorkbenchFocus(props: DoorWorkbenchFocusProps) {
   const selectedDoor = props.selectedDoor;
+  const canEditDoor = props.editingDoorId !== null && selectedDoor !== null;
   return (
     <section className="doors-workbench-panel doors-workbench-focus" data-testid="doors-workbench-focus">
       <div className="doors-workbench-focus-top">
@@ -42,8 +48,17 @@ export function DoorWorkbenchFocus(props: DoorWorkbenchFocusProps) {
         </div>
       </div>
 
-      <DoorWorkbenchComponentComposer {...props} />
-      <DoorWorkbenchComponentList {...props} />
+      {canEditDoor ? (
+        <DoorWorkbenchDoorComposer {...props} />
+      ) : (
+        <div className="doors-workbench-empty-panel">Выберите дверь слева или добавьте новую, чтобы открыть параметры.</div>
+      )}
+      {selectedDoor ? (
+        <>
+          <DoorWorkbenchComponentComposer {...props} />
+          <DoorWorkbenchComponentList {...props} />
+        </>
+      ) : null}
     </section>
   );
 }

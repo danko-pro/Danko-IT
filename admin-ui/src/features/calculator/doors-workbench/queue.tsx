@@ -1,23 +1,35 @@
 import { Button } from "../../../shared/controls";
-import { formatMoney, trimFloat } from "../shared";
 import type { CalculatorProjectDoor } from "../doors/model";
 import type { DoorsStageReadyProps } from "../doors/types";
-import { doorArea, doorKind, doorMoneyLine, doorRooms, doorSize, doorTitle } from "./helpers";
+import { doorKind, doorMoneyLine, doorRooms, doorSize, doorTitle } from "./helpers";
 
 type DoorWorkbenchQueueProps = Pick<
   DoorsStageReadyProps,
-  "projectDetail" | "selectedDoor" | "setSelectedDoorId" | "busyKey" | "startDoorEdit" | "onDeleteProjectDoor"
+  "projectDetail" | "selectedDoor" | "busyKey" | "createBlankProjectDoor" | "startDoorEdit" | "onDeleteProjectDoor"
 >;
 
 export function DoorWorkbenchQueue(props: DoorWorkbenchQueueProps) {
+  const createBusy = props.busyKey === `calculator-project-door-create-${props.projectDetail.project.id}`;
+  const canCreateDoor = props.projectDetail.rooms.length > 0;
   return (
     <section className="doors-workbench-panel doors-workbench-queue" data-testid="doors-workbench-queue">
       <div className="doors-workbench-panel-head">
         <div>
-          <div className="doors-workbench-kicker">Очередь</div>
+          <div className="doors-workbench-kicker">Двери</div>
           <h3>Двери и проемы</h3>
         </div>
-        <span className="doors-workbench-count">{props.projectDetail.doors.length}</span>
+        <div className="doors-workbench-queue-head-actions">
+          <span className="doors-workbench-count">{props.projectDetail.doors.length}</span>
+          <Button
+            type="button"
+            variant="micro"
+            className="doors-workbench-add-door"
+            disabled={createBusy || !canCreateDoor}
+            onClick={() => void props.createBlankProjectDoor()}
+          >
+            {createBusy ? "..." : "+ Добавить дверь"}
+          </Button>
+        </div>
       </div>
 
       <div className="doors-workbench-door-list">
@@ -27,13 +39,15 @@ export function DoorWorkbenchQueue(props: DoorWorkbenchQueueProps) {
             door={door}
             active={props.selectedDoor?.id === door.id}
             busyKey={props.busyKey}
-            onSelect={() => props.setSelectedDoorId(door.id)}
-            onEdit={() => props.startDoorEdit(door)}
+            onSelect={() => props.startDoorEdit(door)}
             onDelete={() => void props.onDeleteProjectDoor(door.id)}
           />
         ))}
-        {!props.projectDetail.doors.length ? (
-          <div className="doors-workbench-empty-panel">Добавьте первую позицию: дверь, чистый проем или оформление проема.</div>
+        {!props.projectDetail.doors.length && canCreateDoor ? (
+          <div className="doors-workbench-empty-panel">Добавьте первую дверь. Параметры и комплект откроются в центральной рабочей области.</div>
+        ) : null}
+        {!props.projectDetail.doors.length && !canCreateDoor ? (
+          <div className="doors-workbench-empty-panel">Сначала добавьте помещение, потом создайте дверь.</div>
         ) : null}
       </div>
     </section>
@@ -45,7 +59,6 @@ function DoorQueueItem(props: {
   active: boolean;
   busyKey: string | null;
   onSelect: () => void;
-  onEdit: () => void;
   onDelete: () => void;
 }) {
   const { door } = props;
@@ -58,19 +71,12 @@ function DoorQueueItem(props: {
       </button>
       <div className="doors-workbench-door-meta">
         <span>{doorSize(door)}</span>
-        <span>{doorArea(door)}</span>
         <span>{door.components?.length ?? 0} компл.</span>
       </div>
       <div className="doors-workbench-door-money">
-        <span>Закуп {formatMoney(door.effective_purchase_price ?? 0)}</span>
         <strong>{doorMoneyLine(door)}</strong>
-        {door.effective_install_price ? <span>Монтаж {formatMoney(door.effective_install_price)}</span> : null}
       </div>
-      {door.note ? <p>{door.note}</p> : null}
       <div className="doors-workbench-row-actions">
-        <Button type="button" variant="micro" onClick={props.onEdit}>
-          Править
-        </Button>
         <Button
           type="button"
           variant="micro"
@@ -80,9 +86,6 @@ function DoorQueueItem(props: {
         >
           {props.busyKey === `calculator-project-door-delete-${door.id}` ? "..." : "Удалить"}
         </Button>
-      </div>
-      <div className="doors-workbench-door-size-shadow" aria-hidden="true">
-        {door.width_mm && door.height_mm ? `${trimFloat(door.width_mm)} / ${trimFloat(door.height_mm)}` : "#"}
       </div>
     </article>
   );

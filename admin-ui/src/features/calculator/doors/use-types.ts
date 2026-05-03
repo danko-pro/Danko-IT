@@ -24,7 +24,7 @@ export type UseCalculatorDoorsControllerParams = {
   setActiveStage: Dispatch<SetStateAction<CalculatorStage>>;
   onCreateDoorCatalogItem: (payload: DoorCatalogPayload) => Promise<void>;
   onCreateDoorComponentCatalogItem: (payload: DoorComponentCatalogPayload) => Promise<void>;
-  onCreateProjectDoor: (projectId: number, payload: ProjectDoorPayload) => Promise<void>;
+  onCreateProjectDoor: (projectId: number, payload: ProjectDoorPayload) => Promise<CalculatorProjectDetail | void>;
   onUpdateProjectDoor: (doorId: number, payload: ProjectDoorPayload) => Promise<void>;
   onCreateProjectDoorComponent: (doorId: number, payload: ProjectDoorComponentPayload) => Promise<void>;
   onUpdateProjectDoorComponent: (componentId: number, payload: ProjectDoorComponentPayload) => Promise<void>;
@@ -49,6 +49,7 @@ export type UseCalculatorDoorsControllerResult = {
   handleDoorCatalogSubmit: (event: FormEvent<HTMLFormElement>) => Promise<void>;
   handleDoorComponentCatalogSubmit: (event: FormEvent<HTMLFormElement>) => Promise<void>;
   handleProjectDoorSubmit: (event: FormEvent<HTMLFormElement>) => Promise<void>;
+  createBlankProjectDoor: () => Promise<void>;
   handleProjectDoorComponentSubmit: (event: FormEvent<HTMLFormElement>) => Promise<void>;
   startDoorEdit: (door: CalculatorProjectDoor) => void;
   resetDoorForm: () => void;

@@ -1,4 +1,3 @@
-import { DoorWorkbenchDoorComposer } from "./composers";
 import { DoorWorkbenchDock } from "./dock";
 import { DoorWorkbenchFocus } from "./focus";
 import { DoorWorkbenchQueue } from "./queue";
@@ -40,7 +39,6 @@ function DoorsWorkbenchReadyStage(props: DoorsStageReadyProps) {
 
       <div className="doors-workbench-grid">
         <div className="doors-workbench-left">
-          <DoorWorkbenchDoorComposer {...props} />
           <DoorWorkbenchQueue {...props} />
         </div>
         <DoorWorkbenchFocus {...props} />

@@ -75,6 +75,7 @@ function buildDoorsStageProps(props: CalculatorEstimateStagesFacadeProps): Doors
     handleDoorCatalogSubmit: doors.handleDoorCatalogSubmit,
     handleDoorComponentCatalogSubmit: doors.handleDoorComponentCatalogSubmit,
     handleProjectDoorSubmit: doors.handleProjectDoorSubmit,
+    createBlankProjectDoor: doors.createBlankProjectDoor,
     handleProjectDoorComponentSubmit: doors.handleProjectDoorComponentSubmit,
     startDoorEdit: doors.startDoorEdit,
     resetDoorForm: doors.resetDoorForm,

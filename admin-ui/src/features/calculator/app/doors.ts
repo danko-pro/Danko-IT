@@ -64,6 +64,7 @@ export function createAdminCalculatorDoorsController(props: CalculatorDoorsContr
       }
       props.setSuccessMessage("Дверной блок добавлен в проект.");
       props.setCalculatorError(null);
+      return updatedProject;
     } catch (actionError) {
       props.setCalculatorError(actionError instanceof Error ? actionError.message : "Не удалось добавить дверь или проём");
     } finally {

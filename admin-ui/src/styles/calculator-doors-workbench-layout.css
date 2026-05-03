@@ -199,6 +199,31 @@
     flex-wrap: nowrap;
   }
 
+  .doors-workbench-queue-head-actions {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.45rem;
+  }
+
+  .doors-workbench .doors-workbench-add-door {
+    min-width: 7.4rem;
+  }
+
+  .doors-workbench-queue .doors-workbench-door-card {
+    gap: 0.36rem;
+    padding: 0.58rem;
+  }
+
+  .doors-workbench-queue .doors-workbench-door-money {
+    justify-content: space-between;
+  }
+
+  .doors-workbench-queue .doors-workbench-row-actions {
+    justify-content: flex-end;
+  }
+
   @media (max-width: 1180px) {
     .doors-workbench:not(.doors-workbench-empty) .doors-workbench-left,
     .doors-workbench:not(.doors-workbench-empty) .doors-workbench-focus {

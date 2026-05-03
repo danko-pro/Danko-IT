@@ -14,8 +14,11 @@ import {
 import {
   buildCalculatorDetailViews,
   buildFlooringDisplayPreview,
+  buildFlooringHeaderPreview,
   buildWallFinishDisplayPreview,
+  buildWallFinishHeaderPreview,
   buildWarmFloorDisplayPreview,
+  buildWarmFloorHeaderPreview,
 } from "./preview";
 import { useCalculatorStageController } from "../stage/use";
 import type { CalculatorScreenProps, CalculatorScreenState } from "./types";
@@ -98,11 +101,23 @@ export function useCalculatorScreenController(props: CalculatorScreenProps): Cal
       ),
     [stageFlags.isWallFinishStage, wallFinish.wallFinishState, wallFinishDetailView],
   );
+  const warmFloorHeaderPreviewView = useMemo(
+    () => buildWarmFloorHeaderPreview(warmFloorDetailView, warmFloor.warmFloorState),
+    [warmFloor.warmFloorState, warmFloorDetailView],
+  );
+  const flooringHeaderPreviewView = useMemo(
+    () => buildFlooringHeaderPreview(flooringDetailView, flooring.flooringState),
+    [flooring.flooringState, flooringDetailView],
+  );
+  const wallFinishHeaderPreviewView = useMemo(
+    () => buildWallFinishHeaderPreview(wallFinishDetailView, wallFinish.wallFinishState),
+    [wallFinish.wallFinishState, wallFinishDetailView],
+  );
   const headerTotals = buildCalculatorHeaderTotals(
     projectDetailView,
-    warmFloorPreviewView,
-    flooringPreviewView,
-    wallFinishPreviewView,
+    warmFloorHeaderPreviewView,
+    flooringHeaderPreviewView,
+    wallFinishHeaderPreviewView,
   );
 
   return {

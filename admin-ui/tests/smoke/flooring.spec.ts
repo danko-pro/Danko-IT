@@ -106,6 +106,14 @@ test("opens calculator flooring stage with seeded zoned estimate", async ({ page
 
   await expect(page.getByTestId("calculator-header-flooring-total").locator("strong")).not.toHaveText(/^0\s/);
   await expect(page.getByTestId("calculator-header-object-total")).not.toHaveText(/^0\s/);
+  const flooringHeaderTotal = await page.getByTestId("calculator-header-flooring-total").locator("strong").innerText();
+  const objectHeaderTotal = await page.getByTestId("calculator-header-object-total").innerText();
+  await page.getByTestId("calculator-stage-warmfloor").click();
+  await expect(page.getByTestId("calculator-header-flooring-total").locator("strong")).toHaveText(flooringHeaderTotal);
+  await expect(page.getByTestId("calculator-header-object-total")).toHaveText(objectHeaderTotal);
+  await page.getByTestId("calculator-stage-flooring").click();
+  await expect(page.getByTestId("calculator-header-flooring-total").locator("strong")).toHaveText(flooringHeaderTotal);
+  await expect(page.getByTestId("calculator-header-object-total")).toHaveText(objectHeaderTotal);
   await expect(page.locator(".flooring-summary-panel")).toBeVisible();
   await expect(page.locator(".calculator-stage-section-title").filter({ hasText: "Итог" })).toBeVisible();
   await expect(page.getByTestId("flooring-summary-area")).toContainText("18.5");

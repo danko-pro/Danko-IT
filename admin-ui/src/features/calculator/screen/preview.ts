@@ -4,6 +4,25 @@ import type { CalculatorRoomSummary } from "../room/model";
 import { buildWallFinishPreview, buildWallFinishState, type CalculatorWallFinishDetail } from "../wall-finish";
 import { buildWarmFloorPreview, buildWarmFloorState, type CalculatorWarmFloorDetail } from "../warm-floor";
 
+type RoomBackedDetail = {
+  rooms: Array<{ room_id: number }>;
+};
+
+type RoomBackedDraft = {
+  rooms: Array<{ room_id: number }>;
+};
+
+function isDraftReadyForDetail(detail: RoomBackedDetail | null, draftState: RoomBackedDraft | undefined): boolean {
+  if (!detail || !draftState) {
+    return false;
+  }
+  if (detail.rooms.length === 0) {
+    return true;
+  }
+  const draftRoomIds = new Set(draftState.rooms.map((room) => room.room_id));
+  return detail.rooms.every((room) => draftRoomIds.has(room.room_id));
+}
+
 function sumRoomMetric(
   rooms: CalculatorRoomSummary[],
   key: "floor_area_m2" | "wall_area_gross_m2" | "openings_area_m2" | "door_area_m2" | "wall_area_net_m2" | "perimeter_m",
@@ -172,6 +191,13 @@ export function buildWarmFloorDisplayPreview(
     : buildWarmFloorPreview(detail, buildWarmFloorState(detail));
 }
 
+export function buildWarmFloorHeaderPreview(
+  detail: CalculatorWarmFloorDetail | null,
+  draftState?: Parameters<typeof buildWarmFloorPreview>[1],
+): CalculatorWarmFloorDetail | null {
+  return buildWarmFloorDisplayPreview(detail, isDraftReadyForDetail(detail, draftState) ? "draft" : "base", draftState);
+}
+
 export function buildFlooringDisplayPreview(
   detail: CalculatorFlooringDetail | null,
   mode: "base" | "draft",
@@ -185,6 +211,13 @@ export function buildFlooringDisplayPreview(
     : buildFlooringPreview(detail, buildFlooringState(detail));
 }
 
+export function buildFlooringHeaderPreview(
+  detail: CalculatorFlooringDetail | null,
+  draftState?: Parameters<typeof buildFlooringPreview>[1],
+): CalculatorFlooringDetail | null {
+  return buildFlooringDisplayPreview(detail, isDraftReadyForDetail(detail, draftState) ? "draft" : "base", draftState);
+}
+
 export function buildWallFinishDisplayPreview(
   detail: CalculatorWallFinishDetail | null,
   mode: "base" | "draft",
@@ -196,4 +229,11 @@ export function buildWallFinishDisplayPreview(
   return mode === "draft" && draftState
     ? buildWallFinishPreview(detail, draftState)
     : buildWallFinishPreview(detail, buildWallFinishState(detail));
+}
+
+export function buildWallFinishHeaderPreview(
+  detail: CalculatorWallFinishDetail | null,
+  draftState?: Parameters<typeof buildWallFinishPreview>[1],
+): CalculatorWallFinishDetail | null {
+  return buildWallFinishDisplayPreview(detail, isDraftReadyForDetail(detail, draftState) ? "draft" : "base", draftState);
 }

@@ -10,6 +10,7 @@ from supply_bot.admin_api.calculator_payloads.wall_finish_support import (
     build_wall_finish_summary,
     finalize_wall_finish_summary,
 )
+from supply_bot.admin_api.calculator_payloads.wall_finish_zones import build_wall_finish_zoned_room_payload
 from supply_bot.storage import BotStorage
 
 
@@ -24,8 +25,12 @@ async def _estimate_wall_finish_payload(
     preparations = await storage.list_estimate_wall_finish_preparations()
     layouts = await storage.list_estimate_wall_finish_layouts()
     selected_rows = await storage.list_estimate_wall_finish_rooms(project_id)
+    selected_zones = await storage.list_estimate_wall_finish_room_zones(project_id)
 
     selected_by_room = {int(row["room_id"]): row for row in selected_rows}
+    zones_by_room: dict[int, list[dict[str, Any]]] = {}
+    for zone in selected_zones:
+        zones_by_room.setdefault(int(zone["room_id"]), []).append(zone)
     coverings_by_id = {int(item["id"]): item for item in coverings}
     preparations_by_id = {int(item["id"]): item for item in preparations}
     layouts_by_id = {int(item["id"]): item for item in layouts}
@@ -65,6 +70,24 @@ async def _estimate_wall_finish_payload(
             if selected
             else 0.0
         )
+        room_zones = zones_by_room.get(room_id, []) if selected else []
+        if selected and room_zones:
+            rooms_payload.append(
+                build_wall_finish_zoned_room_payload(
+                    config=config,
+                    summary=summary,
+                    spec_map=spec_map,
+                    room=room,
+                    selected_row=selected_row,
+                    room_zones=room_zones,
+                    coverings_by_id=coverings_by_id,
+                    preparations_by_id=preparations_by_id,
+                    layouts_by_id=layouts_by_id,
+                    base_area=base_area,
+                    effective_area=effective_area,
+                )
+            )
+            continue
 
         base_waste = float(covering["base_waste_percent"] or 0.0) if covering else 0.0
         extra_waste = float(layout["extra_waste_percent"] or 0.0) if layout else 0.0

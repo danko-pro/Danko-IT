@@ -26,6 +26,13 @@ export function buildWallFinishPayload(state: WallFinishEditState): CalculatorWa
       layout_id: toInteger(room.layout_id),
       area_m2_override: toNumber(room.area_m2_override),
       note: room.note.trim() || null,
+      zones: (room.zones ?? []).map((zone) => ({
+        covering_id: toInteger(zone.covering_id),
+        preparation_id: toInteger(zone.preparation_id),
+        layout_id: toInteger(zone.layout_id),
+        area_m2: toNumber(zone.area_m2),
+        note: zone.note.trim() || null,
+      })),
     })),
   };
 }

@@ -6,6 +6,16 @@ type WallFinishRoomEditState = {
   layout_id: string;
   area_m2_override: string;
   note: string;
+  zones: WallFinishRoomZoneEditState[];
+};
+
+export type WallFinishRoomZoneEditState = {
+  id: string;
+  covering_id: string;
+  preparation_id: string;
+  layout_id: string;
+  area_m2: string;
+  note: string;
 };
 
 export type WallFinishEditState = {

@@ -100,6 +100,22 @@ export type CalculatorWallFinishRoom = {
   instrument_cost: number;
   total_cost: number;
   note: string | null;
+  zones?: CalculatorWallFinishRoomZone[];
+};
+
+export type CalculatorWallFinishRoomZone = {
+  id: number;
+  covering_id: number | null;
+  covering_title: string | null;
+  preparation_id: number | null;
+  preparation_title: string | null;
+  layout_id: number | null;
+  layout_title: string | null;
+  area_m2: number | null;
+  effective_area_m2: number;
+  purchase_area_m2: number;
+  total_cost: number;
+  note: string | null;
 };
 
 export type CalculatorWallFinishSummary = {

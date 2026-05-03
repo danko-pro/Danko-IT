@@ -535,6 +535,20 @@ CREATE TABLE IF NOT EXISTS estimate_wall_finish_rooms (
     UNIQUE(project_id, room_id)
 );
 
+CREATE TABLE IF NOT EXISTS estimate_wall_finish_room_zones (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    project_id INTEGER NOT NULL REFERENCES estimate_projects(id) ON DELETE CASCADE,
+    room_id INTEGER NOT NULL REFERENCES estimate_rooms(id) ON DELETE CASCADE,
+    covering_id INTEGER REFERENCES estimate_wall_finish_coverings(id) ON DELETE SET NULL,
+    preparation_id INTEGER REFERENCES estimate_wall_finish_preparations(id) ON DELETE SET NULL,
+    layout_id INTEGER REFERENCES estimate_wall_finish_layouts(id) ON DELETE SET NULL,
+    area_m2 REAL,
+    note TEXT,
+    sort_order INTEGER NOT NULL DEFAULT 100,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE TABLE IF NOT EXISTS estimate_door_catalog (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     title TEXT NOT NULL,

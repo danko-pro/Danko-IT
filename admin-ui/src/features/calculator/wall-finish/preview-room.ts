@@ -1,21 +1,18 @@
 import { toInteger, toNumber } from "../shared";
 import type {
   CalculatorWallFinishConfig,
-  CalculatorWallFinishCovering,
-  CalculatorWallFinishCoveringConsumable,
   CalculatorWallFinishDetail,
-  CalculatorWallFinishPreparation,
   CalculatorWallFinishRoom,
   CalculatorWallFinishSummary,
   WallFinishEditState,
 } from "./model";
+import { calculateWallFinishConsumables, calculateWallFinishPreparationCosts } from "./preview-calculations";
 import {
   appendRoomSpec,
   applySummaryUnits,
-  type WallFinishConsumables,
-  type WallFinishPreparationCosts,
   updateSummary,
 } from "./preview-room-effects";
+import { buildWallFinishZonePreviewRoom } from "./preview-zones";
 import type { WallFinishSpecCollector } from "./preview-summary";
 
 type BuildWallFinishPreviewRoomsArgs = {
@@ -44,6 +41,21 @@ export function buildWallFinishPreviewRooms(args: BuildWallFinishPreviewRoomsArg
     const layout = layoutId === null ? null : layoutsById.get(layoutId) ?? null;
     const areaOverride = edit ? toNumber(edit.area_m2_override) : room.area_m2_override;
     const effectiveArea = selected ? Math.max(0, areaOverride ?? room.base_area_m2) : 0;
+    const zones = edit?.zones ?? [];
+    if (selected && edit && zones.length > 0) {
+      return buildWallFinishZonePreviewRoom({
+        room,
+        edit,
+        zones,
+        detail,
+        config,
+        summary,
+        specCollector,
+        selected,
+        effectiveArea,
+        areaOverride,
+      });
+    }
     const baseWastePercent = covering?.base_waste_percent ?? 0;
     const extraWastePercent = layout?.extra_waste_percent ?? 0;
     const totalWastePercent = baseWastePercent + extraWastePercent;
@@ -54,8 +66,8 @@ export function buildWallFinishPreviewRooms(args: BuildWallFinishPreviewRoomsArg
     const laborPricePerM2 = selected ? baseLaborPricePerM2 * layoutMultiplier : 0;
     const materialCost = purchaseArea * materialPricePerM2;
     const installationCost = effectiveArea * laborPricePerM2;
-    const preparationCosts = calculatePreparationCosts(selected, effectiveArea, preparation, config);
-    const consumables = calculateConsumables(selected, purchaseArea, covering, preparationCosts.primerQty, preparationCosts.primerCost);
+    const preparationCosts = calculateWallFinishPreparationCosts(selected, effectiveArea, preparation, config);
+    const consumables = calculateWallFinishConsumables(selected, purchaseArea, covering, preparationCosts.primerQty, preparationCosts.primerCost);
     const demolitionCost = selected && Boolean(config.include_demolition) ? effectiveArea * config.demolition_price_per_m2 : 0;
     const instrumentCost = selected && covering ? effectiveArea * covering.instrument_price_per_m2 : 0;
     const totalCost =
@@ -134,68 +146,4 @@ export function buildWallFinishPreviewRooms(args: BuildWallFinishPreviewRoomsArg
       note: edit?.note ?? room.note,
     };
   });
-}
-
-function calculatePreparationCosts(
-  selected: boolean,
-  effectiveArea: number,
-  preparation: CalculatorWallFinishPreparation | null,
-  config: CalculatorWallFinishConfig,
-): WallFinishPreparationCosts {
-  if (!selected || !preparation || !Boolean(config.include_preparation)) {
-    return { workCost: 0, materialCost: 0, primerQty: 0, primerCost: 0, totalCost: 0 };
-  }
-
-  const workCost = effectiveArea * preparation.labor_price_per_m2;
-  const materialCost = effectiveArea * preparation.material_price_per_m2;
-  const primerQty = effectiveArea * preparation.primer_consumption_per_m2;
-  const primerCost = primerQty * preparation.primer_price_per_unit;
-  return { workCost, materialCost, primerQty, primerCost, totalCost: workCost + materialCost };
-}
-
-function calculateConsumables(
-  selected: boolean,
-  purchaseArea: number,
-  covering: CalculatorWallFinishCovering | null,
-  preparationPrimerQty: number,
-  preparationPrimerCost: number,
-): WallFinishConsumables {
-  const glueQty = selected && covering ? purchaseArea * covering.glue_consumption_per_m2 : 0;
-  const glueCost = selected && covering ? glueQty * covering.glue_price_per_unit : 0;
-  const coveringPrimerQty = selected && covering ? purchaseArea * covering.primer_consumption_per_m2 : 0;
-  const coveringPrimerCost = selected && covering ? coveringPrimerQty * covering.primer_price_per_unit : 0;
-  const puttyQty = selected && covering ? purchaseArea * covering.putty_consumption_per_m2 : 0;
-  const puttyCost = selected && covering ? puttyQty * covering.putty_price_per_unit : 0;
-  const meshQty = selected && covering ? purchaseArea * covering.mesh_consumption_per_m2 : 0;
-  const meshCost = selected && covering ? meshQty * covering.mesh_price_per_unit : 0;
-  const customItems = selected && covering ? calculateCustomConsumables(purchaseArea, covering) : [];
-
-  return {
-    glueQty,
-    glueCost,
-    primerQty: preparationPrimerQty + coveringPrimerQty,
-    primerCost: preparationPrimerCost + coveringPrimerCost,
-    puttyQty,
-    puttyCost,
-    meshQty,
-    meshCost,
-    customItems,
-    customCost: customItems.reduce((sum, item) => sum + item.cost, 0),
-  };
-}
-
-function calculateCustomConsumables(purchaseArea: number, covering: CalculatorWallFinishCovering) {
-  return parseCustomConsumables(covering.custom_consumables_json).map((item) => {
-    const quantity = purchaseArea * item.consumption_per_m2;
-    return { title: item.title, unit: item.unit, quantity, cost: quantity * item.price_per_unit };
-  });
-}
-
-function parseCustomConsumables(raw: string): CalculatorWallFinishCoveringConsumable[] {
-  try {
-    const items = JSON.parse(raw || "[]") as CalculatorWallFinishCoveringConsumable[];
-    return items.filter((item) => item.title?.trim());
-  } catch {
-    return [];
-  }
 }

@@ -50,6 +50,8 @@ export const WallFinishRoomCard = memo(function WallFinishRoomCard(props: WallFi
     (preparationPreviewId !== null ? preparationById.get(preparationPreviewId)?.title : null) ?? room.preparation_title;
   const layoutPreviewTitle =
     (layoutPreviewId !== null ? layoutById.get(layoutPreviewId)?.title : null) ?? room.layout_title;
+  const zoneCount = edit?.zones?.length ?? room.zones?.length ?? 0;
+  const hasMultipleZones = zoneCount > 1;
 
   function selectRoom() {
     if (expanded) {
@@ -106,12 +108,13 @@ export const WallFinishRoomCard = memo(function WallFinishRoomCard(props: WallFi
         <div className="warmfloor-room-metrics flooring-room-metrics" aria-label="Показатели помещения">
           <span>Стены {formatArea(room.base_area_m2)}</span>
           <span>Расчет {formatArea(room.effective_area_m2)}</span>
-          {coveringPreviewTitle ? <span>{coveringPreviewTitle}</span> : null}
-          {layoutPreviewTitle ? <span>{layoutPreviewTitle}</span> : null}
-          {preparationPreviewTitle ? <span>{preparationPreviewTitle}</span> : null}
+          {hasMultipleZones ? <span>{zoneCount} участка</span> : coveringPreviewTitle ? <span>{coveringPreviewTitle}</span> : null}
+          {hasMultipleZones ? null : layoutPreviewTitle ? <span>{layoutPreviewTitle}</span> : null}
+          {hasMultipleZones ? null : preparationPreviewTitle ? <span>{preparationPreviewTitle}</span> : null}
         </div>
 
         <div className="flooring-room-parameter-chips" aria-label="Включенные параметры помещения">
+          {hasMultipleZones ? <span>{zoneCount} участка отделки</span> : null}
           <span className={coveringPreviewTitle ? "" : "flooring-room-parameter-chip-muted"}>
             {coveringPreviewTitle ?? "Отделка не выбрана"}
           </span>
@@ -151,11 +154,13 @@ function areWallFinishRoomCardPropsEqual(prev: Readonly<WallFinishRoomCardProps>
     prev.room.base_area_m2 === next.room.base_area_m2 &&
     prev.room.effective_area_m2 === next.room.effective_area_m2 &&
     prev.room.total_cost === next.room.total_cost &&
+    prev.room.zones === next.room.zones &&
     prev.edit?.selected === next.edit?.selected &&
     prev.edit?.covering_id === next.edit?.covering_id &&
     prev.edit?.preparation_id === next.edit?.preparation_id &&
     prev.edit?.layout_id === next.edit?.layout_id &&
     prev.edit?.area_m2_override === next.edit?.area_m2_override &&
-    prev.edit?.note === next.edit?.note
+    prev.edit?.note === next.edit?.note &&
+    prev.edit?.zones === next.edit?.zones
   );
 }

@@ -134,6 +134,14 @@ class CalculatorWallFinishLayoutPayload(BaseModel):
     note: str | None = None
 
 
+class CalculatorWallFinishRoomZonePayload(BaseModel):
+    covering_id: int | None = None
+    preparation_id: int | None = None
+    layout_id: int | None = None
+    area_m2: float | None = None
+    note: str | None = None
+
+
 class CalculatorWallFinishRoomPayload(BaseModel):
     room_id: int
     selected: bool = False
@@ -142,6 +150,7 @@ class CalculatorWallFinishRoomPayload(BaseModel):
     layout_id: int | None = None
     area_m2_override: float | None = None
     note: str | None = None
+    zones: list[CalculatorWallFinishRoomZonePayload] = Field(default_factory=list)
 
 
 class CalculatorWallFinishUpdatePayload(BaseModel):

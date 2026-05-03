@@ -10,6 +10,13 @@ export type CalculatorWallFinishPayload = {
     layout_id: number | null;
     area_m2_override: number | null;
     note: string | null;
+    zones: Array<{
+      covering_id: number | null;
+      preparation_id: number | null;
+      layout_id: number | null;
+      area_m2: number | null;
+      note: string | null;
+    }>;
   }>;
 };
 

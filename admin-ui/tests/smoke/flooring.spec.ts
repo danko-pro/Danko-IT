@@ -138,6 +138,8 @@ test("opens calculator flooring stage with seeded zoned estimate", async ({ page
   await expect(page.getByTestId("wall-finish-summary-grand-total")).not.toHaveText(/^0\s/);
   await page.getByRole("button", { name: "Помещение" }).click();
   await expect(page.locator(".flooring-room-params-panel")).toBeVisible();
+  await page.getByRole("button", { name: "+ Участок" }).click();
+  await expect(page.locator(".flooring-zone-card")).toHaveCount(2);
   await page.getByRole("button", { name: "Техкарта" }).click();
   await expect(page.locator(".flooring-catalog-panel")).toBeVisible();
   await expect(page.locator(".flooring-techmap-form")).toBeVisible();

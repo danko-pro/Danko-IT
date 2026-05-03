@@ -22,6 +22,18 @@ export function buildWallFinishState(detail: CalculatorWallFinishDetail, draft: 
         layout_id: draftRoom?.layout_id ?? (room.layout_id === null ? "" : String(room.layout_id)),
         area_m2_override: draftRoom?.area_m2_override ?? (room.area_m2_override === null ? "" : trimFloat(room.area_m2_override)),
         note: draftRoom?.note ?? (room.note ?? ""),
+        zones:
+          draftRoom?.zones ??
+          (room.zones?.length
+            ? room.zones.map((zone, index) => ({
+                id: String(zone.id ?? index + 1),
+                covering_id: zone.covering_id === null ? "" : String(zone.covering_id),
+                preparation_id: zone.preparation_id === null ? "" : String(zone.preparation_id),
+                layout_id: zone.layout_id === null ? "" : String(zone.layout_id),
+                area_m2: zone.area_m2 === null ? "" : trimFloat(zone.area_m2),
+                note: zone.note ?? "",
+              }))
+            : []),
       };
     }),
   };

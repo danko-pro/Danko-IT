@@ -101,6 +101,23 @@ async def apply_storage_migrations(connection_factory: ConnectionFactory) -> Non
             )
             """
         )
+        await db.execute(
+            """
+            CREATE TABLE IF NOT EXISTS estimate_wall_finish_room_zones (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                project_id INTEGER NOT NULL REFERENCES estimate_projects(id) ON DELETE CASCADE,
+                room_id INTEGER NOT NULL REFERENCES estimate_rooms(id) ON DELETE CASCADE,
+                covering_id INTEGER REFERENCES estimate_wall_finish_coverings(id) ON DELETE SET NULL,
+                preparation_id INTEGER REFERENCES estimate_wall_finish_preparations(id) ON DELETE SET NULL,
+                layout_id INTEGER REFERENCES estimate_wall_finish_layouts(id) ON DELETE SET NULL,
+                area_m2 REAL,
+                note TEXT,
+                sort_order INTEGER NOT NULL DEFAULT 100,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            )
+            """
+        )
         for table_name in ("estimate_door_catalog", "estimate_project_doors"):
             await _ensure_column(
                 db,

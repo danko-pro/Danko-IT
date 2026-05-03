@@ -139,7 +139,8 @@
     padding-block: 0.36rem;
     background: #0c0d0f;
     color: var(--door-ink);
-    font-weight: 350;
+    font-variation-settings: "wght" 300;
+    font-weight: 300;
   }
 
   .doors-workbench .text-input-compact {

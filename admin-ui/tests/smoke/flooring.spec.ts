@@ -108,6 +108,32 @@ test("opens calculator flooring stage with seeded zoned estimate", async ({ page
     ],
   });
 
+  const doorsProject = await postJson(request, `/api/calculator/projects/${projectId}/doors`, {
+    door_catalog_id: null,
+    opening_kind: "door",
+    title: "Smoke door",
+    width_mm: 800,
+    height_mm: 2100,
+    thickness_mm: 40,
+    purchase_price: 4000,
+    sale_price: 7000,
+    install_price: 2500,
+    room_a_id: roomId,
+    room_b_id: null,
+    note: "smoke door",
+  });
+  const projectDoorId = Number(doorsProject.doors[doorsProject.doors.length - 1].id);
+  await postJson(request, `/api/calculator/project-doors/${projectDoorId}/components`, {
+    component_catalog_id: null,
+    category_code: "handle",
+    title: "Smoke handle",
+    unit: "шт",
+    quantity: 1,
+    purchase_price: 500,
+    sale_price: 900,
+    note: "smoke component",
+  });
+
   await page.addInitScript(() => window.sessionStorage.clear());
   await page.goto("/");
   await expect(page.locator('[data-screen="dashboard"]')).toBeVisible();
@@ -151,6 +177,11 @@ test("opens calculator flooring stage with seeded zoned estimate", async ({ page
   await expect(page.locator(".flooring-techmap-consumable-row-custom")).toBeVisible();
   await page.getByRole("button", { name: "Смета" }).click();
   await expect(page.locator(".flooring-estimate-document")).toBeVisible();
+  await page.getByTestId("calculator-stage-doors").click();
+  await expect(page.getByTestId("doors-workbench")).toBeVisible();
+  await expect(page.getByTestId("doors-workbench-queue")).toContainText("Smoke door");
+  await expect(page.getByTestId("doors-workbench-focus")).toContainText("Smoke handle");
+  await expect(page.getByTestId("doors-workbench-dock")).toContainText("Двери и монтаж");
 });
 
 async function expectExplicitTransition(page: Page, selector: string, expectedProperty: string) {

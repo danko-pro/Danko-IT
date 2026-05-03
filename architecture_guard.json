@@ -126,6 +126,8 @@
       "source_patterns": [
         "admin-ui/src/features/calculator/doors/**/*.ts",
         "admin-ui/src/features/calculator/doors/**/*.tsx",
+        "admin-ui/src/features/calculator/doors-workbench/**/*.ts",
+        "admin-ui/src/features/calculator/doors-workbench/**/*.tsx",
         "admin-ui/src/features/calculator/wall-finish/**/*.ts",
         "admin-ui/src/features/calculator/wall-finish/**/*.tsx",
         "admin-ui/src/features/calculator/warm-floor/**/*.ts",
@@ -315,6 +317,7 @@
         "index.tsx",
         "app",
         "doors",
+        "doors-workbench",
         "flooring",
         "model",
         "project",

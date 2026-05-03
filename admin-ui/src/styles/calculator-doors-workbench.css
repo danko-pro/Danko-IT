@@ -1,0 +1,322 @@
+@layer components {
+  .doors-workbench {
+    --door-bg: #101114;
+    --door-ink: #f4f0e7;
+    --door-muted: #9d9b93;
+    --door-line: rgba(244, 240, 231, 0.13);
+    --door-green: #79d7ad;
+    --door-amber: #e5b96b;
+    --door-clay: #b86b58;
+    display: grid;
+    gap: 0.9rem;
+    min-width: 0;
+    color: var(--door-ink);
+  }
+
+  .doors-workbench-hero,
+  .doors-workbench-panel,
+  .doors-workbench-composer {
+    border: 1px solid var(--door-line);
+    border-radius: 8px;
+    background:
+      linear-gradient(180deg, rgba(31, 32, 34, 0.96), rgba(16, 17, 19, 0.99)),
+      linear-gradient(90deg, rgba(121, 215, 173, 0.06), transparent 52%);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.28), inset 0 1px rgba(255, 255, 255, 0.04);
+  }
+
+  .doors-workbench-hero {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) minmax(18rem, auto);
+    align-items: center;
+    gap: 1rem;
+    padding: 0.9rem;
+    overflow: hidden;
+  }
+
+  .doors-workbench-mark,
+  .doors-workbench-visual-frame {
+    position: relative;
+    border: 2px solid rgba(229, 185, 107, 0.52);
+    background: linear-gradient(180deg, rgba(229, 185, 107, 0.12), rgba(12, 13, 14, 0.45));
+  }
+
+  .doors-workbench-mark {
+    width: 3.2rem;
+    height: 4.4rem;
+    border-radius: 8px 8px 2px 2px;
+  }
+
+  .doors-workbench-mark span,
+  .doors-workbench-visual-leaf span {
+    position: absolute;
+    right: 0.45rem;
+    top: 50%;
+    width: 0.32rem;
+    height: 0.32rem;
+    border-radius: 999px;
+    background: var(--door-amber);
+    box-shadow: 0 0 16px rgba(229, 185, 107, 0.36);
+  }
+
+  .doors-workbench-kicker {
+    color: var(--door-amber);
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: 0.18em;
+    line-height: 1;
+    text-transform: uppercase;
+  }
+
+  .doors-workbench h2,
+  .doors-workbench h3 {
+    margin: 0.16rem 0 0;
+    color: var(--door-ink);
+    font-weight: 850;
+    letter-spacing: 0;
+    line-height: 1.1;
+  }
+
+  .doors-workbench h2 { font-size: clamp(1.15rem, 1.8vw, 1.55rem); }
+  .doors-workbench h3 { font-size: 0.92rem; }
+
+  .doors-workbench-hero-line,
+  .doors-workbench-focus-route,
+  .doors-workbench-door-main span,
+  .doors-workbench-component-row small {
+    color: var(--door-muted);
+    font-size: 11px;
+    font-weight: 750;
+    line-height: 1.25;
+  }
+
+  .doors-workbench-hero-metrics,
+  .doors-workbench-focus-metrics,
+  .doors-workbench-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.45rem;
+  }
+
+  .doors-workbench-hero-metric,
+  .doors-workbench-metric,
+  .doors-workbench-summary-cell {
+    display: grid;
+    gap: 0.18rem;
+    min-width: 0;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    padding: 0.55rem;
+    background: rgba(8, 9, 10, 0.46);
+  }
+
+  .doors-workbench-hero-metric span,
+  .doors-workbench-metric span,
+  .doors-workbench-summary-cell span,
+  .doors-workbench-summary-total span,
+  .doors-workbench-component-money span {
+    color: var(--door-muted);
+    font-size: 10px;
+    font-weight: 850;
+    line-height: 1;
+  }
+
+  .doors-workbench-hero-metric strong,
+  .doors-workbench-metric strong,
+  .doors-workbench-summary-cell strong,
+  .doors-workbench-summary-total strong {
+    overflow: hidden;
+    color: var(--door-ink);
+    font-size: 0.92rem;
+    font-weight: 900;
+    line-height: 1.12;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .doors-workbench-grid {
+    display: grid;
+    grid-template-columns: minmax(17rem, 0.92fr) minmax(24rem, 1.34fr) minmax(18rem, 0.9fr);
+    gap: 0.9rem;
+    align-items: start;
+  }
+
+  .doors-workbench-left,
+  .doors-workbench-focus,
+  .doors-workbench-dock,
+  .doors-workbench-dock-content,
+  .doors-workbench-components,
+  .doors-workbench-door-list,
+  .doors-workbench-component-list {
+    display: grid;
+    gap: 0.65rem;
+    min-width: 0;
+  }
+
+  .doors-workbench-panel,
+  .doors-workbench-composer { padding: 0.75rem; }
+
+  .doors-workbench-panel-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+    min-width: 0;
+  }
+
+  .doors-workbench-panel-head-compact { align-items: center; }
+
+  .doors-workbench-count {
+    border: 1px solid rgba(121, 215, 173, 0.2);
+    border-radius: 999px;
+    padding: 0.22rem 0.48rem;
+    background: rgba(121, 215, 173, 0.08);
+    color: #b8f2d8;
+    font-size: 11px;
+    font-weight: 900;
+    line-height: 1;
+  }
+
+  .doors-workbench-field-grid {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 0.45rem;
+  }
+
+  .doors-workbench-field-grid-main { grid-template-columns: minmax(0, 1.1fr) 0.72fr minmax(0, 1fr); }
+  .doors-workbench-field-grid-money,
+  .doors-workbench-component-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .doors-workbench-field-grid-three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+  .doors-workbench .field-label { color: #88877f; letter-spacing: 0.12em; }
+  .doors-workbench .text-input { border-radius: 7px; border-color: rgba(244, 240, 231, 0.12); background: #0c0d0f; color: var(--door-ink); }
+  .doors-workbench .text-input:focus { border-color: rgba(121, 215, 173, 0.42); box-shadow: 0 0 0 3px rgba(121, 215, 173, 0.12); }
+  .doors-workbench .action-button,
+  .doors-workbench .secondary-button,
+  .doors-workbench .micro-action { border-radius: 7px; }
+
+  .doors-workbench-actions,
+  .doors-workbench-row-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.4rem;
+  }
+
+  .doors-workbench-door-card,
+  .doors-workbench-component-row {
+    position: relative;
+    display: grid;
+    gap: 0.45rem;
+    border: 1px solid rgba(244, 240, 231, 0.1);
+    border-radius: 8px;
+    padding: 0.65rem;
+    background: rgba(8, 9, 10, 0.5);
+    overflow: hidden;
+    transition: border-color var(--ui-motion-interactive) var(--ui-motion-ease-soft), background-color var(--ui-motion-interactive) var(--ui-motion-ease-soft), transform var(--ui-motion-interactive) var(--ui-motion-ease-soft);
+  }
+
+  .doors-workbench-door-card:hover { transform: translateY(-1px); border-color: rgba(229, 185, 107, 0.28); }
+  .doors-workbench-door-card-active { border-color: rgba(121, 215, 173, 0.36); background: rgba(35, 43, 38, 0.56); }
+
+  .doors-workbench-door-main {
+    display: grid;
+    gap: 0.18rem;
+    min-width: 0;
+    border: 0;
+    padding: 0;
+    background: transparent;
+    color: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .doors-workbench-door-main strong,
+  .doors-workbench-component-row strong {
+    overflow: hidden;
+    color: var(--door-ink);
+    font-size: 0.92rem;
+    font-weight: 900;
+    line-height: 1.16;
+    text-overflow: ellipsis;
+  }
+
+  .doors-workbench-door-kind { color: var(--door-green) !important; text-transform: uppercase; letter-spacing: 0.14em; }
+
+  .doors-workbench-door-meta,
+  .doors-workbench-door-money {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.34rem;
+    align-items: center;
+  }
+
+  .doors-workbench-door-meta span,
+  .doors-workbench-door-money span {
+    border-radius: 999px;
+    padding: 0.24rem 0.42rem;
+    background: rgba(255, 255, 255, 0.055);
+    color: var(--door-muted);
+    font-size: 10px;
+    font-weight: 800;
+    line-height: 1;
+  }
+
+  .doors-workbench-door-money strong,
+  .doors-workbench-component-money strong { color: #d9ffe9; font-size: 0.9rem; line-height: 1; }
+
+  .doors-workbench-door-card p {
+    margin: 0;
+    color: var(--door-muted);
+    font-size: 11px;
+    line-height: 1.35;
+  }
+
+  .doors-workbench-door-size-shadow {
+    position: absolute;
+    right: -0.35rem;
+    bottom: -0.45rem;
+    color: rgba(244, 240, 231, 0.035);
+    font-size: 2.25rem;
+    font-weight: 950;
+    line-height: 1;
+    pointer-events: none;
+  }
+
+  .doors-workbench-focus-top {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) minmax(8rem, auto);
+    gap: 0.85rem;
+    align-items: stretch;
+  }
+
+  .doors-workbench-visual {
+    display: grid;
+    align-content: center;
+    justify-items: center;
+    gap: 0.45rem;
+    min-width: 7rem;
+  }
+
+  .doors-workbench-visual-frame {
+    width: 5rem;
+    height: 7rem;
+    border-radius: 8px 8px 2px 2px;
+    padding: 0.35rem;
+  }
+
+  .doors-workbench-visual-leaf {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    border: 1px solid rgba(244, 240, 231, 0.14);
+    border-radius: 5px 5px 1px 1px;
+    background: linear-gradient(90deg, rgba(121, 215, 173, 0.18), rgba(229, 185, 107, 0.1));
+  }
+
+  .doors-workbench-visual-size {
+    color: var(--door-muted);
+    font-size: 10px;
+    font-weight: 850;
+    text-align: center;
+  }
+}

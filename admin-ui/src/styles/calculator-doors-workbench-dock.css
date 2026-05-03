@@ -1,0 +1,140 @@
+@layer components {
+  .doors-workbench-dock-tabs {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.35rem;
+  }
+
+  .doors-workbench-dock-tab {
+    min-height: 2rem;
+    border: 1px solid rgba(244, 240, 231, 0.1);
+    border-radius: 7px;
+    background: rgba(8, 9, 10, 0.54);
+    color: var(--door-muted);
+    font-size: 11px;
+    font-weight: 900;
+    cursor: pointer;
+    transition: border-color var(--ui-motion-interactive) var(--ui-motion-ease-soft), color var(--ui-motion-interactive) var(--ui-motion-ease-soft), background-color var(--ui-motion-interactive) var(--ui-motion-ease-soft);
+  }
+
+  .doors-workbench-dock-tab-active {
+    border-color: rgba(121, 215, 173, 0.34);
+    background: rgba(121, 215, 173, 0.1);
+    color: #d9ffe9;
+  }
+
+  .doors-workbench-summary-total {
+    display: grid;
+    gap: 0.22rem;
+    border: 1px solid rgba(121, 215, 173, 0.22);
+    border-radius: 8px;
+    padding: 0.72rem;
+    background: linear-gradient(135deg, rgba(121, 215, 173, 0.13), rgba(229, 185, 107, 0.08));
+  }
+
+  .doors-workbench-summary-total strong {
+    color: #f8fff8;
+    font-size: 1.35rem;
+    font-weight: 950;
+    line-height: 1;
+  }
+
+  .doors-workbench-component-row {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    align-items: center;
+  }
+
+  .doors-workbench-component-row > div:first-child {
+    display: grid;
+    gap: 0.14rem;
+    min-width: 0;
+  }
+
+  .doors-workbench-component-row > div:first-child span {
+    color: var(--door-green);
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .doors-workbench-component-money {
+    display: grid;
+    gap: 0.22rem;
+    min-width: 6rem;
+    text-align: right;
+  }
+
+  .doors-workbench-focus-copy {
+    display: grid;
+    align-content: center;
+    gap: 0.45rem;
+    min-width: 0;
+  }
+
+  .doors-workbench-focus-total {
+    display: grid;
+    align-content: center;
+    justify-items: end;
+    gap: 0.22rem;
+    border-left: 1px solid rgba(244, 240, 231, 0.1);
+    padding-left: 0.85rem;
+    min-width: 0;
+  }
+
+  .doors-workbench-focus-total span {
+    color: var(--door-muted);
+    font-size: 10px;
+    font-weight: 900;
+    text-transform: uppercase;
+  }
+
+  .doors-workbench-focus-total strong {
+    color: #d9ffe9;
+    font-size: clamp(1.2rem, 2vw, 1.6rem);
+    font-weight: 950;
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  .doors-workbench-empty-panel {
+    border: 1px dashed rgba(244, 240, 231, 0.18);
+    border-radius: 8px;
+    padding: 1rem;
+    color: var(--door-muted);
+    font-size: 12px;
+    font-weight: 750;
+    line-height: 1.35;
+    text-align: center;
+  }
+
+  .doors-workbench .calculator-spec-sheet,
+  .doors-workbench .calculator-spec-sheet * {
+    min-width: 0;
+  }
+
+  @media (max-width: 1180px) {
+    .doors-workbench-grid { grid-template-columns: 1fr; }
+    .doors-workbench-left { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; }
+  }
+
+  @media (max-width: 760px) {
+    .doors-workbench-hero,
+    .doors-workbench-focus-top,
+    .doors-workbench-left,
+    .doors-workbench-field-grid,
+    .doors-workbench-field-grid-main,
+    .doors-workbench-field-grid-money,
+    .doors-workbench-component-grid,
+    .doors-workbench-field-grid-three,
+    .doors-workbench-hero-metrics,
+    .doors-workbench-focus-metrics,
+    .doors-workbench-summary-grid,
+    .doors-workbench-component-row {
+      grid-template-columns: 1fr;
+    }
+
+    .doors-workbench-focus-total,
+    .doors-workbench-component-money { text-align: left; }
+  }
+}

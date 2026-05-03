@@ -11,6 +11,8 @@
 @import "./calculator-stage.css";
 @import "./calculator-stage-actions.css";
 @import "./calculator-stage-theme.css";
+@import "./calculator-doors-workbench.css";
+@import "./calculator-doors-workbench-dock.css";
 @import "./calculator-flooring-stage.css";
 @import "./calculator-flooring-tabs.css";
 @import "./calculator-flooring-estimate.css";

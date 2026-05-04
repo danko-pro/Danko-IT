@@ -169,13 +169,13 @@
   .doors-workbench-door-card {
     position: relative;
     display: grid;
-    grid-template-columns: minmax(0, 1.1fr) minmax(4.3rem, 0.78fr) auto auto;
+    grid-template-columns: minmax(4.8rem, 1fr) max-content auto auto;
     align-items: center;
-    gap: 0.38rem;
+    gap: 0.3rem;
     border: 1px solid rgba(121, 215, 173, 0.18);
     border-radius: 8px;
-    min-height: 3.45rem;
-    padding: 0.42rem 0.48rem;
+    min-height: 3.2rem;
+    padding: 0.34rem 0.4rem;
     background:
       linear-gradient(135deg, rgba(121, 215, 173, 0.08), transparent 42%),
       linear-gradient(180deg, rgba(23, 27, 27, 0.9), rgba(8, 10, 11, 0.88));
@@ -202,7 +202,7 @@
   .doors-workbench-door-main {
     display: grid;
     grid-template-columns: auto minmax(0, 1fr);
-    gap: 0.36rem;
+    gap: 0.3rem;
     min-width: 0;
     width: 100%;
     border: 0;
@@ -213,11 +213,11 @@
     cursor: pointer;
   }
 
-  .doors-workbench-door-icon { display: grid; width: 2.12rem; height: 2.12rem; place-items: center; border: 1px solid rgba(244, 240, 231, 0.12); border-radius: 7px; background: rgba(255, 255, 255, 0.035); }
+  .doors-workbench-door-icon { display: grid; width: 1.92rem; height: 1.92rem; place-items: center; border: 1px solid rgba(244, 240, 231, 0.12); border-radius: 7px; background: rgba(255, 255, 255, 0.035); }
 
   .doors-workbench-door-icon svg {
-    width: 1.25rem;
-    height: 1.25rem;
+    width: 1.12rem;
+    height: 1.12rem;
     fill: none;
     stroke: var(--door-green);
     stroke-linecap: round;
@@ -233,18 +233,20 @@
   .doors-workbench-component-row strong {
     overflow: hidden;
     color: var(--door-ink);
-    font-size: 0.86rem;
+    font-size: 0.78rem;
     font-weight: 900;
     line-height: 1.05;
     text-overflow: ellipsis;
   }
 
   .doors-workbench-door-kind { color: var(--door-green) !important; text-transform: uppercase; letter-spacing: 0.1em; }
+  .doors-workbench-door-copy .doors-workbench-door-kind { font-size: 8px; }
+  .doors-workbench-door-copy > span:last-child { font-size: 9px; }
 
   .doors-workbench-door-meta {
     display: flex;
     flex-wrap: nowrap;
-    gap: 0.18rem;
+    gap: 0.14rem;
     min-width: 0;
     overflow: hidden;
   }
@@ -252,15 +254,14 @@
   .doors-workbench-door-meta > span {
     display: flex;
     align-items: center;
-    gap: 0.18rem;
+    gap: 0.14rem;
     min-width: 0;
-    max-width: 4.2rem;
     border: 1px solid rgba(244, 240, 231, 0.08);
     border-radius: 999px;
-    padding: 0.24rem 0.34rem;
+    padding: 0.19rem 0.28rem;
     background: rgba(255, 255, 255, 0.045);
     color: var(--door-muted);
-    font-size: 9px;
+    font-size: 8px;
     font-weight: 800;
     line-height: 1;
     overflow: hidden;
@@ -272,8 +273,8 @@
 
   .doors-workbench-door-meta svg {
     flex: 0 0 auto;
-    width: 0.68rem;
-    height: 0.68rem;
+    width: 0.62rem;
+    height: 0.62rem;
     fill: none;
     stroke: var(--door-green);
     stroke-linecap: round;
@@ -286,17 +287,17 @@
     align-items: center;
     align-self: stretch;
     border-left: 1px solid rgba(244, 240, 231, 0.12);
-    padding-left: 0.42rem;
+    padding-left: 0.32rem;
   }
 
   .doors-workbench-door-money strong,
-  .doors-workbench-component-money strong { color: #d9ffe9; font-size: 0.86rem; line-height: 1; white-space: nowrap; }
+  .doors-workbench-component-money strong { color: #d9ffe9; font-size: 0.78rem; line-height: 1; white-space: nowrap; }
 
   .doors-workbench-door-card .doors-workbench-row-actions { align-self: center; }
 
   .doors-workbench-delete-door svg {
-    width: 1rem;
-    height: 1rem;
+    width: 0.86rem;
+    height: 0.86rem;
     fill: none;
     stroke: currentColor;
     stroke-linecap: round;

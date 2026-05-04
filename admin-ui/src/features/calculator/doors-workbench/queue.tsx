@@ -2,7 +2,7 @@ import { IconButton } from "../../../shared/controls";
 import type { CalculatorProjectDoor } from "../doors/model";
 import type { DoorsStageReadyProps } from "../doors/types";
 import { trimFloat } from "../shared";
-import { doorKind, doorMoneyLine, doorRooms, doorTitle } from "./helpers";
+import { doorMoneyLine, doorRooms, doorTitle } from "./helpers";
 
 type DoorWorkbenchQueueProps = Pick<
   DoorsStageReadyProps,
@@ -147,7 +147,6 @@ function DoorQueueItem(props: {
           <DoorCardIcon />
         </span>
         <span className="doors-workbench-door-copy">
-          <span className="doors-workbench-door-kind">{doorKind(door)}</span>
           <strong>{title}</strong>
           <span>{doorRooms(door)}</span>
         </span>

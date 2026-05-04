@@ -240,8 +240,6 @@
     text-overflow: ellipsis;
   }
 
-  .doors-workbench-door-kind { color: var(--door-green) !important; text-transform: uppercase; letter-spacing: 0.1em; }
-  .doors-workbench-door-copy .doors-workbench-door-kind { font-size: 8px; }
   .doors-workbench-door-copy > span:last-child { font-size: 9px; }
 
   .doors-workbench-door-meta {

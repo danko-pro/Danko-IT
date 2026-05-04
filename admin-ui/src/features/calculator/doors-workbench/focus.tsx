@@ -1,8 +1,12 @@
+import { useState } from "react";
+
 import { Button } from "../../../shared/controls";
 import { formatMoney, trimFloat } from "../shared";
 import type { CalculatorProjectDoorComponent } from "../doors/model";
 import type { DoorsStageReadyProps } from "../doors/types";
 import { DoorWorkbenchComponentComposer, DoorWorkbenchDoorComposer } from "./composers";
+import { IconCheck, IconClose, IconDots, autosaveLabel } from "./editor-parts";
+import { DoorActionMenu, DoorKitPills } from "./focus-actions";
 import { componentLabel, doorArea, doorMarginText, doorMoneyLine, doorRooms, doorSize, doorTitle } from "./helpers";
 
 type DoorWorkbenchFocusProps = Pick<
@@ -18,34 +22,73 @@ type DoorWorkbenchFocusProps = Pick<
   | "editingDoorComponentId"
   | "busyKey"
   | "handleProjectDoorSubmit"
+  | "duplicateSelectedProjectDoor"
+  | "closeDoorEditor"
   | "resetDoorForm"
   | "handleProjectDoorComponentSubmit"
   | "startDoorComponentEdit"
   | "resetDoorComponentForm"
+  | "onDeleteProjectDoor"
   | "onDeleteProjectDoorComponent"
 >;
 
 export function DoorWorkbenchFocus(props: DoorWorkbenchFocusProps) {
+  const [menuOpen, setMenuOpen] = useState(false);
   const selectedDoor = props.selectedDoor;
   const canEditDoor = props.editingDoorId !== null && selectedDoor !== null;
+  const saveBusy = selectedDoor !== null && props.busyKey === `calculator-project-door-save-${selectedDoor.id}`;
   return (
     <section className="doors-workbench-panel doors-workbench-focus" data-testid="doors-workbench-focus">
-      <div className="doors-workbench-focus-top">
-        <DoorVisual selectedDoor={selectedDoor} />
-        <div className="doors-workbench-focus-copy">
-          <div className="doors-workbench-kicker">Выбранная позиция</div>
-          <h2>{doorTitle(selectedDoor)}</h2>
-          <div className="doors-workbench-focus-route">{doorRooms(selectedDoor)}</div>
-          <div className="doors-workbench-focus-metrics">
-            <Metric label="Размер" value={doorSize(selectedDoor)} />
-            <Metric label="Площадь" value={doorArea(selectedDoor)} />
-            <Metric label="Комплект" value={formatMoney(selectedDoor?.components_sale_total ?? 0)} />
-            <Metric label="Маржа" value={doorMarginText(selectedDoor)} />
+      <div className="doors-workbench-focus-shell">
+        <DoorActionMenu
+          open={menuOpen}
+          canAct={selectedDoor !== null}
+          onDuplicate={() => void props.duplicateSelectedProjectDoor()}
+          onReset={props.resetDoorForm}
+          onDelete={() => selectedDoor && void props.onDeleteProjectDoor(selectedDoor.id)}
+        />
+        <div className="doors-workbench-focus-toolbar">
+          <div className="doors-workbench-kicker">Редактирование позиции</div>
+          <div className="doors-workbench-focus-actions">
+            <span className={`doors-workbench-save-state doors-workbench-save-state-${props.projectDoorAutosaveState}`}>
+              <IconCheck />
+              {autosaveLabel(props.projectDoorAutosaveState, saveBusy)}
+            </span>
+            <button
+              type="button"
+              className="doors-workbench-icon-action doors-workbench-icon-action-accent"
+              aria-label="Открыть меню действий"
+              onClick={() => setMenuOpen((current) => !current)}
+            >
+              <IconDots />
+            </button>
+            <button
+              type="button"
+              className="doors-workbench-icon-action"
+              aria-label="Закрыть редактор"
+              onClick={props.closeDoorEditor}
+            >
+              <IconClose />
+            </button>
           </div>
         </div>
-        <div className="doors-workbench-focus-total">
-          <span>Итого</span>
-          <strong>{doorMoneyLine(selectedDoor)}</strong>
+
+        <div className="doors-workbench-focus-top">
+          <DoorVisual selectedDoor={selectedDoor} />
+          <div className="doors-workbench-focus-copy">
+            <h2>{doorTitle(selectedDoor)}</h2>
+            <div className="doors-workbench-focus-route">{doorRooms(selectedDoor)}</div>
+            <div className="doors-workbench-focus-metrics">
+              <Metric label="Размер" value={doorSize(selectedDoor)} />
+              <Metric label="Площадь" value={doorArea(selectedDoor)} />
+              <Metric label="Комплект" value={formatMoney(selectedDoor?.components_sale_total ?? 0)} />
+              <Metric label="Маржа" value={doorMarginText(selectedDoor)} />
+            </div>
+          </div>
+          <div className="doors-workbench-focus-total">
+            <span>Итого</span>
+            <strong>{doorMoneyLine(selectedDoor)}</strong>
+          </div>
         </div>
       </div>
 
@@ -60,6 +103,7 @@ export function DoorWorkbenchFocus(props: DoorWorkbenchFocusProps) {
             <span aria-hidden="true" />
             <h4>Комплектация</h4>
           </div>
+          <DoorKitPills {...props} />
           <DoorWorkbenchComponentComposer {...props} />
           <DoorWorkbenchComponentList {...props} />
         </section>

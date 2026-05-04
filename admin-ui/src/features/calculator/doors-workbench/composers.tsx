@@ -1,7 +1,7 @@
 import { Button } from "../../../shared/controls";
 import { SelectField, TextField, doorComponentCategoryOptions, trimFloat } from "../shared";
 import type { DoorsStageReadyProps } from "../doors/types";
-import { EditorSection, SummaryCell, TextAreaField, autosaveLabel } from "./editor-parts";
+import { EditorSection, SummaryCell, TextAreaField } from "./editor-parts";
 import { doorArea, doorMarginPercent, doorMarginText, doorMoneyLine } from "./helpers";
 
 type DoorComposerProps = Pick<
@@ -10,11 +10,9 @@ type DoorComposerProps = Pick<
   | "selectedDoor"
   | "projectDoorState"
   | "setProjectDoorState"
-  | "projectDoorAutosaveState"
   | "editingDoorId"
   | "busyKey"
   | "handleProjectDoorSubmit"
-  | "resetDoorForm"
 >;
 
 export function DoorWorkbenchDoorComposer(props: DoorComposerProps) {
@@ -22,21 +20,6 @@ export function DoorWorkbenchDoorComposer(props: DoorComposerProps) {
   const saveBusy = props.editingDoorId !== null && props.busyKey === `calculator-project-door-save-${props.editingDoorId}`;
   return (
     <form className="doors-workbench-composer doors-workbench-editor" onSubmit={(event) => void props.handleProjectDoorSubmit(event)}>
-      <div className="doors-workbench-editor-head">
-        <div>
-          <div className="doors-workbench-kicker">Редактирование позиции</div>
-          <h3>Параметры выбранной позиции</h3>
-        </div>
-        <div className="doors-workbench-editor-head-actions">
-          <span className={`doors-workbench-save-state doors-workbench-save-state-${props.projectDoorAutosaveState}`}>
-            {autosaveLabel(props.projectDoorAutosaveState, saveBusy || createBusy)}
-          </span>
-          <Button type="button" variant="micro" onClick={props.resetDoorForm}>
-            Сбросить
-          </Button>
-        </div>
-      </div>
-
       <EditorSection title="Основное">
         <div className="doors-workbench-field-grid doors-workbench-field-grid-three">
           <SelectField

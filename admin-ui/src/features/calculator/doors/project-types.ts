@@ -25,7 +25,9 @@ export type DoorsProjectPanelProps = {
   busyKey: string | null;
   handleProjectDoorComponentSubmit: (event: FormEvent<HTMLFormElement>) => Promise<void> | void;
   createBlankProjectDoor: () => Promise<void> | void;
+  duplicateSelectedProjectDoor: () => Promise<void> | void;
   startDoorEdit: (door: CalculatorProjectDoor) => void;
+  closeDoorEditor: () => void;
   startDoorComponentEdit: (component: CalculatorProjectDoorComponent) => void;
   resetDoorComponentForm: () => void;
   onDeleteProjectDoor: (doorId: number) => Promise<void> | void;

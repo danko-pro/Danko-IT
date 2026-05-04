@@ -83,20 +83,9 @@ export function useCalculatorDoorsController(
     setProjectDoorComponentState(emptyProjectDoorComponentState);
   }, [selectedDoorId]);
 
-  const selectedDoor =
-    projectDetail?.doors.find((door) => door.id === selectedDoorId) ??
-    projectDetail?.doors[0] ??
-    null;
-
-  const doorsStageSummary = useMemo(
-    () => buildDoorsStageSummary(projectDetail),
-    [projectDetail],
-  );
-
-  const doorsStageSpecification = useMemo(
-    () => buildDoorsStageSpecification(projectDetail?.doors),
-    [projectDetail?.doors],
-  );
+  const selectedDoor = projectDetail?.doors.find((door) => door.id === selectedDoorId) ?? projectDetail?.doors[0] ?? null;
+  const doorsStageSummary = useMemo(() => buildDoorsStageSummary(projectDetail), [projectDetail]);
+  const doorsStageSpecification = useMemo(() => buildDoorsStageSpecification(projectDetail?.doors), [projectDetail?.doors]);
 
   const projectDoorAutosaveState = useProjectDoorAutosave({
     editingDoorId,
@@ -145,25 +134,31 @@ export function useCalculatorDoorsController(
   }
 
   async function createBlankProjectDoor() {
-    if (!projectDetail || projectDetail.rooms.length === 0) {
-      return;
-    }
-    const payload = buildProjectDoorPayload({
+    if (!projectDetail || projectDetail.rooms.length === 0) return;
+    await createAndSelectProjectDoor(buildProjectDoorPayload({
       ...emptyProjectDoorState,
       title: `Дверь ${projectDetail.doors.length + 1}`,
       width_mm: "800",
       height_mm: "2000",
       thickness_mm: "40",
       room_a_id: String(projectDetail.rooms[0]?.id ?? ""),
-    });
+    }));
+  }
+
+  async function duplicateSelectedProjectDoor() {
+    if (!projectDetail || !selectedDoor) return;
+    await createAndSelectProjectDoor(buildProjectDoorPayload({
+      ...buildProjectDoorStateFromDoor(selectedDoor),
+      title: `${selectedDoor.title ?? selectedDoor.catalog_title ?? "Дверь"} копия`,
+    }));
+  }
+
+  async function createAndSelectProjectDoor(payload: ReturnType<typeof buildProjectDoorPayload>) {
+    if (!projectDetail) return;
     const existingDoorIds = new Set(projectDetail.doors.map((door) => door.id));
     const updatedProject = await onCreateProjectDoor(projectDetail.project.id, payload);
-    const createdDoor =
-      updatedProject?.doors.find((door) => !existingDoorIds.has(door.id)) ??
-      updatedProject?.doors[updatedProject.doors.length - 1];
-    if (createdDoor) {
-      startDoorEdit(createdDoor);
-    }
+    const createdDoor = updatedProject?.doors.find((door) => !existingDoorIds.has(door.id)) ?? updatedProject?.doors[updatedProject.doors.length - 1];
+    if (createdDoor) startDoorEdit(createdDoor);
   }
 
   async function handleProjectDoorComponentSubmit(event: FormEvent<HTMLFormElement>) {
@@ -187,6 +182,8 @@ export function useCalculatorDoorsController(
     setSelectedDoorId(door.id);
     setProjectDoorState(buildProjectDoorStateFromDoor(door));
   }
+
+  function closeDoorEditor() { setEditingDoorId(null); }
 
   function resetDoorForm() {
     if (selectedDoor) {
@@ -238,8 +235,10 @@ export function useCalculatorDoorsController(
     handleDoorComponentCatalogSubmit,
     handleProjectDoorSubmit,
     createBlankProjectDoor,
+    duplicateSelectedProjectDoor,
     handleProjectDoorComponentSubmit,
     startDoorEdit,
+    closeDoorEditor,
     resetDoorForm,
     startDoorComponentEdit,
     resetDoorComponentForm,

@@ -166,7 +166,22 @@
     line-height: 1;
   }
 
-  .doors-workbench-door-card,
+  .doors-workbench-door-card {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.7rem 0.6rem;
+    border: 1px solid rgba(121, 215, 173, 0.18);
+    border-radius: 8px;
+    padding: 0.82rem;
+    background:
+      linear-gradient(135deg, rgba(121, 215, 173, 0.08), transparent 42%),
+      linear-gradient(180deg, rgba(23, 27, 27, 0.9), rgba(8, 10, 11, 0.88));
+    overflow: hidden;
+    box-shadow: inset 0 1px rgba(255, 255, 255, 0.04), 0 12px 28px rgba(0, 0, 0, 0.18);
+    transition: border-color var(--ui-motion-interactive) var(--ui-motion-ease-soft), background-color var(--ui-motion-interactive) var(--ui-motion-ease-soft), transform var(--ui-motion-interactive) var(--ui-motion-ease-soft);
+  }
+
   .doors-workbench-component-row {
     position: relative;
     display: grid;
@@ -179,17 +194,13 @@
     transition: border-color var(--ui-motion-interactive) var(--ui-motion-ease-soft), background-color var(--ui-motion-interactive) var(--ui-motion-ease-soft), transform var(--ui-motion-interactive) var(--ui-motion-ease-soft);
   }
 
-  .doors-workbench-door-card > :not(.doors-workbench-door-size-shadow) {
-    position: relative;
-    z-index: 1;
-  }
-
-  .doors-workbench-door-card:hover { transform: translateY(-1px); border-color: rgba(229, 185, 107, 0.28); }
-  .doors-workbench-door-card-active { border-color: rgba(121, 215, 173, 0.36); background: rgba(35, 43, 38, 0.56); }
+  .doors-workbench-door-card:hover { transform: translateY(-1px); border-color: rgba(229, 185, 107, 0.34); }
+  .doors-workbench-door-card-active { border-color: rgba(121, 215, 173, 0.56); background-color: rgba(35, 43, 38, 0.58); }
 
   .doors-workbench-door-main {
     display: grid;
-    gap: 0.18rem;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 0.62rem;
     min-width: 0;
     width: 100%;
     border: 0;
@@ -200,58 +211,87 @@
     cursor: pointer;
   }
 
+  .doors-workbench-door-icon { display: grid; width: 3rem; height: 3rem; place-items: center; border: 1px solid rgba(244, 240, 231, 0.12); border-radius: 8px; background: rgba(255, 255, 255, 0.035); }
+
+  .doors-workbench-door-icon svg {
+    width: 1.75rem;
+    height: 1.75rem;
+    fill: none;
+    stroke: var(--door-green);
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.8;
+  }
+
+  .doors-workbench-door-copy { display: grid; gap: 0.16rem; min-width: 0; }
+
   .doors-workbench-door-main strong,
   .doors-workbench-component-row strong {
     overflow: hidden;
     color: var(--door-ink);
-    font-size: 0.92rem;
+    font-size: 1.18rem;
     font-weight: 900;
-    line-height: 1.16;
+    line-height: 1.05;
     text-overflow: ellipsis;
   }
 
   .doors-workbench-door-kind { color: var(--door-green) !important; text-transform: uppercase; letter-spacing: 0.14em; }
 
-  .doors-workbench-door-meta,
-  .doors-workbench-door-money {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.34rem;
-    align-items: center;
+  .doors-workbench-door-meta {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.45rem;
     min-width: 0;
   }
 
-  .doors-workbench-door-meta span,
-  .doors-workbench-door-money span {
+  .doors-workbench-door-meta span {
+    display: flex;
+    align-items: center;
+    gap: 0.34rem;
+    min-width: 0;
+    border: 1px solid rgba(244, 240, 231, 0.08);
     border-radius: 999px;
-    padding: 0.24rem 0.42rem;
-    background: rgba(255, 255, 255, 0.055);
+    padding: 0.42rem 0.58rem;
+    background: rgba(255, 255, 255, 0.045);
     color: var(--door-muted);
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 800;
     line-height: 1;
   }
 
-  .doors-workbench-door-money strong,
-  .doors-workbench-component-money strong { color: #d9ffe9; font-size: 0.9rem; line-height: 1; }
-
-  .doors-workbench-door-card p {
-    margin: 0;
-    color: var(--door-muted);
-    font-size: 11px;
-    line-height: 1.35;
+  .doors-workbench-door-meta svg {
+    flex: 0 0 auto;
+    width: 0.95rem;
+    height: 0.95rem;
+    fill: none;
+    stroke: var(--door-green);
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.8;
   }
 
-  .doors-workbench-door-size-shadow {
-    position: absolute;
-    z-index: 0;
-    right: -0.2rem;
-    bottom: -0.75rem;
-    color: rgba(244, 240, 231, 0.035);
-    font-size: 2.25rem;
-    font-weight: 950;
-    line-height: 1;
-    pointer-events: none;
+  .doors-workbench-door-money {
+    grid-column: 1 / -1;
+    display: flex;
+    justify-content: flex-end;
+    border-top: 1px solid rgba(244, 240, 231, 0.09);
+    padding-top: 0.62rem;
+  }
+
+  .doors-workbench-door-money strong,
+  .doors-workbench-component-money strong { color: #d9ffe9; font-size: 1.15rem; line-height: 1; }
+
+  .doors-workbench-door-card .doors-workbench-row-actions { grid-column: 2; grid-row: 1; align-self: start; }
+
+  .doors-workbench-delete-door svg {
+    width: 1rem;
+    height: 1rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.7;
   }
 
   .doors-workbench-focus-top {

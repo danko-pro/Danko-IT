@@ -210,12 +210,7 @@
   .doors-workbench-actions { padding-top: 0.12rem; }
   .doors-workbench-row-actions { position: relative; z-index: 1; }
 
-  .doors-workbench-door-card .doors-workbench-row-actions {
-    flex-wrap: nowrap;
-    margin-top: 0.1rem;
-    border-top: 1px solid rgba(244, 240, 231, 0.08);
-    padding-top: 0.5rem;
-  }
+  .doors-workbench-door-card .doors-workbench-row-actions { flex-wrap: nowrap; }
 
   .doors-workbench-component-row .doors-workbench-row-actions {
     flex-wrap: nowrap;
@@ -240,6 +235,14 @@
     color: #bff8dd;
   }
 
+  .doors-workbench .doors-workbench-delete-door {
+    width: 2.2rem;
+    min-width: 2.2rem;
+    height: 2.2rem;
+    min-height: 2.2rem;
+    padding: 0;
+  }
+
   .doors-workbench-add-door-icon {
     display: block;
     width: 1.72rem;
@@ -250,19 +253,6 @@
   .doors-workbench-add-door-plus-source {
     fill: currentColor;
     filter: drop-shadow(0 0 0.28rem rgba(121, 215, 173, 0.22));
-  }
-
-  .doors-workbench-queue .doors-workbench-door-card {
-    gap: 0.36rem;
-    padding: 0.58rem;
-  }
-
-  .doors-workbench-queue .doors-workbench-door-money {
-    justify-content: space-between;
-  }
-
-  .doors-workbench-queue .doors-workbench-row-actions {
-    justify-content: flex-end;
   }
 
   @media (max-width: 1180px) {

@@ -1,7 +1,8 @@
-import { Button, IconButton } from "../../../shared/controls";
+import { IconButton } from "../../../shared/controls";
 import type { CalculatorProjectDoor } from "../doors/model";
 import type { DoorsStageReadyProps } from "../doors/types";
-import { doorKind, doorMoneyLine, doorRooms, doorSize, doorTitle } from "./helpers";
+import { trimFloat } from "../shared";
+import { doorKind, doorMoneyLine, doorRooms, doorTitle } from "./helpers";
 
 type DoorWorkbenchQueueProps = Pick<
   DoorsStageReadyProps,
@@ -55,6 +56,57 @@ export function DoorWorkbenchQueue(props: DoorWorkbenchQueueProps) {
   );
 }
 
+function doorDimensions(door: CalculatorProjectDoor) {
+  if (!door.width_mm || !door.height_mm) return "Размер не задан";
+  return `${trimFloat(door.width_mm)} x ${trimFloat(door.height_mm)} мм`;
+}
+
+function doorThickness(door: CalculatorProjectDoor) {
+  return door.thickness_mm ? `${trimFloat(door.thickness_mm)} мм` : "Толщина не задана";
+}
+
+function DoorCardIcon() {
+  return (
+    <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+      <path d="M7 4.5h10v15H7z" />
+      <path d="M9.2 6.7h5.6v10.6H9.2z" />
+      <path d="M14.1 12h0.1" />
+    </svg>
+  );
+}
+
+function SizeChipIcon() {
+  return (
+    <svg viewBox="0 0 16 16" focusable="false" aria-hidden="true">
+      <path d="M3 11.5h10M3 11.5v-3M6.3 11.5v-5M9.6 11.5V4.8M13 11.5V3.5" />
+    </svg>
+  );
+}
+
+function LayersChipIcon() {
+  return (
+    <svg viewBox="0 0 16 16" focusable="false" aria-hidden="true">
+      <path d="M2.5 5.1 8 2.7l5.5 2.4L8 7.5 2.5 5.1Zm0 3L8 10.5l5.5-2.4M2.5 11.1 8 13.5l5.5-2.4" />
+    </svg>
+  );
+}
+
+function BoxChipIcon() {
+  return (
+    <svg viewBox="0 0 16 16" focusable="false" aria-hidden="true">
+      <path d="m3 5 5-2.5L13 5v6L8 13.5 3 11V5Zm5 2.5L13 5M8 7.5 3 5m5 2.5v6" />
+    </svg>
+  );
+}
+
+function TrashIcon() {
+  return (
+    <svg viewBox="0 0 16 16" focusable="false" aria-hidden="true">
+      <path d="M3.4 4.6h9.2M6.3 4.6V3.1h3.4v1.5m-5 0 .5 8.3h5.6l.5-8.3M6.8 6.7v4.1m2.4-4.1v4.1" />
+    </svg>
+  );
+}
+
 function DoorAddIcon() {
   return (
     <svg
@@ -80,30 +132,48 @@ function DoorQueueItem(props: {
   onDelete: () => void;
 }) {
   const { door } = props;
+  const title = doorTitle(door);
   return (
     <article className={props.active ? "doors-workbench-door-card doors-workbench-door-card-active" : "doors-workbench-door-card"}>
       <button type="button" className="doors-workbench-door-main" onClick={props.onSelect}>
-        <span className="doors-workbench-door-kind">{doorKind(door)}</span>
-        <strong>{doorTitle(door)}</strong>
-        <span>{doorRooms(door)}</span>
+        <span className="doors-workbench-door-icon" aria-hidden="true">
+          <DoorCardIcon />
+        </span>
+        <span className="doors-workbench-door-copy">
+          <span className="doors-workbench-door-kind">{doorKind(door)}</span>
+          <strong>{title}</strong>
+          <span>{doorRooms(door)}</span>
+        </span>
       </button>
       <div className="doors-workbench-door-meta">
-        <span>{doorSize(door)}</span>
-        <span>{door.components?.length ?? 0} компл.</span>
+        <span>
+          <SizeChipIcon />
+          {doorDimensions(door)}
+        </span>
+        <span>
+          <LayersChipIcon />
+          {doorThickness(door)}
+        </span>
+        <span>
+          <BoxChipIcon />
+          {door.components?.length ?? 0} компл.
+        </span>
       </div>
       <div className="doors-workbench-door-money">
         <strong>{doorMoneyLine(door)}</strong>
       </div>
       <div className="doors-workbench-row-actions">
-        <Button
+        <IconButton
           type="button"
           variant="micro"
           tone="danger"
+          ariaLabel={`Удалить ${title}`}
+          className="doors-workbench-delete-door"
           disabled={props.busyKey === `calculator-project-door-delete-${door.id}`}
           onClick={props.onDelete}
         >
-          {props.busyKey === `calculator-project-door-delete-${door.id}` ? "..." : "Удалить"}
-        </Button>
+          <TrashIcon />
+        </IconButton>
       </div>
     </article>
   );

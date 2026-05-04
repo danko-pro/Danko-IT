@@ -30,9 +30,11 @@
   }
 
   .field-label-row {
+    position: relative;
     display: flex;
     align-items: center;
     gap: 0.32rem;
+    min-width: 0;
   }
 
   .field-control-shell {
@@ -40,19 +42,17 @@
     display: block;
   }
 
-  .field-control-shell:has(.field-help-tooltip:hover),
-  .field-control-shell:has(.field-help-tooltip:focus-visible) {
+  .field-label-row:has(.field-help-tooltip:hover),
+  .field-label-row:has(.field-help-tooltip:focus-visible) {
     z-index: 80;
   }
 
   .field-control-shell .text-input {
-    padding-right: 2rem;
+    padding-right: 0.875rem;
   }
 
   .field-help-icon {
-    position: absolute;
-    top: 50%;
-    right: 0.56rem;
+    position: relative;
     z-index: 82;
     display: inline-flex;
     width: 0.8rem;
@@ -67,7 +67,6 @@
     font-weight: 900;
     letter-spacing: 0;
     text-transform: none;
-    transform: translateY(-50%);
     cursor: help;
   }
 

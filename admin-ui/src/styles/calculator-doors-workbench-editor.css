@@ -160,10 +160,10 @@
 
   .doors-workbench-editor-section {
     display: grid;
-    gap: 0.72rem;
+    gap: 0.62rem;
     min-width: 0;
     border-top: 1px solid rgba(244, 240, 231, 0.11);
-    padding-top: 0.85rem;
+    padding-top: 0.78rem;
   }
 
   .doors-workbench-editor-section-title {
@@ -185,31 +185,39 @@
   .doors-workbench-editor-section-title h4 {
     margin: 0;
     color: #bff8dd;
-    font-size: 0.78rem;
+    font-size: 0.72rem;
     font-weight: 900;
-    letter-spacing: 0.18em;
+    letter-spacing: 0.17em;
     line-height: 1;
     text-transform: uppercase;
   }
 
   .doors-workbench .doors-workbench-textarea {
     display: block;
-    min-height: 4rem;
+    min-height: 3.35rem;
     resize: vertical;
     line-height: 1.35;
   }
 
   .doors-workbench-editor .text-input {
-    min-height: 3rem;
+    min-height: 2rem;
     border-radius: 8px;
-    padding-inline: 1rem;
-    font-size: 0.95rem;
-    font-weight: 650;
+    padding-inline: 0.68rem;
+    font-size: 0.76rem;
+    font-weight: 420;
   }
 
   .doors-workbench-editor .field-label {
-    margin-bottom: 0.42rem;
-    font-size: 10px;
+    margin-bottom: 0.34rem;
+    font-size: 8px;
+  }
+
+  .doors-workbench-editor select.text-input {
+    padding-right: 1.65rem;
+  }
+
+  .doors-workbench-editor input.text-input-select-with-help {
+    padding-right: 0.68rem;
   }
 
   .doors-workbench-editor-summary-grid {
@@ -224,7 +232,7 @@
     border: 0;
     border-right: 1px solid rgba(244, 240, 231, 0.09);
     border-radius: 0;
-    padding: 0.9rem;
+    padding: 0.68rem;
     background: transparent;
   }
 
@@ -234,7 +242,7 @@
 
   .doors-workbench-editor-summary-grid .doors-workbench-summary-cell strong {
     color: #d9ffe9;
-    font-size: 1.08rem;
+    font-size: 0.9rem;
   }
 
   .doors-workbench-editor-foot {

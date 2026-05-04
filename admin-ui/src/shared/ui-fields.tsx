@@ -9,11 +9,11 @@ export function Field(props: {
   tooltip?: string;
 }) {
   const labelClassName = props.size === "compact" ? "field-label field-label-compact" : "field-label";
-  const inputClassName = props.size === "compact" ? "text-input text-input-compact text-input-select-with-help" : "text-input text-input-select-with-help";
+  const inputClassName = props.size === "compact" ? "text-input text-input-compact" : "text-input";
 
   return (
     <label className="block">
-      <FieldLabel className={labelClassName} label={props.label} />
+      <FieldLabel className={labelClassName} label={props.label} tooltip={props.tooltip} />
       <div className="field-control-shell">
         <input
           className={inputClassName}
@@ -21,7 +21,6 @@ export function Field(props: {
           onChange={(event) => props.onChange(event.target.value)}
           placeholder={props.placeholder}
         />
-        <FieldHelp label={props.label} tooltip={props.tooltip} />
       </div>
     </label>
   );
@@ -36,11 +35,12 @@ export function SelectField(props: {
   tooltip?: string;
 }) {
   const labelClassName = props.size === "compact" ? "field-label field-label-compact" : "field-label";
-  const inputClassName = props.size === "compact" ? "text-input text-input-compact" : "text-input";
+  const inputClassName =
+    props.size === "compact" ? "text-input text-input-compact text-input-select-with-help" : "text-input text-input-select-with-help";
 
   return (
     <label className="block">
-      <FieldLabel className={labelClassName} label={props.label} />
+      <FieldLabel className={labelClassName} label={props.label} tooltip={props.tooltip} />
       <div className="field-control-shell">
         <select className={inputClassName} value={props.value} onChange={(event) => props.onChange(event.target.value)}>
           {props.options.map((option) => (
@@ -49,7 +49,6 @@ export function SelectField(props: {
             </option>
           ))}
         </select>
-        <FieldHelp label={props.label} tooltip={props.tooltip} />
       </div>
     </label>
   );
@@ -67,7 +66,7 @@ export function TimeField(props: {
 
   return (
     <label className="block">
-      <FieldLabel className={labelClassName} label={props.label} />
+      <FieldLabel className={labelClassName} label={props.label} tooltip={props.tooltip} />
       <div className="field-control-shell">
         <input
           type="time"
@@ -75,16 +74,16 @@ export function TimeField(props: {
           value={props.value}
           onChange={(event) => props.onChange(event.target.value)}
         />
-        <FieldHelp label={props.label} tooltip={props.tooltip} />
       </div>
     </label>
   );
 }
 
-function FieldLabel(props: { className: string; label: string }) {
+function FieldLabel(props: { className: string; label: string; tooltip?: string }) {
   return (
     <div className={`${props.className} field-label-row`}>
       <span>{props.label}</span>
+      <FieldHelp label={props.label} tooltip={props.tooltip} />
     </div>
   );
 }

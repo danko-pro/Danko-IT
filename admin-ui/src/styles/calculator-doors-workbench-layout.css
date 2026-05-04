@@ -267,17 +267,14 @@
     fill: var(--door-amber);
   }
 
-  .doors-workbench-add-door-plus-bg {
+  .doors-workbench-add-door-plus-panel {
     fill: #10231d;
-    stroke: rgba(121, 215, 173, 0.95);
-    stroke-width: 1.35;
+    stroke: rgba(121, 215, 173, 0.55);
+    stroke-width: 0.8;
   }
 
-  .doors-workbench-add-door-plus {
-    fill: none;
-    stroke: currentColor;
-    stroke-linecap: round;
-    stroke-width: 1.75;
+  .doors-workbench-add-door-plus-source {
+    fill: currentColor;
   }
 
   .doors-workbench-queue .doors-workbench-door-card {

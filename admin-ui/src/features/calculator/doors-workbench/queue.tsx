@@ -57,12 +57,16 @@ export function DoorWorkbenchQueue(props: DoorWorkbenchQueueProps) {
 }
 
 function doorDimensions(door: CalculatorProjectDoor) {
-  if (!door.width_mm || !door.height_mm) return "Размер не задан";
-  return `${trimFloat(door.width_mm)} x ${trimFloat(door.height_mm)} мм`;
+  if (!door.width_mm || !door.height_mm) return "-";
+  return `${trimFloat(door.width_mm)}x${trimFloat(door.height_mm)}`;
 }
 
 function doorThickness(door: CalculatorProjectDoor) {
-  return door.thickness_mm ? `${trimFloat(door.thickness_mm)} мм` : "Толщина не задана";
+  return door.thickness_mm ? trimFloat(door.thickness_mm) : "-";
+}
+
+function doorComponentCount(door: CalculatorProjectDoor) {
+  return String(door.components?.length ?? 0);
 }
 
 function DoorCardIcon() {
@@ -133,6 +137,9 @@ function DoorQueueItem(props: {
 }) {
   const { door } = props;
   const title = doorTitle(door);
+  const dimensions = doorDimensions(door);
+  const thickness = doorThickness(door);
+  const componentCount = doorComponentCount(door);
   return (
     <article className={props.active ? "doors-workbench-door-card doors-workbench-door-card-active" : "doors-workbench-door-card"}>
       <button type="button" className="doors-workbench-door-main" onClick={props.onSelect}>
@@ -146,17 +153,17 @@ function DoorQueueItem(props: {
         </span>
       </button>
       <div className="doors-workbench-door-meta">
-        <span>
+        <span title={dimensions}>
           <SizeChipIcon />
-          {doorDimensions(door)}
+          <span>{dimensions}</span>
         </span>
-        <span>
+        <span title={thickness}>
           <LayersChipIcon />
-          {doorThickness(door)}
+          <span>{thickness}</span>
         </span>
-        <span>
+        <span title={componentCount}>
           <BoxChipIcon />
-          {door.components?.length ?? 0} компл.
+          <span>{componentCount}</span>
         </span>
       </div>
       <div className="doors-workbench-door-money">

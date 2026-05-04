@@ -247,26 +247,6 @@
     overflow: visible;
   }
 
-  .doors-workbench-add-door-frame,
-  .doors-workbench-add-door-threshold {
-    fill: none;
-    stroke: rgba(229, 185, 107, 0.42);
-    stroke-linecap: round;
-    stroke-linejoin: round;
-    stroke-width: 1.2;
-  }
-
-  .doors-workbench-add-door-leaf {
-    fill: rgba(121, 215, 173, 0.06);
-    stroke: rgba(244, 240, 231, 0.18);
-    stroke-linejoin: round;
-    stroke-width: 0.9;
-  }
-
-  .doors-workbench-add-door-handle {
-    fill: rgba(229, 185, 107, 0.58);
-  }
-
   .doors-workbench-add-door-plus-source {
     fill: currentColor;
     filter: drop-shadow(0 0 0.28rem rgba(121, 215, 173, 0.22));

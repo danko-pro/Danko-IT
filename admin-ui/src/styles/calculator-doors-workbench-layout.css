@@ -47,6 +47,7 @@
 
   .doors-workbench:not(.doors-workbench-empty) .doors-workbench-focus {
     padding: 0;
+    overflow: hidden;
   }
 
   .doors-workbench:not(.doors-workbench-empty) .doors-workbench-focus > * {

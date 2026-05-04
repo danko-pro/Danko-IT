@@ -19,8 +19,8 @@ export function doorSize(door: CalculatorProjectDoor | null): string {
   if (!door?.width_mm || !door.height_mm) {
     return "Размер не задан";
   }
-  const thickness = door.thickness_mm ? ` / ${trimFloat(door.thickness_mm)} мм` : "";
-  return `${trimFloat(door.width_mm)} x ${trimFloat(door.height_mm)} мм${thickness}`;
+  const thickness = door.thickness_mm ? ` x ${trimFloat(door.thickness_mm)}` : "";
+  return `${trimFloat(door.width_mm)} x ${trimFloat(door.height_mm)}${thickness} мм`;
 }
 
 export function doorRooms(door: CalculatorProjectDoor | null): string {

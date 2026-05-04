@@ -78,16 +78,16 @@ export function DoorWorkbenchFocus(props: DoorWorkbenchFocusProps) {
           <div className="doors-workbench-focus-copy">
             <h2>{doorTitle(selectedDoor)}</h2>
             <div className="doors-workbench-focus-route">{doorRooms(selectedDoor)}</div>
-            <div className="doors-workbench-focus-metrics">
-              <Metric label="Размер" value={doorSize(selectedDoor)} />
-              <Metric label="Площадь" value={doorArea(selectedDoor)} />
-              <Metric label="Комплект" value={formatMoney(selectedDoor?.components_sale_total ?? 0)} />
-              <Metric label="Маржа" value={doorMarginText(selectedDoor)} />
-            </div>
           </div>
           <div className="doors-workbench-focus-total">
             <span>Итого</span>
             <strong>{doorMoneyLine(selectedDoor)}</strong>
+          </div>
+          <div className="doors-workbench-focus-metrics">
+            <Metric label="Размер" value={doorSize(selectedDoor)} />
+            <Metric label="Площадь" value={doorArea(selectedDoor)} />
+            <Metric label="Комплект" value={formatMoney(selectedDoor?.components_sale_total ?? 0)} />
+            <Metric label="Маржа" value={doorMarginText(selectedDoor)} />
           </div>
         </div>
       </div>

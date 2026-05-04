@@ -81,14 +81,19 @@
     min-width: 0;
   }
 
+  .doors-workbench-focus-metrics {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
   .doors-workbench-focus-total {
-    display: flex;
-    grid-column: 1 / -1;
-    align-items: end;
-    justify-content: space-between;
-    gap: 0.75rem;
-    border-top: 1px solid rgba(244, 240, 231, 0.1);
-    padding-top: 0.75rem;
+    display: grid;
+    grid-column: 3;
+    grid-row: 1;
+    align-self: start;
+    justify-items: end;
+    gap: 0.28rem;
+    border-top: 0;
+    padding-top: 0.35rem;
     min-width: 0;
   }
 
@@ -105,6 +110,10 @@
     font-weight: 950;
     line-height: 1;
     white-space: nowrap;
+  }
+
+  .doors-workbench-editor-summary-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
   .doors-workbench-empty-panel {
@@ -142,6 +151,12 @@
     .doors-workbench-summary-grid,
     .doors-workbench-component-row {
       grid-template-columns: 1fr;
+    }
+
+    .doors-workbench-focus-total {
+      grid-column: 1;
+      grid-row: auto;
+      justify-items: start;
     }
 
     .doors-workbench-focus-total,

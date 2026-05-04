@@ -9,6 +9,7 @@ import type {
   CalculatorProjectDoorComponent,
   DoorCatalogCreateState,
   DoorComponentCatalogCreateState,
+  ProjectDoorAutosaveState,
   ProjectDoorComponentState,
   ProjectDoorCreateState,
 } from "./model";
@@ -21,11 +22,12 @@ import type {
 
 export type UseCalculatorDoorsControllerParams = {
   projectDetail: CalculatorProjectDetail | null;
+  isDoorsStage: boolean;
   setActiveStage: Dispatch<SetStateAction<CalculatorStage>>;
   onCreateDoorCatalogItem: (payload: DoorCatalogPayload) => Promise<void>;
   onCreateDoorComponentCatalogItem: (payload: DoorComponentCatalogPayload) => Promise<void>;
   onCreateProjectDoor: (projectId: number, payload: ProjectDoorPayload) => Promise<CalculatorProjectDetail | void>;
-  onUpdateProjectDoor: (doorId: number, payload: ProjectDoorPayload) => Promise<void>;
+  onUpdateProjectDoor: (doorId: number, payload: ProjectDoorPayload, options?: { silent?: boolean }) => Promise<void>;
   onCreateProjectDoorComponent: (doorId: number, payload: ProjectDoorComponentPayload) => Promise<void>;
   onUpdateProjectDoorComponent: (componentId: number, payload: ProjectDoorComponentPayload) => Promise<void>;
 };
@@ -37,6 +39,7 @@ export type UseCalculatorDoorsControllerResult = {
   setDoorComponentCatalogState: Dispatch<SetStateAction<DoorComponentCatalogCreateState>>;
   projectDoorState: ProjectDoorCreateState;
   setProjectDoorState: Dispatch<SetStateAction<ProjectDoorCreateState>>;
+  projectDoorAutosaveState: ProjectDoorAutosaveState;
   projectDoorComponentState: ProjectDoorComponentState;
   setProjectDoorComponentState: Dispatch<SetStateAction<ProjectDoorComponentState>>;
   editingDoorId: number | null;

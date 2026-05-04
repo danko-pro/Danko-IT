@@ -42,6 +42,13 @@ export function doorMarginText(door: CalculatorProjectDoor | null): string {
   return formatMoney((door.effective_sale_price ?? 0) - (door.effective_purchase_price ?? 0));
 }
 
+export function doorMarginPercent(door: CalculatorProjectDoor | null): string {
+  const sale = door?.effective_sale_price ?? 0;
+  if (sale <= 0) return "0%";
+  const margin = sale - (door?.effective_purchase_price ?? 0);
+  return `${trimFloat((margin / sale) * 100)}%`;
+}
+
 export function componentLabel(categoryCode: string): string {
   return getDoorComponentCategoryLabel(categoryCode);
 }

@@ -62,6 +62,7 @@ function buildDoorsStageProps(props: CalculatorEstimateStagesFacadeProps): Doors
     setDoorComponentCatalogState: doors.setDoorComponentCatalogState,
     projectDoorState: doors.projectDoorState,
     setProjectDoorState: doors.setProjectDoorState,
+    projectDoorAutosaveState: doors.projectDoorAutosaveState,
     projectDoorComponentState: doors.projectDoorComponentState,
     setProjectDoorComponentState: doors.setProjectDoorComponentState,
     editingDoorId: doors.editingDoorId,

@@ -45,6 +45,7 @@ export function useCalculatorScreenController(props: CalculatorScreenProps): Cal
   );
   const doors = useCalculatorDoorsController({
     projectDetail: data.projectDetail,
+    isDoorsStage: stageFlags.isDoorsStage,
     setActiveStage,
     onCreateDoorCatalogItem: actions.onCreateDoorCatalogItem,
     onCreateDoorComponentCatalogItem: actions.onCreateDoorComponentCatalogItem,

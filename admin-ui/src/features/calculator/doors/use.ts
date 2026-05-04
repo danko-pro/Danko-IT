@@ -2,6 +2,7 @@ import type { FormEvent } from "react";
 import { useEffect, useMemo, useState } from "react";
 
 import { trimFloat } from "../shared";
+import { buildProjectDoorStateFromDoor, useProjectDoorAutosave } from "./autosave";
 import { buildDoorsStageSpecification, buildDoorsStageSummary } from "./derived";
 import {
   buildDoorCatalogPayload,
@@ -25,6 +26,7 @@ export function useCalculatorDoorsController(
 ): UseCalculatorDoorsControllerResult {
   const {
     projectDetail,
+    isDoorsStage,
     setActiveStage,
     onCreateDoorCatalogItem,
     onCreateDoorComponentCatalogItem,
@@ -96,22 +98,15 @@ export function useCalculatorDoorsController(
     [projectDetail?.doors],
   );
 
-  function buildProjectDoorStateFromDoor(door: CalculatorProjectDoor): ProjectDoorCreateState {
-    return {
-      door_catalog_id: door.door_catalog_id === null ? "" : String(door.door_catalog_id),
-      opening_kind: door.opening_kind,
-      title: door.title ?? door.catalog_title ?? "",
-      width_mm: door.width_mm === null ? "" : trimFloat(door.width_mm),
-      height_mm: door.height_mm === null ? "" : trimFloat(door.height_mm),
-      thickness_mm: door.thickness_mm === null ? "" : trimFloat(door.thickness_mm),
-      purchase_price: door.purchase_price === null ? "" : trimFloat(door.purchase_price),
-      sale_price: door.sale_price === null ? "" : trimFloat(door.sale_price),
-      install_price: door.install_price === null ? "" : trimFloat(door.install_price),
-      room_a_id: door.room_a_id === null ? "" : String(door.room_a_id),
-      room_b_id: door.room_b_id === null ? "" : String(door.room_b_id),
-      note: door.note ?? "",
-    };
-  }
+  const projectDoorAutosaveState = useProjectDoorAutosave({
+    editingDoorId,
+    isDoorsStage,
+    projectId: projectDetail?.project.id ?? null,
+    projectDoorState,
+    selectedDoor,
+    setProjectDoorState,
+    onUpdateProjectDoor,
+  });
 
   async function handleDoorCatalogSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -194,6 +189,11 @@ export function useCalculatorDoorsController(
   }
 
   function resetDoorForm() {
+    if (selectedDoor) {
+      setEditingDoorId(selectedDoor.id);
+      setProjectDoorState(buildProjectDoorStateFromDoor(selectedDoor));
+      return;
+    }
     setEditingDoorId(null);
     setProjectDoorState(emptyProjectDoorState);
   }
@@ -224,6 +224,7 @@ export function useCalculatorDoorsController(
     setDoorComponentCatalogState,
     projectDoorState,
     setProjectDoorState,
+    projectDoorAutosaveState,
     projectDoorComponentState,
     setProjectDoorComponentState,
     editingDoorId,

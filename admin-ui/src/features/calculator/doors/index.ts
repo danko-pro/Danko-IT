@@ -5,6 +5,7 @@ export { CalculatorStageShell } from "../stage/shell";
 export type { CalculatorProjectDetail } from "../project/model";
 export type { CalculatorStage } from "../model/core";
 
+export * from "./autosave";
 export * from "./catalog-types";
 export * from "./catalog";
 export * from "./derived";

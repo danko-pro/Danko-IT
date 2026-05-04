@@ -11,6 +11,7 @@ type DoorWorkbenchFocusProps = Pick<
   | "selectedDoor"
   | "projectDoorState"
   | "setProjectDoorState"
+  | "projectDoorAutosaveState"
   | "editingDoorId"
   | "projectDoorComponentState"
   | "setProjectDoorComponentState"
@@ -54,10 +55,14 @@ export function DoorWorkbenchFocus(props: DoorWorkbenchFocusProps) {
         <div className="doors-workbench-empty-panel">Выберите дверь слева или добавьте новую, чтобы открыть параметры.</div>
       )}
       {selectedDoor ? (
-        <>
+        <section className="doors-workbench-editor-section doors-workbench-components-section">
+          <div className="doors-workbench-editor-section-title">
+            <span aria-hidden="true" />
+            <h4>Комплектация</h4>
+          </div>
           <DoorWorkbenchComponentComposer {...props} />
           <DoorWorkbenchComponentList {...props} />
-        </>
+        </section>
       ) : null}
     </section>
   );

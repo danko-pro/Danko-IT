@@ -63,7 +63,11 @@ export type CalculatorScreenActionProps = {
     projectId: number,
     payload: CalculatorProjectDoorPayload,
   ) => Promise<CalculatorProjectDetail | void>;
-  onUpdateProjectDoor: (doorId: number, payload: CalculatorProjectDoorPayload) => Promise<void>;
+  onUpdateProjectDoor: (
+    doorId: number,
+    payload: CalculatorProjectDoorPayload,
+    options?: { silent?: boolean },
+  ) => Promise<void>;
   onDeleteProjectDoor: (doorId: number) => Promise<void>;
   onCreateDoorComponentCatalogItem: (payload: CalculatorDoorComponentCatalogCreatePayload) => Promise<void>;
   onCreateProjectDoorComponent: (doorId: number, payload: CalculatorProjectDoorComponentPayload) => Promise<void>;

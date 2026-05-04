@@ -96,7 +96,11 @@ export function createAdminCalculatorDoorsController(props: CalculatorDoorsContr
     }
   }
 
-  async function handleUpdateCalculatorProjectDoor(doorId: number, payload: ProjectDoorPayload) {
+  async function handleUpdateCalculatorProjectDoor(
+    doorId: number,
+    payload: ProjectDoorPayload,
+    options?: { silent?: boolean },
+  ) {
     try {
       props.setCalculatorBusyKey(`calculator-project-door-save-${doorId}`);
       const updatedProject = await fetchJson<CalculatorProjectDetail>(`/api/calculator/project-doors/${doorId}`, {
@@ -108,10 +112,15 @@ export function createAdminCalculatorDoorsController(props: CalculatorDoorsContr
       if (props.selectedCalculatorRoomId !== null) {
         await props.loadCalculatorRoomDetail(props.selectedCalculatorRoomId);
       }
-      props.setSuccessMessage(`Дверной блок #${doorId} обновлён.`);
+      if (!options?.silent) {
+        props.setSuccessMessage(`Дверной блок #${doorId} обновлён.`);
+      }
       props.setCalculatorError(null);
     } catch (actionError) {
       props.setCalculatorError(actionError instanceof Error ? actionError.message : "Не удалось обновить дверной блок");
+      if (options?.silent) {
+        throw actionError;
+      }
     } finally {
       props.setCalculatorBusyKey(null);
     }

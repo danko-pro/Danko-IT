@@ -1,0 +1,120 @@
+@layer components {
+  .doors-workbench-editor-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+    min-width: 0;
+  }
+
+  .doors-workbench-editor-head > div:first-child {
+    display: grid;
+    gap: 0.18rem;
+    min-width: 0;
+  }
+
+  .doors-workbench-editor-head-actions {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.5rem;
+  }
+
+  .doors-workbench-save-state {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    min-height: 2rem;
+    color: var(--door-muted);
+    font-size: 11px;
+    font-weight: 850;
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  .doors-workbench-save-state::before {
+    content: "";
+    width: 0.42rem;
+    height: 0.42rem;
+    border-radius: 999px;
+    background: rgba(121, 215, 173, 0.42);
+    box-shadow: 0 0 0.6rem rgba(121, 215, 173, 0.22);
+  }
+
+  .doors-workbench-save-state-pending::before,
+  .doors-workbench-save-state-saving::before {
+    background: var(--door-amber);
+    box-shadow: 0 0 0.6rem rgba(229, 185, 107, 0.26);
+  }
+
+  .doors-workbench-save-state-error::before {
+    background: var(--door-clay);
+    box-shadow: 0 0 0.6rem rgba(184, 107, 88, 0.28);
+  }
+
+  .doors-workbench-editor-section {
+    display: grid;
+    gap: 0.72rem;
+    min-width: 0;
+    border-top: 1px solid rgba(244, 240, 231, 0.11);
+    padding-top: 0.85rem;
+  }
+
+  .doors-workbench-editor-section-title {
+    display: flex;
+    align-items: center;
+    gap: 0.48rem;
+    min-width: 0;
+  }
+
+  .doors-workbench-editor-section-title > span {
+    display: inline-block;
+    width: 0.44rem;
+    height: 0.44rem;
+    border: 1px solid rgba(121, 215, 173, 0.62);
+    border-radius: 2px;
+    box-shadow: 0 0 0.55rem rgba(121, 215, 173, 0.2);
+  }
+
+  .doors-workbench-editor-section-title h4 {
+    margin: 0;
+    color: #bff8dd;
+    font-size: 0.78rem;
+    font-weight: 900;
+    letter-spacing: 0.18em;
+    line-height: 1;
+    text-transform: uppercase;
+  }
+
+  .doors-workbench .doors-workbench-textarea {
+    display: block;
+    min-height: 4rem;
+    resize: vertical;
+    line-height: 1.35;
+  }
+
+  .doors-workbench-editor-foot {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.6rem;
+    border-top: 1px solid rgba(244, 240, 231, 0.1);
+    padding-top: 0.75rem;
+    color: var(--door-muted);
+    font-size: 11px;
+    font-weight: 750;
+    line-height: 1.2;
+  }
+
+  .doors-workbench-hidden-submit {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    border: 0;
+    clip: rect(0 0 0 0);
+  }
+}

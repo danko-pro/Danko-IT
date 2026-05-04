@@ -95,6 +95,8 @@ export type CalculatorDoorSpecItem = {
   amount: number;
 };
 
+export type ProjectDoorAutosaveState = "idle" | "pending" | "saving" | "saved" | "error";
+
 export type DoorCatalogCreateState = {
   title: string;
   width_mm: string;

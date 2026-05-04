@@ -4,6 +4,7 @@ import type {
   CalculatorProjectDetail,
   DoorCatalogCreateState,
   DoorComponentCatalogCreateState,
+  ProjectDoorAutosaveState,
   ProjectDoorCreateState,
 } from "./";
 
@@ -17,6 +18,7 @@ export type DoorsCatalogPanelProps = {
   setDoorComponentCatalogState: Dispatch<SetStateAction<DoorComponentCatalogCreateState>>;
   projectDoorState: ProjectDoorCreateState;
   setProjectDoorState: Dispatch<SetStateAction<ProjectDoorCreateState>>;
+  projectDoorAutosaveState: ProjectDoorAutosaveState;
   editingDoorId: number | null;
   busyKey: string | null;
   handleDoorCatalogSubmit: (event: FormEvent<HTMLFormElement>) => Promise<void> | void;

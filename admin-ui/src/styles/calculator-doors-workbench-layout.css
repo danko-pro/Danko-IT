@@ -231,10 +231,10 @@
 
   .doors-workbench .doors-workbench-add-door {
     display: inline-grid;
-    width: 2.12rem;
-    min-width: 2.12rem;
-    height: 2.12rem;
-    min-height: 2.12rem;
+    width: 2.35rem;
+    min-width: 2.35rem;
+    height: 2.35rem;
+    min-height: 2.35rem;
     place-items: center;
     padding: 0;
     color: #bff8dd;
@@ -242,39 +242,34 @@
 
   .doors-workbench-add-door-icon {
     display: block;
-    width: 1.38rem;
-    height: 1.38rem;
+    width: 1.72rem;
+    height: 1.72rem;
     overflow: visible;
   }
 
   .doors-workbench-add-door-frame,
   .doors-workbench-add-door-threshold {
     fill: none;
-    stroke: rgba(229, 185, 107, 0.9);
+    stroke: rgba(229, 185, 107, 0.42);
     stroke-linecap: round;
     stroke-linejoin: round;
-    stroke-width: 1.6;
+    stroke-width: 1.2;
   }
 
   .doors-workbench-add-door-leaf {
-    fill: rgba(121, 215, 173, 0.13);
-    stroke: rgba(244, 240, 231, 0.42);
+    fill: rgba(121, 215, 173, 0.06);
+    stroke: rgba(244, 240, 231, 0.18);
     stroke-linejoin: round;
-    stroke-width: 1.15;
+    stroke-width: 0.9;
   }
 
   .doors-workbench-add-door-handle {
-    fill: var(--door-amber);
-  }
-
-  .doors-workbench-add-door-plus-panel {
-    fill: #10231d;
-    stroke: rgba(121, 215, 173, 0.55);
-    stroke-width: 0.8;
+    fill: rgba(229, 185, 107, 0.58);
   }
 
   .doors-workbench-add-door-plus-source {
     fill: currentColor;
+    filter: drop-shadow(0 0 0.28rem rgba(121, 215, 173, 0.22));
   }
 
   .doors-workbench-queue .doors-workbench-door-card {

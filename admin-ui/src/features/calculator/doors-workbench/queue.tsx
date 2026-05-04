@@ -67,8 +67,7 @@ function DoorAddIcon() {
       <path className="doors-workbench-add-door-leaf" d="M8.25 5.35h6.05v12.35H8.25V5.35Z" />
       <path className="doors-workbench-add-door-threshold" d="M5.25 19.75h11.15" />
       <circle className="doors-workbench-add-door-handle" cx="12.95" cy="11.55" r="0.58" />
-      <rect className="doors-workbench-add-door-plus-panel" x="12.05" y="12.05" width="9.7" height="9.7" rx="2" />
-      <g className="doors-workbench-add-door-plus-source" transform="translate(12.22 12.18) scale(0.01835) translate(-144 -144)">
+      <g className="doors-workbench-add-door-plus-source" transform="translate(7.25 5.25) scale(0.0285) translate(-144 -144)">
         <path d="m560 179.39h-320c-41.965 0-76.094 34.133-76.094 76.094v289.05c0 41.945 34.133 76.074 76.094 76.074h320c41.965 0 76.094-34.133 76.094-76.074v-289.05c0.003906-41.965-34.129-76.094-76.094-76.094zm45.168 365.15c0 24.887-20.258 45.145-45.164 45.145l-320.01 0.003906c-24.906 0-45.164-20.258-45.164-45.145l-0.003906-289.06c0-24.906 20.258-45.164 45.164-45.164h320c24.906 0 45.164 20.258 45.164 45.164z" />
         <path d="m415.46 289.91h-30.93v94.621h-94.641v30.93h94.641v94.641h30.93v-94.641h94.641v-30.93h-94.641z" />
         <path d="m326.88 240.04h-68.383c-17.418 0-31.594 14.176-31.594 31.594v66.449h30.93l0.66406-67.113h68.383z" />

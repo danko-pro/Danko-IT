@@ -142,23 +142,24 @@ def set_admin_session_cookie(
     *,
     token: str,
     max_age: int,
+    secure: bool = False,
 ) -> None:
     response.set_cookie(
         key=SESSION_COOKIE_NAME,
         value=token,
         httponly=True,
         samesite="lax",
-        secure=False,
+        secure=secure,
         max_age=max_age,
         path="/",
     )
 
 
-def clear_admin_session_cookie(response: Response) -> None:
+def clear_admin_session_cookie(response: Response, *, secure: bool = False) -> None:
     response.delete_cookie(
         key=SESSION_COOKIE_NAME,
         httponly=True,
         samesite="lax",
-        secure=False,
+        secure=secure,
         path="/",
     )

@@ -51,9 +51,10 @@ class Settings:
     supply_dialogue_mistral_max_output_tokens: int
     supply_dialogue_mistral_timeout_seconds: int
     database_path: Path
-    admin_password_hash: str | 1
-    admin_session_secret: str | 1
+    admin_password_hash: str | None
+    admin_session_secret: str | None
     admin_session_ttl_seconds: int
+    admin_session_cookie_secure: bool
     project_documents_dir: Path
     config_path: Path
 
@@ -167,6 +168,7 @@ def load_settings(config_path: Path | None = None) -> Settings:
         admin_password_hash=_optional_secret(env.get("ADMIN_PASSWORD_HASH")),
         admin_session_secret=_optional_secret(env.get("ADMIN_SESSION_SECRET")),
         admin_session_ttl_seconds=int(env.get("ADMIN_SESSION_TTL_SECONDS", "43200")),
+        admin_session_cookie_secure=parse_bool(env.get("ADMIN_SESSION_COOKIE_SECURE")),
         project_documents_dir=_pick_path(
             base_dir,
             env.get("PROJECT_DOCUMENTS_DIR"),

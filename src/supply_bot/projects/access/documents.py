@@ -44,7 +44,13 @@ def _document_suffix(file_name: str | None) -> str:
 
 def resolve_project_document_path(settings_obj: Settings, storage_key: str) -> Path:
     root = _project_documents_root(settings_obj)
-    resolved_path = (root / storage_key).resolve()
+    normalized_storage_key = str(storage_key or "").strip()
+    if not normalized_storage_key:
+        raise ProjectDocumentStorageError("Project document path is empty")
+
+    resolved_path = (root / normalized_storage_key).resolve()
+    if resolved_path == root:
+        raise ProjectDocumentStorageError("Invalid project document path")
     return _ensure_within_project_documents_root(root, resolved_path)
 
 
@@ -52,6 +58,8 @@ def resolve_existing_project_document_path(settings_obj: Settings, storage_key: 
     resolved_path = resolve_project_document_path(settings_obj, storage_key)
     if not resolved_path.exists():
         raise FileNotFoundError(storage_key)
+    if not resolved_path.is_file():
+        raise ProjectDocumentStorageError("Project document path is not a file")
     return resolved_path
 
 

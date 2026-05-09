@@ -75,6 +75,7 @@ def register_auth_routes(
             response,
             token=token,
             max_age=settings_obj.admin_session_ttl_seconds,
+            secure=settings_obj.admin_session_cookie_secure,
         )
         return _session_payload(settings_obj, session)
 
@@ -84,7 +85,7 @@ def register_auth_routes(
     @app.post("/api/auth/logout")
     async def auth_logout(request: Request, response: Response) -> dict[str, Any]:
         settings_obj = get_settings(request)
-        clear_admin_session_cookie(response)
+        clear_admin_session_cookie(response, secure=settings_obj.admin_session_cookie_secure)
         return _session_payload(
             settings_obj,
             None if settings_obj.admin_auth_enabled else get_optional_admin_session(request),

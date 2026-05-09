@@ -40,6 +40,15 @@ def normalize_request_delivery(
     return normalized_date, normalized_time
 
 
+def normalize_positive_number(value: float | None, *, detail: str) -> float | None:
+    if value is None:
+        return None
+    normalized = float(value)
+    if normalized <= 0:
+        raise HTTPException(status_code=400, detail=detail)
+    return normalized
+
+
 def build_request_item_create_values(payload) -> dict[str, Any]:
     title = payload.title.strip()
     if not title:
@@ -51,11 +60,11 @@ def build_request_item_create_values(payload) -> dict[str, Any]:
         "sku_id": None,
         "raw_name": title,
         "normalized_name": title,
-        "quantity": payload.quantity,
+        "quantity": normalize_positive_number(payload.quantity, detail="Item quantity must be positive"),
         "unit": payload.unit.strip() if payload.unit and payload.unit.strip() else None,
-        "thickness_mm": payload.thickness_mm,
-        "length_mm": payload.length_mm,
-        "width_mm": payload.width_mm,
+        "thickness_mm": normalize_positive_number(payload.thickness_mm, detail="Item dimensions must be positive"),
+        "length_mm": normalize_positive_number(payload.length_mm, detail="Item dimensions must be positive"),
+        "width_mm": normalize_positive_number(payload.width_mm, detail="Item dimensions must be positive"),
         "note": payload.note.strip() if payload.note and payload.note.strip() else None,
     }
 
@@ -68,11 +77,11 @@ def build_request_item_update_values(payload) -> dict[str, Any]:
     fields: dict[str, Any] = {
         "raw_name": title,
         "normalized_name": title,
-        "quantity": payload.quantity,
+        "quantity": normalize_positive_number(payload.quantity, detail="Item quantity must be positive"),
         "unit": payload.unit.strip() if payload.unit and payload.unit.strip() else None,
-        "thickness_mm": payload.thickness_mm,
-        "length_mm": payload.length_mm,
-        "width_mm": payload.width_mm,
+        "thickness_mm": normalize_positive_number(payload.thickness_mm, detail="Item dimensions must be positive"),
+        "length_mm": normalize_positive_number(payload.length_mm, detail="Item dimensions must be positive"),
+        "width_mm": normalize_positive_number(payload.width_mm, detail="Item dimensions must be positive"),
         "note": payload.note.strip() if payload.note and payload.note.strip() else None,
     }
     if payload.detach_catalog:

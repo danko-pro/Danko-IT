@@ -5,10 +5,13 @@ from typing import Any
 
 from fastapi import FastAPI, HTTPException, Request
 
-from supply_bot.admin_api.app_helpers import _family_overview, _split_alias_values
+from supply_bot.admin_api.app_helpers import _family_overview
 from supply_bot.admin_api.app_routes_materials_support import (
     build_material_family_values,
+    require_material_family,
+    require_material_variant,
     search_material_catalog,
+    split_material_alias_values,
     validate_material_alias_payload,
     validate_material_sku_payload,
 )
@@ -68,17 +71,12 @@ def register_material_routes(
         payload: variant_create_payload_model,
     ) -> dict[str, Any]:
         storage_obj = get_storage(request)
-        family = await storage_obj.get_family(payload.family_id)
-        if not family:
-            raise HTTPException(status_code=404, detail="Family not found")
+        await require_material_family(storage_obj, payload.family_id)
         display_name = payload.display_name.strip()
         if not display_name:
             raise HTTPException(status_code=400, detail="display_name is required")
         variant_id = await storage_obj.create_variant(payload.family_id, display_name)
-        variant = await storage_obj.get_variant(variant_id)
-        if not variant:
-            raise HTTPException(status_code=500, detail="Variant was not created")
-        return variant
+        return await require_material_variant(storage_obj, variant_id)
 
     @app.post("/api/materials/skus")
     async def create_material_sku(
@@ -109,7 +107,7 @@ def register_material_routes(
         )
 
         return {
-            "created_count": len(_split_alias_values(alias)),
+            "created_count": len(split_material_alias_values(alias)),
             "family_id": payload.family_id,
             "variant_id": payload.variant_id,
             "sku_id": payload.sku_id,

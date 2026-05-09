@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { KeyboardEvent } from "react";
-import { InlineAddButton } from "../../shared/ui";
+import { ConfirmDeleteContent, DeleteButton, InlineAddButton } from "../../shared/controls";
 import type { DashboardProjectCardData } from "./model/project-model";
 
 export function DashboardProjectSwitcher(props: {
@@ -104,8 +104,7 @@ export function DashboardProjectSwitcher(props: {
               </div>
 
               {isActive && !isEditing ? (
-                <button
-                  type="button"
+                <DeleteButton
                   className="dashboard-project-switcher-tab-remove"
                   aria-label={`Удалить объект ${project.code}`}
                   title="Удалить объект"
@@ -115,34 +114,19 @@ export function DashboardProjectSwitcher(props: {
                   }}
                 >
                   ×
-                </button>
+                </DeleteButton>
               ) : null}
 
               {isDeleteConfirmOpen ? (
-                <div
-                  className="dashboard-project-switcher-tab-delete-cloud"
-                  onClick={(event) => event.stopPropagation()}
-                >
-                  <div className="dashboard-project-switcher-tab-delete-copy">Удалить объект?</div>
-                  <div className="dashboard-project-switcher-tab-delete-actions">
-                    <button
-                      type="button"
-                      className="dashboard-project-switcher-tab-delete-button dashboard-project-switcher-tab-delete-button-danger"
-                      onClick={() => {
-                        props.onDeleteProject(project.id);
-                        setPendingDeleteProjectId(null);
-                      }}
-                    >
-                      Удалить
-                    </button>
-                    <button
-                      type="button"
-                      className="dashboard-project-switcher-tab-delete-button"
-                      onClick={() => setPendingDeleteProjectId(null)}
-                    >
-                      Отмена
-                    </button>
-                  </div>
+                <div className="ui-confirm-delete-cloud dashboard-project-switcher-tab-delete-cloud" onClick={(event) => event.stopPropagation()}>
+                  <ConfirmDeleteContent
+                    message="Удалить объект?"
+                    onCancel={() => setPendingDeleteProjectId(null)}
+                    onConfirm={() => {
+                      props.onDeleteProject(project.id);
+                      setPendingDeleteProjectId(null);
+                    }}
+                  />
                 </div>
               ) : null}
             </div>

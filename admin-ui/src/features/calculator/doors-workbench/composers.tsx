@@ -1,7 +1,7 @@
 import { Button } from "../../../shared/controls";
-import { SelectField, TextField, doorComponentCategoryOptions, trimFloat } from "../shared";
+import { SelectField, TextAreaField, TextField, doorComponentCategoryOptions, trimFloat } from "../shared";
 import type { DoorsStageReadyProps } from "../doors/types";
-import { EditorSection, SummaryCell, TextAreaField } from "./editor-parts";
+import { EditorSection, SummaryCell } from "./editor-parts";
 import { doorArea, doorMarginPercent, doorMarginText, doorMoneyLine } from "./helpers";
 
 type DoorComposerProps = Pick<
@@ -112,6 +112,8 @@ export function DoorWorkbenchDoorComposer(props: DoorComposerProps) {
       <EditorSection title="Заметка">
         <TextAreaField
           label="Заметка"
+          size="compact"
+          className="doors-workbench-textarea"
           value={props.projectDoorState.note}
           onChange={(value) => props.setProjectDoorState((current) => ({ ...current, note: value }))}
           placeholder="Добавьте заметку..."

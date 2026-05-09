@@ -1,4 +1,4 @@
-import { Button } from "../../../shared/controls";
+import { Button, ConfirmDeleteContent } from "../../../shared/controls";
 import type { ProjectCardContractEditorProps } from "./project-card-contract-types";
 
 type ProjectCardContractDeleteZoneProps = Pick<
@@ -21,22 +21,12 @@ export function ProjectCardContractDeleteZone(props: ProjectCardContractDeleteZo
     <div className="dashboard-project-contract-delete-zone">
       {props.isDeleteConfirmOpen ? (
         <div className="dashboard-project-contract-delete-confirm">
-          <div className="dashboard-project-contract-delete-confirm-text">
-            Удалить договор и связанные вехи?
-          </div>
-          <div className="dashboard-project-contract-delete-confirm-actions">
-            <button
-              type="button"
-              className="dashboard-project-contract-danger-button"
-              onClick={props.onDelete}
-              disabled={props.isBusy}
-            >
-              {props.isDeleting ? "Удаляю..." : "Удалить"}
-            </button>
-            <Button variant="secondary" onClick={props.onCloseDeleteConfirm} disabled={props.isBusy}>
-              Отмена
-            </Button>
-          </div>
+          <ConfirmDeleteContent
+            message="Удалить договор и связанные вехи?"
+            busy={props.isBusy}
+            onCancel={props.onCloseDeleteConfirm}
+            onConfirm={props.onDelete}
+          />
         </div>
       ) : (
         <button

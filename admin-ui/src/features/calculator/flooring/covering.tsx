@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 
+import { AddButton } from "../../../shared/controls";
 import { Button, TextField, emptyFlooringCoveringState } from "./";
 import { CoveringConsumablesEditor } from "./covering-consumables";
 import { coveringToState } from "./catalog-state";
@@ -148,9 +149,12 @@ function TechmapHeader(props: {
             {item.title}
           </button>
         ))}
-        <button type="button" className="flooring-techmap-chip-add" onClick={props.onCreate} aria-label="Добавить покрытие">
-          +
-        </button>
+        <AddButton
+          className="flooring-techmap-chip-add"
+          aria-label="Добавить покрытие"
+          children={null}
+          onClick={props.onCreate}
+        />
       </div>
     </div>
   );

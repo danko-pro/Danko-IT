@@ -1,3 +1,4 @@
+import { DeleteButton } from "../../../shared/controls";
 import { openingTypeOptions, trimFloat } from "../shared";
 import type { RoomStateSetter } from "../rooms/types";
 import type { OpeningState, OpeningViewModel } from "./opening-utils";
@@ -24,14 +25,13 @@ export function RoomOpeningCard(props: RoomOpeningCardProps) {
             {view.area !== null ? `${trimFloat(view.area)} м²` : "Нет данных"}
           </div>
         </div>
-        <button
-          type="button"
+        <DeleteButton
           className="calculator-room-opening-remove"
           aria-label={`Удалить проём ${index + 1}`}
           onClick={() => removeOpening(setRoomState, index)}
         >
           ×
-        </button>
+        </DeleteButton>
       </div>
 
       <div className="calculator-room-opening-fields">

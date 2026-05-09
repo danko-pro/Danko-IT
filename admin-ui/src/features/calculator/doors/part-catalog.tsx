@@ -1,4 +1,5 @@
 import { Button } from "./";
+import { StatChip } from "./";
 import {
   SelectField,
   TextField,
@@ -54,9 +55,7 @@ export function DoorsComponentCatalogPanel(props: DoorsCatalogPanelProps) {
         <div className="flex items-center justify-between gap-3">
           <div className="flex flex-wrap gap-1.5">
             {props.projectDetail.door_component_catalog.slice(0, 8).map((item) => (
-              <span key={item.id} className="stat-chip">
-                {getDoorComponentCategoryLabel(item.category_code)} В· {item.title}
-              </span>
+              <StatChip key={item.id}>{getDoorComponentCategoryLabel(item.category_code)} · {item.title}</StatChip>
             ))}
           </div>
           <Button type="submit" disabled={props.busyKey === "calculator-door-component-catalog-create"}>

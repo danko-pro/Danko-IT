@@ -1,3 +1,4 @@
+import { ConfirmDeleteContent, DeleteButton } from "../../../../shared/controls";
 import {
   ProjectAccountingLedgerBuilderPopover,
   useProjectAccountingLedgerBuilderPopover,
@@ -16,6 +17,7 @@ export function ProjectAccountingLedgerDeleteAction(props: ProjectAccountingLedg
     onClose: props.onClose,
     preferredMaxHeight: 180,
     minimumHeight: 120,
+    bodyClassName: "dashboard-ledger-builder-delete-cloud-body",
   });
 
   return (
@@ -33,8 +35,7 @@ export function ProjectAccountingLedgerDeleteAction(props: ProjectAccountingLedg
         }
       }}
     >
-      <button
-        type="button"
+      <DeleteButton
         className={
           props.isOpen
             ? "dashboard-ledger-builder-delete-button dashboard-ledger-builder-delete-button-open"
@@ -65,7 +66,7 @@ export function ProjectAccountingLedgerDeleteAction(props: ProjectAccountingLedg
           <path d="M6.85 6.35v3.4" />
           <path d="M9.15 6.35v3.4" />
         </svg>
-      </button>
+      </DeleteButton>
 
       {props.isOpen ? (
         <ProjectAccountingLedgerBuilderPopover
@@ -73,24 +74,7 @@ export function ProjectAccountingLedgerDeleteAction(props: ProjectAccountingLedg
           ariaLabel="Подтверждение удаления строки"
           className="dashboard-ledger-builder-delete-cloud"
         >
-          <div className="dashboard-ledger-builder-delete-cloud-copy">Удалить строку?</div>
-
-          <div className="dashboard-ledger-builder-delete-cloud-actions">
-            <button
-              type="button"
-              className="dashboard-ledger-builder-delete-cloud-button dashboard-ledger-builder-delete-cloud-button-danger"
-              onClick={props.onConfirm}
-            >
-              Удалить
-            </button>
-            <button
-              type="button"
-              className="dashboard-ledger-builder-delete-cloud-button"
-              onClick={props.onClose}
-            >
-              Отмена
-            </button>
-          </div>
+          <ConfirmDeleteContent message="Удалить строку?" onCancel={props.onClose} onConfirm={props.onConfirm} />
         </ProjectAccountingLedgerBuilderPopover>
       ) : null}
     </div>

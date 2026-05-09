@@ -1,4 +1,5 @@
 import { Button } from "./";
+import { StatChip } from "./";
 import { TextField } from "./";
 import type { DoorsCatalogPanelProps } from "./";
 
@@ -56,9 +57,7 @@ export function DoorsDoorCatalogPanel(props: DoorsCatalogPanelProps) {
         <div className="flex items-center justify-between gap-3">
           <div className="flex flex-wrap gap-1.5">
             {props.projectDetail.door_catalog.slice(0, 6).map((item) => (
-              <span key={item.id} className="stat-chip">
-                {item.title}
-              </span>
+              <StatChip key={item.id}>{item.title}</StatChip>
             ))}
           </div>
           <Button type="submit" disabled={props.busyKey === "calculator-door-catalog-create"}>

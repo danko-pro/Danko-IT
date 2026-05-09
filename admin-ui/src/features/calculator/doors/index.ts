@@ -1,4 +1,4 @@
-export { Button } from "../../../shared/controls";
+export { Button, DeleteButton } from "../../../shared/controls";
 
 export * from "../shared";
 export { CalculatorStageShell } from "../stage/shell";

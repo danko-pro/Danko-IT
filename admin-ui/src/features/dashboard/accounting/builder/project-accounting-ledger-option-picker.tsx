@@ -1,5 +1,11 @@
 import { useState } from "react";
 import {
+  DropdownCheck,
+  DropdownChevron,
+  DropdownRoot,
+  DropdownTrigger,
+} from "../../../../shared/controls";
+import {
   ProjectAccountingLedgerBuilderPopover,
   useProjectAccountingLedgerBuilderPopover,
 } from "./project-accounting-ledger-builder-popover";
@@ -54,24 +60,20 @@ export function ProjectAccountingLedgerOptionPicker(props: ProjectAccountingLedg
   };
 
   return (
-    <div
-      ref={popover.rootRef}
-      className={isOpen ? "dashboard-ledger-item-select dashboard-ledger-item-select-open" : "dashboard-ledger-item-select"}
+    <DropdownRoot
+      rootRef={popover.rootRef}
+      open={isOpen}
+      className="dashboard-ledger-item-select"
+      openClassName="dashboard-ledger-item-select-open"
     >
-      <button
-        type="button"
+      <DropdownTrigger
+        open={isOpen}
         className="dashboard-ledger-item-trigger"
-        aria-haspopup="dialog"
-        aria-expanded={isOpen}
         onClick={() => setIsOpen((current) => !current)}
       >
-        <span className="dashboard-ledger-item-trigger-value">{activeValue}</span>
-        <span className="dashboard-ledger-item-trigger-glyph" aria-hidden="true">
-          <svg viewBox="0 0 14 14" className="h-3.5 w-3.5 fill-none stroke-current" strokeWidth="1.6">
-            <path d="m3.5 5.25 3.5 3.5 3.5-3.5" />
-          </svg>
-        </span>
-      </button>
+        <span className="ui-dropdown-trigger-value dashboard-ledger-item-trigger-value">{activeValue}</span>
+        <DropdownChevron />
+      </DropdownTrigger>
 
       {isOpen ? (
         <ProjectAccountingLedgerBuilderPopover
@@ -92,21 +94,15 @@ export function ProjectAccountingLedgerOptionPicker(props: ProjectAccountingLedg
                     aria-selected={selected}
                     className={
                       selected
-                        ? "dashboard-ledger-item-option dashboard-ledger-item-option-selected"
-                        : "dashboard-ledger-item-option"
+                        ? "ui-dropdown-option ui-dropdown-option-selected dashboard-ledger-item-option dashboard-ledger-item-option-selected"
+                        : "ui-dropdown-option dashboard-ledger-item-option"
                     }
                     onClick={() => {
                       props.onChange(option);
                       setIsOpen(false);
                     }}
                   >
-                    <span className="dashboard-ledger-item-option-check" aria-hidden="true">
-                      {selected ? (
-                        <svg viewBox="0 0 14 14" className="h-3.5 w-3.5 fill-none stroke-current" strokeWidth="2">
-                          <path d="m2.75 7.5 2.5 2.5 6-6" />
-                        </svg>
-                      ) : null}
-                    </span>
+                    <DropdownCheck selected={selected} />
                     <span className="dashboard-ledger-item-option-label">{option}</span>
                   </button>
                 );
@@ -131,6 +127,6 @@ export function ProjectAccountingLedgerOptionPicker(props: ProjectAccountingLedg
           </div>
         </ProjectAccountingLedgerBuilderPopover>
       ) : null}
-    </div>
+    </DropdownRoot>
   );
 }

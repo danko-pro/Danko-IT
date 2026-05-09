@@ -1,4 +1,4 @@
-import { Button } from "../../shared/controls";
+import { Button, DeleteButton } from "../../shared/controls";
 import type { RecentRequest } from "../../shared/types";
 import { StatusBadge } from "../../shared/ui";
 import { canDeleteRequest, formatDeliveryWindow, formatStatus, requestActionsForStatus, toneForStatus, waitingForLabel } from "../../shared/utils";
@@ -91,14 +91,7 @@ export function RequestsListPanel(props: RequestsListPanelProps) {
                   ))}
 
                   {canDeleteRequest(request.status) ? (
-                    <Button
-                      variant="micro"
-                      tone="danger"
-                      disabled={busy}
-                      onClick={() => void props.onDeleteRequest(request.id)}
-                    >
-                      {busy ? "..." : "Удалить"}
-                    </Button>
+                    <DeleteButton busy={busy} onClick={() => void props.onDeleteRequest(request.id)} />
                   ) : null}
                 </div>
               ) : null}

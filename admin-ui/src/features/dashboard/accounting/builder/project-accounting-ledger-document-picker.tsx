@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { DropdownRoot, DropdownTrigger } from "../../../../shared/controls";
 import { formatDisplayDate, formatMoney } from "../../model/project-accounting-format";
 import type { ProjectCardLedgerDocument, ProjectCardLedgerStatus } from "../../model/project-model";
 import type { LedgerDocumentKind } from "../project-accounting-ledger-config";
@@ -122,15 +123,15 @@ export function ProjectAccountingLedgerDocumentPicker(props: ProjectAccountingLe
   }, [isInteractive]);
 
   return (
-    <div
-      ref={popover.rootRef}
-      className={isOpen ? "dashboard-ledger-document-select dashboard-ledger-document-select-open" : "dashboard-ledger-document-select"}
+    <DropdownRoot
+      rootRef={popover.rootRef}
+      open={isOpen}
+      className="dashboard-ledger-document-select"
+      openClassName="dashboard-ledger-document-select-open"
     >
-      <button
-        type="button"
+      <DropdownTrigger
+        open={isOpen}
         className={`dashboard-ledger-document-trigger dashboard-ledger-document-trigger-${visualState}`}
-        aria-haspopup="dialog"
-        aria-expanded={isOpen}
         disabled={!isInteractive}
         onClick={() => setIsOpen((current) => !current)}
       >
@@ -146,7 +147,7 @@ export function ProjectAccountingLedgerDocumentPicker(props: ProjectAccountingLe
             <path d="M9.75 2.9V5.4H12.2" />
           </svg>
         </span>
-      </button>
+      </DropdownTrigger>
 
       {isOpen ? (
         <ProjectAccountingLedgerBuilderPopover
@@ -240,6 +241,6 @@ export function ProjectAccountingLedgerDocumentPicker(props: ProjectAccountingLe
           ) : null}
         </ProjectAccountingLedgerBuilderPopover>
       ) : null}
-    </div>
+    </DropdownRoot>
   );
 }

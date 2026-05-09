@@ -1,7 +1,4 @@
 .dashboard-ledger-item-select {
-  position: relative;
-  width: 100%;
-  max-width: none;
   z-index: 2;
 }
 
@@ -9,43 +6,10 @@
   z-index: 12;
 }
 
-.dashboard-ledger-item-trigger {
-  width: 100%;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 0.55rem;
-  min-height: 2.5rem;
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.03);
-  padding: 0.38rem 0.48rem;
-  color: #e9f5fb;
-  transition:
-    border-color var(--dashboard-motion-fast) var(--dashboard-motion-ease-soft),
-    background-color var(--dashboard-motion-fast) var(--dashboard-motion-ease-soft),
-    transform var(--dashboard-motion-fast) var(--dashboard-motion-ease-soft),
-    box-shadow var(--dashboard-motion-medium) var(--dashboard-motion-ease-soft);
-}
-
-.dashboard-ledger-item-trigger:hover,
-.dashboard-ledger-item-select-open .dashboard-ledger-item-trigger {
-  border-color: rgba(110, 231, 183, 0.18);
-  background: rgba(110, 231, 183, 0.05);
-}
-
 .dashboard-ledger-item-trigger-value {
-  min-width: 0;
-  text-align: left;
   font-size: 0.8rem;
   font-weight: 300;
   line-height: 1.2;
-}
-
-.dashboard-ledger-item-trigger-glyph {
-  display: inline-flex;
-  align-items: center;
-  color: #7c92a5;
 }
 
 .dashboard-ledger-item-cloud {
@@ -77,41 +41,6 @@
   gap: 0.2rem;
   overflow-y: auto;
   padding-right: 0.1rem;
-}
-
-.dashboard-ledger-item-option {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  align-items: center;
-  gap: 0.48rem;
-  border-radius: 9px;
-  border: 1px solid rgba(255, 255, 255, 0.04);
-  background: rgba(255, 255, 255, 0.02);
-  padding: 0.34rem 0.42rem;
-  color: #dceaf3;
-  transition:
-    border-color 180ms ease,
-    background-color 180ms ease,
-    transform 180ms ease;
-}
-
-.dashboard-ledger-item-option:hover,
-.dashboard-ledger-item-option-selected {
-  border-color: rgba(110, 231, 183, 0.16);
-  background: rgba(110, 231, 183, 0.06);
-  transform: translateY(-1px);
-}
-
-.dashboard-ledger-item-option-check {
-  display: inline-flex;
-  height: 1rem;
-  width: 1rem;
-  align-items: center;
-  justify-content: center;
-  border-radius: 9999px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  color: #93efc0;
-  background: rgba(255, 255, 255, 0.03);
 }
 
 .dashboard-ledger-item-option-label {

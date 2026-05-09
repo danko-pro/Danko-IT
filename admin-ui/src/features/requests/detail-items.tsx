@@ -1,4 +1,4 @@
-import { Button } from "../../shared/controls";
+import { Button, DeleteButton } from "../../shared/controls";
 import type { RequestDetail, RequestItem, RequestItemFormState } from "../../shared/types";
 import { emptyRequestItemForm } from "../../shared/types";
 import { formatDimensions, formatQuantity, itemTitle, requestItemFormFromItem } from "../../shared/utils";
@@ -58,14 +58,10 @@ export function RequestsDetailItems(props: RequestsDetailItemsProps) {
                 >
                   Редактировать
                 </Button>
-                <Button
-                  variant="micro"
-                  tone="danger"
-                  disabled={props.requestDetailBusyKey === `delete-item-${item.id}`}
+                <DeleteButton
+                  busy={props.requestDetailBusyKey === `delete-item-${item.id}`}
                   onClick={() => void props.onDeleteItem(props.requestDetail.draft.id, item.id)}
-                >
-                  {props.requestDetailBusyKey === `delete-item-${item.id}` ? "..." : "Удалить"}
-                </Button>
+                />
               </div>
             </div>
 

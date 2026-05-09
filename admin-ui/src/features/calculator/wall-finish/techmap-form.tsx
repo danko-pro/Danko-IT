@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
 
+import { AddButton } from "../../../shared/controls";
+
 type TechmapItem = {
   id: number;
   title: string;
@@ -31,9 +33,12 @@ export function WallFinishTechmapHeader<TItem extends TechmapItem>(props: {
             {item.title}
           </button>
         ))}
-        <button type="button" className="flooring-techmap-chip-add" onClick={props.onCreate} aria-label={props.addLabel}>
-          +
-        </button>
+        <AddButton
+          className="flooring-techmap-chip-add"
+          aria-label={props.addLabel}
+          children={null}
+          onClick={props.onCreate}
+        />
       </div>
     </div>
   );

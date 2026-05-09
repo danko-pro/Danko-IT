@@ -1,4 +1,4 @@
-export { Button } from "../../../shared/controls";
+export { AddButton, Button, DeleteButton } from "../../../shared/controls";
 
 export * from "../shared";
 export { CalculatorStageRightPanelLayout } from "../stage/right-panel-layout";

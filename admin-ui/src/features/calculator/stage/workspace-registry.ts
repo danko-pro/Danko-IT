@@ -1,0 +1,125 @@
+import { defineWorkspaceRegistry } from "../../../shared/workspace-contract";
+
+export const calculatorStageWorkspaceRegistry = defineWorkspaceRegistry({
+  id: "calculator.stage-shell",
+  title: "Каркас стадии калькулятора",
+  description: "Общий shell стадий расчета: заголовок, actions, основная зона и правая панель.",
+  components: [
+    {
+      id: "calculator.stage.header",
+      type: "toolbar",
+      title: "Заголовок стадии",
+      description: "Название стадии, переключатель параметров и feature actions.",
+      dataKey: "calculator.activeStage",
+      area: { x: 1, y: 1, w: 30, h: 3 },
+      minArea: { w: 12, h: 2 },
+      priority: 100,
+      capabilities: {
+        movable: false,
+        resizable: false,
+        deletable: false,
+        copyable: false,
+        collapsible: false,
+      },
+      children: [
+        {
+          id: "calculator.stage.settings-toggle",
+          type: "button",
+          role: "secondary-action",
+          label: "Параметры",
+          dataKey: "calculator.stage.settingsOpen",
+        },
+        {
+          id: "calculator.stage.actions",
+          type: "button",
+          role: "primary-action",
+          label: "Действия стадии",
+        },
+      ],
+      source: {
+        feature: "calculator/stage",
+        file: "shell.tsx",
+      },
+    },
+    {
+      id: "calculator.stage.main",
+      type: "stage",
+      title: "Основная рабочая зона",
+      description: "Главный контент активной стадии: комнаты, техкарта, смета или двери.",
+      dataKey: "calculator.activeStage.content",
+      area: { x: 1, y: 4, w: 20, h: 22 },
+      minArea: { w: 10, h: 10 },
+      priority: 90,
+      capabilities: {
+        movable: false,
+        resizable: true,
+        deletable: false,
+        copyable: false,
+        collapsible: false,
+      },
+      relationships: [
+        {
+          type: "controls",
+          targetId: "calculator.stage.side-panel",
+          note: "Выбор в основной зоне определяет содержимое правой панели.",
+        },
+      ],
+      source: {
+        feature: "calculator/stage",
+        file: "right-panel-layout.tsx",
+      },
+    },
+    {
+      id: "calculator.stage.side-panel",
+      type: "panel",
+      title: "Правая панель стадии",
+      description: "Параметры, каталоги или детализация выбранного блока активной стадии.",
+      dataKey: "calculator.activeStage.sidePanel",
+      area: { x: 21, y: 4, w: 10, h: 22 },
+      minArea: { w: 6, h: 10 },
+      priority: 80,
+      capabilities: {
+        movable: false,
+        resizable: true,
+        deletable: false,
+        copyable: false,
+        collapsible: true,
+      },
+      children: [
+        {
+          id: "calculator.stage.side-panel.toggle",
+          type: "button",
+          role: "secondary-action",
+          label: "Открыть или закрыть панель",
+          dataKey: "calculator.stage.panelOpen",
+        },
+      ],
+      source: {
+        feature: "calculator/stage",
+        file: "right-panel-layout.tsx",
+      },
+    },
+    {
+      id: "calculator.stage.empty",
+      type: "panel",
+      title: "Пустое состояние стадии",
+      description: "Сообщение, когда проект или данные стадии еще не готовы.",
+      dataKey: "calculator.stage.isReady",
+      area: { x: 1, y: 4, w: 30, h: 8 },
+      layoutParticipation: "conditional",
+      minArea: { w: 10, h: 4 },
+      priority: 50,
+      capabilities: {
+        movable: false,
+        resizable: false,
+        deletable: false,
+        copyable: false,
+        collapsible: false,
+      },
+      source: {
+        feature: "calculator/stage",
+        file: "shell.tsx",
+      },
+    },
+  ],
+});

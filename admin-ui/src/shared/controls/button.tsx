@@ -50,3 +50,53 @@ export function IconButton(props: IconButtonProps) {
 
   return <Button aria-label={ariaLabel} title={title ?? ariaLabel} {...buttonProps} />;
 }
+
+type DeleteButtonProps = Omit<SharedButtonProps, "children" | "tone"> & {
+  busy?: boolean;
+  busyLabel?: string;
+  children?: ReactNode;
+};
+
+export function DeleteButton(props: DeleteButtonProps) {
+  const {
+    busy = false,
+    busyLabel = "...",
+    children = "Удалить",
+    disabled,
+    variant = "micro",
+    ...buttonProps
+  } = props;
+
+  return (
+    <Button {...buttonProps} disabled={disabled || busy} tone="danger" variant={variant}>
+      {busy ? busyLabel : children}
+    </Button>
+  );
+}
+
+type AddButtonProps = Omit<SharedButtonProps, "children" | "tone"> & {
+  children?: ReactNode;
+  glyphClassName?: string;
+  showGlyph?: boolean;
+};
+
+export function AddButton(props: AddButtonProps) {
+  const {
+    children = "Добавить",
+    glyphClassName,
+    showGlyph = true,
+    variant = "micro",
+    ...buttonProps
+  } = props;
+
+  return (
+    <Button {...buttonProps} variant={variant}>
+      {showGlyph ? (
+        <span className={glyphClassName} aria-hidden="true">
+          +
+        </span>
+      ) : null}
+      {children}
+    </Button>
+  );
+}

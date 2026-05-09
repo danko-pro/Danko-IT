@@ -146,7 +146,6 @@
 
 .dashboard-project-contract-delete-confirm {
   display: grid;
-  gap: 0.6rem;
   min-width: min(100%, 18rem);
   border-radius: 16px;
   border: 1px solid rgba(255, 122, 122, 0.16);
@@ -155,45 +154,8 @@
   animation: dashboard-project-contract-sync-appear var(--dashboard-motion-medium) var(--dashboard-motion-ease-soft);
 }
 
-.dashboard-project-contract-delete-confirm-text {
-  font-size: 0.8rem;
-  line-height: 1.45;
-  color: #ffd2d2;
-}
-
-.dashboard-project-contract-delete-confirm-actions {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-}
-
-.dashboard-project-contract-danger-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 2.35rem;
-  border-radius: 14px;
-  border: 1px solid rgba(255, 122, 122, 0.18);
-  background: linear-gradient(180deg, rgba(91, 30, 41, 0.98), rgba(43, 15, 22, 0.98));
-  padding: 0.62rem 0.9rem;
-  font-size: 0.82rem;
-  font-weight: 700;
-  color: #ffe7e7;
-  transition:
-    border-color var(--dashboard-motion-fast) var(--dashboard-motion-ease-soft),
-    background-color var(--dashboard-motion-fast) var(--dashboard-motion-ease-soft),
-    color var(--dashboard-motion-fast) var(--dashboard-motion-ease-soft),
-    transform var(--dashboard-motion-fast) var(--dashboard-motion-ease-soft);
-}
-
-.dashboard-project-contract-danger-button:hover {
-  border-color: rgba(255, 122, 122, 0.3);
-  transform: translateY(-1px);
-}
-
 .dashboard-project-contract-delete-trigger:disabled,
-.dashboard-project-contract-danger-button:disabled {
+.dashboard-project-contract-delete-confirm .ui-confirm-delete-button:disabled {
   cursor: not-allowed;
   opacity: 0.6;
   transform: none;

@@ -45,3 +45,9 @@ export function SignalChip(props: {
     </div>
   );
 }
+
+export function StatChip(props: { children: ReactNode; className?: string }) {
+  const className = props.className ? `stat-chip ${props.className}` : "stat-chip";
+
+  return <span className={className}>{props.children}</span>;
+}

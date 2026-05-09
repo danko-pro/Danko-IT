@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { DropdownCheck, DropdownRoot, DropdownTrigger } from "../../../../shared/controls";
 import type { ProjectCardLedgerCounterparty } from "../../model/project-model";
 import {
   ProjectAccountingLedgerBuilderPopover,
@@ -38,17 +39,15 @@ export function ProjectAccountingLedgerCounterpartyPicker(
   });
 
   return (
-    <div
-      ref={popover.rootRef}
-      className={
-        isOpen ? "dashboard-ledger-counterparty-select dashboard-ledger-counterparty-select-open" : "dashboard-ledger-counterparty-select"
-      }
+    <DropdownRoot
+      rootRef={popover.rootRef}
+      open={isOpen}
+      className="dashboard-ledger-counterparty-select"
+      openClassName="dashboard-ledger-counterparty-select-open"
     >
-      <button
-        type="button"
+      <DropdownTrigger
+        open={isOpen}
         className="dashboard-ledger-counterparty-trigger"
-        aria-haspopup="dialog"
-        aria-expanded={isOpen}
         onClick={() => setIsOpen((current) => !current)}
       >
         <span className="dashboard-ledger-counterparty-trigger-body">
@@ -62,7 +61,7 @@ export function ProjectAccountingLedgerCounterpartyPicker(
             <path d="M6 9h2.5" />
           </svg>
         </span>
-      </button>
+      </DropdownTrigger>
 
       {isOpen ? (
         <ProjectAccountingLedgerBuilderPopover
@@ -84,21 +83,15 @@ export function ProjectAccountingLedgerCounterpartyPicker(
                   aria-selected={selected}
                   className={
                     selected
-                      ? "dashboard-ledger-counterparty-option dashboard-ledger-counterparty-option-selected"
-                      : "dashboard-ledger-counterparty-option"
+                      ? "ui-dropdown-option ui-dropdown-option-selected dashboard-ledger-counterparty-option dashboard-ledger-counterparty-option-selected"
+                      : "ui-dropdown-option dashboard-ledger-counterparty-option"
                   }
                   onClick={() => {
                     props.onSelect(option);
                     setIsOpen(false);
                   }}
                 >
-                  <span className="dashboard-ledger-counterparty-option-check" aria-hidden="true">
-                    {selected ? (
-                      <svg viewBox="0 0 14 14" className="h-3.5 w-3.5 fill-none stroke-current" strokeWidth="2">
-                        <path d="m2.75 7.5 2.5 2.5 6-6" />
-                      </svg>
-                    ) : null}
-                  </span>
+                  <DropdownCheck selected={selected} />
                   <span className="dashboard-ledger-counterparty-option-body">
                     <span className="dashboard-ledger-counterparty-option-title">{option.legalName}</span>
                     <span className="dashboard-ledger-counterparty-option-meta">
@@ -179,6 +172,6 @@ export function ProjectAccountingLedgerCounterpartyPicker(
           </div>
         </ProjectAccountingLedgerBuilderPopover>
       ) : null}
-    </div>
+    </DropdownRoot>
   );
 }

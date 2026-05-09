@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-import { Button } from "./";
+import { AddButton, Button, DeleteButton } from "../../../shared/controls";
 import type { FlooringStageReadyProps } from "./";
 
 export function FlooringSettingsPanel(
@@ -100,9 +100,13 @@ export function FlooringSettingsPanel(
                   onChange={(event) => updateGlobalItem(props, item.id, { title: event.target.value })}
                   placeholder="Название"
                 />
-                <button type="button" className="warmfloor-material-remove" onClick={() => removeGlobalItem(props, item.id)}>
+                <DeleteButton
+                  className="warmfloor-material-remove"
+                  aria-label={`Удалить строку ${item.title || "без названия"}`}
+                  onClick={() => removeGlobalItem(props, item.id)}
+                >
                   ×
-                </button>
+                </DeleteButton>
               </div>
               <div className="flooring-global-item-controls">
                 <select
@@ -140,9 +144,9 @@ export function FlooringSettingsPanel(
               </div>
             </div>
           ))}
-          <button type="button" className="calculator-nav-add warmfloor-material-add" onClick={() => addGlobalItem(props)}>
-            + Добавить строку
-          </button>
+          <AddButton className="calculator-nav-add warmfloor-material-add" onClick={() => addGlobalItem(props)}>
+            Добавить строку
+          </AddButton>
         </SettingsGroup>
       </div>
 

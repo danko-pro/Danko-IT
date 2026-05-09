@@ -32,9 +32,9 @@ export function DoorWorkbenchDock(props: DoorWorkbenchDockProps) {
   return (
     <aside className="doors-workbench-panel doors-workbench-dock" data-testid="doors-workbench-dock">
       <div className="doors-workbench-dock-tabs">
-        <DockButton active={mode === "summary"} onClick={() => setMode("summary")}>Свод</DockButton>
+        <DockButton active={mode === "summary"} onClick={() => setMode("summary")}>Итог</DockButton>
         <DockButton active={mode === "sizes"} onClick={() => setMode("sizes")}>Размеры</DockButton>
-        <DockButton active={mode === "parts"} onClick={() => setMode("parts")}>Комплект</DockButton>
+        <DockButton active={mode === "parts"} onClick={() => setMode("parts")}>Каталог</DockButton>
       </div>
       {mode === "summary" ? <DoorWorkbenchSummary {...props} /> : null}
       {mode === "sizes" ? <DoorCatalogForm {...props} /> : null}

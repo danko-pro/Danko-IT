@@ -1,4 +1,18 @@
+import type { ReactNode } from "react";
+
 // Визуальные карточки для сводок и настроек admin UI.
+
+export function DenseRow(props: { active?: boolean; children: ReactNode; className?: string }) {
+  const className = [
+    "dense-row",
+    props.active ? "dense-row-active" : "",
+    props.className,
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  return <div className={className}>{props.children}</div>;
+}
 
 export function InfoCard(props: { label: string; value: string }) {
   return (

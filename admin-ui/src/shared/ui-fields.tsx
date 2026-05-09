@@ -79,6 +79,36 @@ export function TimeField(props: {
   );
 }
 
+export function TextAreaField(props: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  size?: "default" | "compact";
+  className?: string;
+  tooltip?: string;
+}) {
+  const labelClassName = props.size === "compact" ? "field-label field-label-compact" : "field-label";
+  const inputClassName = [
+    props.size === "compact" ? "text-input text-input-compact" : "text-input",
+    props.className,
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  return (
+    <label className="block">
+      <FieldLabel className={labelClassName} label={props.label} tooltip={props.tooltip} />
+      <textarea
+        className={inputClassName}
+        value={props.value}
+        onChange={(event) => props.onChange(event.target.value)}
+        placeholder={props.placeholder}
+      />
+    </label>
+  );
+}
+
 function FieldLabel(props: { className: string; label: string; tooltip?: string }) {
   return (
     <div className={`${props.className} field-label-row`}>

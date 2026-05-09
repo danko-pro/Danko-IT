@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-import { Button } from "../../../shared/controls";
+import { Button, DeleteButton } from "../../../shared/controls";
 import { formatMoney, trimFloat } from "../shared";
 import type { CalculatorProjectDoorComponent } from "../doors/model";
 import type { DoorsStageReadyProps } from "../doors/types";
@@ -193,15 +193,11 @@ function ComponentRow(props: {
         <Button type="button" variant="micro" onClick={props.onEdit}>
           Править
         </Button>
-        <Button
+        <DeleteButton
           type="button"
-          variant="micro"
-          tone="danger"
-          disabled={props.busyKey === `calculator-project-door-component-delete-${component.id}`}
+          busy={props.busyKey === `calculator-project-door-component-delete-${component.id}`}
           onClick={props.onDelete}
-        >
-          {props.busyKey === `calculator-project-door-component-delete-${component.id}` ? "..." : "Удалить"}
-        </Button>
+        />
       </div>
     </div>
   );

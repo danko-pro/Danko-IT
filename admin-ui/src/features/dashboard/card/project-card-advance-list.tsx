@@ -4,6 +4,7 @@
  */
 import { formatDisplayDate, formatMoney } from "../model/project-accounting-format";
 import type { ProjectCardAdvanceItem } from "../model/project-model";
+import { DeleteButton } from "../../../shared/controls";
 
 type ProjectCardAdvanceListProps = {
   advances: ProjectCardAdvanceItem[];
@@ -42,15 +43,14 @@ export function ProjectCardAdvanceList(props: ProjectCardAdvanceListProps) {
                     {advance.status === "paid" ? "Оплачено" : "План"}
                   </span>
                 </div>
-                <button
-                  type="button"
+                <DeleteButton
                   className="dashboard-project-advance-remove"
                   aria-label="Удалить аванс"
                   disabled={isRemoving}
                   onClick={() => props.onRemoveAdvance(advance.id)}
                 >
                   ×
-                </button>
+                </DeleteButton>
               </div>
             </div>
           </div>

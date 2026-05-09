@@ -1,45 +1,9 @@
 .dashboard-ledger-status-select {
-  position: relative;
-  width: 100%;
-  max-width: none;
   z-index: 2;
 }
 
 .dashboard-ledger-status-select-open {
   z-index: 12;
-}
-
-.dashboard-ledger-status-trigger {
-  width: 100%;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 0.55rem;
-  min-height: 2.5rem;
-  border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.03);
-  padding: 0.38rem 0.48rem;
-  color: #e9f5fb;
-  transition:
-    border-color 180ms ease,
-    background-color 180ms ease,
-    transform 180ms ease;
-}
-
-.dashboard-ledger-status-trigger:hover,
-.dashboard-ledger-status-select-open .dashboard-ledger-status-trigger {
-  border-color: rgba(92, 179, 255, 0.18);
-  background: rgba(92, 179, 255, 0.05);
-}
-
-.dashboard-ledger-status-trigger-body {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  grid-template-rows: auto auto;
-  align-items: start;
-  gap: 0.08rem 0.36rem;
-  min-width: 0;
 }
 
 .dashboard-ledger-status-trigger-label {
@@ -69,47 +33,6 @@
 
 .dashboard-ledger-status-trigger-label-error {
   color: #ffbfd1;
-}
-
-.dashboard-ledger-status-trigger-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  height: 1.7rem;
-  width: 1.7rem;
-  border-radius: 9px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.03);
-  font-size: 0.82rem;
-  font-weight: 600;
-  line-height: 1;
-  color: #a7bed0;
-}
-
-.dashboard-ledger-status-trigger-meta {
-  min-width: 0;
-  grid-column: 2;
-  grid-row: 2;
-  justify-self: end;
-  text-align: right;
-  font-size: 0.56rem;
-  line-height: 1.15;
-  color: #88a0b4;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.dashboard-ledger-status-trigger-meta-neutral {
-  color: #7f95a8;
-}
-
-.dashboard-ledger-status-trigger-meta-positive {
-  color: #91e4c3;
-}
-
-.dashboard-ledger-status-trigger-meta-negative {
-  color: #f0b1c4;
 }
 
 .dashboard-ledger-status-pill {

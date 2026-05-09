@@ -56,8 +56,7 @@
 
 .dashboard-ledger-toolbar-button,
 .dashboard-ledger-toolbar-secondary,
-.dashboard-ledger-document-upload-button,
-.dashboard-ledger-builder-delete-cloud-button {
+.dashboard-ledger-document-upload-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;

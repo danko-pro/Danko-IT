@@ -1,5 +1,6 @@
 import { memo, type Ref } from "react";
 
+import { DeleteButton } from "../../../shared/controls";
 import { formatArea, formatMeters, trimFloat } from "../shared";
 import type { CalculatorRoomSummary } from "../room/model";
 
@@ -74,15 +75,14 @@ function RoomsStageSidebarRowComponent(props: RoomsStageSidebarRowProps) {
               </button>
             </div>
           ) : (
-            <button
-              type="button"
+            <DeleteButton
               className="calculator-room-sidebar-remove"
               aria-label={`Удалить помещение ${room.name}`}
               disabled={isRemoving || busyKey === `calculator-room-delete-${room.id}`}
               onClick={() => onRequestRemove(room.id)}
             >
               ×
-            </button>
+            </DeleteButton>
           )}
         </div>
       </div>

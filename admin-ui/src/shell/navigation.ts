@@ -1,25 +1,49 @@
 import type { ScreenKey } from "../shared/types";
+import { getSidebarAppPages, type AppPageRegistryItem } from "./page-registry";
 
 export type NavigationScreenKey = Exclude<ScreenKey, "editor">;
+type NavigationPage = AppPageRegistryItem & { screen: NavigationScreenKey };
 
 export type NavigationItem = {
   key: NavigationScreenKey;
   label: string;
   note: string;
+  pageId: string;
+  routeId: string;
+  routeElementId: string;
+  navigationElementId: string;
+  workspaceId: string;
+  defaultComponentId?: string;
+  order: number;
 };
 
-export const navigation: NavigationItem[] = [
-  { key: "dashboard", label: "Дашборд", note: "Резервный стартовый экран среды" },
-  { key: "requests", label: "Логистика", note: "Сводка, статусы и работа по заявкам" },
-  { key: "materials", label: "Материалы", note: "Каталог, семейства, варианты и SKU" },
-  { key: "calculator", label: "Калькулятор", note: "Обмеры помещений, стены, полы и проемы" },
-  { key: "settings", label: "Настройки", note: "Окно доставки и базовые параметры" },
-];
+function isNavigationScreen(screen: ScreenKey): screen is NavigationScreenKey {
+  return screen !== "editor";
+}
 
-export const screenTitles: Record<NavigationScreenKey, string> = {
-  dashboard: "Дашборд",
-  requests: "Логистика",
-  materials: "Каталог материалов",
-  calculator: "Проектный калькулятор",
-  settings: "Настройки",
-};
+function isNavigationPage(page: AppPageRegistryItem): page is NavigationPage {
+  return isNavigationScreen(page.screen);
+}
+
+const sidebarNavigationPages = getSidebarAppPages().filter(isNavigationPage);
+
+export const navigation: NavigationItem[] = sidebarNavigationPages.map((page) => ({
+  key: page.screen,
+  label: page.navigationLabel,
+  note: page.note,
+  pageId: page.id,
+  routeId: page.routeId,
+  routeElementId: page.routeElementId,
+  navigationElementId: page.navigationElementId,
+  workspaceId: page.workspaceId,
+  defaultComponentId: page.defaultComponentId,
+  order: page.order,
+}));
+
+export const screenTitles: Record<NavigationScreenKey, string> = navigation.reduce(
+  (titles, item) => ({
+    ...titles,
+    [item.key]: sidebarNavigationPages.find((page) => page.screen === item.key)?.title ?? item.label,
+  }),
+  {} as Record<NavigationScreenKey, string>,
+);

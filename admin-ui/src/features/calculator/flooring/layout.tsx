@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 
+import { AddButton } from "../../../shared/controls";
 import { Button, TextField, emptyFlooringLayoutState } from "./";
 import { layoutToState } from "./catalog-state";
 import type { CalculatorFlooringLayout, FlooringStageReadyProps } from "./";
@@ -108,9 +109,12 @@ function TechmapHeader(props: {
             {item.title}
           </button>
         ))}
-        <button type="button" className="flooring-techmap-chip-add" onClick={props.onCreate} aria-label="Добавить укладку">
-          +
-        </button>
+        <AddButton
+          className="flooring-techmap-chip-add"
+          aria-label="Добавить укладку"
+          children={null}
+          onClick={props.onCreate}
+        />
       </div>
     </div>
   );

@@ -1,0 +1,86 @@
+@layer components {
+  .ui-confirm-delete-cloud {
+    display: grid;
+    gap: 0.5rem;
+    min-width: 12rem;
+    overflow: visible;
+    border: 1px solid rgba(7, 248, 198, 0.22);
+    border-radius: 14px;
+    background:
+      linear-gradient(180deg, rgba(18, 28, 34, 0.98), rgba(9, 15, 20, 0.99)),
+      radial-gradient(circle at top left, rgba(7, 248, 198, 0.1), transparent 55%);
+    padding: 0.58rem 0.68rem;
+    box-shadow:
+      0 18px 34px rgba(0, 0, 0, 0.28),
+      0 0 0 1px rgba(7, 248, 198, 0.05),
+      0 0 22px rgba(7, 248, 198, 0.1);
+  }
+
+  .ui-confirm-delete-cloud::before {
+    content: "";
+    position: absolute;
+    top: -6px;
+    right: var(--ui-confirm-delete-arrow-right, 0.9rem);
+    border-right: 6px solid transparent;
+    border-bottom: 6px solid rgba(7, 248, 198, 0.26);
+    border-left: 6px solid transparent;
+  }
+
+  .ui-confirm-delete-copy {
+    color: #eafffb;
+    font-size: 0.7rem;
+    font-weight: 650;
+    letter-spacing: 0.04em;
+    line-height: 1.45;
+  }
+
+  .ui-confirm-delete-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.4rem;
+  }
+
+  .ui-confirm-delete-button {
+    min-height: 1.85rem;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.03);
+    padding: 0.24rem 0.52rem;
+    color: #d9e6f3;
+    font-size: 0.62rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    line-height: 1;
+    text-transform: uppercase;
+    transition:
+      transform var(--ui-motion-fast) var(--ui-motion-ease-soft),
+      border-color var(--ui-motion-fast) var(--ui-motion-ease-soft),
+      background-color var(--ui-motion-fast) var(--ui-motion-ease-soft),
+      color var(--ui-motion-fast) var(--ui-motion-ease-soft),
+      opacity var(--ui-motion-fast) var(--ui-motion-ease-soft);
+  }
+
+  .ui-confirm-delete-button:hover:not(:disabled) {
+    transform: translateY(-1px);
+    border-color: rgba(255, 255, 255, 0.14);
+    background: rgba(255, 255, 255, 0.06);
+    color: #edf7ff;
+  }
+
+  .ui-confirm-delete-button:disabled {
+    cursor: not-allowed;
+    opacity: 0.58;
+  }
+
+  .ui-confirm-delete-button-danger {
+    border-color: rgba(255, 128, 160, 0.2);
+    background: rgba(255, 128, 160, 0.1);
+    color: #ffcbd9;
+  }
+
+  .ui-confirm-delete-button-danger:hover:not(:disabled) {
+    border-color: rgba(255, 128, 160, 0.34);
+    background: rgba(255, 128, 160, 0.16);
+    color: #ffe4eb;
+  }
+}

@@ -4,3 +4,9 @@ import App from "./App";
 import "./styles.css";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(<App />);
+
+if (import.meta.env.DEV) {
+  void import("./shell/workspace-devtools").then(({ installWorkspaceDevtools }) => {
+    installWorkspaceDevtools();
+  });
+}

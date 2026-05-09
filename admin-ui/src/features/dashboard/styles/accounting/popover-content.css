@@ -26,7 +26,7 @@
   overflow: hidden;
 }
 
-.dashboard-ledger-builder-delete-cloud .dashboard-ledger-popover-body {
+.dashboard-ledger-builder-delete-cloud-body {
   min-width: 12rem;
   display: grid;
   gap: 0.5rem;

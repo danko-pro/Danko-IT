@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 
+import { Button, DeleteButton } from "../../../shared/controls";
 import { MetricChip, SelectField, TextField, formatArea, formatMoney, toNumber } from "./";
 import type { WallFinishStageReadyProps } from "./";
 import { addZone, clampZoneArea, duplicateZone, removeZone, updateZone, updateZoneArea } from "./room-zone-actions";
@@ -81,9 +82,9 @@ export function WallFinishRoomParametersPanel(props: WallFinishRoomParametersPan
               {overusedArea > 0 ? ` · превышение ${formatArea(overusedArea)}` : ` · осталось ${formatArea(remainingArea)}`}
             </div>
           </div>
-          <button type="button" className="micro-action" onClick={() => addZone(props, room.room_id, zones, remainingArea)}>
+          <Button variant="micro" onClick={() => addZone(props, room.room_id, zones, remainingArea)}>
             + Участок
-          </button>
+          </Button>
         </div>
 
         <div className="flooring-zone-list">
@@ -151,17 +152,15 @@ export function WallFinishRoomParametersPanel(props: WallFinishRoomParametersPan
                 />
               </div>
               <div className="flooring-zone-actions">
-                <button type="button" className="micro-action" onClick={() => duplicateZone(props, room.room_id, zones, zone)}>
+                <Button variant="micro" onClick={() => duplicateZone(props, room.room_id, zones, zone)}>
                   Дублировать
-                </button>
-                <button
-                  type="button"
-                  className="micro-action micro-action-danger"
+                </Button>
+                <DeleteButton
                   onClick={() => removeZone(props, room.room_id, zones, zone.id)}
                   disabled={zones.length <= 1}
                 >
                   Удалить
-                </button>
+                </DeleteButton>
               </div>
             </div>
           ))}

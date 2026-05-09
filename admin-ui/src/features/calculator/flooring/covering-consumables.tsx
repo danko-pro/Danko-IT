@@ -1,3 +1,4 @@
+import { AddButton, DeleteButton } from "../../../shared/controls";
 import type { FlooringCoveringCreateState } from "./";
 
 type CoveringConsumableKey = keyof Pick<
@@ -61,15 +62,19 @@ export function CoveringConsumablesEditor(props: CoveringConsumablesEditorProps)
           <input className="text-input text-input-compact" value={item.consumption_per_m2} onChange={(event) => updateCustomConsumable(onChange, item.id, { consumption_per_m2: event.target.value })} placeholder="0" />
           <input className="text-input text-input-compact" value={item.unit} onChange={(event) => updateCustomConsumable(onChange, item.id, { unit: event.target.value })} placeholder="шт" />
           <input className="text-input text-input-compact" value={item.price_per_unit} onChange={(event) => updateCustomConsumable(onChange, item.id, { price_per_unit: event.target.value })} placeholder="0" />
-          <button type="button" className="warmfloor-material-remove" onClick={() => removeCustomConsumable(onChange, item.id)}>
+          <DeleteButton
+            className="warmfloor-material-remove"
+            aria-label={`Удалить позицию ${item.title || "без названия"}`}
+            onClick={() => removeCustomConsumable(onChange, item.id)}
+          >
             ×
-          </button>
+          </DeleteButton>
         </div>
       ))}
 
-      <button type="button" className="calculator-nav-add warmfloor-material-add" onClick={() => addCustomConsumable(onChange)}>
-        + Добавить позицию
-      </button>
+      <AddButton className="calculator-nav-add warmfloor-material-add" onClick={() => addCustomConsumable(onChange)}>
+        Добавить позицию
+      </AddButton>
     </div>
   );
 }

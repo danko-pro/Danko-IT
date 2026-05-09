@@ -1,5 +1,6 @@
 import { useState, type Dispatch, type ReactNode, type SetStateAction } from "react";
 
+import { AddButton, DeleteButton } from "../../../shared/controls";
 import { formatMoney, materialItemsTotal } from "./";
 import type { WarmFloorEditState, WarmFloorMaterialItem } from "./";
 
@@ -184,17 +185,21 @@ function MaterialGroup(props: {
               <input className="text-input" value={String(item.quantity)} onChange={(event) => props.onChange(index, { quantity: Number(event.target.value) || 0 })} />
               <input className="text-input" value={String(item.amount)} onChange={(event) => props.onChange(index, { amount: Number(event.target.value) || 0 })} />
               {props.onRemove ? (
-                <button className="warmfloor-material-remove" type="button" onClick={() => handleRemove(index)}>
+                <DeleteButton
+                  className="warmfloor-material-remove"
+                  aria-label={`Удалить позицию ${item.title || index + 1}`}
+                  onClick={() => handleRemove(index)}
+                >
                   ×
-                </button>
+                </DeleteButton>
               ) : null}
             </div>
           </div>
         ))}
         {props.onAdd ? (
-          <button className="calculator-nav-add warmfloor-material-add" type="button" onClick={props.onAdd}>
-            + Добавить позицию
-          </button>
+          <AddButton className="calculator-nav-add warmfloor-material-add" onClick={props.onAdd}>
+            Добавить позицию
+          </AddButton>
         ) : null}
       </div>
     </details>

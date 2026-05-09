@@ -1,4 +1,4 @@
-import { Button } from "../../../shared/controls";
+import { Button, DeleteButton } from "../../../shared/controls";
 import { toNumber, trimFloat } from "../shared";
 import type { RoomStateSetter } from "../rooms/types";
 import type { RoomEditState } from "./model";
@@ -81,8 +81,7 @@ export function RoomFloorSectionsPanel(props: RoomFloorSectionsPanelProps) {
           >
             <div className="calculator-room-floor-head">
               <div className="calculator-room-floor-kicker">Участок {index + 1}</div>
-              <button
-                type="button"
+              <DeleteButton
                 className="calculator-room-floor-remove"
                 aria-label={`Удалить участок ${index + 1}`}
                 onClick={() =>
@@ -93,7 +92,7 @@ export function RoomFloorSectionsPanel(props: RoomFloorSectionsPanelProps) {
                 }
               >
                 ×
-              </button>
+              </DeleteButton>
             </div>
 
             <div className="calculator-room-floor-fields">

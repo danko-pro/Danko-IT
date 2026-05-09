@@ -1,0 +1,44 @@
+@layer components {
+  .status-pill {
+    @apply inline-flex items-center rounded-full border px-3 py-1.5 text-[11px] font-semibold tracking-[0.08em];
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  }
+
+  .chip {
+    @apply rounded-full border px-3 py-1.5 text-xs font-medium;
+    transition:
+      transform var(--ui-motion-fast) var(--ui-motion-ease-soft),
+      border-color var(--ui-motion-fast) var(--ui-motion-ease-soft),
+      background-color var(--ui-motion-fast) var(--ui-motion-ease-soft),
+      color var(--ui-motion-fast) var(--ui-motion-ease-soft),
+      box-shadow var(--ui-motion-medium) var(--ui-motion-ease-soft);
+    border-color: rgba(255, 255, 255, 0.08);
+    background: linear-gradient(180deg, rgba(19, 24, 31, 0.92), rgba(10, 14, 20, 0.98));
+    color: #c5d4e4;
+  }
+
+  .chip:hover {
+    border-color: rgba(7, 248, 198, 0.22);
+    color: #eef8ff;
+  }
+
+  .chip-active {
+    border-color: rgba(7, 248, 198, 0.28);
+    background: linear-gradient(180deg, rgba(15, 50, 45, 0.96), rgba(10, 16, 22, 0.98));
+    color: #e8ffff;
+  }
+
+  .stat-chip {
+    @apply rounded-full border px-2.5 py-1 text-[11px] font-medium;
+    border-color: rgba(255, 255, 255, 0.08);
+    background: rgba(11, 15, 20, 0.78);
+    color: #b7c9db;
+  }
+
+  .slot-chip {
+    @apply rounded-full border px-2.5 py-1 text-[11px] font-semibold;
+    border-color: rgba(7, 248, 198, 0.26);
+    background: rgba(8, 31, 28, 0.88);
+    color: #cafdff;
+  }
+}

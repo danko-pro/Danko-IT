@@ -1,5 +1,4 @@
-import type { ScreenKey } from "../shared/types";
-import { SignalChip } from "../shared/ui";
+import { SignalChip, type ScreenKey } from "../shared";
 
 function TermsSignal(props: { value: number | undefined }) {
   return (

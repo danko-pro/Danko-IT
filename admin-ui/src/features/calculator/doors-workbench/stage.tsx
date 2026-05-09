@@ -24,8 +24,8 @@ function DoorsWorkbenchReadyStage(props: DoorsStageReadyProps) {
           <span />
         </div>
         <div className="doors-workbench-hero-copy">
-          <div className="doors-workbench-kicker">Дверной workbench</div>
-          <h2>Проемы, двери и комплектация</h2>
+          <div className="doors-workbench-kicker">Дверной раздел</div>
+          <h2>Двери, проемы и комплектация</h2>
           <div className="doors-workbench-hero-line">
             {summary.total_items} позиций · {summary.door_units} дверей · {summary.opening_units + summary.trim_only_units} проемов
           </div>

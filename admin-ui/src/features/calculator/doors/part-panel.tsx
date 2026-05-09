@@ -1,6 +1,7 @@
 import { DoorsProjectComponentsForm } from "./";
 import { DoorsProjectComponentsHeader } from "./";
 import { DoorsProjectComponentsList } from "./";
+import { CalculatorStageEmptyState, CalculatorStageSectionHeader } from "./";
 import type {
   DoorsProjectComponentsPanelProps,
   DoorsProjectComponentsReadyProps,
@@ -9,15 +10,11 @@ import type {
 export function DoorsProjectComponentsPanel(props: DoorsProjectComponentsPanelProps) {
   return (
     <div className="subpanel calculator-stage-section p-3 space-y-3">
-      <div className="calculator-stage-section-head">
-        <div>
-          <div className="calculator-stage-section-kicker">Комплектация</div>
-          <div className="calculator-stage-section-title">Состав и цены выбранной двери</div>
-        </div>
-        <div className="calculator-stage-section-note">
-          Управление комплектующими, продажной ценой и закупкой для выбранной дверной позиции.
-        </div>
-      </div>
+      <CalculatorStageSectionHeader
+        kicker="Комплектация"
+        title="Состав и цены выбранной двери"
+        note="Управление комплектующими, продажной ценой и закупкой для выбранной дверной позиции."
+      />
 
       <DoorsProjectComponentsHeader selectedDoor={props.selectedDoor} />
 
@@ -32,9 +29,9 @@ export function DoorsProjectComponentsPanel(props: DoorsProjectComponentsPanelPr
           />
         </>
       ) : (
-        <div className="calculator-stage-empty">
+        <CalculatorStageEmptyState>
           Выберите дверь слева, чтобы редактировать её комплектацию.
-        </div>
+        </CalculatorStageEmptyState>
       )}
     </div>
   );

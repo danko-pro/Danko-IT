@@ -1,0 +1,92 @@
+@layer components {
+  .ui-dropdown-root {
+    position: relative;
+    width: 100%;
+    max-width: none;
+    z-index: 2;
+  }
+
+  .ui-dropdown-root-open {
+    z-index: var(--ui-dropdown-open-z-index, 12);
+  }
+
+  .ui-dropdown-trigger {
+    display: grid;
+    width: 100%;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.55rem;
+    min-height: 2.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.03);
+    padding: 0.38rem 0.48rem;
+    color: #e9f5fb;
+    transition:
+      border-color var(--ui-motion-fast) var(--ui-motion-ease-soft),
+      background-color var(--ui-motion-fast) var(--ui-motion-ease-soft),
+      transform var(--ui-motion-fast) var(--ui-motion-ease-soft),
+      box-shadow var(--ui-motion-medium) var(--ui-motion-ease-soft),
+      opacity var(--ui-motion-fast) var(--ui-motion-ease-soft);
+  }
+
+  .ui-dropdown-trigger:hover,
+  .ui-dropdown-root-open .ui-dropdown-trigger {
+    border-color: rgba(110, 231, 183, 0.18);
+    background: rgba(110, 231, 183, 0.05);
+  }
+
+  .ui-dropdown-trigger:disabled {
+    cursor: not-allowed;
+    opacity: 0.58;
+  }
+
+  .ui-dropdown-trigger-value {
+    min-width: 0;
+    overflow: hidden;
+    text-align: left;
+    text-overflow: ellipsis;
+  }
+
+  .ui-dropdown-trigger-glyph {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #7c92a5;
+  }
+
+  .ui-dropdown-option {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: 0.48rem;
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    border-radius: 9px;
+    background: rgba(255, 255, 255, 0.02);
+    padding: 0.34rem 0.42rem;
+    color: #dceaf3;
+    transition:
+      border-color var(--ui-motion-fast) var(--ui-motion-ease-soft),
+      background-color var(--ui-motion-fast) var(--ui-motion-ease-soft),
+      transform var(--ui-motion-fast) var(--ui-motion-ease-soft);
+  }
+
+  .ui-dropdown-option:hover,
+  .ui-dropdown-option-selected {
+    transform: translateY(-1px);
+    border-color: rgba(110, 231, 183, 0.16);
+    background: rgba(110, 231, 183, 0.06);
+  }
+
+  .ui-dropdown-option-check {
+    display: inline-flex;
+    width: 1rem;
+    height: 1rem;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 9999px;
+    background: rgba(255, 255, 255, 0.03);
+    color: #93efc0;
+  }
+}

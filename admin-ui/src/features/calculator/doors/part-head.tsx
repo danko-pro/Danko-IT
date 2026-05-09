@@ -1,4 +1,4 @@
-import { formatMoney, getDoorDisplayTitle } from "./";
+import { StatChip, formatMoney, getDoorDisplayTitle } from "./";
 import type { DoorsProjectComponentsPanelProps } from "./";
 
 type DoorsProjectComponentsHeaderProps = Pick<DoorsProjectComponentsPanelProps, "selectedDoor">;
@@ -13,10 +13,10 @@ export function DoorsProjectComponentsHeader(props: DoorsProjectComponentsHeader
         </div>
         {props.selectedDoor ? (
           <div className="mt-1 flex flex-wrap gap-1.5">
-            <span className="stat-chip">Комплект закуп {formatMoney(props.selectedDoor.components_purchase_total ?? 0)}</span>
-            <span className="stat-chip">Комплект продажа {formatMoney(props.selectedDoor.components_sale_total ?? 0)}</span>
-            <span className="stat-chip">Итог закуп {formatMoney(props.selectedDoor.effective_purchase_price ?? 0)}</span>
-            <span className="stat-chip">Итог продажа {formatMoney(props.selectedDoor.effective_sale_price ?? 0)}</span>
+            <StatChip>Комплект закуп {formatMoney(props.selectedDoor.components_purchase_total ?? 0)}</StatChip>
+            <StatChip>Комплект продажа {formatMoney(props.selectedDoor.components_sale_total ?? 0)}</StatChip>
+            <StatChip>Итог закуп {formatMoney(props.selectedDoor.effective_purchase_price ?? 0)}</StatChip>
+            <StatChip>Итог продажа {formatMoney(props.selectedDoor.effective_sale_price ?? 0)}</StatChip>
           </div>
         ) : null}
       </div>

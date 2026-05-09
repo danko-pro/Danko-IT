@@ -1,4 +1,5 @@
 import type { ProjectCardLedgerDocument, ProjectCardLedgerEntry } from "../model/project-model";
+import { AddButton } from "../../../shared/controls";
 import type { LedgerDocumentKind } from "./project-accounting-ledger-config";
 import {
   LEDGER_COLUMN_LAYOUT,
@@ -76,14 +77,13 @@ export function ProjectAccountingLedgerTable(props: ProjectAccountingLedgerTable
 
         <div className="dashboard-ledger-builder-add-overlay">
           <div className="dashboard-ledger-builder-add-separator">
-            <button
-              type="button"
+            <AddButton
               className="dashboard-ledger-builder-add-button"
               aria-label="Добавить строку"
+              glyphClassName="dashboard-ledger-builder-add-button-glyph"
+              children={null}
               onClick={props.onAddEntry}
-            >
-              <span className="dashboard-ledger-builder-add-button-glyph">+</span>
-            </button>
+            />
           </div>
         </div>
       </div>

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { DropdownRoot, DropdownTrigger } from "../../../../shared/controls";
 import { ledgerStatusView } from "../../model/project-accounting-format";
 import type { ProjectCardLedgerStatus } from "../../model/project-model";
 import {
@@ -69,15 +70,15 @@ export function ProjectAccountingLedgerStatusPicker(props: ProjectAccountingLedg
   };
 
   return (
-    <div
-      ref={popover.rootRef}
-      className={isOpen ? "dashboard-ledger-status-select dashboard-ledger-status-select-open" : "dashboard-ledger-status-select"}
+    <DropdownRoot
+      rootRef={popover.rootRef}
+      open={isOpen}
+      className="dashboard-ledger-status-select"
+      openClassName="dashboard-ledger-status-select-open"
     >
-      <button
-        type="button"
+      <DropdownTrigger
+        open={isOpen}
         className="dashboard-ledger-status-trigger"
-        aria-haspopup="dialog"
-        aria-expanded={isOpen}
         onClick={() => setIsOpen((current) => !current)}
       >
         <span className="dashboard-ledger-status-trigger-body">
@@ -96,7 +97,7 @@ export function ProjectAccountingLedgerStatusPicker(props: ProjectAccountingLedg
         <span className="dashboard-ledger-status-trigger-icon" aria-hidden="true">
           ₽
         </span>
-      </button>
+      </DropdownTrigger>
 
       {isOpen ? (
         <ProjectAccountingLedgerBuilderPopover
@@ -194,6 +195,6 @@ export function ProjectAccountingLedgerStatusPicker(props: ProjectAccountingLedg
           </div>
         </ProjectAccountingLedgerBuilderPopover>
       ) : null}
-    </div>
+    </DropdownRoot>
   );
 }

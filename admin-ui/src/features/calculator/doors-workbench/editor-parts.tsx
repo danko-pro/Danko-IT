@@ -23,27 +23,6 @@ export function SummaryCell(props: { label: string; value: string }) {
   );
 }
 
-export function TextAreaField(props: {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  placeholder?: string;
-}) {
-  return (
-    <label className="block">
-      <div className="field-label field-label-compact field-label-row">
-        <span>{props.label}</span>
-      </div>
-      <textarea
-        className="text-input text-input-compact doors-workbench-textarea"
-        value={props.value}
-        onChange={(event) => props.onChange(event.target.value)}
-        placeholder={props.placeholder}
-      />
-    </label>
-  );
-}
-
 export function autosaveLabel(state: DoorsStageReadyProps["projectDoorAutosaveState"], busy: boolean) {
   if (busy || state === "saving") return "Сохраняю...";
   if (state === "pending") return "Сохранится автоматически";

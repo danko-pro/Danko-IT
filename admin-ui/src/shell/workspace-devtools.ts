@@ -11,6 +11,11 @@ import type {
   WorkspaceCompositionInput,
   WorkspaceRuntimeSnapshot,
 } from "../shared/workspace-adapter";
+import {
+  createNavigationEngineInput,
+  type CreateNavigationEngineInputOptions,
+  type NavigationEngineInput,
+} from "./navigation-engine";
 
 type WorkspaceDevtoolsSummary = {
   id: string;
@@ -31,6 +36,7 @@ type WorkspaceDevtools = {
     runtimeOptions?: CreateWorkspaceRuntimeSnapshotOptions,
     compositionOptions?: CreateWorkspaceCompositionInputOptions,
   ) => WorkspaceCompositionInput | null;
+  navigation: (options?: CreateNavigationEngineInputOptions) => NavigationEngineInput;
   shellCalculator: () => WorkspaceCompositionInput | null;
   calculator: () => WorkspaceCompositionInput | null;
 };
@@ -146,6 +152,13 @@ function installWorkspaceProbePanel(devtools: WorkspaceDevtools) {
   addButton("list", () => devtools.list());
   addButton("shell composition", () => devtools.shellCalculator());
   addButton("calculator composition", () => devtools.calculator());
+  addButton("v3 navigation input", () =>
+    devtools.navigation({
+      activeScreen: "calculator",
+      metrics: { columns: 32, rows: 30 },
+      shellState: { menuState: "pinned", placement: "left" },
+    }),
+  );
   addButton("shell runtime", () =>
     devtools.runtime("shell-workspace", { activeRoute: "calculator", includeConditional: true }),
   );
@@ -182,6 +195,7 @@ export function installWorkspaceDevtools() {
     runtime: (id, options = {}) => clone(getAppWorkspaceRuntimeSnapshot(id, options)),
     composition: (id, runtimeOptions = {}, compositionOptions = {}) =>
       clone(getAppWorkspaceCompositionInput(id, runtimeOptions, compositionOptions)),
+    navigation: (options = {}) => clone(createNavigationEngineInput(options)),
     shellCalculator: () =>
       clone(
         getAppWorkspaceCompositionInput(

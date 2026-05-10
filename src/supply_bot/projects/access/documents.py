@@ -18,6 +18,8 @@ from fastapi.responses import FileResponse
 
 from supply_bot.config import Settings
 
+PROJECT_DOCUMENT_UPLOAD_CHUNK_SIZE = 1024 * 1024
+
 
 # Ошибка файлового слоя проекта. Её потом переводит HTTP-слой.
 class ProjectDocumentStorageError(ValueError):
@@ -40,6 +42,10 @@ def _ensure_within_project_documents_root(root: Path, target_path: Path) -> Path
 def _document_suffix(file_name: str | None) -> str:
     suffix = Path(file_name or "").suffix.strip().lower()
     return suffix or ".bin"
+
+
+def _project_document_max_upload_bytes(settings_obj: Settings) -> int:
+    return max(1, int(settings_obj.project_document_max_upload_bytes))
 
 
 def resolve_project_document_path(settings_obj: Settings, storage_key: str) -> Path:
@@ -124,7 +130,19 @@ async def _store_project_document_file(
 
     storage_name = f"{storage_prefix}-{secrets.token_hex(8)}{_document_suffix(uploaded_file.filename)}"
     target_path = _ensure_within_project_documents_root(root, (target_dir / storage_name).resolve())
-    target_path.write_bytes(await uploaded_file.read())
+    bytes_written = 0
+    max_upload_bytes = _project_document_max_upload_bytes(settings_obj)
+    try:
+        with target_path.open("wb") as target:
+            while chunk := await uploaded_file.read(PROJECT_DOCUMENT_UPLOAD_CHUNK_SIZE):
+                bytes_written += len(chunk)
+                if bytes_written > max_upload_bytes:
+                    raise ProjectDocumentStorageError("Project document upload is too large")
+                target.write(chunk)
+    except ProjectDocumentStorageError:
+        if target_path.exists():
+            target_path.unlink()
+        raise
 
     return (
         target_path.relative_to(root).as_posix(),

@@ -6,8 +6,13 @@ from typing import Any
 from fastapi import HTTPException
 
 from supply_bot.admin_api.app_helpers import _parse_hhmm
+from supply_bot.domain.request_lifecycle import (
+    ADMIN_REQUEST_STATUSES,
+    RequestLifecycleError,
+    normalize_request_status as normalize_lifecycle_status,
+)
 
-ALLOWED_REQUEST_STATUSES = {"collecting", "confirmed", "in_progress", "done", "cancelled"}
+ALLOWED_REQUEST_STATUSES = ADMIN_REQUEST_STATUSES
 
 
 def clamp_route_limit(limit: int, *, maximum: int = 100) -> int:
@@ -15,10 +20,10 @@ def clamp_route_limit(limit: int, *, maximum: int = 100) -> int:
 
 
 def normalize_request_status(value: str) -> str:
-    normalized = value.strip().lower()
-    if normalized not in ALLOWED_REQUEST_STATUSES:
-        raise HTTPException(status_code=400, detail="Unsupported status")
-    return normalized
+    try:
+        return normalize_lifecycle_status(value, allowed=ALLOWED_REQUEST_STATUSES)
+    except RequestLifecycleError as exc:
+        raise HTTPException(status_code=400, detail="Unsupported status") from exc
 
 
 def normalize_request_delivery(

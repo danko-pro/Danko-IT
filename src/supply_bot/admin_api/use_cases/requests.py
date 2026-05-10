@@ -16,6 +16,7 @@ from supply_bot.admin_api.app_routes_requests_support import (
     normalize_request_delivery,
     normalize_request_status,
 )
+from supply_bot.domain.request_lifecycle import RequestLifecycleError, can_delete_request_status
 
 
 async def list_recent_requests(storage_obj, *, limit: int = 20) -> list[dict[str, Any]]:
@@ -45,11 +46,14 @@ async def update_request_status(storage_obj, settings_obj, draft_id: int, status
 
     target_status = normalize_request_status(status)
 
-    await storage_obj.update_draft_admin_fields(
-        draft_id,
-        status=target_status,
-        waiting_for="confirmation" if target_status == "confirmed" else None,
-    )
+    try:
+        await storage_obj.update_draft_admin_fields(
+            draft_id,
+            status=target_status,
+            waiting_for="confirmation" if target_status == "confirmed" else None,
+        )
+    except RequestLifecycleError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
     updated_draft = await storage_obj.get_draft(draft_id)
     if not updated_draft:
         raise HTTPException(status_code=500, detail="Draft status update failed")
@@ -81,7 +85,7 @@ async def delete_request(storage_obj, draft_id: int) -> dict[str, Any]:
     if not draft:
         raise HTTPException(status_code=404, detail="Draft not found")
 
-    if draft["status"] not in {"collecting", "awaiting_confirmation", "cancelled"}:
+    if not can_delete_request_status(draft["status"]):
         raise HTTPException(
             status_code=400,
             detail="Only drafts, awaiting confirmation, or cancelled requests can be deleted",

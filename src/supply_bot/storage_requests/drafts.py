@@ -2,21 +2,34 @@ from __future__ import annotations
 
 from typing import Any
 
+from supply_bot.domain.request_lifecycle import (
+    ACTIVE_REQUEST_STATUSES,
+    validate_request_status_transition,
+)
+
 # Черновики заявок и их жизненный цикл до подтверждения.
 
 
 class RequestDraftsStorageMixin:
+    def _active_status_sql(self) -> str:
+        return ", ".join(f"'{status}'" for status in sorted(ACTIVE_REQUEST_STATUSES))
+
+    async def _normalize_status_transition(self, draft_id: int, target_status: str) -> str:
+        draft = await self.get_draft(draft_id)
+        current_status = str(draft["status"]) if draft and draft.get("status") else None
+        return validate_request_status_transition(current_status, target_status)
+
     async def get_active_draft(self, *, chat_id: int, master_id: int) -> dict[str, Any] | None:
         async with self.connection() as db:
             cursor = await db.execute(
-                """
+                f"""
                 SELECT id, chat_id, master_id, master_name, status, waiting_for, waiting_item_id,
                        requested_delivery_date, requested_delivery_time,
                        confirmed_delivery_date, confirmed_delivery_time,
                        proposed_delivery_date, proposed_delivery_time,
                        created_at, updated_at
                 FROM request_drafts
-                WHERE chat_id = ? AND master_id = ? AND status IN ('collecting', 'awaiting_confirmation')
+                WHERE chat_id = ? AND master_id = ? AND status IN ({self._active_status_sql()})
                 ORDER BY created_at DESC
                 LIMIT 1
                 """,
@@ -28,14 +41,14 @@ class RequestDraftsStorageMixin:
     async def get_active_draft_for_chat(self, *, chat_id: int) -> dict[str, Any] | None:
         async with self.connection() as db:
             cursor = await db.execute(
-                """
+                f"""
                 SELECT id, chat_id, master_id, master_name, status, waiting_for, waiting_item_id,
                        requested_delivery_date, requested_delivery_time,
                        confirmed_delivery_date, confirmed_delivery_time,
                        proposed_delivery_date, proposed_delivery_time,
                        created_at, updated_at
                 FROM request_drafts
-                WHERE chat_id = ? AND status IN ('collecting', 'awaiting_confirmation')
+                WHERE chat_id = ? AND status IN ({self._active_status_sql()})
                 ORDER BY created_at DESC
                 LIMIT 1
                 """,
@@ -48,7 +61,7 @@ class RequestDraftsStorageMixin:
         if max_age_hours <= 0:
             return 0
         clauses = [
-            "status IN ('collecting', 'awaiting_confirmation')",
+            f"status IN ({self._active_status_sql()})",
             "updated_at < datetime('now', ?)",
         ]
         params: list[Any] = [f"-{max_age_hours} hours"]
@@ -208,6 +221,7 @@ class RequestDraftsStorageMixin:
         proposed_delivery_time: str | None = None,
         status: str | None = None,
     ) -> None:
+        target_status = await self._normalize_status_transition(draft_id, status) if status is not None else None
         async with self.connection() as db:
             await db.execute(
                 """
@@ -225,7 +239,7 @@ class RequestDraftsStorageMixin:
                     waiting_item_id,
                     proposed_delivery_date,
                     proposed_delivery_time,
-                    status,
+                    target_status,
                     draft_id,
                 ),
             )
@@ -241,6 +255,7 @@ class RequestDraftsStorageMixin:
         confirmed_time: str | None = None,
         status: str | None = None,
     ) -> None:
+        target_status = await self._normalize_status_transition(draft_id, status) if status is not None else None
         async with self.connection() as db:
             await db.execute(
                 """
@@ -258,13 +273,14 @@ class RequestDraftsStorageMixin:
                     requested_time,
                     confirmed_date,
                     confirmed_time,
-                    status,
+                    target_status,
                     draft_id,
                 ),
             )
             await db.commit()
 
     async def set_draft_status(self, draft_id: int, *, status: str) -> None:
+        target_status = await self._normalize_status_transition(draft_id, status)
         async with self.connection() as db:
             await db.execute(
                 """
@@ -272,7 +288,7 @@ class RequestDraftsStorageMixin:
                 SET status = ?, updated_at = CURRENT_TIMESTAMP
                 WHERE id = ?
                 """,
-                (status, draft_id),
+                (target_status, draft_id),
             )
             await db.commit()
 
@@ -283,6 +299,7 @@ class RequestDraftsStorageMixin:
         status: str,
         waiting_for: str | None = None,
     ) -> None:
+        target_status = await self._normalize_status_transition(draft_id, status)
         async with self.connection() as db:
             await db.execute(
                 """
@@ -292,7 +309,7 @@ class RequestDraftsStorageMixin:
                     updated_at = CURRENT_TIMESTAMP
                 WHERE id = ?
                 """,
-                (status, waiting_for, draft_id),
+                (target_status, waiting_for, draft_id),
             )
             await db.commit()
 
@@ -326,6 +343,7 @@ class RequestDraftsStorageMixin:
         waiting_for: str | None = None,
         status: str | None = None,
     ) -> None:
+        target_status = await self._normalize_status_transition(draft_id, status) if status is not None else None
         async with self.connection() as db:
             await db.execute(
                 """
@@ -349,7 +367,7 @@ class RequestDraftsStorageMixin:
                     proposed_date,
                     proposed_time,
                     waiting_for,
-                    status,
+                    target_status,
                     draft_id,
                 ),
             )

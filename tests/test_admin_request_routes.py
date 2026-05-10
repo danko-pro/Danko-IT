@@ -213,6 +213,29 @@ def test_admin_route_rejects_negative_stale_expiration_age() -> None:
             assert response.json()["detail"] == "max_age_hours must be non-negative"
 
 
+def test_admin_route_rejects_invalid_status_transition() -> None:
+    with TemporaryDirectory() as tmp_dir:
+        root = Path(tmp_dir)
+        settings = load_settings(_create_settings_file(root))
+
+        with TestClient(create_admin_app(settings)) as client:
+            draft_id = asyncio.run(
+                client.app.state.storage.create_draft(
+                    chat_id=1001,
+                    master_id=2002,
+                    master_name="Admin tester",
+                )
+            )
+            asyncio.run(client.app.state.storage.set_draft_status(draft_id, status="cancelled"))
+
+            response = client.patch(f"/api/requests/{draft_id}/status", json={"status": "done"})
+            draft = asyncio.run(client.app.state.storage.get_draft(draft_id))
+
+            assert response.status_code == 400
+            assert "transition is not allowed" in response.json()["detail"]
+            assert draft["status"] == "cancelled"
+
+
 def test_admin_recent_requests_use_storage_summary() -> None:
     with TemporaryDirectory() as tmp_dir:
         root = Path(tmp_dir)

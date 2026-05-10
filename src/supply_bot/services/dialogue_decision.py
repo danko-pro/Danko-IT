@@ -1,10 +1,14 @@
 from __future__ import annotations
 
+import logging
+
 from aiogram import Bot
 
 from supply_bot.services.dialogue_decision_actions import DialogueDecisionActionMixin
 from supply_bot.services.dialogue_decision_context import DialogueDecisionContextMixin
 from supply_bot.services.dialogue_decision_mutations import DialogueDecisionMutationMixin
+
+logger = logging.getLogger(__name__)
 
 
 class DialogueDecisionMixin(
@@ -63,13 +67,17 @@ class DialogueDecisionMixin(
         if not actions and intent in {"unknown", "offtopic"}:
             return None
 
-        return await self._apply_llm_decision(
-            bot=bot,
-            profile=profile,
-            chat_id=chat_id,
-            master_id=master_id,
-            master_name=master_name,
-            draft=draft,
-            reply_text=reply_text,
-            actions=actions,
-        )
+        try:
+            return await self._apply_llm_decision(
+                bot=bot,
+                profile=profile,
+                chat_id=chat_id,
+                master_id=master_id,
+                master_name=master_name,
+                draft=draft,
+                reply_text=reply_text,
+                actions=actions,
+            )
+        except Exception:
+            logger.exception("Не удалось применить LLM-решение к заявке.")
+            return None

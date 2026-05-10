@@ -20,6 +20,10 @@ class FakeStorage:
         self.group_messages: list[dict] = []
         self.participants: set[tuple[int, int]] = set()
         self.expire_calls: list[dict] = []
+        self.created_items: list[dict] = []
+        self.updated_items: list[tuple[int, dict]] = []
+        self.cleared_items: list[int] = []
+        self.replaced_delivery: list[tuple[int, dict]] = []
 
     async def add_group_message(
         self,
@@ -78,6 +82,23 @@ class FakeStorage:
 
     async def list_request_items(self, draft_id: int) -> list[dict]:
         return list(self.items)
+
+    async def create_request_item(self, **fields) -> int:
+        self.created_items.append(dict(fields))
+        return len(self.created_items)
+
+    async def update_request_item(self, item_id: int, **fields) -> None:
+        self.updated_items.append((item_id, dict(fields)))
+
+    async def clear_request_items(self, draft_id: int) -> None:
+        self.cleared_items.append(draft_id)
+
+    async def replace_draft_delivery(self, draft_id: int, **fields) -> None:
+        self.replaced_delivery.append((draft_id, dict(fields)))
+        self.drafts.setdefault(draft_id, {"id": draft_id}).update(fields)
+
+    async def search_catalog(self, query: str) -> list[dict]:
+        return []
 
     async def update_draft_waiting(self, draft_id: int, **kwargs) -> None:
         self.waiting_updates.append((draft_id, dict(kwargs)))
@@ -347,6 +368,38 @@ class DialogueServiceTests(IsolatedAsyncioTestCase):
     async def test_negative_item_correction_is_not_whole_request_cancel(self) -> None:
         self.assertFalse(self.service._is_abort_request_message("не влагостойкий, нужен обычный"))
         self.assertFalse(self.service._is_possible_abort_request_message("не влагостойкий, нужен обычный"))
+
+    async def test_llm_item_action_drops_invalid_non_positive_numbers(self) -> None:
+        await self.service._create_item_from_action(
+            15,
+            {
+                "raw_text": "cement",
+                "normalized_name": "cement",
+                "quantity": -10,
+                "unit": "bags",
+                "thickness_mm": 0,
+                "length_mm": "nan",
+                "width_mm": "1200",
+            },
+        )
+
+        created = self.storage.created_items[0]
+        self.assertIsNone(created["quantity"])
+        self.assertIsNone(created["thickness_mm"])
+        self.assertIsNone(created["length_mm"])
+        self.assertEqual(created["width_mm"], 1200.0)
+
+    async def test_llm_delivery_action_ignores_invalid_date_or_time(self) -> None:
+        reply = await self.service._apply_delivery_action(
+            self.profile,
+            16,
+            {"delivery_date": "2026-99-99", "delivery_time": "25:61"},
+            proposal=False,
+        )
+
+        self.assertIsNone(reply)
+        self.assertEqual(self.storage.delivery_updates, [])
+        self.assertEqual(self.storage.waiting_updates, [])
 
     async def test_bot_address_accepts_human_and_telegram_names(self) -> None:
         self.assertTrue(self.service._is_addressed_to_bot("Данко, нужна заявка"))

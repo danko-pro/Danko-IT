@@ -138,8 +138,10 @@ class DialogueContextMixin:
         normalized = normalize_text(text)
         if not normalized or self._is_smalltalk_message(text):
             return False
-        quantity, _ = self._extract_quantity(text)
-        if quantity is None and "заявк" not in normalized:
+        if "заявк" in normalized:
+            return any(marker in normalized for marker in ORDER_OPENING_MARKERS)
+        quantity, unit = self._extract_quantity(text)
+        if quantity is None or unit is None:
             return False
         return any(marker in normalized for marker in ORDER_OPENING_MARKERS)
 

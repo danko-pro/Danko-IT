@@ -336,3 +336,31 @@ class DialogueServiceTests(IsolatedAsyncioTestCase):
 
         self.assertEqual(result.text, "handled")
         self.assertEqual(len(self.storage.created_drafts), 1)
+
+    async def test_unaddressed_direct_order_with_standalone_number_is_ignored(self) -> None:
+        text = "привези ключи через 10 минут"
+        self.service.material_analysis = {text: ([], ["ключи через 10 минут"])}
+        message = SimpleNamespace(
+            chat=SimpleNamespace(id=10),
+            from_user=SimpleNamespace(id=20, full_name="Мастер", username="master", is_bot=False),
+            message_id=53,
+        )
+
+        result = await self.service.handle_group_text_payload(object(), message, text=text)
+
+        self.assertIsNone(result.text)
+        self.assertEqual(self.storage.created_drafts, [])
+
+    async def test_unaddressed_unknown_material_does_not_create_manual_item(self) -> None:
+        text = "привези штуки 10 шт"
+        self.service.material_analysis = {text: ([], ["штуки 10 шт"])}
+        message = SimpleNamespace(
+            chat=SimpleNamespace(id=10),
+            from_user=SimpleNamespace(id=20, full_name="Мастер", username="master", is_bot=False),
+            message_id=54,
+        )
+
+        result = await self.service.handle_group_text_payload(object(), message, text=text)
+
+        self.assertIsNone(result.text)
+        self.assertEqual(self.storage.created_drafts, [])

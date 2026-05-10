@@ -123,6 +123,7 @@ class RequestDialogueService(
             return DialogueResult(text="Активной заявки для отмены не нашел.")
 
         should_listen_without_address = self._should_listen_without_address(text)
+        allow_unaddressed_unknown_material = should_listen_without_address and "заявк" in normalized
         if (
             draft is None
             and not force_dialogue
@@ -196,7 +197,7 @@ class RequestDialogueService(
                 not force_dialogue
                 and not self._is_request_opening_text(text, unknown_segments)
                 and not self._should_start_new_request_message(text)
-                and not should_listen_without_address
+                and not allow_unaddressed_unknown_material
             ):
                 return DialogueResult(text=None)
             draft = await self.storage.get_or_create_active_draft(

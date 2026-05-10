@@ -406,6 +406,39 @@ class DialogueServiceTests(IsolatedAsyncioTestCase):
         self.assertEqual(self.storage.group_messages, [])
         self.assertNotIn((8, 20), self.storage.participants)
 
+    async def test_owner_side_chat_during_active_draft_is_ignored(self) -> None:
+        self.storage.drafts[11] = {
+            "id": 11,
+            "chat_id": 10,
+            "master_id": 20,
+            "master_name": "Автор",
+            "status": "collecting",
+        }
+        self.storage.participants.add((11, 20))
+        message = SimpleNamespace(
+            chat=SimpleNamespace(id=10),
+            from_user=SimpleNamespace(id=20, full_name="Автор", username="owner", is_bot=False),
+            message_id=58,
+        )
+
+        result = await self.service.handle_group_text_payload(object(), message, text="кто завтра на объекте?")
+
+        self.assertIsNone(result.text)
+        self.assertEqual(self.storage.group_messages, [])
+
+    async def test_active_draft_filter_allows_waiting_quantity_answer_only_when_clean(self) -> None:
+        draft = {"id": 12, "waiting_for": "quantity"}
+
+        self.assertTrue(self.service._should_process_active_draft_message("10", draft))
+        self.assertTrue(self.service._should_process_active_draft_message("10 мешков", draft))
+        self.assertFalse(self.service._should_process_active_draft_message("10 минут", draft))
+
+    async def test_active_draft_filter_separates_delivery_answer_from_side_question(self) -> None:
+        draft = {"id": 13, "waiting_for": None}
+
+        self.assertTrue(self.service._should_process_active_draft_message("завтра в 12:00", draft))
+        self.assertFalse(self.service._should_process_active_draft_message("кто завтра на объекте?", draft))
+
     async def test_foreign_addressed_smalltalk_during_active_draft_is_ignored(self) -> None:
         self.storage.drafts[9] = {
             "id": 9,

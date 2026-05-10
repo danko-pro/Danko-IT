@@ -114,6 +114,9 @@ class RequestDialogueService(
                 role="owner",
             )
 
+        if draft and not force_dialogue and not self._should_process_active_draft_message(text, draft):
+            return DialogueResult(text=None)
+
         profile = await self.profiles.sync_from_telegram(bot, message.chat.id)
         await self.storage.add_group_message(
             chat_id=message.chat.id,

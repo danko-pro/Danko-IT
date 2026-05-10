@@ -117,6 +117,16 @@ SMALLTALK_MARKERS = (
     "благодарю",
     "как дела",
 )
+SIDE_CHAT_QUESTION_STARTS = (
+    "кто",
+    "где",
+    "куда",
+    "почему",
+    "зачем",
+    "как",
+    "что",
+    "когда",
+)
 
 
 class DialogueContextMixin:
@@ -167,6 +177,70 @@ class DialogueContextMixin:
         if has_request_reference:
             return unit is not None or any(marker in normalized for marker in ("добав", "нуж", "привез", "заявк"))
         return normalized.startswith(("еще ", "ещё ", "и ")) and unit is not None
+
+    def _should_process_active_draft_message(self, text: str, draft: dict) -> bool:
+        normalized = normalize_text(text)
+        if not normalized or self._is_smalltalk_message(text):
+            return False
+        if self._is_abort_request_message(text) or self._is_possible_abort_request_message(text):
+            return True
+        if self._looks_like_waiting_answer(text, draft):
+            return True
+        if self._looks_like_delivery_answer(text) and self._draft_needs_delivery(draft):
+            return True
+        if self._is_addressed_to_bot(text):
+            return self._request_topic_score(text) >= 2 or any(
+                marker in normalized for marker in ACTIVE_DRAFT_JOIN_REFERENCES
+            )
+        return self._request_topic_score(text) >= 2 and (
+            self._has_additional_material_intent(text)
+            or any(marker in normalized for marker in ACTIVE_DRAFT_JOIN_REFERENCES)
+        )
+
+    def _looks_like_waiting_answer(self, text: str, draft: dict) -> bool:
+        waiting_for = str(draft.get("waiting_for") or "")
+        normalized = normalize_text(text)
+        if not waiting_for:
+            return False
+        if waiting_for == "confirmation":
+            return normalized in AFFIRMATIVE_WORDS or normalized in NEGATIVE_WORDS
+        if waiting_for == "delivery_proposal":
+            return (
+                normalized in AFFIRMATIVE_WORDS
+                or normalized in NEGATIVE_WORDS
+                or self._looks_like_delivery_answer(text)
+            )
+        if waiting_for == "variant":
+            return self._extract_variant_hint(normalized) is not None
+        if waiting_for == "thickness_mm":
+            return self._extract_thickness(text) is not None
+        if waiting_for == "size":
+            return self._extract_size(text) is not None
+        if waiting_for == "quantity":
+            quantity, unit = self._extract_quantity(text)
+            return quantity is not None and (unit is not None or self._is_plain_number_answer(text))
+        if waiting_for == "comment":
+            return self._is_addressed_to_bot(text) or normalized in NEGATIVE_WORDS or "без коммент" in normalized
+        if waiting_for == "manual_item_description":
+            quantity, unit = self._extract_quantity(text)
+            return unit is not None or self._looks_like_material_segment(text)
+        return False
+
+    def _looks_like_delivery_answer(self, text: str) -> bool:
+        normalized = normalize_text(text)
+        if not normalized or "?" in text:
+            return False
+        first_word = normalized.split(maxsplit=1)[0]
+        if first_word in SIDE_CHAT_QUESTION_STARTS:
+            return False
+        return self._parse_delivery(text) is not None
+
+    def _draft_needs_delivery(self, draft: dict) -> bool:
+        return not (draft.get("confirmed_delivery_date") and draft.get("confirmed_delivery_time"))
+
+    def _is_plain_number_answer(self, text: str) -> bool:
+        normalized = normalize_text(text)
+        return bool(normalized) and normalized.replace(".", "", 1).replace(",", "", 1).isdigit()
 
     def _should_start_new_request_message(self, text: str) -> bool:
         if not self._is_addressed_to_bot(text):

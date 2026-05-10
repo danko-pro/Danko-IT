@@ -306,3 +306,33 @@ class DialogueServiceTests(IsolatedAsyncioTestCase):
         self.assertEqual(self.storage.status_updates, [])
         self.assertIsNotNone(result.text)
         self.assertIn("Другой мастер", result.text)
+
+    async def test_possible_cancel_phrase_does_not_become_waiting_comment(self) -> None:
+        draft = {"id": 7, "waiting_for": "comment"}
+
+        bypass = self.service._should_bypass_llm_for_waiting_answer(draft, "передумал, не оформляй")
+
+        self.assertFalse(bypass)
+
+    async def test_negative_item_correction_is_not_whole_request_cancel(self) -> None:
+        self.assertFalse(self.service._is_abort_request_message("не влагостойкий, нужен обычный"))
+        self.assertFalse(self.service._is_possible_abort_request_message("не влагостойкий, нужен обычный"))
+
+    async def test_bot_address_accepts_human_and_telegram_names(self) -> None:
+        self.assertTrue(self.service._is_addressed_to_bot("Данко, нужна заявка"))
+        self.assertTrue(self.service._is_addressed_to_bot("@Danko_ai_bot привези цемент"))
+
+    async def test_unaddressed_direct_order_can_start_dialogue(self) -> None:
+        text = "привези цемент 10 мешков"
+        match = {"family_id": 1, "alias": "цемент"}
+        self.service.material_analysis = {text: ([match], [])}
+        message = SimpleNamespace(
+            chat=SimpleNamespace(id=10),
+            from_user=SimpleNamespace(id=20, full_name="Мастер", username="master", is_bot=False),
+            message_id=52,
+        )
+
+        result = await self.service.handle_group_text_payload(object(), message, text=text)
+
+        self.assertEqual(result.text, "handled")
+        self.assertEqual(len(self.storage.created_drafts), 1)

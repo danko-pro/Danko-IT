@@ -4,6 +4,7 @@ from supply_bot.constants import AFFIRMATIVE_WORDS, CANCEL_WORDS, NEGATIVE_WORDS
 from supply_bot.services.dialogue_materials import GENERIC_REQUEST_WORDS
 from supply_bot.utils import normalize_text
 
+BOT_ADDRESS_WORDS = {"бот", "danko_ai_bot", "danko", "данко", "данкоит"}
 STRONG_REQUEST_MARKERS = (
     "заявк",
     "заказ",
@@ -31,9 +32,24 @@ SUPPORT_REQUEST_MARKERS = (
     "рассчит",
     "сколько",
 )
-ABORT_REQUEST_MARKERS = (
+ORDER_OPENING_MARKERS = (
+    "привези",
+    "привезите",
+    "привезти",
+    "завези",
+    "завезите",
+    "закажи",
+    "заказать",
+    "оформи заявк",
+    "оформить заявк",
+    "нужна заявк",
+    "собери заявк",
+    "сделай заявк",
+)
+DIRECT_ABORT_REQUEST_MARKERS = (
     "отбой",
     "отмена заявк",
+    "отмена заказ",
     "отмени заявк",
     "отменить заявк",
     "заявку отмен",
@@ -42,14 +58,37 @@ ABORT_REQUEST_MARKERS = (
     "удали заявк",
     "сброс заявк",
     "сбрось заявк",
+    "аннулируй заявк",
+    "аннулировать заявк",
+    "снимаем заявк",
+    "закрываем заявк",
     "это проверка",
     "просто провер",
     "ложная тревога",
+)
+EXACT_ABORT_REQUEST_PHRASES = (
     "пока не надо",
     "не надо",
     "не нужна заявка",
     "не нужен заказ",
     "не нужно оформлять",
+)
+POSSIBLE_ABORT_REQUEST_MARKERS = (
+    "передумал",
+    "не оформляй",
+    "не оформляем",
+    "не отправляй",
+    "не отправляем",
+    "не вези",
+    "не привози",
+    "пока не вези",
+    "пока не привози",
+    "на паузу",
+    "поставь на паузу",
+    "снимаем",
+    "закрываем",
+    "аннулируй",
+    "отменяем",
 )
 CONTEXT_CONTINUATION_MARKERS = (
     "и ",
@@ -79,13 +118,30 @@ class DialogueContextMixin:
         if not normalized:
             return False
         first_word = normalized.split(maxsplit=1)[0]
-        return first_word in {"бот", "danko_ai_bot"}
+        return first_word in BOT_ADDRESS_WORDS
 
     def _is_abort_request_message(self, text: str) -> bool:
         normalized = normalize_text(text)
         if normalized in CANCEL_WORDS:
             return True
-        return any(marker in normalized for marker in ABORT_REQUEST_MARKERS)
+        if normalized in EXACT_ABORT_REQUEST_PHRASES:
+            return True
+        return any(marker in normalized for marker in DIRECT_ABORT_REQUEST_MARKERS)
+
+    def _is_possible_abort_request_message(self, text: str) -> bool:
+        normalized = normalize_text(text)
+        if self._is_abort_request_message(text):
+            return True
+        return any(marker in normalized for marker in POSSIBLE_ABORT_REQUEST_MARKERS)
+
+    def _should_listen_without_address(self, text: str) -> bool:
+        normalized = normalize_text(text)
+        if not normalized or self._is_smalltalk_message(text):
+            return False
+        quantity, _ = self._extract_quantity(text)
+        if quantity is None and "заявк" not in normalized:
+            return False
+        return any(marker in normalized for marker in ORDER_OPENING_MARKERS)
 
     def _should_start_new_request_message(self, text: str) -> bool:
         if not self._is_addressed_to_bot(text):

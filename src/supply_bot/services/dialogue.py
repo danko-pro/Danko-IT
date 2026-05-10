@@ -85,11 +85,12 @@ class RequestDialogueService(
         )
         normalized = normalize_text(text)
         abort_requested = self._is_abort_request_message(text)
+        abort_candidate = abort_requested or self._is_possible_abort_request_message(text)
         active_chat_draft = await self.storage.get_active_draft_for_chat(chat_id=message.chat.id)
         if active_chat_draft and int(active_chat_draft["master_id"]) != int(message.from_user.id):
-            if abort_requested:
+            if abort_candidate:
                 admin_ids = {int(admin_id) for admin_id in self.settings.admin_ids}
-                if int(message.from_user.id) in admin_ids:
+                if abort_requested and int(message.from_user.id) in admin_ids:
                     await self.storage.set_draft_status(active_chat_draft["id"], status="cancelled")
                     return DialogueResult(text="Понял, активную заявку в этом чате закрыл.")
                 owner_name = str(active_chat_draft.get("master_name") or "другого мастера")
@@ -121,7 +122,13 @@ class RequestDialogueService(
         if draft is None and explicit_cancel_without_draft:
             return DialogueResult(text="Активной заявки для отмены не нашел.")
 
-        if draft is None and not force_dialogue and not self._is_addressed_to_bot(text):
+        should_listen_without_address = self._should_listen_without_address(text)
+        if (
+            draft is None
+            and not force_dialogue
+            and not self._is_addressed_to_bot(text)
+            and not should_listen_without_address
+        ):
             return DialogueResult(text=None)
 
         if draft and abort_requested:
@@ -146,6 +153,14 @@ class RequestDialogueService(
         if llm_reply is not None:
             return DialogueResult(text=llm_reply)
 
+        if draft and abort_candidate:
+            return DialogueResult(
+                text=(
+                    "Похоже, вы хотите остановить или отменить заявку. "
+                    "Напишите 'отмена заявки', если закрываем черновик, или уточните, что именно нужно убрать."
+                )
+            )
+
         if draft:
             confirmation_result = await self._handle_confirmation(bot, profile, draft, text, normalized)
             if confirmation_result is not None:
@@ -163,6 +178,7 @@ class RequestDialogueService(
                 or self._should_start_new_request_message(text)
                 or quantity is not None
                 or self._is_addressed_to_bot(text)
+                or should_listen_without_address
             ):
                 return DialogueResult(text=None)
             draft = await self.storage.get_or_create_active_draft(
@@ -180,6 +196,7 @@ class RequestDialogueService(
                 not force_dialogue
                 and not self._is_request_opening_text(text, unknown_segments)
                 and not self._should_start_new_request_message(text)
+                and not should_listen_without_address
             ):
                 return DialogueResult(text=None)
             draft = await self.storage.get_or_create_active_draft(

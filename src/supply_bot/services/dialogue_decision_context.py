@@ -15,6 +15,8 @@ class DialogueDecisionContextMixin:
         normalized = normalize_text(text)
         if not waiting_for:
             return False
+        if self._is_possible_abort_request_message(text):
+            return False
         if waiting_for == "variant":
             return self._extract_variant_hint(normalized) is not None
         if waiting_for == "thickness_mm":

@@ -47,6 +47,9 @@ Hard rules:
 - If the last bot turn contained more than one option, more than one question, or both summary and proposal together, a short confirmation like "да" is not enough; ask what exactly is being confirmed.
 - If the last bot turn both changed the draft and asked a new question, a short confirmation like "да" is not enough unless the message ended with one explicit yes/no proposal.
 - If the bot proposed one specific material variant or one specific spec in the immediately preceding turn and asked for yes/no confirmation, a short confirmation may confirm only that single proposal.
+- If there is an active draft and the foreman clearly says to stop, cancel, pause, not send, not order, or not bring the whole request, use `cancel_request`.
+- Cancellation examples: "передумал, не оформляй", "не вези пока", "отбой по заявке", "закрывай эту заявку", "снимаем заявку".
+- Do not cancel the whole draft when the negative wording clearly modifies only one item or one spec, for example "не влагостойкий, нужен обычный", "не 12 мм, а 9.5", "не грунтовку, а клей". In those cases update or remove the affected item.
 - A manual free-text item is still a valid item. Lack of catalog mapping does not block request completion.
 - Use `loop_detected=true` only when you are actively correcting a repeated misunderstanding, a repeated already-answered question, or draft garbage created by earlier misunderstanding.
 - If intent is `recover_request`, actions must include `rebuild_draft`.

@@ -1,14 +1,23 @@
 ﻿import { type Dispatch, type SetStateAction, useEffect, useState } from "react";
 import type {
-  RequestActionResult,
   RequestDeliveryFormState,
   RequestDetail,
   RequestItem,
   RequestItemFormState,
-  RequestStaleDraftResetResult,
   RecentRequest,
 } from "../../shared/types";
-import { fetchJson, formatStatus, itemTitle, toNullableNumber } from "../../shared/utils";
+import { formatStatus } from "../../shared/utils";
+import {
+  createRequestItem,
+  deleteRequest,
+  deleteRequestItem,
+  expireStaleRequests,
+  fetchRecentRequests,
+  fetchRequestDetail,
+  saveRequestDelivery,
+  updateRequestItem,
+  updateRequestStatus,
+} from "./api";
 
 type RequestsControllerOptions = {
   setSuccessMessage: Dispatch<SetStateAction<string | null>>;
@@ -42,7 +51,7 @@ export function useAdminRequestsController(props: RequestsControllerOptions) {
   async function loadRequests() {
     try {
       setRequestsLoading(true);
-      const data = await fetchJson<RecentRequest[]>("/api/requests/recent?limit=40");
+      const data = await fetchRecentRequests();
       setRequests(data);
       setRequestError(null);
     } catch (loadError) {
@@ -55,7 +64,7 @@ export function useAdminRequestsController(props: RequestsControllerOptions) {
   async function loadRequestDetail(draftId: number) {
     try {
       setRequestDetailLoading(true);
-      const data = await fetchJson<RequestDetail>(`/api/requests/${draftId}`);
+      const data = await fetchRequestDetail(draftId);
       setRequestDetail(data);
       setRequestError(null);
     } catch (loadError) {
@@ -69,10 +78,7 @@ export function useAdminRequestsController(props: RequestsControllerOptions) {
   async function handleRequestStatusAction(draftId: number, status: string) {
     try {
       setRequestActionId(draftId);
-      const result = await fetchJson<RequestActionResult>(`/api/requests/${draftId}/status`, {
-        method: "PATCH",
-        body: JSON.stringify({ status }),
-      });
+      const result = await updateRequestStatus(draftId, status);
       await loadRequests();
       if (selectedRequestId === draftId) {
         await loadRequestDetail(draftId);
@@ -99,9 +105,7 @@ export function useAdminRequestsController(props: RequestsControllerOptions) {
 
     try {
       setRequestActionId(draftId);
-      await fetchJson<{ deleted: boolean }>(`/api/requests/${draftId}`, {
-        method: "DELETE",
-      });
+      await deleteRequest(draftId);
       await loadRequests();
       if (selectedRequestId === draftId) {
         setSelectedRequestId(null);
@@ -127,9 +131,7 @@ export function useAdminRequestsController(props: RequestsControllerOptions) {
     const currentSelectedRequestId = selectedRequestId;
     try {
       setRequestMaintenanceLoading(true);
-      const result = await fetchJson<RequestStaleDraftResetResult>("/api/requests/expire-stale", {
-        method: "POST",
-      });
+      const result = await expireStaleRequests();
       await loadRequests();
       if (currentSelectedRequestId !== null) {
         await loadRequestDetail(currentSelectedRequestId);
@@ -150,10 +152,7 @@ export function useAdminRequestsController(props: RequestsControllerOptions) {
   async function handleSaveRequestDelivery(draftId: number, form: RequestDeliveryFormState): Promise<boolean> {
     try {
       setRequestDetailBusyKey(`delivery-${draftId}`);
-      const updated = await fetchJson<RequestDetail>(`/api/requests/${draftId}/delivery`, {
-        method: "PATCH",
-        body: JSON.stringify(form),
-      });
+      const updated = await saveRequestDelivery(draftId, form);
       setRequestDetail(updated);
       await loadRequests();
       setRequestError(null);
@@ -176,18 +175,7 @@ export function useAdminRequestsController(props: RequestsControllerOptions) {
 
     try {
       setRequestDetailBusyKey(`create-item-${draftId}`);
-      const updated = await fetchJson<RequestDetail>(`/api/requests/${draftId}/items`, {
-        method: "POST",
-        body: JSON.stringify({
-          title,
-          quantity: toNullableNumber(form.quantity),
-          unit: form.unit.trim() || null,
-          thickness_mm: toNullableNumber(form.thickness_mm),
-          length_mm: toNullableNumber(form.length_mm),
-          width_mm: toNullableNumber(form.width_mm),
-          note: form.note.trim() || null,
-        }),
-      });
+      const updated = await createRequestItem(draftId, form);
       setRequestDetail(updated);
       await loadRequests();
       setRequestError(null);
@@ -210,19 +198,7 @@ export function useAdminRequestsController(props: RequestsControllerOptions) {
 
     try {
       setRequestDetailBusyKey(`item-${item.id}`);
-      const updated = await fetchJson<RequestDetail>(`/api/requests/items/${item.id}`, {
-        method: "PATCH",
-        body: JSON.stringify({
-          title,
-          quantity: toNullableNumber(form.quantity),
-          unit: form.unit.trim() || null,
-          thickness_mm: toNullableNumber(form.thickness_mm),
-          length_mm: toNullableNumber(form.length_mm),
-          width_mm: toNullableNumber(form.width_mm),
-          note: form.note.trim() || null,
-          detach_catalog: title !== itemTitle(item).trim(),
-        }),
-      });
+      const updated = await updateRequestItem(item, form);
       setRequestDetail(updated);
       await loadRequests();
       setRequestError(null);
@@ -244,9 +220,7 @@ export function useAdminRequestsController(props: RequestsControllerOptions) {
 
     try {
       setRequestDetailBusyKey(`delete-item-${itemId}`);
-      const updated = await fetchJson<RequestDetail>(`/api/requests/items/${itemId}`, {
-        method: "DELETE",
-      });
+      const updated = await deleteRequestItem(itemId);
       setRequestDetail(updated);
       await loadRequests();
       setRequestError(null);

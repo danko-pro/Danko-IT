@@ -143,3 +143,27 @@ def test_material_alias_rejects_sku_from_other_family_or_variant() -> None:
             assert family_response.json()["detail"] == "SKU does not belong to family"
             assert variant_response.status_code == 400
             assert variant_response.json()["detail"] == "SKU does not belong to variant"
+
+
+def test_material_sku_rejects_negative_or_zero_dimensions() -> None:
+    with TemporaryDirectory() as tmp_dir:
+        root = Path(tmp_dir)
+        settings = load_settings(_create_settings_file(root))
+
+        with TestClient(create_admin_app(settings)) as client:
+            family_id = _create_family(client, "Dimension family")
+
+            response = client.post(
+                "/api/materials/skus",
+                json={
+                    "family_id": family_id,
+                    "title": "Broken dimensions",
+                    "unit": "pcs",
+                    "thickness_mm": -1,
+                    "length_mm": 0,
+                    "width_mm": 100,
+                },
+            )
+
+            assert response.status_code == 400
+            assert response.json()["detail"] == "thickness_mm must be positive"

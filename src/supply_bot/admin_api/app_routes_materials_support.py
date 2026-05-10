@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 import re
 from typing import Any
 
@@ -67,6 +68,14 @@ def ensure_sku_matches_target(
         raise HTTPException(status_code=400, detail="SKU does not belong to variant")
 
 
+def ensure_positive_optional_number(value: float | None, field_name: str) -> float | None:
+    if value is None:
+        return None
+    if not math.isfinite(value) or value <= 0:
+        raise HTTPException(status_code=400, detail=f"{field_name} must be positive")
+    return value
+
+
 async def validate_material_sku_payload(storage_obj, payload) -> dict[str, Any]:
     await require_material_family(storage_obj, payload.family_id)
 
@@ -88,9 +97,9 @@ async def validate_material_sku_payload(storage_obj, payload) -> dict[str, Any]:
         "article": payload.article.strip() if payload.article and payload.article.strip() else None,
         "brand": payload.brand.strip() if payload.brand and payload.brand.strip() else None,
         "unit": unit,
-        "thickness_mm": payload.thickness_mm,
-        "length_mm": payload.length_mm,
-        "width_mm": payload.width_mm,
+        "thickness_mm": ensure_positive_optional_number(payload.thickness_mm, "thickness_mm"),
+        "length_mm": ensure_positive_optional_number(payload.length_mm, "length_mm"),
+        "width_mm": ensure_positive_optional_number(payload.width_mm, "width_mm"),
         "source_description": payload.source_description.strip()
         if payload.source_description and payload.source_description.strip()
         else None,

@@ -6,6 +6,7 @@ import asyncio
 from io import BytesIO
 from types import SimpleNamespace
 
+from supply_bot.handlers.group import _format_transcript_preview
 from supply_bot.services.media_intake import TelegramMediaIntakeService
 
 
@@ -68,5 +69,16 @@ def test_telegram_media_intake_rejects_large_audio_before_download() -> None:
     result = asyncio.run(service.transcribe_group_audio_message(FakeTelegramBot(b"audio"), message))
 
     assert result.text is None
-    assert result.reason == "Telegram audio file is too large"
+    assert result.reason == "Аудиофайл слишком большой"
     assert client.calls == []
+
+
+def test_format_transcript_preview_collapses_and_trims_text() -> None:
+    """Проверяет короткий диагностический transcript для ответа в чат."""
+    text = "  " + ("слово " * 80)
+
+    preview = _format_transcript_preview(text)
+
+    assert len(preview) <= 180
+    assert preview.endswith("…")
+    assert "  " not in preview

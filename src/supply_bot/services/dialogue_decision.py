@@ -23,16 +23,15 @@ class DialogueDecisionMixin(
         text: str,
         draft: dict | None,
         recent_chat_messages: list[dict],
+        force_dialogue: bool = False,
     ) -> str | None:
-        # LLM-first boundary:
-        # semantic routing belongs to the model; code here should only provide
-        # context, reject obviously unsafe low-confidence outputs, and apply
-        # deterministic fallback for strict parsing/validation.
+        # Граница LLM-first: модель решает семантику, код только готовит контекст
+        # и отсекает явно небезопасные низкоуверенные ответы.
         if not self.settings.llm_enabled:
             return None
-        if self._is_smalltalk_message(text) and draft is None:
+        if not force_dialogue and self._is_smalltalk_message(text) and draft is None:
             return None
-        if draft is None:
+        if draft is None and not force_dialogue:
             score = self._request_topic_score(text)
             if score < 3 and not (self._is_addressed_to_bot(text) and score >= 2):
                 return None

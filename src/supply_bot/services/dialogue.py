@@ -57,8 +57,19 @@ class RequestDialogueService(
         text = (message.text or "").strip()
         return await self.handle_group_text_payload(bot, message, text=text)
 
-    async def handle_group_text_payload(self, bot: Bot, message: Message, *, text: str) -> DialogueResult:
-        """Обрабатывает текстовый payload независимо от источника: сообщение или транскрипт."""
+    async def handle_group_text_payload(
+        self,
+        bot: Bot,
+        message: Message,
+        *,
+        text: str,
+        force_dialogue: bool = False,
+    ) -> DialogueResult:
+        """Обрабатывает текстовый payload независимо от источника: сообщение или транскрипт.
+
+        force_dialogue используется для voice/audio: пользователь уже явно отправил боту медиа,
+        поэтому transcript нельзя отбрасывать тем же фильтром адресации, что фоновый текст чата.
+        """
         text = text.strip()
         if not text or message.from_user is None:
             return DialogueResult(text=None)
@@ -87,7 +98,7 @@ class RequestDialogueService(
         draft = await self.storage.get_active_draft(chat_id=message.chat.id, master_id=message.from_user.id)
         normalized = normalize_text(text)
 
-        if draft is None and not self._is_addressed_to_bot(text):
+        if draft is None and not force_dialogue and not self._is_addressed_to_bot(text):
             return DialogueResult(text=None)
 
         if draft and self._is_abort_request_message(text):
@@ -107,6 +118,7 @@ class RequestDialogueService(
             text=text,
             draft=draft,
             recent_chat_messages=recent_chat_messages,
+            force_dialogue=force_dialogue,
         )
         if llm_reply is not None:
             return DialogueResult(text=llm_reply)
@@ -124,7 +136,10 @@ class RequestDialogueService(
         if material_matches:
             quantity, _ = self._extract_quantity(text)
             if draft is None and not (
-                self._should_start_new_request_message(text) or quantity is not None or self._is_addressed_to_bot(text)
+                force_dialogue
+                or self._should_start_new_request_message(text)
+                or quantity is not None
+                or self._is_addressed_to_bot(text)
             ):
                 return DialogueResult(text=None)
             draft = await self.storage.get_or_create_active_draft(
@@ -138,8 +153,10 @@ class RequestDialogueService(
         if unknown_segments and not draft:
             if self._is_smalltalk_message(text):
                 return DialogueResult(text=None)
-            if not self._is_request_opening_text(text, unknown_segments) and not self._should_start_new_request_message(
-                text
+            if (
+                not force_dialogue
+                and not self._is_request_opening_text(text, unknown_segments)
+                and not self._should_start_new_request_message(text)
             ):
                 return DialogueResult(text=None)
             draft = await self.storage.get_or_create_active_draft(

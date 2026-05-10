@@ -287,3 +287,27 @@ def test_admin_recent_requests_use_storage_summary() -> None:
             row = next(item for item in response.json() if item["id"] == draft_id)
             assert row["object_name"] == "Object Alpha"
             assert row["items_count"] == 1
+
+
+def test_storage_recent_request_summary_is_typed() -> None:
+    with TemporaryDirectory() as tmp_dir:
+        root = Path(tmp_dir)
+        settings = load_settings(_create_settings_file(root))
+
+        with TestClient(create_admin_app(settings)) as client:
+            storage = client.app.state.storage
+            draft_id = asyncio.run(
+                storage.create_draft(
+                    chat_id=1001,
+                    master_id=2002,
+                    master_name="Typed tester",
+                )
+            )
+
+            summaries = asyncio.run(storage.list_recent_request_summaries(limit=10))
+            summary = next(item for item in summaries if item.id == draft_id)
+
+            assert summary.master_name == "Typed tester"
+            assert summary.status == "collecting"
+            assert summary.items_count == 0
+            assert summary.to_api_dict()["id"] == draft_id

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from supply_bot.domain.requests import RequestSummary
 from supply_bot.domain.request_lifecycle import (
     ACTIVE_REQUEST_STATUSES,
     validate_request_status_transition,
@@ -120,7 +121,7 @@ class RequestDraftsStorageMixin:
             row = await cursor.fetchone()
         return dict(row) if row else None
 
-    async def list_recent_request_summaries(self, *, limit: int = 20) -> list[dict[str, Any]]:
+    async def list_recent_request_summaries(self, *, limit: int = 20) -> list[RequestSummary]:
         safe_limit = max(1, min(limit, 100))
         async with self.connection() as db:
             cursor = await db.execute(
@@ -151,7 +152,7 @@ class RequestDraftsStorageMixin:
                 (safe_limit,),
             )
             rows = await cursor.fetchall()
-        return [dict(row) for row in rows]
+        return [RequestSummary.from_row(row) for row in rows]
 
     async def get_or_create_active_draft(self, *, chat_id: int, master_id: int, master_name: str) -> dict[str, Any]:
         draft = await self.get_active_draft(chat_id=chat_id, master_id=master_id)

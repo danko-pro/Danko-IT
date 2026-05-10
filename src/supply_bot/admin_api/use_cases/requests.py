@@ -20,7 +20,8 @@ from supply_bot.services.notifications import TelegramNotificationOutboxService
 
 
 async def list_recent_requests(storage_obj, *, limit: int = 20) -> list[dict[str, Any]]:
-    return await storage_obj.list_recent_request_summaries(limit=clamp_route_limit(limit))
+    summaries = await storage_obj.list_recent_request_summaries(limit=clamp_route_limit(limit))
+    return [summary.to_api_dict() for summary in summaries]
 
 
 async def expire_stale_requests(storage_obj, settings_obj, *, max_age_hours: int | None = None) -> dict[str, int]:

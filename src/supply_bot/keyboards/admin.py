@@ -16,6 +16,8 @@ from supply_bot.keyboards.admin_catalog_keyboards import (
 from supply_bot.keyboards.admin_root_keyboards import (
     admin_root_keyboard,
     delivery_hours_keyboard,
+    request_stale_reset_confirm_keyboard,
+    requests_maintenance_keyboard,
     settings_keyboard,
 )
 from supply_bot.keyboards.admin_support_keyboards import (
@@ -39,6 +41,8 @@ __all__ = [
     "family_field_selection_keyboard",
     "family_view_keyboard",
     "search_results_keyboard",
+    "request_stale_reset_confirm_keyboard",
+    "requests_maintenance_keyboard",
     "settings_keyboard",
     "skus_keyboard",
     "sku_view_keyboard",

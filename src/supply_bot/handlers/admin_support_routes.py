@@ -8,6 +8,8 @@ from aiogram.types import CallbackQuery, InlineKeyboardMarkup, Message
 
 from supply_bot.keyboards.admin import (
     admin_root_keyboard,
+    request_stale_reset_confirm_keyboard,
+    requests_maintenance_keyboard,
     search_results_keyboard,
     settings_keyboard,
     unknown_view_keyboard,
@@ -112,6 +114,62 @@ def register_admin_support_routes(
         await state.clear()
         await state.set_state(SearchStates.query)
         await render(callback, "Поиск по каталогу\n\nВведите название, алиас или артикул.")
+
+    @router.callback_query(F.data == "adm:requests")
+    async def requests_maintenance(callback: CallbackQuery, state: FSMContext) -> None:
+        if await reject_non_admin(callback):
+            return
+        await state.clear()
+        stale_hours = settings.request_draft_stale_hours
+        limit_text = (
+            f"Сейчас зависшими считаются активные черновики старше {stale_hours} ч."
+            if stale_hours > 0
+            else "Автосброс зависших черновиков сейчас отключен настройкой REQUEST_DRAFT_STALE_HOURS=0."
+        )
+        await render(
+            callback,
+            "Заявки\n\n"
+            f"{limit_text}\n\n"
+            "Ручной сброс переводит только зависшие активные черновики в статус отмены. "
+            "Свежие заявки и подтверждённые заявки не трогает.",
+            reply_markup=requests_maintenance_keyboard(),
+        )
+
+    @router.callback_query(F.data == "req:expire_stale:confirm")
+    async def requests_stale_reset_confirm(callback: CallbackQuery, state: FSMContext) -> None:
+        if await reject_non_admin(callback):
+            return
+        await state.clear()
+        if settings.request_draft_stale_hours <= 0:
+            await render(
+                callback,
+                "Сброс зависших заявок отключен: REQUEST_DRAFT_STALE_HOURS=0.\n\n"
+                "Поставьте положительное значение в часах, чтобы бот понимал, какие черновики считать зависшими.",
+                reply_markup=requests_maintenance_keyboard(),
+            )
+            return
+        await render(
+            callback,
+            "Подтвердите сброс зависших черновиков заявок.\n\n"
+            f"Будут отменены только активные черновики старше {settings.request_draft_stale_hours} ч.",
+            reply_markup=request_stale_reset_confirm_keyboard(),
+        )
+
+    @router.callback_query(F.data == "req:expire_stale:run")
+    async def requests_stale_reset_run(callback: CallbackQuery, state: FSMContext) -> None:
+        if await reject_non_admin(callback):
+            return
+        await state.clear()
+        expired_count = await storage.expire_stale_active_drafts(
+            max_age_hours=settings.request_draft_stale_hours,
+        )
+        await render(
+            callback,
+            "Сброс зависших заявок выполнен.\n\n"
+            f"Закрыто черновиков: {expired_count}.\n"
+            f"Лимит возраста: {settings.request_draft_stale_hours} ч.",
+            reply_markup=requests_maintenance_keyboard(),
+        )
 
     @router.message(SearchStates.query)
     async def search_query(message: Message, state: FSMContext) -> None:

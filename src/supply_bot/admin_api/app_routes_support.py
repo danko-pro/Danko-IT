@@ -97,7 +97,8 @@ def register_support_routes(
         status: str | None = "pending",
         limit: int = 50,
     ) -> list[dict[str, Any]]:
-        return await get_storage(request).list_telegram_notifications(status=status, limit=limit)
+        notifications = await get_storage(request).list_telegram_notifications(status=status, limit=limit)
+        return [notification.to_api_dict() for notification in notifications]
 
     @app.post("/api/notifications/telegram/flush")
     async def flush_telegram_notifications(request: Request, limit: int = 20) -> dict[str, int]:

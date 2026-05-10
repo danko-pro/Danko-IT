@@ -59,8 +59,8 @@ def test_notification_outbox_marks_sent_after_success() -> None:
 
         assert result.delivered is True
         assert sender.sent == [{"chat_id": 1001, "text": "hello"}]
-        assert row["status"] == "sent"
-        assert row["sent_at"]
+        assert row.status == "sent"
+        assert row.sent_at
 
 
 def test_notification_outbox_keeps_pending_after_failure_and_retries() -> None:
@@ -78,11 +78,11 @@ def test_notification_outbox_keeps_pending_after_failure_and_retries() -> None:
 
         assert failed.delivered is False
         assert failed.error == "network is down"
-        assert failed_row["status"] == "pending"
-        assert failed_row["attempts"] == 1
-        assert failed_row["last_error"] == "network is down"
+        assert failed_row.status == "pending"
+        assert failed_row.attempts == 1
+        assert failed_row.last_error == "network is down"
         assert retried.delivered is True
-        assert retried_row["status"] == "sent"
+        assert retried_row.status == "sent"
         assert sender.sent == [{"chat_id": 1001, "text": "retry me"}]
 
 
@@ -111,5 +111,5 @@ def test_admin_can_list_and_flush_telegram_notifications(monkeypatch) -> None:
             assert list_response.json()[0]["id"] == notification_id
             assert flush_response.status_code == 200
             assert flush_response.json() == {"delivered_count": 1, "failed_count": 0}
-            assert sent_row["status"] == "sent"
+            assert sent_row.status == "sent"
             assert sent == [{"chat_id": 1001, "text": "queued"}]

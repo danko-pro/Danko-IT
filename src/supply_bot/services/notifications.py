@@ -6,6 +6,11 @@ from typing import Protocol
 import httpx
 
 from supply_bot.config import Settings
+from supply_bot.domain.notifications import (
+    TELEGRAM_NOTIFICATION_PENDING,
+    TELEGRAM_NOTIFICATION_SENT,
+    TelegramNotification,
+)
 from supply_bot.storage import BotStorage
 
 
@@ -84,16 +89,19 @@ class TelegramNotificationOutboxService:
                 delivered=False,
                 error="Notification not found",
             )
-        if notification["status"] != "pending":
-            return NotificationDeliveryResult(notification_id=notification_id, delivered=notification["status"] == "sent")
+        if notification.status != TELEGRAM_NOTIFICATION_PENDING:
+            return NotificationDeliveryResult(
+                notification_id=notification_id,
+                delivered=notification.status == TELEGRAM_NOTIFICATION_SENT,
+            )
         return await self._deliver(notification)
 
-    async def _deliver(self, notification: dict) -> NotificationDeliveryResult:
-        notification_id = int(notification["id"])
+    async def _deliver(self, notification: TelegramNotification) -> NotificationDeliveryResult:
+        notification_id = notification.id
         try:
             await self.sender.send_message(
-                chat_id=int(notification["chat_id"]),
-                text=str(notification["text"]),
+                chat_id=notification.chat_id,
+                text=notification.text,
             )
         except Exception as exc:  # noqa: BLE001
             error = str(exc)

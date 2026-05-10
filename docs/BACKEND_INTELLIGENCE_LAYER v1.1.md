@@ -12,6 +12,10 @@ Backend intelligence layer is the controlled entry point for non-text and AI-ass
 
 The key rule: AI may prepare structured data, but it must not silently mutate project state without a domain use case and a review boundary.
 
+Related history:
+
+- `BACKEND_IMPLEMENTATION_HISTORY v1.0.md` records the backend stabilization steps, commits, checks, and current stop line.
+
 ## Current State
 
 Already implemented:
@@ -25,13 +29,18 @@ Already implemented:
 - ledger document upload for invoice and act files;
 - AI extraction endpoint for ledger invoice and act metadata;
 - shared LLM provider facade in `supply_bot.services.llm_client`;
-- shared project document text reader for PDF, text, and image documents.
+- shared project document text reader for PDF, text, and image documents;
+- domain request lifecycle validation for status transitions;
+- Telegram notification outbox for retryable admin/bot notifications;
+- typed DTO boundaries for Telegram notifications, admin request summaries, and material search targets.
 
 Current limitation:
 
 - Telegram photo-to-project linking is not automatic yet because the backend needs a project matching/review flow;
 - handwriting quality depends on the configured vision model;
-- extracted ledger and contract data still requires user review before it is treated as verified.
+- extracted ledger and contract data still requires user review before it is treated as verified;
+- notification outbox has API/manual flush and opportunistic flush, but no dedicated background retry worker yet;
+- notification outbox is not surfaced in the admin UI yet.
 
 ## Target Layers
 

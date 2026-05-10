@@ -105,3 +105,65 @@ def test_request_draft_participants_are_persisted() -> None:
 
             assert owner_is_participant
             assert helper_is_participant
+
+
+async def _make_draft_old(storage, draft_id: int) -> None:
+    async with storage.connection() as db:
+        await db.execute(
+            """
+            UPDATE request_drafts
+            SET updated_at = datetime('now', '-48 hours')
+            WHERE id = ?
+            """,
+            (draft_id,),
+        )
+        await db.commit()
+
+
+def test_stale_active_request_drafts_are_cancelled() -> None:
+    with TemporaryDirectory() as tmp_dir:
+        root = Path(tmp_dir)
+        settings = load_settings(_create_settings_file(root))
+
+        with TestClient(create_admin_app(settings)) as client:
+            draft_id = asyncio.run(
+                client.app.state.storage.create_draft(
+                    chat_id=1001,
+                    master_id=2002,
+                    master_name="Admin tester",
+                )
+            )
+            asyncio.run(_make_draft_old(client.app.state.storage, draft_id))
+
+            expired_count = asyncio.run(
+                client.app.state.storage.expire_stale_active_drafts(max_age_hours=24)
+            )
+            draft = asyncio.run(client.app.state.storage.get_draft(draft_id))
+
+            assert expired_count == 1
+            assert draft["status"] == "cancelled"
+            assert draft["waiting_for"] is None
+
+
+def test_stale_active_request_expiration_can_be_disabled() -> None:
+    with TemporaryDirectory() as tmp_dir:
+        root = Path(tmp_dir)
+        settings = load_settings(_create_settings_file(root))
+
+        with TestClient(create_admin_app(settings)) as client:
+            draft_id = asyncio.run(
+                client.app.state.storage.create_draft(
+                    chat_id=1001,
+                    master_id=2002,
+                    master_name="Admin tester",
+                )
+            )
+            asyncio.run(_make_draft_old(client.app.state.storage, draft_id))
+
+            expired_count = asyncio.run(
+                client.app.state.storage.expire_stale_active_drafts(max_age_hours=0)
+            )
+            draft = asyncio.run(client.app.state.storage.get_draft(draft_id))
+
+            assert expired_count == 0
+            assert draft["status"] == "collecting"

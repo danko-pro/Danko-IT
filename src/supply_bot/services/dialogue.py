@@ -78,6 +78,10 @@ class RequestDialogueService(
         normalized = normalize_text(text)
         abort_requested = self._is_abort_request_message(text)
         abort_candidate = abort_requested or self._is_possible_abort_request_message(text)
+        await self.storage.expire_stale_active_drafts(
+            max_age_hours=self.settings.request_draft_stale_hours,
+            chat_id=message.chat.id,
+        )
         active_chat_draft = await self.storage.get_active_draft_for_chat(chat_id=message.chat.id)
         draft = active_chat_draft if active_chat_draft else None
         if active_chat_draft and int(active_chat_draft["master_id"]) != int(message.from_user.id):

@@ -54,6 +54,7 @@ class Settings:
     supply_dialogue_mistral_model: str
     supply_dialogue_mistral_max_output_tokens: int
     supply_dialogue_mistral_timeout_seconds: int
+    request_draft_stale_hours: int
     database_path: Path
     admin_password_hash: str | None
     admin_session_secret: str | None
@@ -179,6 +180,7 @@ def load_settings(config_path: Path | None = None) -> Settings:
         supply_dialogue_mistral_model=env.get("SUPPLY_DIALOGUE_MISTRAL_MODEL", "mistral-large-latest"),
         supply_dialogue_mistral_max_output_tokens=int(env.get("SUPPLY_DIALOGUE_MISTRAL_MAX_OUTPUT_TOKENS", "320")),
         supply_dialogue_mistral_timeout_seconds=int(env.get("SUPPLY_DIALOGUE_MISTRAL_TIMEOUT_SECONDS", "25")),
+        request_draft_stale_hours=int(env.get("REQUEST_DRAFT_STALE_HOURS", "24")),
         database_path=_pick_path(base_dir, env.get("DATABASE_PATH"), default="./data/supply_bot.sqlite3"),
         admin_password_hash=_optional_secret(env.get("ADMIN_PASSWORD_HASH")),
         admin_session_secret=_optional_secret(env.get("ADMIN_SESSION_SECRET")),

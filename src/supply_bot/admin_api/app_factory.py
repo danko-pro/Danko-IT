@@ -92,6 +92,7 @@ def _build_admin_lifespan(settings: Settings, storage: BotStorage):
             delivery_end=settings.default_delivery_end.strftime("%H:%M"),
             delivery_fallback=settings.default_delivery_fallback.strftime("%H:%M"),
         )
+        await storage.expire_stale_active_drafts(max_age_hours=settings.request_draft_stale_hours)
         app.state.settings = settings
         app.state.storage = storage
         yield

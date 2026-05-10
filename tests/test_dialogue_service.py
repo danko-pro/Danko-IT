@@ -19,6 +19,7 @@ class FakeStorage:
         self.created_drafts: list[dict] = []
         self.group_messages: list[dict] = []
         self.participants: set[tuple[int, int]] = set()
+        self.expire_calls: list[dict] = []
 
     async def add_group_message(
         self,
@@ -44,6 +45,10 @@ class FakeStorage:
             if draft.get("chat_id") == chat_id and draft.get("status") in {"collecting", "awaiting_confirmation"}:
                 return dict(draft)
         return None
+
+    async def expire_stale_active_drafts(self, *, max_age_hours: int, chat_id: int | None = None) -> int:
+        self.expire_calls.append({"max_age_hours": max_age_hours, "chat_id": chat_id})
+        return 0
 
     async def get_active_draft(self, *, chat_id: int, master_id: int) -> dict | None:
         for draft in reversed(list(self.drafts.values())):
@@ -126,7 +131,12 @@ class FakeStorage:
 
 class DialogueServiceHarness(RequestDialogueService):
     def __init__(self, storage: FakeStorage) -> None:
-        self.settings = SimpleNamespace(admin_ids=[], timezone="Europe/Berlin", llm_enabled=False)
+        self.settings = SimpleNamespace(
+            admin_ids=[],
+            timezone="Europe/Berlin",
+            llm_enabled=False,
+            request_draft_stale_hours=24,
+        )
         self.storage = storage
         self.narrator = None
         self.decider = None

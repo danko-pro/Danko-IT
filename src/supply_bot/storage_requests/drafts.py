@@ -44,6 +44,32 @@ class RequestDraftsStorageMixin:
             row = await cursor.fetchone()
         return dict(row) if row else None
 
+    async def expire_stale_active_drafts(self, *, max_age_hours: int, chat_id: int | None = None) -> int:
+        if max_age_hours <= 0:
+            return 0
+        clauses = [
+            "status IN ('collecting', 'awaiting_confirmation')",
+            "updated_at < datetime('now', ?)",
+        ]
+        params: list[Any] = [f"-{max_age_hours} hours"]
+        if chat_id is not None:
+            clauses.append("chat_id = ?")
+            params.append(chat_id)
+        async with self.connection() as db:
+            cursor = await db.execute(
+                f"""
+                UPDATE request_drafts
+                SET status = 'cancelled',
+                    waiting_for = NULL,
+                    waiting_item_id = NULL,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE {" AND ".join(clauses)}
+                """,
+                params,
+            )
+            await db.commit()
+            return int(cursor.rowcount or 0)
+
     async def create_draft(self, *, chat_id: int, master_id: int, master_name: str) -> int:
         async with self.connection() as db:
             cursor = await db.execute(

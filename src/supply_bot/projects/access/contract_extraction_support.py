@@ -1,8 +1,11 @@
 from __future__ import annotations
 
-import json
 from pathlib import Path
 from typing import Any
+
+IMAGE_DOCUMENT_SUFFIXES = {".gif", ".heic", ".jpeg", ".jpg", ".png", ".tif", ".tiff", ".webp"}
+TEXT_DOCUMENT_SUFFIXES = {".csv", ".json", ".md", ".rtf", ".txt", ".xml"}
+TEXT_DOCUMENT_MIME_TYPES = {"application/json", "application/xml", "text/csv", "text/markdown", "text/plain"}
 
 CONTRACT_EXTRACTION_SCHEMA = {
     "title": "string",
@@ -33,8 +36,38 @@ CONTRACT_EXTRACTION_SYSTEM_PROMPT = (
 )
 
 
+class ProjectDocumentTextExtractionError(ValueError):
+    pass
+
+
+def _is_image_document(file_path: Path, *, mime_type: str | None) -> bool:
+    normalized_mime_type = str(mime_type or "").strip().lower()
+    return normalized_mime_type.startswith("image/") or file_path.suffix.lower() in IMAGE_DOCUMENT_SUFFIXES
+
+
+def _is_text_document(file_path: Path, *, mime_type: str | None) -> bool:
+    normalized_mime_type = str(mime_type or "").strip().lower()
+    return (
+        normalized_mime_type.startswith("text/")
+        or normalized_mime_type in TEXT_DOCUMENT_MIME_TYPES
+        or file_path.suffix.lower() in TEXT_DOCUMENT_SUFFIXES
+    )
+
+
+def _decode_text_document(raw_bytes: bytes) -> str:
+    for encoding in ("utf-8", "cp1251", "latin-1"):
+        try:
+            return raw_bytes.decode(encoding)
+        except UnicodeDecodeError:
+            continue
+    return raw_bytes.decode("utf-8", errors="ignore")
+
+
 def extract_contract_text(file_path: Path, *, mime_type: str | None = None) -> str:
     suffix = file_path.suffix.lower()
+    if _is_image_document(file_path, mime_type=mime_type):
+        raise ProjectDocumentTextExtractionError("OCR is required for image document")
+
     if mime_type == "application/pdf" or suffix == ".pdf":
         from pypdf import PdfReader
 
@@ -47,45 +80,11 @@ def extract_contract_text(file_path: Path, *, mime_type: str | None = None) -> s
                 parts.append(stripped)
         return "\n\n".join(parts)
 
+    if not _is_text_document(file_path, mime_type=mime_type):
+        raise ProjectDocumentTextExtractionError("Unsupported document text extraction type")
+
     raw_bytes = file_path.read_bytes()
-    for encoding in ("utf-8", "cp1251", "latin-1"):
-        try:
-            return raw_bytes.decode(encoding)
-        except UnicodeDecodeError:
-            continue
-    return raw_bytes.decode("utf-8", errors="ignore")
-
-
-def extract_json_content(payload: dict[str, Any]) -> dict[str, Any] | None:
-    choices = payload.get("choices") or []
-    if not choices:
-        return None
-    message = choices[0].get("message") or {}
-    content = message.get("content")
-    text: str | None = None
-    if isinstance(content, str):
-        text = content.strip()
-    elif isinstance(content, list):
-        fragments: list[str] = []
-        for chunk in content:
-            if isinstance(chunk, dict) and chunk.get("type") == "text":
-                fragments.append(str(chunk.get("text", "")))
-        text = "".join(fragments).strip()
-
-    if not text:
-        return None
-
-    cleaned = text.strip()
-    if cleaned.startswith("```"):
-        cleaned = cleaned.strip("`")
-        if cleaned.lower().startswith("json"):
-            cleaned = cleaned[4:].strip()
-
-    try:
-        parsed = json.loads(cleaned)
-    except json.JSONDecodeError:
-        return None
-    return parsed if isinstance(parsed, dict) else None
+    return _decode_text_document(raw_bytes)
 
 
 def normalize_contract_payload(payload: dict[str, Any] | None) -> dict[str, Any] | None:

@@ -61,7 +61,13 @@ class Settings:
 
     @property
     def llm_enabled(self) -> bool:
-        return self.supply_dialogue_enabled and bool(self.provider_api_key)
+        return self.supply_dialogue_enabled and any(
+            (
+                self.openai_api_key,
+                self.openrouter_api_key,
+                self.mistral_api_key,
+            )
+        )
 
     @property
     def provider_api_key(self) -> str | None:

@@ -82,4 +82,5 @@ async def create_material_alias(storage_obj, payload) -> dict[str, Any]:
 
 
 async def search_materials(storage_obj, query: str) -> list[dict[str, Any]]:
-    return await search_material_catalog(storage_obj, query)
+    targets = await search_material_catalog(storage_obj, query)
+    return [target.to_api_dict() for target in targets]

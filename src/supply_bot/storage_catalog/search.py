@@ -2,20 +2,21 @@ from __future__ import annotations
 
 from typing import Any
 
+from supply_bot.domain.materials import MaterialSearchTarget
 from supply_bot.utils import normalize_text
 
 # Поисковый фасад по разным сущностям каталога.
 
 
 class CatalogSearchStorageMixin:
-    async def search_material_targets(self, query: str) -> list[dict[str, Any]]:
+    async def search_material_targets(self, query: str) -> list[MaterialSearchTarget]:
         normalized_query = normalize_text(query)
         if len(normalized_query) < 2:
             return []
 
         needle = f"%{normalized_query}%"
         async with self.connection() as db:
-            results: list[dict[str, Any]] = []
+            results: list[MaterialSearchTarget] = []
 
             cursor = await db.execute(
                 """
@@ -29,14 +30,14 @@ class CatalogSearchStorageMixin:
             )
             for row in await cursor.fetchall():
                 results.append(
-                    {
-                        "type": "family",
-                        "id": row["id"],
-                        "title": row["title"],
-                        "family_id": row["family_id"],
-                        "variant_id": None,
-                        "sku_id": None,
-                    }
+                    MaterialSearchTarget(
+                        type="family",
+                        id=int(row["id"]),
+                        title=str(row["title"]),
+                        family_id=int(row["family_id"]),
+                        variant_id=None,
+                        sku_id=None,
+                    )
                 )
 
             cursor = await db.execute(
@@ -51,14 +52,14 @@ class CatalogSearchStorageMixin:
             )
             for row in await cursor.fetchall():
                 results.append(
-                    {
-                        "type": "variant",
-                        "id": row["id"],
-                        "title": row["title"],
-                        "family_id": row["family_id"],
-                        "variant_id": row["id"],
-                        "sku_id": None,
-                    }
+                    MaterialSearchTarget(
+                        type="variant",
+                        id=int(row["id"]),
+                        title=str(row["title"]),
+                        family_id=int(row["family_id"]),
+                        variant_id=int(row["id"]),
+                        sku_id=None,
+                    )
                 )
 
             cursor = await db.execute(
@@ -73,14 +74,14 @@ class CatalogSearchStorageMixin:
             )
             for row in await cursor.fetchall():
                 results.append(
-                    {
-                        "type": "sku",
-                        "id": row["id"],
-                        "title": row["title"],
-                        "family_id": row["family_id"],
-                        "variant_id": row["variant_id"],
-                        "sku_id": row["id"],
-                    }
+                    MaterialSearchTarget(
+                        type="sku",
+                        id=int(row["id"]),
+                        title=str(row["title"]),
+                        family_id=int(row["family_id"]),
+                        variant_id=int(row["variant_id"]) if row["variant_id"] is not None else None,
+                        sku_id=int(row["id"]),
+                    )
                 )
 
             cursor = await db.execute(
@@ -95,14 +96,14 @@ class CatalogSearchStorageMixin:
             )
             for row in await cursor.fetchall():
                 results.append(
-                    {
-                        "type": "alias",
-                        "id": row["id"],
-                        "title": row["title"],
-                        "family_id": row["family_id"],
-                        "variant_id": row["variant_id"],
-                        "sku_id": row["sku_id"],
-                    }
+                    MaterialSearchTarget(
+                        type="alias",
+                        id=int(row["id"]),
+                        title=str(row["title"]),
+                        family_id=int(row["family_id"]) if row["family_id"] is not None else None,
+                        variant_id=int(row["variant_id"]) if row["variant_id"] is not None else None,
+                        sku_id=int(row["sku_id"]) if row["sku_id"] is not None else None,
+                    )
                 )
 
         return results[:20]

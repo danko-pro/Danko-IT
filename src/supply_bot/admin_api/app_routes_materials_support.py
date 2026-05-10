@@ -6,6 +6,8 @@ from typing import Any
 
 from fastapi import HTTPException
 
+from supply_bot.domain.materials import MaterialSearchTarget
+
 
 def build_material_family_values(payload) -> dict[str, Any]:
     canonical_name = payload.canonical_name.strip()
@@ -131,5 +133,5 @@ async def validate_material_alias_payload(storage_obj, payload) -> str:
     return alias
 
 
-async def search_material_catalog(storage_obj, query: str) -> list[dict[str, Any]]:
+async def search_material_catalog(storage_obj, query: str) -> list[MaterialSearchTarget]:
     return await storage_obj.search_material_targets(query)

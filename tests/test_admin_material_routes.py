@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
@@ -197,3 +198,20 @@ def test_material_search_returns_catalog_targets() -> None:
             assert any(item["type"] == "variant" and item["variant_id"] == variant_id for item in results)
             assert any(item["type"] == "sku" and item["sku_id"] == sku_id for item in results)
             assert any(item["type"] == "alias" and item["family_id"] == family_id for item in results)
+
+
+def test_material_search_storage_returns_typed_targets() -> None:
+    with TemporaryDirectory() as tmp_dir:
+        root = Path(tmp_dir)
+        settings = load_settings(_create_settings_file(root))
+
+        with TestClient(create_admin_app(settings)) as client:
+            family_id = _create_family(client, "Typed search family")
+
+            targets = asyncio.run(client.app.state.storage.search_material_targets("typed"))
+            family_target = next(target for target in targets if target.type == "family")
+
+            assert family_target.id == family_id
+            assert family_target.family_id == family_id
+            assert family_target.variant_id is None
+            assert family_target.to_api_dict()["type"] == "family"

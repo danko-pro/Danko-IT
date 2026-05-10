@@ -188,6 +188,28 @@ async def apply_storage_migrations(connection_factory: ConnectionFactory) -> Non
             FROM request_drafts
             """
         )
+        await db.execute(
+            """
+            CREATE TABLE IF NOT EXISTS telegram_notification_outbox (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                chat_id INTEGER NOT NULL,
+                text TEXT NOT NULL,
+                status TEXT NOT NULL DEFAULT 'pending',
+                attempts INTEGER NOT NULL DEFAULT 0,
+                last_error TEXT,
+                next_attempt_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                sent_at TEXT,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            )
+            """
+        )
+        await db.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_telegram_notification_outbox_pending
+            ON telegram_notification_outbox(status, next_attempt_at, id)
+            """
+        )
         await db.commit()
 
 

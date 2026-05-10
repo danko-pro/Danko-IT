@@ -14,6 +14,7 @@ from supply_bot.storage_estimates import (
     EstimateFlooringStorageMixin,
     EstimateWallFinishStorageMixin,
 )
+from supply_bot.storage_notifications import TelegramNotificationOutboxStorageMixin
 from supply_bot.storage_projects import ProjectsStorageMixin
 from supply_bot.storage_requests import GroupRequestsStorageMixin
 
@@ -28,6 +29,7 @@ class BotStorage(
     EstimateWallFinishStorageMixin,
     EstimateFlooringStorageMixin,
     EstimateCoreStorageMixin,
+    TelegramNotificationOutboxStorageMixin,
 ):
     def __init__(self, database_path: Path) -> None:
         self.database_path = database_path

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from aiogram import Bot
 
+from supply_bot.services.notifications import TelegramNotificationOutboxService
 from supply_bot.utils import format_date
 
 
@@ -32,5 +33,7 @@ class DialogueRequestFlowSummaryMixin:
 
     async def _notify_admins(self, bot: Bot, summary: str, draft: dict) -> None:
         header = f"Новая подтверждённая заявка\nМастер: {draft['master_name']}\nЧерновик: #{draft['id']}\n\n"
+        notifications = TelegramNotificationOutboxService(settings=self.settings, storage=self.storage)
+        await notifications.flush_pending(limit=10)
         for admin_id in self.settings.admin_ids:
-            await bot.send_message(admin_id, header + summary)
+            await notifications.enqueue_and_try_send(chat_id=admin_id, text=header + summary)

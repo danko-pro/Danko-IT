@@ -8,6 +8,7 @@ from fastapi import FastAPI, Request
 
 from supply_bot.admin_api.app_helpers import _fetch_scalar, _parse_hhmm
 from supply_bot.admin_api.deps import get_settings, get_storage
+from supply_bot.services.notifications import TelegramNotificationOutboxService
 
 
 def register_support_routes(
@@ -89,6 +90,26 @@ def register_support_routes(
             )
             rows = await cursor.fetchall()
         return [dict(row) for row in rows]
+
+    @app.get("/api/notifications/telegram")
+    async def telegram_notifications(
+        request: Request,
+        status: str | None = "pending",
+        limit: int = 50,
+    ) -> list[dict[str, Any]]:
+        return await get_storage(request).list_telegram_notifications(status=status, limit=limit)
+
+    @app.post("/api/notifications/telegram/flush")
+    async def flush_telegram_notifications(request: Request, limit: int = 20) -> dict[str, int]:
+        notifications = TelegramNotificationOutboxService(
+            settings=get_settings(request),
+            storage=get_storage(request),
+        )
+        result = await notifications.flush_pending(limit=limit)
+        return {
+            "delivered_count": result.delivered_count,
+            "failed_count": result.failed_count,
+        }
 
     @app.get("/api/settings/delivery")
     async def delivery_settings(request: Request) -> dict[str, str]:

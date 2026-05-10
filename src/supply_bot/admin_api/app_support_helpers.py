@@ -4,10 +4,8 @@ from datetime import datetime
 from typing import Any
 
 import aiosqlite
-import httpx
 from fastapi import HTTPException
 
-from supply_bot.config import Settings
 from supply_bot.storage import BotStorage
 
 
@@ -61,22 +59,6 @@ def _admin_status_message(status: str) -> str | None:
         "collecting": "Администратор вернул заявку в сбор и уточнение.",
     }
     return messages.get(status)
-
-
-async def _send_group_message(*, settings: Settings, chat_id: int, text: str) -> None:
-    timeout = httpx.Timeout(15.0, connect=10.0)
-    async with httpx.AsyncClient(timeout=timeout) as client:
-        response = await client.post(
-            f"https://api.telegram.org/bot{settings.bot_token}/sendMessage",
-            json={
-                "chat_id": chat_id,
-                "text": text,
-            },
-        )
-        response.raise_for_status()
-        payload = response.json()
-        if not payload.get("ok"):
-            raise RuntimeError(payload.get("description") or "Telegram sendMessage failed")
 
 
 async def _fetch_scalar(

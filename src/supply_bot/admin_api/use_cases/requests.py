@@ -7,7 +7,6 @@ from fastapi import HTTPException
 from supply_bot.admin_api.app_helpers import (
     _admin_status_message,
     _request_detail_payload,
-    _send_group_message,
 )
 from supply_bot.admin_api.app_routes_requests_support import (
     build_request_item_create_values,
@@ -17,6 +16,7 @@ from supply_bot.admin_api.app_routes_requests_support import (
     normalize_request_status,
 )
 from supply_bot.domain.request_lifecycle import RequestLifecycleError, can_delete_request_status
+from supply_bot.services.notifications import TelegramNotificationOutboxService
 
 
 async def list_recent_requests(storage_obj, *, limit: int = 20) -> list[dict[str, Any]]:
@@ -62,15 +62,14 @@ async def update_request_status(storage_obj, settings_obj, draft_id: int, status
     notified = False
     notification_text = _admin_status_message(target_status)
     if notification_text:
-        try:
-            await _send_group_message(
-                settings=settings_obj,
-                chat_id=int(updated_draft["chat_id"]),
-                text=notification_text,
-            )
-            notified = True
-        except Exception as exc:  # noqa: BLE001
-            notification_error = str(exc)
+        notifications = TelegramNotificationOutboxService(settings=settings_obj, storage=storage_obj)
+        await notifications.flush_pending(limit=10)
+        result = await notifications.enqueue_and_try_send(
+            chat_id=int(updated_draft["chat_id"]),
+            text=notification_text,
+        )
+        notified = result.delivered
+        notification_error = result.error
 
     return {
         "draft_id": draft_id,

@@ -53,8 +53,16 @@ class RequestDraftsStorageMixin:
                 """,
                 (chat_id, master_id, master_name),
             )
+            draft_id = int(cursor.lastrowid)
+            await db.execute(
+                """
+                INSERT OR IGNORE INTO request_draft_participants (draft_id, user_id, user_name, role)
+                VALUES (?, ?, ?, 'owner')
+                """,
+                (draft_id, master_id, master_name),
+            )
             await db.commit()
-            return int(cursor.lastrowid)
+            return draft_id
 
     async def get_draft(self, draft_id: int) -> dict[str, Any] | None:
         async with self.connection() as db:
@@ -76,12 +84,60 @@ class RequestDraftsStorageMixin:
     async def get_or_create_active_draft(self, *, chat_id: int, master_id: int, master_name: str) -> dict[str, Any]:
         draft = await self.get_active_draft(chat_id=chat_id, master_id=master_id)
         if draft:
+            await self.add_draft_participant(
+                draft_id=draft["id"],
+                user_id=master_id,
+                user_name=master_name,
+                role="owner",
+            )
             return draft
         await self.create_draft(chat_id=chat_id, master_id=master_id, master_name=master_name)
         fresh = await self.get_active_draft(chat_id=chat_id, master_id=master_id)
         if fresh:
             return fresh
         raise RuntimeError("Не удалось создать черновик заявки.")
+
+    async def add_draft_participant(
+        self,
+        *,
+        draft_id: int,
+        user_id: int,
+        user_name: str | None,
+        role: str = "participant",
+    ) -> None:
+        async with self.connection() as db:
+            await db.execute(
+                """
+                INSERT OR IGNORE INTO request_draft_participants (draft_id, user_id, user_name, role)
+                VALUES (?, ?, ?, ?)
+                """,
+                (draft_id, user_id, user_name, role),
+            )
+            await db.execute(
+                """
+                UPDATE request_draft_participants
+                SET user_name = ?,
+                    role = CASE WHEN ? = 'owner' THEN 'owner' ELSE role END,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE draft_id = ? AND user_id = ?
+                """,
+                (user_name, role, draft_id, user_id),
+            )
+            await db.commit()
+
+    async def is_draft_participant(self, *, draft_id: int, user_id: int) -> bool:
+        async with self.connection() as db:
+            cursor = await db.execute(
+                """
+                SELECT 1
+                FROM request_draft_participants
+                WHERE draft_id = ? AND user_id = ?
+                LIMIT 1
+                """,
+                (draft_id, user_id),
+            )
+            row = await cursor.fetchone()
+        return row is not None
 
     async def update_draft_waiting(
         self,

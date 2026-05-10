@@ -162,6 +162,32 @@ async def apply_storage_migrations(connection_factory: ConnectionFactory) -> Non
                 column=column,
                 definition=definition,
             )
+        await db.execute(
+            """
+            CREATE TABLE IF NOT EXISTS request_draft_participants (
+                draft_id INTEGER NOT NULL REFERENCES request_drafts(id) ON DELETE CASCADE,
+                user_id INTEGER NOT NULL,
+                user_name TEXT,
+                role TEXT NOT NULL DEFAULT 'participant',
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (draft_id, user_id)
+            )
+            """
+        )
+        await db.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_request_draft_participants_user
+            ON request_draft_participants(user_id, draft_id)
+            """
+        )
+        await db.execute(
+            """
+            INSERT OR IGNORE INTO request_draft_participants (draft_id, user_id, user_name, role)
+            SELECT id, master_id, master_name, 'owner'
+            FROM request_drafts
+            """
+        )
         await db.commit()
 
 

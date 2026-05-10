@@ -74,21 +74,18 @@ class RequestDialogueService(
         if not text or message.from_user is None:
             return DialogueResult(text=None)
 
-        profile = await self.profiles.sync_from_telegram(bot, message.chat.id)
         master_name = message.from_user.full_name or message.from_user.username or str(message.from_user.id)
-        await self.storage.add_group_message(
-            chat_id=message.chat.id,
-            user_id=message.from_user.id,
-            user_name=master_name,
-            text=text,
-            message_id=message.message_id,
-        )
         normalized = normalize_text(text)
         abort_requested = self._is_abort_request_message(text)
         abort_candidate = abort_requested or self._is_possible_abort_request_message(text)
         active_chat_draft = await self.storage.get_active_draft_for_chat(chat_id=message.chat.id)
+        draft = active_chat_draft if active_chat_draft else None
         if active_chat_draft and int(active_chat_draft["master_id"]) != int(message.from_user.id):
-            if abort_candidate:
+            is_participant = await self.storage.is_draft_participant(
+                draft_id=active_chat_draft["id"],
+                user_id=message.from_user.id,
+            )
+            if abort_candidate and not is_participant:
                 admin_ids = {int(admin_id) for admin_id in self.settings.admin_ids}
                 if abort_requested and int(message.from_user.id) in admin_ids:
                     await self.storage.set_draft_status(active_chat_draft["id"], status="cancelled")
@@ -100,7 +97,31 @@ class RequestDialogueService(
                         "Отменить ее может автор заявки или администратор."
                     )
                 )
-            return DialogueResult(text=None)
+            should_join_draft = self._should_join_active_draft(text)
+            if not is_participant and not should_join_draft:
+                return DialogueResult(text=None)
+            if should_join_draft:
+                await self.storage.add_draft_participant(
+                    draft_id=active_chat_draft["id"],
+                    user_id=message.from_user.id,
+                    user_name=master_name,
+                )
+        elif active_chat_draft:
+            await self.storage.add_draft_participant(
+                draft_id=active_chat_draft["id"],
+                user_id=message.from_user.id,
+                user_name=master_name,
+                role="owner",
+            )
+
+        profile = await self.profiles.sync_from_telegram(bot, message.chat.id)
+        await self.storage.add_group_message(
+            chat_id=message.chat.id,
+            user_id=message.from_user.id,
+            user_name=master_name,
+            text=text,
+            message_id=message.message_id,
+        )
         recent_self_messages = await self.storage.list_recent_group_messages(
             chat_id=message.chat.id,
             user_id=message.from_user.id,
@@ -110,7 +131,8 @@ class RequestDialogueService(
             chat_id=message.chat.id,
             limit=12,
         )
-        draft = await self.storage.get_active_draft(chat_id=message.chat.id, master_id=message.from_user.id)
+        if draft is None:
+            draft = await self.storage.get_active_draft(chat_id=message.chat.id, master_id=message.from_user.id)
         explicit_cancel_without_draft = abort_requested and (
             force_dialogue
             or self._is_addressed_to_bot(text)

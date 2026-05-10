@@ -46,6 +46,13 @@ ORDER_OPENING_MARKERS = (
     "собери заявк",
     "сделай заявк",
 )
+ACTIVE_DRAFT_JOIN_REFERENCES = (
+    "по заявк",
+    "в заявк",
+    "к заявк",
+    "эту заявк",
+    "туда же",
+)
 DIRECT_ABORT_REQUEST_MARKERS = (
     "отбой",
     "отмена заявк",
@@ -144,6 +151,22 @@ class DialogueContextMixin:
         if quantity is None or unit is None:
             return False
         return any(marker in normalized for marker in ORDER_OPENING_MARKERS)
+
+    def _should_join_active_draft(self, text: str) -> bool:
+        normalized = normalize_text(text)
+        if not normalized or self._is_smalltalk_message(text):
+            return False
+        if self._is_addressed_to_bot(text):
+            return (
+                self._is_possible_abort_request_message(text)
+                or self._request_topic_score(text) >= 2
+                or any(marker in normalized for marker in ACTIVE_DRAFT_JOIN_REFERENCES)
+            )
+        quantity, unit = self._extract_quantity(text)
+        has_request_reference = any(marker in normalized for marker in ACTIVE_DRAFT_JOIN_REFERENCES)
+        if has_request_reference:
+            return unit is not None or any(marker in normalized for marker in ("добав", "нуж", "привез", "заявк"))
+        return normalized.startswith(("еще ", "ещё ", "и ")) and unit is not None
 
     def _should_start_new_request_message(self, text: str) -> bool:
         if not self._is_addressed_to_bot(text):

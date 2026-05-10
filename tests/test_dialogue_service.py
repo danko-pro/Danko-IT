@@ -18,6 +18,7 @@ class FakeStorage:
         self.drafts: dict[int, dict] = {}
         self.created_drafts: list[dict] = []
         self.group_messages: list[dict] = []
+        self.participants: set[tuple[int, int]] = set()
 
     async def add_group_message(
         self,
@@ -101,7 +102,26 @@ class FakeStorage:
             },
         )
         self.created_drafts.append(dict(draft))
+        await self.add_draft_participant(
+            draft_id=draft["id"],
+            user_id=master_id,
+            user_name=master_name,
+            role="owner",
+        )
         return dict(draft)
+
+    async def add_draft_participant(
+        self,
+        *,
+        draft_id: int,
+        user_id: int,
+        user_name: str | None,
+        role: str = "participant",
+    ) -> None:
+        self.participants.add((draft_id, user_id))
+
+    async def is_draft_participant(self, *, draft_id: int, user_id: int) -> bool:
+        return (draft_id, user_id) in self.participants
 
 
 class DialogueServiceHarness(RequestDialogueService):
@@ -363,4 +383,69 @@ class DialogueServiceTests(IsolatedAsyncioTestCase):
         result = await self.service.handle_group_text_payload(object(), message, text=text)
 
         self.assertIsNone(result.text)
+        self.assertEqual(self.storage.created_drafts, [])
+
+    async def test_foreign_noise_during_active_draft_is_ignored(self) -> None:
+        self.storage.drafts[8] = {
+            "id": 8,
+            "chat_id": 10,
+            "master_id": 99,
+            "master_name": "Автор",
+            "status": "collecting",
+        }
+        self.storage.participants.add((8, 99))
+        message = SimpleNamespace(
+            chat=SimpleNamespace(id=10),
+            from_user=SimpleNamespace(id=20, full_name="Сосед", username="neighbor", is_bot=False),
+            message_id=55,
+        )
+
+        result = await self.service.handle_group_text_payload(object(), message, text="кто завтра на объекте?")
+
+        self.assertIsNone(result.text)
+        self.assertEqual(self.storage.group_messages, [])
+        self.assertNotIn((8, 20), self.storage.participants)
+
+    async def test_foreign_addressed_smalltalk_during_active_draft_is_ignored(self) -> None:
+        self.storage.drafts[9] = {
+            "id": 9,
+            "chat_id": 10,
+            "master_id": 99,
+            "master_name": "Автор",
+            "status": "collecting",
+        }
+        self.storage.participants.add((9, 99))
+        message = SimpleNamespace(
+            chat=SimpleNamespace(id=10),
+            from_user=SimpleNamespace(id=20, full_name="Сосед", username="neighbor", is_bot=False),
+            message_id=56,
+        )
+
+        result = await self.service.handle_group_text_payload(object(), message, text="Данко, как дела?")
+
+        self.assertIsNone(result.text)
+        self.assertEqual(self.storage.group_messages, [])
+        self.assertNotIn((9, 20), self.storage.participants)
+
+    async def test_foreign_user_can_join_active_draft_with_explicit_request_message(self) -> None:
+        text = "Данко, добавь цемент 10 мешков"
+        self.storage.drafts[10] = {
+            "id": 10,
+            "chat_id": 10,
+            "master_id": 99,
+            "master_name": "Автор",
+            "status": "collecting",
+        }
+        self.storage.participants.add((10, 99))
+        self.service.material_analysis = {text: ([{"family_id": 1, "alias": "цемент"}], [])}
+        message = SimpleNamespace(
+            chat=SimpleNamespace(id=10),
+            from_user=SimpleNamespace(id=20, full_name="Помощник", username="helper", is_bot=False),
+            message_id=57,
+        )
+
+        result = await self.service.handle_group_text_payload(object(), message, text=text)
+
+        self.assertEqual(result.text, "handled")
+        self.assertIn((10, 20), self.storage.participants)
         self.assertEqual(self.storage.created_drafts, [])

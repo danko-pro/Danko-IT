@@ -124,6 +124,19 @@ CREATE TABLE IF NOT EXISTS request_drafts (
 
 CREATE INDEX IF NOT EXISTS idx_request_drafts_active ON request_drafts(chat_id, master_id, status);
 
+CREATE TABLE IF NOT EXISTS request_draft_participants (
+    draft_id INTEGER NOT NULL REFERENCES request_drafts(id) ON DELETE CASCADE,
+    user_id INTEGER NOT NULL,
+    user_name TEXT,
+    role TEXT NOT NULL DEFAULT 'participant',
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (draft_id, user_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_request_draft_participants_user
+    ON request_draft_participants(user_id, draft_id);
+
 CREATE TABLE IF NOT EXISTS request_items (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     draft_id INTEGER NOT NULL REFERENCES request_drafts(id) ON DELETE CASCADE,

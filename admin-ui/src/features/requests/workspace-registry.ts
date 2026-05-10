@@ -5,6 +5,7 @@ const OVERVIEW_ID = "requests.overview";
 const SUMMARY_ID = "requests.overview.summary";
 const PRIORITY_ID = "requests.overview.priority";
 const SIDE_ID = "requests.overview.side";
+const TELEGRAM_OUTBOX_ID = "requests.telegram-outbox";
 const LIST_ID = "requests.list";
 const DETAIL_ID = "requests.detail";
 const DELIVERY_ID = "requests.detail.delivery";
@@ -114,12 +115,38 @@ export const requestsWorkspaceRegistry = defineWorkspaceRegistry({
       source: { feature: "requests", file: "overview-side-sections.tsx" },
     },
     {
+      id: TELEGRAM_OUTBOX_ID,
+      parentId: ROOT_ID,
+      type: "panel",
+      title: "Telegram notification outbox",
+      dataKey: "requests.telegramNotifications[]",
+      area: { x: 1, y: 12, w: 30, h: 5 },
+      minArea: { w: 14, h: 4 },
+      priority: 85,
+      capabilities: caps({ resizable: true, collapsible: true, copyable: true }),
+      children: [
+        metric("requests.telegram-outbox.pending-count", "Pending Telegram notifications", "requests.telegramNotifications.length", true),
+        button("requests.telegram-outbox.reload", "Reload Telegram outbox", "secondary-action"),
+        element("requests.telegram-outbox.flush", "button", "submit-action", "Flush Telegram outbox", { critical: true }),
+        element("requests.telegram-outbox.row", "list-item", "summary", "Telegram notification row", { dataKey: "requests.telegramNotifications[]" }),
+        element("requests.telegram-outbox.error", "status", "status", "Telegram delivery error", { dataKey: "requests.telegramNotifications[].last_error", critical: true }),
+      ],
+      relationships: [
+        {
+          type: "depends-on",
+          targetId: LIST_ID,
+          note: "Изменение статуса заявки в админке может поставить Telegram-уведомление в очередь.",
+        },
+      ],
+      source: { feature: "requests", file: "telegram-outbox-panel.tsx" },
+    },
+    {
       id: LIST_ID,
       parentId: ROOT_ID,
       type: "list",
       title: "Recent requests list",
       dataKey: "requests.recent[]",
-      area: { x: 1, y: 12, w: 12, h: 18 },
+      area: { x: 1, y: 18, w: 12, h: 18 },
       minArea: { w: 9, h: 10 },
       priority: 100,
       capabilities: caps({ resizable: true, collapsible: true }),
@@ -143,7 +170,7 @@ export const requestsWorkspaceRegistry = defineWorkspaceRegistry({
       type: "panel",
       title: "Active request detail",
       dataKey: "requests.requestDetail",
-      area: { x: 13, y: 12, w: 18, h: 18 },
+      area: { x: 13, y: 18, w: 18, h: 18 },
       minArea: { w: 11, h: 10 },
       priority: 100,
       capabilities: caps({ resizable: true, collapsible: true, copyable: true }),

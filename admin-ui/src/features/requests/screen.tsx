@@ -8,20 +8,25 @@ import type {
   RequestItemFormState,
   RecentRequest,
   Summary,
+  TelegramNotification,
 } from "../../shared/types";
 import { RequestsDetailPanel } from "./detail-panel";
 import { RequestsListPanel } from "./list-panel";
 import { RequestsOverviewPanel } from "./overview-panel";
+import { RequestsTelegramOutboxPanel } from "./telegram-outbox-panel";
 
 // Экран логистики: верхняя сводка, список заявок и карточка активной заявки.
 export function RequestsScreen(props: {
   summary: Summary | null;
   requests: RecentRequest[];
+  telegramNotifications: TelegramNotification[];
   families: MaterialFamily[];
   groups: GroupProfile[];
   deliverySettings: DeliverySettings | null;
   loading: boolean;
   requestsLoading: boolean;
+  telegramNotificationsLoading: boolean;
+  telegramNotificationsFlushing: boolean;
   requestDetail: RequestDetail | null;
   requestDetailLoading: boolean;
   selectedRequestId: number | null;
@@ -32,6 +37,8 @@ export function RequestsScreen(props: {
   requestDetailBusyKey: string | null;
   error: string | null;
   onReload: () => Promise<void>;
+  onReloadTelegramNotifications: () => Promise<void>;
+  onFlushTelegramNotifications: () => Promise<void>;
   onSelectRequest: (draftId: number) => void;
   onChangeStatus: (draftId: number, status: string) => Promise<void>;
   onDeleteRequest: (draftId: number) => Promise<void>;
@@ -52,6 +59,14 @@ export function RequestsScreen(props: {
         loading={props.loading}
         error={props.overviewError}
         onReloadOverview={props.onReloadOverview}
+      />
+
+      <RequestsTelegramOutboxPanel
+        notifications={props.telegramNotifications}
+        loading={props.telegramNotificationsLoading}
+        flushing={props.telegramNotificationsFlushing}
+        onReload={props.onReloadTelegramNotifications}
+        onFlush={props.onFlushTelegramNotifications}
       />
 
       <div className="grid gap-4 xl:grid-cols-[0.88fr_1.32fr]">

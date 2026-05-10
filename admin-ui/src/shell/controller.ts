@@ -88,6 +88,7 @@ export function useAdminAppController() {
         fetchJson<GroupProfile[]>("/api/groups?limit=12"),
         fetchJson<DeliverySettings>("/api/settings/delivery"),
         requestsController.loadRequests(),
+        requestsController.loadTelegramNotifications(),
         materialsController.loadFamilies(),
       ]);
 

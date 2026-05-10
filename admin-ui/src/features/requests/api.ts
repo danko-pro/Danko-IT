@@ -6,6 +6,8 @@ import type {
   RequestItemFormState,
   RequestStaleDraftResetResult,
   RecentRequest,
+  TelegramNotification,
+  TelegramNotificationFlushResult,
 } from "../../shared/types";
 import { fetchJson, itemTitle, toNullableNumber } from "../../shared/utils";
 
@@ -32,6 +34,16 @@ export function deleteRequest(draftId: number) {
 
 export function expireStaleRequests() {
   return fetchJson<RequestStaleDraftResetResult>("/api/requests/expire-stale", {
+    method: "POST",
+  });
+}
+
+export function fetchTelegramNotifications(limit = 20) {
+  return fetchJson<TelegramNotification[]>(`/api/notifications/telegram?status=pending&limit=${limit}`);
+}
+
+export function flushTelegramNotifications(limit = 20) {
+  return fetchJson<TelegramNotificationFlushResult>(`/api/notifications/telegram/flush?limit=${limit}`, {
     method: "POST",
   });
 }

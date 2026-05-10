@@ -5,6 +5,7 @@ import type {
   RequestItem,
   RequestItemFormState,
   RecentRequest,
+  TelegramNotification,
 } from "../../shared/types";
 import { formatStatus } from "../../shared/utils";
 import {
@@ -14,6 +15,8 @@ import {
   expireStaleRequests,
   fetchRecentRequests,
   fetchRequestDetail,
+  fetchTelegramNotifications,
+  flushTelegramNotifications,
   saveRequestDelivery,
   updateRequestItem,
   updateRequestStatus,
@@ -26,10 +29,13 @@ type RequestsControllerOptions = {
 // Контур заявок: список, активная карточка и CRUD по доставке/позициям.
 export function useAdminRequestsController(props: RequestsControllerOptions) {
   const [requests, setRequests] = useState<RecentRequest[]>([]);
+  const [telegramNotifications, setTelegramNotifications] = useState<TelegramNotification[]>([]);
   const [selectedRequestId, setSelectedRequestId] = useState<number | null>(null);
   const [requestDetail, setRequestDetail] = useState<RequestDetail | null>(null);
 
   const [requestsLoading, setRequestsLoading] = useState(false);
+  const [telegramNotificationsLoading, setTelegramNotificationsLoading] = useState(false);
+  const [telegramNotificationsFlushing, setTelegramNotificationsFlushing] = useState(false);
   const [requestDetailLoading, setRequestDetailLoading] = useState(false);
   const [requestActionId, setRequestActionId] = useState<number | null>(null);
   const [requestDetailBusyKey, setRequestDetailBusyKey] = useState<string | null>(null);
@@ -120,6 +126,19 @@ export function useAdminRequestsController(props: RequestsControllerOptions) {
     }
   }
 
+  async function loadTelegramNotifications() {
+    try {
+      setTelegramNotificationsLoading(true);
+      const data = await fetchTelegramNotifications();
+      setTelegramNotifications(data);
+      setRequestError(null);
+    } catch (loadError) {
+      setRequestError(loadError instanceof Error ? loadError.message : "Не удалось загрузить очередь Telegram");
+    } finally {
+      setTelegramNotificationsLoading(false);
+    }
+  }
+
   async function handleExpireStaleRequests() {
     const confirmed = window.confirm(
       "Сбросить зависшие черновики заявок старше настроенного лимита? Свежие активные заявки останутся без изменений.",
@@ -146,6 +165,24 @@ export function useAdminRequestsController(props: RequestsControllerOptions) {
       setRequestError(actionError instanceof Error ? actionError.message : "Не удалось сбросить зависшие черновики");
     } finally {
       setRequestMaintenanceLoading(false);
+    }
+  }
+
+  async function handleFlushTelegramNotifications() {
+    try {
+      setTelegramNotificationsFlushing(true);
+      const result = await flushTelegramNotifications();
+      await loadTelegramNotifications();
+      props.setSuccessMessage(
+        result.failed_count
+          ? `Telegram: отправлено ${result.delivered_count}, осталось с ошибкой ${result.failed_count}.`
+          : `Telegram: отправлено из очереди ${result.delivered_count}.`,
+      );
+      setRequestError(null);
+    } catch (actionError) {
+      setRequestError(actionError instanceof Error ? actionError.message : "Не удалось отправить очередь Telegram");
+    } finally {
+      setTelegramNotificationsFlushing(false);
     }
   }
 
@@ -236,20 +273,25 @@ export function useAdminRequestsController(props: RequestsControllerOptions) {
 
   return {
     requests,
+    telegramNotifications,
     selectedRequestId,
     setSelectedRequestId,
     requestDetail,
     requestsLoading,
+    telegramNotificationsLoading,
+    telegramNotificationsFlushing,
     requestDetailLoading,
     requestActionId,
     requestDetailBusyKey,
     requestMaintenanceLoading,
     requestError,
     loadRequests,
+    loadTelegramNotifications,
     loadRequestDetail,
     handleRequestStatusAction,
     handleDeleteRequest,
     handleExpireStaleRequests,
+    handleFlushTelegramNotifications,
     handleSaveRequestDelivery,
     handleCreateRequestItem,
     handleUpdateRequestItem,

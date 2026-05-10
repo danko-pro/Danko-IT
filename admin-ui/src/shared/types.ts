@@ -53,6 +53,24 @@ export type RequestStaleDraftResetResult = {
   max_age_hours: number;
 };
 
+export type TelegramNotification = {
+  id: number;
+  chat_id: number;
+  text: string;
+  status: "pending" | "sent" | string;
+  attempts: number;
+  last_error: string | null;
+  next_attempt_at: string;
+  sent_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type TelegramNotificationFlushResult = {
+  delivered_count: number;
+  failed_count: number;
+};
+
 export type RequestDeliveryFormState = {
   delivery_date: string;
   delivery_time: string;

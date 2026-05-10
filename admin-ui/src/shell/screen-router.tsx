@@ -61,6 +61,7 @@ export function AppScreenRouter(props: { controller: AdminAppController }) {
     screen,
     summary,
     requests,
+    telegramNotifications,
     families,
     groups,
     deliverySettings,
@@ -84,6 +85,8 @@ export function AppScreenRouter(props: { controller: AdminAppController }) {
     searchResults,
     loading,
     requestsLoading,
+    telegramNotificationsLoading,
+    telegramNotificationsFlushing,
     requestDetailLoading,
     materialsLoading,
     familyDetailLoading,
@@ -100,6 +103,7 @@ export function AppScreenRouter(props: { controller: AdminAppController }) {
     materialsError,
     settingsError,
     loadRequests,
+    loadTelegramNotifications,
     loadOverview,
     loadFamilies,
     loadCatalogSearch,
@@ -111,6 +115,7 @@ export function AppScreenRouter(props: { controller: AdminAppController }) {
     handleRequestStatusAction,
     handleDeleteRequest,
     handleExpireStaleRequests,
+    handleFlushTelegramNotifications,
     handleSaveRequestDelivery,
     handleCreateRequestItem,
     handleUpdateRequestItem,
@@ -126,11 +131,14 @@ export function AppScreenRouter(props: { controller: AdminAppController }) {
         <RequestsScreen
           summary={summary}
           requests={requests}
+          telegramNotifications={telegramNotifications}
           families={families}
           groups={groups}
           deliverySettings={deliverySettings}
           loading={loading}
           requestsLoading={requestsLoading || loading}
+          telegramNotificationsLoading={telegramNotificationsLoading || loading}
+          telegramNotificationsFlushing={telegramNotificationsFlushing}
           requestDetail={requestDetail}
           requestDetailLoading={requestDetailLoading}
           selectedRequestId={selectedRequestId}
@@ -141,6 +149,8 @@ export function AppScreenRouter(props: { controller: AdminAppController }) {
           requestDetailBusyKey={requestDetailBusyKey}
           error={requestError}
           onReload={loadRequests}
+          onReloadTelegramNotifications={loadTelegramNotifications}
+          onFlushTelegramNotifications={handleFlushTelegramNotifications}
           onSelectRequest={setSelectedRequestId}
           onChangeStatus={handleRequestStatusAction}
           onDeleteRequest={handleDeleteRequest}

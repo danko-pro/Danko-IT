@@ -53,6 +53,6 @@ class DialogueDecider:
                 normalized = normalize_decision_payload(result)
                 if normalized:
                     return normalized
-            except Exception:  # pragma: no cover
+            except Exception:
                 logger.exception("Failed to get dialogue decision from %s.", provider)
         return None

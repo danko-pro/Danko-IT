@@ -1,10 +1,4 @@
-"""Маршруты для документов, привязанных к project ledger entry.
-
-Модуль отвечает только за файловые и document-payload сценарии:
-- upload исходного файла;
-- update document metadata;
-- download файла.
-"""
+"""Routes for project ledger entry documents."""
 
 from __future__ import annotations
 
@@ -46,7 +40,6 @@ from supply_bot.projects.service import (
     build_project_ledger_document_create_values,
 )
 
-# Поддерживаемые типы файлов для ledger-документов.
 SUPPORTED_PROJECT_DOCUMENT_KINDS = {"invoice", "act"}
 
 
@@ -55,7 +48,6 @@ def ensure_supported_project_document_kind(kind: str) -> None:
         raise HTTPException(status_code=404, detail="Unsupported document kind")
 
 
-# Регистрация HTTP-маршрутов только для ledger documents.
 def register_project_ledger_document_routes(
     app: FastAPI,
     *,

@@ -232,6 +232,7 @@
         "domain",
         "use_cases",
         "contract_extraction.py",
+        "document_intelligence.py",
         "orchestration.py",
         "service.py",
         "__init__.py",

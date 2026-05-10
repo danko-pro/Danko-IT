@@ -6,6 +6,7 @@ from types import SimpleNamespace
 
 from supply_bot.config import load_settings
 from supply_bot.services.llm_client import LlmProviderClient
+from supply_bot.services.llm_support import extract_responses_text
 
 
 def _settings(
@@ -79,3 +80,20 @@ def test_settings_llm_enabled_accepts_fallback_provider_key() -> None:
 
         assert settings.llm_enabled
         assert settings.provider_api_key is None
+
+
+def test_extract_responses_text_reads_output_items() -> None:
+    assert (
+        extract_responses_text(
+            {
+                "output": [
+                    {
+                        "content": [
+                            {"type": "output_text", "text": "visible document text"},
+                        ]
+                    }
+                ]
+            }
+        )
+        == "visible document text"
+    )

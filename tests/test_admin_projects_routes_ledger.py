@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from unittest.mock import AsyncMock, patch
 
 from fastapi.testclient import TestClient
 
@@ -160,3 +161,73 @@ class AdminProjectsLedgerRouteTests(AdminProjectsRouteCase):
                 self.assertEqual(download_response.status_code, 200)
                 self.assertEqual(download_response.headers["content-type"], "application/pdf")
                 self.assertIn("invoice.pdf", download_response.headers.get("content-disposition", ""))
+
+    def test_project_ledger_document_ai_extract_updates_reviewable_metadata(self) -> None:
+        with TemporaryDirectory() as tmp_dir:
+            root = Path(tmp_dir)
+            settings = load_settings(
+                self._create_settings_file(
+                    root,
+                    extra_lines=[
+                        "SUPPLY_DIALOGUE_ENABLED=1",
+                        "SUPPLY_DIALOGUE_PRIMARY_PROVIDER=openai",
+                        "OPENAI_API_KEY=test-openai-key",
+                    ],
+                )
+            )
+
+            with TestClient(create_admin_app(settings)) as client:
+                create_project_response = client.post(
+                    "/api/projects",
+                    json={"code": "DOC / AI", "name": "Object with AI documents"},
+                )
+                self.assertEqual(create_project_response.status_code, 200)
+                project_id = int(create_project_response.json()["id"])
+
+                create_entry_response = client.post(
+                    f"/api/projects/{project_id}/ledger",
+                    json={
+                        "category": "Materials",
+                        "item": "Finish materials",
+                        "status": "invoice",
+                        "plan_amount": 620000,
+                        "actual_amount": 0,
+                        "control_date": "2026-04-25",
+                    },
+                )
+                self.assertEqual(create_entry_response.status_code, 200)
+                entry_id = int(create_entry_response.json()["entry"]["id"])
+
+                upload_response = client.post(
+                    f"/api/projects/{project_id}/ledger/{entry_id}/documents/invoice/upload",
+                    files={"file": ("invoice.txt", b"invoice text", "text/plain")},
+                )
+                self.assertEqual(upload_response.status_code, 200)
+
+                with (
+                    patch(
+                        "supply_bot.admin_api.project_routes.ledger_document_ai.read_project_document_text",
+                        new=AsyncMock(return_value="Invoice number 33. Total 620000. Date 2026-04-21."),
+                    ),
+                    patch(
+                        "supply_bot.admin_api.project_routes.ledger_document_ai.ProjectLedgerDocumentExtractor.extract_document",
+                        new=AsyncMock(
+                            return_value={
+                                "title": "Invoice number 33",
+                                "date": "2026-04-21",
+                                "amount": 620000,
+                            }
+                        ),
+                    ),
+                ):
+                    extract_response = client.post(
+                        f"/api/projects/{project_id}/ledger/{entry_id}/documents/invoice/extract"
+                    )
+
+                self.assertEqual(extract_response.status_code, 200)
+                document = extract_response.json()["document"]
+                self.assertEqual(document["title"], "Invoice number 33")
+                self.assertEqual(document["date"], "2026-04-21")
+                self.assertEqual(document["amount"], 620000.0)
+                self.assertTrue(document["extracted_by_ai"])
+                self.assertFalse(document["verified_by_user"])

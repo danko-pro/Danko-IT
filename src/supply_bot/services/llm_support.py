@@ -38,6 +38,25 @@ def extract_json_content(payload: dict[str, Any]) -> dict[str, Any] | None:
     return parsed if isinstance(parsed, dict) else None
 
 
+def extract_responses_text(payload: dict[str, Any]) -> str | None:
+    output_text = payload.get("output_text")
+    if isinstance(output_text, str) and output_text.strip():
+        return output_text.strip()
+
+    fragments: list[str] = []
+    for output_item in payload.get("output") or []:
+        if not isinstance(output_item, dict):
+            continue
+        for content_item in output_item.get("content") or []:
+            if not isinstance(content_item, dict):
+                continue
+            if content_item.get("type") in {"output_text", "text"}:
+                fragments.append(str(content_item.get("text") or ""))
+
+    text = "".join(fragments).strip()
+    return text or None
+
+
 def normalize_decision_payload(payload: dict[str, Any] | None) -> dict[str, Any] | None:
     if not isinstance(payload, dict):
         return None

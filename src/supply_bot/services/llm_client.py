@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+import base64
 from typing import Any
 
 import httpx
 
 from supply_bot.config import Settings
-from supply_bot.services.llm_support import extract_content, extract_json_content
+from supply_bot.services.llm_support import extract_content, extract_json_content, extract_responses_text
 
 
 class LlmProviderClient:
@@ -31,6 +32,71 @@ class LlmProviderClient:
     async def complete_json(self, messages: list[dict[str, str]], *, provider: str) -> dict[str, Any] | None:
         payload = await self._post_chat_completion(provider, messages, json_response=True)
         return extract_json_content(payload)
+
+    async def transcribe_audio_bytes(
+        self,
+        audio_bytes: bytes,
+        *,
+        file_name: str,
+        mime_type: str | None = None,
+    ) -> str | None:
+        if not self.settings.openai_api_key:
+            return None
+
+        headers = {"Authorization": f"Bearer {self.settings.openai_api_key}"}
+        files = {"file": (file_name, audio_bytes, mime_type or "application/octet-stream")}
+        data = {
+            "model": self.settings.openai_transcription_model,
+            "response_format": "json",
+        }
+        async with httpx.AsyncClient(timeout=self.settings.supply_dialogue_mistral_timeout_seconds) as client:
+            response = await client.post(
+                f"{self.settings.openai_base_url.rstrip('/')}/audio/transcriptions",
+                headers=headers,
+                data=data,
+                files=files,
+            )
+            response.raise_for_status()
+
+        text = response.json().get("text")
+        return text.strip() if isinstance(text, str) and text.strip() else None
+
+    async def extract_text_from_image_bytes(
+        self,
+        image_bytes: bytes,
+        *,
+        mime_type: str,
+        prompt: str,
+    ) -> str | None:
+        if not self.settings.openai_api_key:
+            return None
+
+        image_data_url = f"data:{mime_type};base64,{base64.b64encode(image_bytes).decode('ascii')}"
+        headers = {
+            "Authorization": f"Bearer {self.settings.openai_api_key}",
+            "Content-Type": "application/json",
+        }
+        payload: dict[str, Any] = {
+            "model": self.settings.openai_vision_model,
+            "input": [
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "input_text", "text": prompt},
+                        {"type": "input_image", "image_url": image_data_url},
+                    ],
+                }
+            ],
+            "max_output_tokens": self.settings.supply_dialogue_max_output_tokens,
+        }
+        async with httpx.AsyncClient(timeout=self.settings.supply_dialogue_mistral_timeout_seconds) as client:
+            response = await client.post(
+                f"{self.settings.openai_base_url.rstrip('/')}/responses",
+                headers=headers,
+                json=payload,
+            )
+            response.raise_for_status()
+        return extract_responses_text(response.json())
 
     def _provider_has_key(self, provider: str) -> bool:
         if provider == "openai":

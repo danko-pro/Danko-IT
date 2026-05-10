@@ -12,6 +12,7 @@ from __future__ import annotations
 
 from fastapi import FastAPI
 
+from supply_bot.admin_api.project_routes.ledger_document_ai import register_project_ledger_document_ai_routes
 from supply_bot.admin_api.project_routes.ledger_documents import register_project_ledger_document_routes
 from supply_bot.admin_api.project_routes.ledger_entries import register_project_ledger_entry_routes
 
@@ -33,3 +34,4 @@ def register_project_ledger_routes(
         app,
         project_ledger_document_update_payload_model=project_ledger_document_update_payload_model,
     )
+    register_project_ledger_document_ai_routes(app)

@@ -1,4 +1,4 @@
-# Backend Intelligence Layer v1.0
+# Backend Intelligence Layer v1.1
 
 ## Purpose
 
@@ -17,18 +17,21 @@ The key rule: AI may prepare structured data, but it must not silently mutate pr
 Already implemented:
 
 - group text dialogue through `RequestDialogueService`;
+- group voice/audio transcription through `TelegramMediaIntakeService`;
 - project contract file upload and download;
 - contract text extraction from PDF and text files;
+- OCR text extraction for image documents through OpenAI vision when configured;
 - AI extraction of structured contract fields;
 - ledger document upload for invoice and act files;
+- AI extraction endpoint for ledger invoice and act metadata;
 - shared LLM provider facade in `supply_bot.services.llm_client`;
-- clear rejection for image documents until OCR/vision extraction is connected.
+- shared project document text reader for PDF, text, and image documents.
 
 Current limitation:
 
-- Telegram voice is not transcribed yet;
-- Telegram photo/document OCR is not connected yet;
-- ledger invoices and acts are stored, but not yet AI-extracted into structured accounting fields.
+- Telegram photo-to-project linking is not automatic yet because the backend needs a project matching/review flow;
+- handwriting quality depends on the configured vision model;
+- extracted ledger and contract data still requires user review before it is treated as verified.
 
 ## Target Layers
 
@@ -91,10 +94,10 @@ Responsibility:
 - reject images clearly until OCR is configured;
 - reject unknown binary files instead of sending garbage to LLM.
 
-Future extension:
+Current extension:
 
-- add OCR/vision adapter for photos and scanned PDFs;
-- preserve the same function contract so project routes do not change.
+- image OCR is routed through `LlmProviderClient.extract_text_from_image_bytes`;
+- routes use `read_project_document_text` instead of talking to OCR directly.
 
 ### 5. Classification Layer
 
@@ -117,10 +120,13 @@ Current example:
 
 - `ProjectContractExtractor` maps contract text to contract fields and milestones.
 
+Implemented extractors:
+
+- `ProjectContractExtractor`;
+- `ProjectLedgerDocumentExtractor` for invoice and act metadata.
+
 Future extractors:
 
-- `ProjectLedgerInvoiceExtractor`;
-- `ProjectLedgerActExtractor`;
 - `TelegramRequestVoiceExtractor`.
 
 Responsibility:
@@ -145,8 +151,8 @@ This prevents AI from quietly corrupting finance or project records.
 ### Telegram Voice To Material Request
 
 1. Telegram handler receives voice/audio.
-2. Media intake downloads it with size and duration limits.
-3. Speech adapter transcribes it.
+2. Media intake downloads it with size limits.
+3. OpenAI transcription adapter transcribes it when configured.
 4. Transcript is sent into the same dialogue flow as a text message.
 5. Dialogue service builds or updates request draft.
 6. User confirms request.
@@ -155,7 +161,7 @@ This prevents AI from quietly corrupting finance or project records.
 
 1. Telegram handler receives photo/document.
 2. Media intake stores metadata and raw file.
-3. OCR/vision adapter extracts text.
+3. OCR/vision adapter extracts text when configured.
 4. Classifier decides whether it is contract, invoice, act, or unknown.
 5. If related project is known, a project document draft is created.
 6. Admin reviews and applies.
@@ -164,7 +170,7 @@ This prevents AI from quietly corrupting finance or project records.
 
 1. Admin uploads contract file.
 2. Backend stores raw file with size limits.
-3. Text extraction reads PDF/text or returns `needs_ocr` for images.
+3. Text extraction reads PDF/text or routes images through OCR.
 4. Contract extractor produces structured fields.
 5. Admin reviews contract fields and milestones.
 6. Project contract is updated.
@@ -173,7 +179,7 @@ This prevents AI from quietly corrupting finance or project records.
 
 1. Admin uploads invoice/act to ledger entry.
 2. Backend stores raw file.
-3. Text extraction reads document.
+3. Text extraction reads PDF/text or routes images through OCR.
 4. Ledger extractor proposes title, date, amount, counterparty, status.
 5. Admin reviews before applying.
 
@@ -192,8 +198,8 @@ This prevents AI from quietly corrupting finance or project records.
 
 The backend is ready for the next intelligence step when:
 
-- all AI provider calls go through `LlmProviderClient`;
+- all text, transcription, and image OCR provider calls go through `LlmProviderClient`;
 - text extraction does not misread binary/image files;
-- Telegram voice/photo handlers have a media intake service, not inline logic;
+- Telegram voice handlers use media intake, not inline logic;
 - contract, invoice, and act extraction are separate domain extractors;
-- admin UI can show extraction drafts before applying them.
+- admin UI can show extracted ledger and contract data as reviewable, unverified data before final confirmation.

@@ -6,9 +6,14 @@ from aiogram.filters import Command
 from aiogram.types import Message
 
 from supply_bot.services.dialogue import RequestDialogueService
+from supply_bot.services.media_intake import TelegramMediaIntakeService
 
 
-def build_group_router(dialogue: RequestDialogueService) -> Router:
+def build_group_router(
+    dialogue: RequestDialogueService,
+    *,
+    media_intake: TelegramMediaIntakeService | None = None,
+) -> Router:
     router = Router(name="group")
     router.message.filter(F.chat.type.in_({ChatType.GROUP, ChatType.SUPERGROUP}))
 
@@ -21,6 +26,22 @@ def build_group_router(dialogue: RequestDialogueService) -> Router:
         if message.from_user is None or message.from_user.is_bot:
             return
         result = await dialogue.handle_group_message(message.bot, message)
+        if result.text:
+            sent = await message.reply(result.text)
+            await dialogue.remember_bot_reply(
+                chat_id=message.chat.id,
+                text=result.text,
+                message_id=sent.message_id,
+            )
+
+    @router.message(F.voice | F.audio)
+    async def handle_group_audio(message: Message) -> None:
+        if message.from_user is None or message.from_user.is_bot or media_intake is None:
+            return
+        media_result = await media_intake.transcribe_group_audio_message(message.bot, message)
+        if not media_result.text:
+            return
+        result = await dialogue.handle_group_text_payload(message.bot, message, text=media_result.text)
         if result.text:
             sent = await message.reply(result.text)
             await dialogue.remember_bot_reply(

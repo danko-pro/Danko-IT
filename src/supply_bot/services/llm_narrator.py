@@ -45,6 +45,6 @@ class DialogueNarrator:
                 result = await self.client.complete_text(messages, provider=provider)
                 if result:
                     return result
-            except Exception:  # pragma: no cover
+            except Exception:
                 logger.exception("Failed to get LLM response from %s.", provider)
         return base_reply

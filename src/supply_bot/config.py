@@ -40,6 +40,8 @@ class Settings:
     openrouter_api_key: str | None
     openai_base_url: str
     openrouter_base_url: str
+    openai_transcription_model: str
+    openai_vision_model: str
     mistral_api_key: str | None
     mistral_base_url: str
     supply_dialogue_enabled: bool
@@ -57,6 +59,7 @@ class Settings:
     admin_session_cookie_secure: bool
     project_document_max_upload_bytes: int
     project_documents_dir: Path
+    telegram_media_max_download_bytes: int
     config_path: Path
 
     @property
@@ -161,6 +164,8 @@ def load_settings(config_path: Path | None = None) -> Settings:
             "OPENROUTER_BASE_URL",
             env.get("OPENAI_BASE_URL", "https://openrouter.ai/api/v1"),
         ),
+        openai_transcription_model=env.get("OPENAI_TRANSCRIPTION_MODEL", "gpt-4o-mini-transcribe"),
+        openai_vision_model=env.get("OPENAI_VISION_MODEL", "gpt-4.1-mini"),
         mistral_api_key=_optional_secret(env.get("MISTRAL_API_KEY")),
         mistral_base_url=env.get("MISTRAL_BASE_URL", "https://api.mistral.ai/v1"),
         supply_dialogue_enabled=parse_bool(env.get("SUPPLY_DIALOGUE_ENABLED")),
@@ -182,5 +187,6 @@ def load_settings(config_path: Path | None = None) -> Settings:
             env.get("PROJECT_DOCUMENTS_DIR"),
             default="./data/project-documents",
         ),
+        telegram_media_max_download_bytes=int(env.get("TELEGRAM_MEDIA_MAX_DOWNLOAD_BYTES", "26214400")),
         config_path=path,
     )

@@ -12,6 +12,7 @@ from supply_bot.handlers.admin import build_admin_router
 from supply_bot.handlers.group import build_group_router
 from supply_bot.services.dialogue import RequestDialogueService
 from supply_bot.services.llm import DialogueNarrator
+from supply_bot.services.media_intake import TelegramMediaIntakeService
 from supply_bot.services.profiles import GroupProfileService
 from supply_bot.storage import BotStorage
 
@@ -32,6 +33,7 @@ async def run() -> None:
     )
 
     narrator = DialogueNarrator(settings)
+    media_intake = TelegramMediaIntakeService(settings)
     profiles = GroupProfileService(storage, settings)
     dialogue = RequestDialogueService(
         settings=settings,
@@ -43,7 +45,7 @@ async def run() -> None:
     bot = Bot(settings.bot_token)
     dispatcher = Dispatcher(storage=MemoryStorage())
     dispatcher.include_router(build_admin_router(settings, storage))
-    dispatcher.include_router(build_group_router(dialogue))
+    dispatcher.include_router(build_group_router(dialogue, media_intake=media_intake))
 
     await bot.set_my_commands(
         [

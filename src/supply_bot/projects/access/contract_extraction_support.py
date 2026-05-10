@@ -40,7 +40,7 @@ class ProjectDocumentTextExtractionError(ValueError):
     pass
 
 
-def _is_image_document(file_path: Path, *, mime_type: str | None) -> bool:
+def is_image_document(file_path: Path, *, mime_type: str | None) -> bool:
     normalized_mime_type = str(mime_type or "").strip().lower()
     return normalized_mime_type.startswith("image/") or file_path.suffix.lower() in IMAGE_DOCUMENT_SUFFIXES
 
@@ -65,7 +65,7 @@ def _decode_text_document(raw_bytes: bytes) -> str:
 
 def extract_contract_text(file_path: Path, *, mime_type: str | None = None) -> str:
     suffix = file_path.suffix.lower()
-    if _is_image_document(file_path, mime_type=mime_type):
+    if is_image_document(file_path, mime_type=mime_type):
         raise ProjectDocumentTextExtractionError("OCR is required for image document")
 
     if mime_type == "application/pdf" or suffix == ".pdf":

@@ -1,11 +1,4 @@
-"""Маршрут AI extraction для договора проекта.
-
-Модуль инкапсулирует отдельный сценарий:
-- прочитать исходный файл договора;
-- извлечь текст;
-- отдать текст в extractor;
-- применить полученный результат к договору проекта.
-"""
+"""AI extraction route for project contracts."""
 
 from __future__ import annotations
 
@@ -26,6 +19,8 @@ from supply_bot.admin_api.project_routes.shared import (
     resolve_or_not_found,
     resolve_or_server_error,
 )
+from supply_bot.projects.access.contract_extraction_support import ProjectDocumentTextExtractionError
+from supply_bot.projects.document_intelligence import read_project_document_text
 from supply_bot.projects.orchestration import (
     apply_extracted_project_contract,
     require_project,
@@ -34,7 +29,6 @@ from supply_bot.projects.orchestration import (
 from supply_bot.projects.service import ProjectValidationError
 
 
-# Регистрация AI-маршрута для contract extraction.
 def register_project_contract_ai_routes(
     app: FastAPI,
     *,
@@ -63,7 +57,14 @@ def register_project_contract_ai_routes(
 
         extract_contract_text = get_extract_contract_text()
         try:
-            contract_text = extract_contract_text(file_path, mime_type=str(contract["source_mime_type"] or ""))
+            contract_text = await read_project_document_text(
+                settings_obj,
+                file_path,
+                mime_type=str(contract["source_mime_type"] or ""),
+                text_reader=extract_contract_text,
+            )
+        except ProjectDocumentTextExtractionError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
         except Exception as exc:
             raise HTTPException(status_code=422, detail="Failed to extract contract text") from exc
 

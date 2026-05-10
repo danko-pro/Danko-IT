@@ -54,6 +54,10 @@ class RequestDialogueService(
 
     async def handle_group_message(self, bot: Bot, message: Message) -> DialogueResult:
         text = (message.text or "").strip()
+        return await self.handle_group_text_payload(bot, message, text=text)
+
+    async def handle_group_text_payload(self, bot: Bot, message: Message, *, text: str) -> DialogueResult:
+        text = text.strip()
         if not text or message.from_user is None:
             return DialogueResult(text=None)
 

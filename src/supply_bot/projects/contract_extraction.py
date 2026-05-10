@@ -50,7 +50,7 @@ class ProjectContractExtractor:
                 normalized = normalize_contract_payload(result)
                 if normalized:
                     return normalized
-            except Exception:  # pragma: no cover
+            except Exception:
                 logger.exception("Failed to extract contract data via %s.", provider)
 
         return None

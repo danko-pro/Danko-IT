@@ -5,8 +5,14 @@
 
 from __future__ import annotations
 
+import asyncio
+import contextlib
+import logging
+from collections.abc import Awaitable
+from typing import TypeVar
+
 from aiogram import F, Router
-from aiogram.enums import ChatType
+from aiogram.enums import ChatAction, ChatType
 from aiogram.filters import Command
 from aiogram.types import Message
 
@@ -14,6 +20,10 @@ from supply_bot.services.dialogue import RequestDialogueService
 from supply_bot.services.media_intake import TelegramMediaIntakeService
 
 TRANSCRIPT_PREVIEW_LIMIT = 180
+CHAT_ACTION_INTERVAL_SECONDS = 4.0
+
+logger = logging.getLogger(__name__)
+_T = TypeVar("_T")
 
 
 def build_group_router(
@@ -35,7 +45,7 @@ def build_group_router(
         """Передает текстовое сообщение в основной dialogue service."""
         if message.from_user is None or message.from_user.is_bot:
             return
-        result = await dialogue.handle_group_message(message.bot, message)
+        result = await _run_with_typing(message, dialogue.handle_group_message(message.bot, message))
         if result.text:
             sent = await message.reply(result.text)
             await dialogue.remember_bot_reply(
@@ -49,16 +59,22 @@ def build_group_router(
         """Транскрибирует voice/audio и передает результат в основной dialogue service."""
         if message.from_user is None or message.from_user.is_bot or media_intake is None:
             return
-        media_result = await media_intake.transcribe_group_audio_message(message.bot, message)
+        media_result = await _run_with_typing(
+            message,
+            media_intake.transcribe_group_audio_message(message.bot, message),
+        )
         if not media_result.text:
             if media_result.reason:
                 await message.reply(f"Не смог распознать голосовое: {media_result.reason}.")
             return
-        result = await dialogue.handle_group_text_payload(
-            message.bot,
+        result = await _run_with_typing(
             message,
-            text=media_result.text,
-            force_dialogue=True,
+            dialogue.handle_group_text_payload(
+                message.bot,
+                message,
+                text=media_result.text,
+                force_dialogue=True,
+            ),
         )
         if result.text:
             sent = await message.reply(result.text)
@@ -84,3 +100,29 @@ def _format_transcript_preview(text: str) -> str:
     if len(normalized) <= TRANSCRIPT_PREVIEW_LIMIT:
         return normalized
     return f"{normalized[: TRANSCRIPT_PREVIEW_LIMIT - 1].rstrip()}…"
+
+
+async def _run_with_typing(message: Message, awaitable: Awaitable[_T]) -> _T:
+    """Показывает Telegram typing action, пока идет долгая операция."""
+    stop_event = asyncio.Event()
+    typing_task = asyncio.create_task(_typing_loop(message, stop_event))
+    try:
+        return await awaitable
+    finally:
+        stop_event.set()
+        typing_task.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await typing_task
+
+
+async def _typing_loop(message: Message, stop_event: asyncio.Event) -> None:
+    """Периодически отправляет chat action и не роняет обработчик при сетевом сбое Telegram."""
+    while not stop_event.is_set():
+        try:
+            await message.bot.send_chat_action(chat_id=message.chat.id, action=ChatAction.TYPING)
+        except Exception:
+            logger.debug("Не удалось отправить Telegram typing action.", exc_info=True)
+        try:
+            await asyncio.wait_for(stop_event.wait(), timeout=CHAT_ACTION_INTERVAL_SECONDS)
+        except TimeoutError:
+            continue

@@ -6,13 +6,19 @@
 
 from __future__ import annotations
 
+import asyncio
 import base64
+import logging
 from typing import Any
 
 import httpx
 
 from supply_bot.config import Settings
 from supply_bot.services.llm_support import extract_content, extract_json_content, extract_responses_text
+
+AI_REQUEST_RETRY_DELAYS_SECONDS = (1.0, 2.0)
+
+logger = logging.getLogger(__name__)
 
 
 class LlmProviderClient:
@@ -68,13 +74,13 @@ class LlmProviderClient:
             "response_format": "json",
         }
         async with httpx.AsyncClient(timeout=self.settings.supply_dialogue_mistral_timeout_seconds) as client:
-            response = await client.post(
+            response = await self._post_with_retries(
+                client,
                 f"{self.settings.openai_base_url.rstrip('/')}/audio/transcriptions",
                 headers=headers,
                 data=data,
                 files=files,
             )
-            response.raise_for_status()
 
         text = response.json().get("text")
         return text.strip() if isinstance(text, str) and text.strip() else None
@@ -110,12 +116,12 @@ class LlmProviderClient:
             "max_output_tokens": self.settings.supply_dialogue_max_output_tokens,
         }
         async with httpx.AsyncClient(timeout=self.settings.supply_dialogue_mistral_timeout_seconds) as client:
-            response = await client.post(
+            response = await self._post_with_retries(
+                client,
                 f"{self.settings.openai_base_url.rstrip('/')}/responses",
                 headers=headers,
                 json=payload,
             )
-            response.raise_for_status()
         return extract_responses_text(response.json())
 
     def _provider_has_key(self, provider: str) -> bool:
@@ -195,10 +201,42 @@ class LlmProviderClient:
             "Content-Type": "application/json",
         }
         async with httpx.AsyncClient(timeout=self.settings.supply_dialogue_mistral_timeout_seconds) as client:
-            response = await client.post(
+            response = await self._post_with_retries(
+                client,
                 f"{self._provider_base_url(provider)}/chat/completions",
                 headers=headers,
                 json=self._chat_payload(provider, messages, json_response=json_response),
             )
-            response.raise_for_status()
         return response.json()
+
+    async def _post_with_retries(
+        self,
+        client: httpx.AsyncClient,
+        url: str,
+        **kwargs: Any,
+    ) -> httpx.Response:
+        """Повторяет временные сетевые ошибки AI API, чтобы бот не зависел от одного сбоя."""
+        for attempt, delay in enumerate((*AI_REQUEST_RETRY_DELAYS_SECONDS, 0.0)):
+            try:
+                response = await client.post(url, **kwargs)
+                response.raise_for_status()
+                return response
+            except (httpx.TimeoutException, httpx.TransportError, httpx.HTTPStatusError) as exc:
+                if not self._should_retry_exception(exc) or attempt >= len(AI_REQUEST_RETRY_DELAYS_SECONDS):
+                    raise
+                logger.warning(
+                    "AI-запрос завершился временной ошибкой %s, повтор через %.1f секунд.",
+                    type(exc).__name__,
+                    delay,
+                )
+                await asyncio.sleep(delay)
+        raise RuntimeError("Цикл повторов AI-запроса завершился без ответа.")
+
+    def _should_retry_exception(self, exc: Exception) -> bool:
+        """Отделяет временные сетевые ошибки от постоянных ошибок payload или доступа."""
+        if isinstance(exc, (httpx.TimeoutException, httpx.TransportError)):
+            return True
+        if isinstance(exc, httpx.HTTPStatusError):
+            status_code = exc.response.status_code
+            return status_code in {408, 409, 425, 429} or status_code >= 500
+        return False

@@ -17,6 +17,54 @@ class FakeStorage:
         self.items: list[dict] = []
         self.drafts: dict[int, dict] = {}
         self.created_drafts: list[dict] = []
+        self.group_messages: list[dict] = []
+
+    async def add_group_message(
+        self,
+        *,
+        chat_id: int,
+        user_id: int,
+        user_name: str,
+        text: str,
+        message_id: int | None = None,
+    ) -> None:
+        self.group_messages.append(
+            {
+                "chat_id": chat_id,
+                "user_id": user_id,
+                "user_name": user_name,
+                "text": text,
+                "message_id": message_id,
+            }
+        )
+
+    async def get_active_draft_for_chat(self, *, chat_id: int) -> dict | None:
+        for draft in reversed(list(self.drafts.values())):
+            if draft.get("chat_id") == chat_id and draft.get("status") in {"collecting", "awaiting_confirmation"}:
+                return dict(draft)
+        return None
+
+    async def get_active_draft(self, *, chat_id: int, master_id: int) -> dict | None:
+        for draft in reversed(list(self.drafts.values())):
+            if (
+                draft.get("chat_id") == chat_id
+                and draft.get("master_id") == master_id
+                and draft.get("status") in {"collecting", "awaiting_confirmation"}
+            ):
+                return dict(draft)
+        return None
+
+    async def list_recent_group_messages(
+        self,
+        *,
+        chat_id: int,
+        user_id: int | None = None,
+        limit: int = 6,
+    ) -> list[dict]:
+        messages = [message for message in self.group_messages if message["chat_id"] == chat_id]
+        if user_id is not None:
+            messages = [message for message in messages if message["user_id"] == user_id]
+        return messages[-limit:]
 
     async def set_draft_status(self, draft_id: int, *, status: str) -> None:
         self.status_updates.append((draft_id, status))
@@ -110,6 +158,14 @@ class DialogueServiceHarness(RequestDialogueService):
         return self.now_dt
 
 
+class FakeProfiles:
+    def __init__(self, profile: dict) -> None:
+        self.profile = profile
+
+    async def sync_from_telegram(self, bot, chat_id: int) -> dict:
+        return dict(self.profile)
+
+
 class DialogueServiceTests(IsolatedAsyncioTestCase):
     def setUp(self) -> None:
         self.storage = FakeStorage()
@@ -121,6 +177,7 @@ class DialogueServiceTests(IsolatedAsyncioTestCase):
             "delivery_end": "18:00",
             "delivery_fallback": "10:00",
         }
+        self.service.profiles = FakeProfiles(self.profile)
 
     async def test_confirmation_affirmative_confirms_draft_and_notifies(self) -> None:
         draft = {
@@ -206,3 +263,46 @@ class DialogueServiceTests(IsolatedAsyncioTestCase):
 
         self.assertEqual(reply, "восстановил заявку")
         self.assertEqual(len(self.storage.created_drafts), 1)
+
+    async def test_explicit_cancel_phrase_closes_own_active_draft(self) -> None:
+        self.storage.drafts[5] = {
+            "id": 5,
+            "chat_id": 10,
+            "master_id": 20,
+            "master_name": "Мастер",
+            "status": "collecting",
+        }
+        message = SimpleNamespace(
+            chat=SimpleNamespace(id=10),
+            from_user=SimpleNamespace(id=20, full_name="Мастер", username="master", is_bot=False),
+            message_id=50,
+        )
+
+        result = await self.service.handle_group_text_payload(object(), message, text="отмена заявки")
+
+        self.assertEqual(self.storage.status_updates, [(5, "cancelled")])
+        self.assertEqual(
+            result.text,
+            "Понял, это не рабочая заявка. Черновик закрыл. "
+            "Если понадобится, просто напишите материал и количество одной фразой.",
+        )
+
+    async def test_explicit_cancel_phrase_for_foreign_draft_does_not_stay_silent(self) -> None:
+        self.storage.drafts[6] = {
+            "id": 6,
+            "chat_id": 10,
+            "master_id": 99,
+            "master_name": "Другой мастер",
+            "status": "collecting",
+        }
+        message = SimpleNamespace(
+            chat=SimpleNamespace(id=10),
+            from_user=SimpleNamespace(id=20, full_name="Мастер", username="master", is_bot=False),
+            message_id=51,
+        )
+
+        result = await self.service.handle_group_text_payload(object(), message, text="отмена заявки")
+
+        self.assertEqual(self.storage.status_updates, [])
+        self.assertIsNotNone(result.text)
+        self.assertIn("Другой мастер", result.text)

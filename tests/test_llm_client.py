@@ -6,6 +6,8 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from types import SimpleNamespace
 
+import httpx
+
 from supply_bot.config import load_settings
 from supply_bot.services.llm_client import LlmProviderClient
 from supply_bot.services.llm_support import extract_responses_text
@@ -105,3 +107,23 @@ def test_extract_responses_text_reads_output_items() -> None:
         )
         == "visible document text"
     )
+
+
+def test_llm_retry_policy_retries_only_temporary_failures() -> None:
+    """Проверяет, что AI-клиент повторяет только временные сетевые и provider-сбои."""
+    client = LlmProviderClient(_settings())
+    request = httpx.Request("POST", "https://api.openai.test/v1/chat/completions")
+    rate_limit_error = httpx.HTTPStatusError(
+        "rate limited",
+        request=request,
+        response=httpx.Response(429, request=request),
+    )
+    bad_request_error = httpx.HTTPStatusError(
+        "bad request",
+        request=request,
+        response=httpx.Response(400, request=request),
+    )
+
+    assert client._should_retry_exception(httpx.TimeoutException("timeout"))
+    assert client._should_retry_exception(rate_limit_error)
+    assert not client._should_retry_exception(bad_request_error)

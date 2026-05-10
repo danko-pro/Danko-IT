@@ -83,8 +83,22 @@ class RequestDialogueService(
             text=text,
             message_id=message.message_id,
         )
+        normalized = normalize_text(text)
+        abort_requested = self._is_abort_request_message(text)
         active_chat_draft = await self.storage.get_active_draft_for_chat(chat_id=message.chat.id)
         if active_chat_draft and int(active_chat_draft["master_id"]) != int(message.from_user.id):
+            if abort_requested:
+                admin_ids = {int(admin_id) for admin_id in self.settings.admin_ids}
+                if int(message.from_user.id) in admin_ids:
+                    await self.storage.set_draft_status(active_chat_draft["id"], status="cancelled")
+                    return DialogueResult(text="Понял, активную заявку в этом чате закрыл.")
+                owner_name = str(active_chat_draft.get("master_name") or "другого мастера")
+                return DialogueResult(
+                    text=(
+                        f"Сейчас в чате открыта заявка другого мастера: {owner_name}. "
+                        "Отменить ее может автор заявки или администратор."
+                    )
+                )
             return DialogueResult(text=None)
         recent_self_messages = await self.storage.list_recent_group_messages(
             chat_id=message.chat.id,
@@ -96,18 +110,27 @@ class RequestDialogueService(
             limit=12,
         )
         draft = await self.storage.get_active_draft(chat_id=message.chat.id, master_id=message.from_user.id)
-        normalized = normalize_text(text)
+        explicit_cancel_without_draft = abort_requested and (
+            force_dialogue
+            or self._is_addressed_to_bot(text)
+            or "заявк" in normalized
+            or "заказ" in normalized
+            or "чернов" in normalized
+        )
+
+        if draft is None and explicit_cancel_without_draft:
+            return DialogueResult(text="Активной заявки для отмены не нашел.")
 
         if draft is None and not force_dialogue and not self._is_addressed_to_bot(text):
             return DialogueResult(text=None)
 
-        if draft and self._is_abort_request_message(text):
+        if draft and abort_requested:
             await self.storage.set_draft_status(draft["id"], status="cancelled")
             reply = (
                 "Понял, это не рабочая заявка. Черновик закрыл. "
                 "Если понадобится, просто напишите материал и количество одной фразой."
             )
-            return DialogueResult(text=await self._narrate(reply, profile, draft))
+            return DialogueResult(text=reply)
 
         llm_reply = await self._try_llm_decision(
             bot=bot,

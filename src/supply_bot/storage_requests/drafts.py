@@ -107,6 +107,39 @@ class RequestDraftsStorageMixin:
             row = await cursor.fetchone()
         return dict(row) if row else None
 
+    async def list_recent_request_summaries(self, *, limit: int = 20) -> list[dict[str, Any]]:
+        safe_limit = max(1, min(limit, 100))
+        async with self.connection() as db:
+            cursor = await db.execute(
+                """
+                SELECT
+                    rd.id,
+                    rd.chat_id,
+                    rd.master_id,
+                    rd.master_name,
+                    rd.status,
+                    rd.waiting_for,
+                    rd.updated_at,
+                    rd.confirmed_delivery_date,
+                    rd.confirmed_delivery_time,
+                    rd.requested_delivery_date,
+                    rd.requested_delivery_time,
+                    COALESCE(gp.object_name, gp.title, 'Без объекта') AS object_name,
+                    COUNT(ri.id) AS items_count
+                FROM request_drafts rd
+                LEFT JOIN group_profiles gp ON gp.chat_id = rd.chat_id
+                LEFT JOIN request_items ri ON ri.draft_id = rd.id
+                GROUP BY rd.id, rd.chat_id, rd.master_id, rd.master_name, rd.status, rd.waiting_for,
+                         rd.updated_at, rd.confirmed_delivery_date, rd.confirmed_delivery_time,
+                         rd.requested_delivery_date, rd.requested_delivery_time, gp.object_name, gp.title
+                ORDER BY rd.updated_at DESC
+                LIMIT ?
+                """,
+                (safe_limit,),
+            )
+            rows = await cursor.fetchall()
+        return [dict(row) for row in rows]
+
     async def get_or_create_active_draft(self, *, chat_id: int, master_id: int, master_name: str) -> dict[str, Any]:
         draft = await self.get_active_draft(chat_id=chat_id, master_id=master_id)
         if draft:

@@ -167,3 +167,33 @@ def test_material_sku_rejects_negative_or_zero_dimensions() -> None:
 
             assert response.status_code == 400
             assert response.json()["detail"] == "thickness_mm must be positive"
+
+
+def test_material_search_returns_catalog_targets() -> None:
+    with TemporaryDirectory() as tmp_dir:
+        root = Path(tmp_dir)
+        settings = load_settings(_create_settings_file(root))
+
+        with TestClient(create_admin_app(settings)) as client:
+            family_id = _create_family(client, "Search target family")
+            variant_id = _create_variant(client, family_id, "Search target variant")
+            sku_id = _create_sku(client, family_id, variant_id, "Search target SKU")
+            alias_response = client.post(
+                "/api/materials/aliases",
+                json={
+                    "alias": "search target alias",
+                    "family_id": family_id,
+                    "variant_id": variant_id,
+                    "sku_id": sku_id,
+                },
+            )
+            assert alias_response.status_code == 200
+
+            response = client.get("/api/materials/search", params={"q": "target"})
+
+            assert response.status_code == 200
+            results = response.json()
+            assert any(item["type"] == "family" and item["family_id"] == family_id for item in results)
+            assert any(item["type"] == "variant" and item["variant_id"] == variant_id for item in results)
+            assert any(item["type"] == "sku" and item["sku_id"] == sku_id for item in results)
+            assert any(item["type"] == "alias" and item["family_id"] == family_id for item in results)

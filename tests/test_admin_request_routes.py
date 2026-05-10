@@ -211,3 +211,56 @@ def test_admin_route_rejects_negative_stale_expiration_age() -> None:
 
             assert response.status_code == 400
             assert response.json()["detail"] == "max_age_hours must be non-negative"
+
+
+def test_admin_recent_requests_use_storage_summary() -> None:
+    with TemporaryDirectory() as tmp_dir:
+        root = Path(tmp_dir)
+        settings = load_settings(_create_settings_file(root))
+
+        with TestClient(create_admin_app(settings)) as client:
+            storage = client.app.state.storage
+            asyncio.run(
+                storage.upsert_group_profile(
+                    {
+                        "chat_id": 1001,
+                        "title": "Project group",
+                        "raw_description": None,
+                        "object_name": "Object Alpha",
+                        "address": None,
+                        "flat": None,
+                        "floor": None,
+                        "elevator": None,
+                        "delivery_rules": None,
+                        "delivery_start": None,
+                        "delivery_end": None,
+                        "delivery_fallback": None,
+                    }
+                )
+            )
+            draft_id = asyncio.run(
+                storage.create_draft(
+                    chat_id=1001,
+                    master_id=2002,
+                    master_name="Admin tester",
+                )
+            )
+            asyncio.run(
+                storage.create_request_item(
+                    draft_id=draft_id,
+                    family_id=None,
+                    variant_id=None,
+                    sku_id=None,
+                    raw_name="Profiled material",
+                    normalized_name="Profiled material",
+                    quantity=2,
+                    unit="pcs",
+                )
+            )
+
+            response = client.get("/api/requests/recent", params={"limit": 10})
+
+            assert response.status_code == 200
+            row = next(item for item in response.json() if item["id"] == draft_id)
+            assert row["object_name"] == "Object Alpha"
+            assert row["items_count"] == 1

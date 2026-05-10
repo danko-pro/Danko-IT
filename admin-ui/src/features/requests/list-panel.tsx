@@ -8,11 +8,13 @@ type RequestsListPanelProps = {
   requestsLoading: boolean;
   selectedRequestId: number | null;
   requestActionId: number | null;
+  requestMaintenanceLoading: boolean;
   error: string | null;
   onReload: () => Promise<void>;
   onSelectRequest: (draftId: number) => void;
   onChangeStatus: (draftId: number, status: string) => Promise<void>;
   onDeleteRequest: (draftId: number) => Promise<void>;
+  onExpireStaleRequests: () => Promise<void>;
 };
 
 // Левая панель заявок: список черновиков и быстрые действия по статусам.
@@ -28,6 +30,13 @@ export function RequestsListPanel(props: RequestsListPanelProps) {
 
         <div className="flex items-center gap-2">
           <span className="slot-chip">{props.requests.length}</span>
+          <Button
+            variant="secondary"
+            disabled={props.requestsLoading || props.requestMaintenanceLoading}
+            onClick={() => void props.onExpireStaleRequests()}
+          >
+            {props.requestMaintenanceLoading ? "Сбрасываю..." : "Сбросить зависшие"}
+          </Button>
           <Button variant="secondary" onClick={() => void props.onReload()}>
             Обновить
           </Button>

@@ -167,3 +167,47 @@ def test_stale_active_request_expiration_can_be_disabled() -> None:
 
             assert expired_count == 0
             assert draft["status"] == "collecting"
+
+
+def test_admin_route_expires_stale_active_request_drafts() -> None:
+    with TemporaryDirectory() as tmp_dir:
+        root = Path(tmp_dir)
+        settings = load_settings(_create_settings_file(root))
+
+        with TestClient(create_admin_app(settings)) as client:
+            old_draft_id = asyncio.run(
+                client.app.state.storage.create_draft(
+                    chat_id=1001,
+                    master_id=2002,
+                    master_name="Old tester",
+                )
+            )
+            fresh_draft_id = asyncio.run(
+                client.app.state.storage.create_draft(
+                    chat_id=1001,
+                    master_id=3003,
+                    master_name="Fresh tester",
+                )
+            )
+            asyncio.run(_make_draft_old(client.app.state.storage, old_draft_id))
+
+            response = client.post("/api/requests/expire-stale")
+            old_draft = asyncio.run(client.app.state.storage.get_draft(old_draft_id))
+            fresh_draft = asyncio.run(client.app.state.storage.get_draft(fresh_draft_id))
+
+            assert response.status_code == 200
+            assert response.json() == {"expired_count": 1, "max_age_hours": 24}
+            assert old_draft["status"] == "cancelled"
+            assert fresh_draft["status"] == "collecting"
+
+
+def test_admin_route_rejects_negative_stale_expiration_age() -> None:
+    with TemporaryDirectory() as tmp_dir:
+        root = Path(tmp_dir)
+        settings = load_settings(_create_settings_file(root))
+
+        with TestClient(create_admin_app(settings)) as client:
+            response = client.post("/api/requests/expire-stale?max_age_hours=-1")
+
+            assert response.status_code == 400
+            assert response.json()["detail"] == "max_age_hours must be non-negative"

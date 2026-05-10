@@ -94,6 +94,7 @@ export function AppScreenRouter(props: { controller: AdminAppController }) {
     savingDelivery,
     requestActionId,
     requestDetailBusyKey,
+    requestMaintenanceLoading,
     error,
     requestError,
     materialsError,
@@ -109,6 +110,7 @@ export function AppScreenRouter(props: { controller: AdminAppController }) {
     handleSaveDeliverySettings,
     handleRequestStatusAction,
     handleDeleteRequest,
+    handleExpireStaleRequests,
     handleSaveRequestDelivery,
     handleCreateRequestItem,
     handleUpdateRequestItem,
@@ -133,6 +135,7 @@ export function AppScreenRouter(props: { controller: AdminAppController }) {
           requestDetailLoading={requestDetailLoading}
           selectedRequestId={selectedRequestId}
           requestActionId={requestActionId}
+          requestMaintenanceLoading={requestMaintenanceLoading}
           overviewError={error}
           onReloadOverview={loadOverview}
           requestDetailBusyKey={requestDetailBusyKey}
@@ -141,6 +144,7 @@ export function AppScreenRouter(props: { controller: AdminAppController }) {
           onSelectRequest={setSelectedRequestId}
           onChangeStatus={handleRequestStatusAction}
           onDeleteRequest={handleDeleteRequest}
+          onExpireStaleRequests={handleExpireStaleRequests}
           onSaveDelivery={handleSaveRequestDelivery}
           onCreateItem={handleCreateRequestItem}
           onUpdateItem={handleUpdateRequestItem}

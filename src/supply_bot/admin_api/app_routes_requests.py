@@ -64,6 +64,17 @@ def register_request_routes(
             rows = await cursor.fetchall()
         return [dict(row) for row in rows[: clamp_route_limit(limit)]]
 
+    @app.post("/api/requests/expire-stale")
+    async def expire_stale_requests(request: Request, max_age_hours: int | None = None) -> dict[str, int]:
+        storage_obj = get_storage(request)
+        settings_obj = get_settings(request)
+        resolved_max_age = settings_obj.request_draft_stale_hours if max_age_hours is None else max_age_hours
+        if resolved_max_age < 0:
+            raise HTTPException(status_code=400, detail="max_age_hours must be non-negative")
+
+        expired_count = await storage_obj.expire_stale_active_drafts(max_age_hours=resolved_max_age)
+        return {"expired_count": expired_count, "max_age_hours": resolved_max_age}
+
     @app.get("/api/requests/{draft_id}")
     async def request_detail(request: Request, draft_id: int) -> dict[str, Any]:
         storage_obj = get_storage(request)

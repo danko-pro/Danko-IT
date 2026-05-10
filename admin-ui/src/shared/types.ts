@@ -48,6 +48,11 @@ export type RequestActionResult = {
   notification_error: string | null;
 };
 
+export type RequestStaleDraftResetResult = {
+  expired_count: number;
+  max_age_hours: number;
+};
+
 export type RequestDeliveryFormState = {
   delivery_date: string;
   delivery_time: string;

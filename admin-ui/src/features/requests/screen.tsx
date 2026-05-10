@@ -26,6 +26,7 @@ export function RequestsScreen(props: {
   requestDetailLoading: boolean;
   selectedRequestId: number | null;
   requestActionId: number | null;
+  requestMaintenanceLoading: boolean;
   overviewError: string | null;
   onReloadOverview: () => Promise<void>;
   requestDetailBusyKey: string | null;
@@ -34,6 +35,7 @@ export function RequestsScreen(props: {
   onSelectRequest: (draftId: number) => void;
   onChangeStatus: (draftId: number, status: string) => Promise<void>;
   onDeleteRequest: (draftId: number) => Promise<void>;
+  onExpireStaleRequests: () => Promise<void>;
   onSaveDelivery: (draftId: number, form: RequestDeliveryFormState) => Promise<boolean>;
   onCreateItem: (draftId: number, form: RequestItemFormState) => Promise<boolean>;
   onUpdateItem: (item: RequestItem, form: RequestItemFormState) => Promise<boolean>;
@@ -58,11 +60,13 @@ export function RequestsScreen(props: {
           requestsLoading={props.requestsLoading}
           selectedRequestId={props.selectedRequestId}
           requestActionId={props.requestActionId}
+          requestMaintenanceLoading={props.requestMaintenanceLoading}
           error={props.error}
           onReload={props.onReload}
           onSelectRequest={props.onSelectRequest}
           onChangeStatus={props.onChangeStatus}
           onDeleteRequest={props.onDeleteRequest}
+          onExpireStaleRequests={props.onExpireStaleRequests}
         />
 
         <RequestsDetailPanel

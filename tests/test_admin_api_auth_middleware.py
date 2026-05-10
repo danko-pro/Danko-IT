@@ -49,6 +49,10 @@ def test_admin_api_middleware_requires_session_for_private_routes() -> None:
                 assert response.status_code == 401
                 assert response.json()["detail"] == "Admin authentication required"
 
+            reset_response = client.post("/api/requests/expire-stale")
+            assert reset_response.status_code == 401
+            assert reset_response.json()["detail"] == "Admin authentication required"
+
 
 def test_admin_api_middleware_accepts_valid_session_for_private_routes() -> None:
     with TemporaryDirectory() as tmp_dir:

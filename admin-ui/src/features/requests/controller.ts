@@ -5,6 +5,7 @@ import type {
   RequestDetail,
   RequestItem,
   RequestItemFormState,
+  RequestStaleDraftResetResult,
   RecentRequest,
 } from "../../shared/types";
 import { fetchJson, formatStatus, itemTitle, toNullableNumber } from "../../shared/utils";
@@ -23,6 +24,7 @@ export function useAdminRequestsController(props: RequestsControllerOptions) {
   const [requestDetailLoading, setRequestDetailLoading] = useState(false);
   const [requestActionId, setRequestActionId] = useState<number | null>(null);
   const [requestDetailBusyKey, setRequestDetailBusyKey] = useState<string | null>(null);
+  const [requestMaintenanceLoading, setRequestMaintenanceLoading] = useState(false);
   const [requestError, setRequestError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -111,6 +113,37 @@ export function useAdminRequestsController(props: RequestsControllerOptions) {
       setRequestError(actionError instanceof Error ? actionError.message : "Не удалось удалить заявку");
     } finally {
       setRequestActionId(null);
+    }
+  }
+
+  async function handleExpireStaleRequests() {
+    const confirmed = window.confirm(
+      "Сбросить зависшие черновики заявок старше настроенного лимита? Свежие активные заявки останутся без изменений.",
+    );
+    if (!confirmed) {
+      return;
+    }
+
+    const currentSelectedRequestId = selectedRequestId;
+    try {
+      setRequestMaintenanceLoading(true);
+      const result = await fetchJson<RequestStaleDraftResetResult>("/api/requests/expire-stale", {
+        method: "POST",
+      });
+      await loadRequests();
+      if (currentSelectedRequestId !== null) {
+        await loadRequestDetail(currentSelectedRequestId);
+      }
+      props.setSuccessMessage(
+        result.expired_count
+          ? `Сброшено зависших черновиков: ${result.expired_count}.`
+          : "Зависших черновиков для сброса нет.",
+      );
+      setRequestError(null);
+    } catch (actionError) {
+      setRequestError(actionError instanceof Error ? actionError.message : "Не удалось сбросить зависшие черновики");
+    } finally {
+      setRequestMaintenanceLoading(false);
     }
   }
 
@@ -236,11 +269,13 @@ export function useAdminRequestsController(props: RequestsControllerOptions) {
     requestDetailLoading,
     requestActionId,
     requestDetailBusyKey,
+    requestMaintenanceLoading,
     requestError,
     loadRequests,
     loadRequestDetail,
     handleRequestStatusAction,
     handleDeleteRequest,
+    handleExpireStaleRequests,
     handleSaveRequestDelivery,
     handleCreateRequestItem,
     handleUpdateRequestItem,

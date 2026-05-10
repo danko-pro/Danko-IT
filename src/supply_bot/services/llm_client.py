@@ -1,3 +1,9 @@
+"""Единый клиент внешних AI-провайдеров.
+
+Модуль держит все сетевые вызовы к LLM, транскрибации и OCR в одном месте.
+Остальные слои передают сюда уже подготовленные данные и не знают деталей HTTP API.
+"""
+
 from __future__ import annotations
 
 import base64
@@ -10,14 +16,23 @@ from supply_bot.services.llm_support import extract_content, extract_json_conten
 
 
 class LlmProviderClient:
+    """Фасад над подключенными AI-провайдерами.
+
+    Клиент отвечает за выбор доступных ключей, порядок fallback-провайдеров,
+    сборку payload и разбор типовых ответов.
+    """
+
     def __init__(self, settings: Settings) -> None:
+        """Сохраняет конфигурацию, из которой берутся ключи, модели и таймауты."""
         self.settings = settings
 
     @property
     def enabled(self) -> bool:
+        """Показывает, можно ли выполнять AI-вызовы хотя бы через один настроенный провайдер."""
         return self.settings.supply_dialogue_enabled and bool(self.provider_candidates())
 
     def provider_candidates(self) -> list[str]:
+        """Возвращает провайдеров в порядке попыток: сначала primary, затем fallback."""
         primary = self.settings.supply_dialogue_primary_provider.lower()
         providers = [primary]
         for candidate in ("openai", "mistral", "openrouter"):
@@ -26,10 +41,12 @@ class LlmProviderClient:
         return [provider for provider in providers if self._provider_has_key(provider)]
 
     async def complete_text(self, messages: list[dict[str, str]], *, provider: str) -> str | None:
+        """Запрашивает обычный текстовый ответ у chat-compatible провайдера."""
         payload = await self._post_chat_completion(provider, messages, json_response=False)
         return extract_content(payload)
 
     async def complete_json(self, messages: list[dict[str, str]], *, provider: str) -> dict[str, Any] | None:
+        """Запрашивает JSON-ответ у chat-compatible провайдера."""
         payload = await self._post_chat_completion(provider, messages, json_response=True)
         return extract_json_content(payload)
 
@@ -40,6 +57,7 @@ class LlmProviderClient:
         file_name: str,
         mime_type: str | None = None,
     ) -> str | None:
+        """Отправляет аудиофайл в OpenAI transcription API и возвращает распознанный текст."""
         if not self.settings.openai_api_key:
             return None
 
@@ -68,9 +86,11 @@ class LlmProviderClient:
         mime_type: str,
         prompt: str,
     ) -> str | None:
+        """Отправляет изображение документа в OpenAI vision API и возвращает извлеченный текст."""
         if not self.settings.openai_api_key:
             return None
 
+        # Responses API принимает изображение как data URL, поэтому байты кодируются в base64.
         image_data_url = f"data:{mime_type};base64,{base64.b64encode(image_bytes).decode('ascii')}"
         headers = {
             "Authorization": f"Bearer {self.settings.openai_api_key}",
@@ -99,6 +119,7 @@ class LlmProviderClient:
         return extract_responses_text(response.json())
 
     def _provider_has_key(self, provider: str) -> bool:
+        """Проверяет, есть ли ключ для конкретного провайдера."""
         if provider == "openai":
             return bool(self.settings.openai_api_key)
         if provider == "mistral":
@@ -108,6 +129,7 @@ class LlmProviderClient:
         return False
 
     def _provider_auth_token(self, provider: str) -> str:
+        """Возвращает токен авторизации для выбранного провайдера."""
         if provider == "openai":
             return str(self.settings.openai_api_key)
         if provider == "mistral":
@@ -117,6 +139,7 @@ class LlmProviderClient:
         raise ValueError(f"Unsupported LLM provider: {provider}")
 
     def _provider_base_url(self, provider: str) -> str:
+        """Возвращает базовый URL API для выбранного провайдера."""
         if provider == "openai":
             return self.settings.openai_base_url.rstrip("/")
         if provider == "mistral":
@@ -132,6 +155,7 @@ class LlmProviderClient:
         *,
         json_response: bool,
     ) -> dict[str, Any]:
+        """Собирает chat payload с учетом отличий OpenAI, Mistral и OpenRouter."""
         if provider == "mistral":
             return {
                 "model": self.settings.supply_dialogue_mistral_model,
@@ -165,6 +189,7 @@ class LlmProviderClient:
         *,
         json_response: bool,
     ) -> dict[str, Any]:
+        """Выполняет общий HTTP-вызов chat completions и возвращает сырой JSON."""
         headers = {
             "Authorization": f"Bearer {self._provider_auth_token(provider)}",
             "Content-Type": "application/json",

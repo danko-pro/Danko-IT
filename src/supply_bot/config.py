@@ -40,7 +40,9 @@ class Settings:
     openrouter_api_key: str | None
     openai_base_url: str
     openrouter_base_url: str
+    # Модель OpenAI для распознавания Telegram voice/audio.
     openai_transcription_model: str
+    # Модель OpenAI vision для OCR изображений договоров, счетов и актов.
     openai_vision_model: str
     mistral_api_key: str | None
     mistral_base_url: str
@@ -59,6 +61,7 @@ class Settings:
     admin_session_cookie_secure: bool
     project_document_max_upload_bytes: int
     project_documents_dir: Path
+    # Максимальный размер Telegram-медиа, которое backend скачивает перед AI-обработкой.
     telegram_media_max_download_bytes: int
     config_path: Path
 

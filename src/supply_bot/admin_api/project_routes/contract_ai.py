@@ -1,4 +1,4 @@
-"""AI extraction route for project contracts."""
+"""AI-маршрут извлечения данных из договора проекта."""
 
 from __future__ import annotations
 
@@ -35,12 +35,15 @@ def register_project_contract_ai_routes(
     get_extract_contract_text: Callable[[], Any],
     get_project_contract_extractor_class: Callable[[], Any],
 ) -> None:
+    """Регистрирует endpoint, который извлекает договорные поля из загруженного файла."""
+
     @app.post("/api/projects/{project_id}/contract/extract")
     async def extract_project_contract(
         request: Request,
         project_id: int,
         _session: AdminSession = Depends(require_admin_session),
     ) -> dict[str, Any]:
+        """Читает файл договора, запускает AI extraction и применяет результат к договору."""
         settings_obj = get_project_route_settings(request)
         if not settings_obj.llm_enabled:
             raise HTTPException(status_code=503, detail="LLM extraction is not configured")
@@ -55,6 +58,7 @@ def register_project_contract_ai_routes(
             missing_detail="Project contract file not found",
         )
 
+        # Документ может быть PDF/text или изображением, которое пойдет через OCR.
         extract_contract_text = get_extract_contract_text()
         try:
             contract_text = await read_project_document_text(

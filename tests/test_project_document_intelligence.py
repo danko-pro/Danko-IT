@@ -1,3 +1,5 @@
+"""Тесты интеллектуального чтения проектных документов."""
+
 from __future__ import annotations
 
 import asyncio
@@ -10,6 +12,7 @@ from supply_bot.projects.document_intelligence import read_project_document_text
 
 
 def _create_settings_file(root: Path) -> Path:
+    """Создает тестовый config с включенным OpenAI OCR-контуром."""
     config_path = root / ".env.test"
     config_path.write_text(
         "\n".join(
@@ -25,6 +28,7 @@ def _create_settings_file(root: Path) -> Path:
 
 
 def test_read_project_document_text_uses_ocr_for_image_document() -> None:
+    """Проверяет, что изображение документа уходит в OCR, а не читается как текст."""
     with TemporaryDirectory() as tmp_dir:
         root = Path(tmp_dir)
         settings = load_settings(_create_settings_file(root))

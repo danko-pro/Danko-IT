@@ -163,6 +163,7 @@ class AdminProjectsLedgerRouteTests(AdminProjectsRouteCase):
                 self.assertIn("invoice.pdf", download_response.headers.get("content-disposition", ""))
 
     def test_project_ledger_document_ai_extract_updates_reviewable_metadata(self) -> None:
+        """Проверяет AI extraction для invoice/act metadata без автоматической верификации."""
         with TemporaryDirectory() as tmp_dir:
             root = Path(tmp_dir)
             settings = load_settings(

@@ -1,3 +1,5 @@
+"""Тесты Telegram media intake слоя."""
+
 from __future__ import annotations
 
 import asyncio
@@ -8,6 +10,8 @@ from supply_bot.services.media_intake import TelegramMediaIntakeService
 
 
 class FakeTelegramBot:
+    """Минимальная подмена Telegram Bot для проверки скачивания файла."""
+
     def __init__(self, payload: bytes) -> None:
         self.payload = payload
 
@@ -19,6 +23,8 @@ class FakeTelegramBot:
 
 
 class FakeTranscriptionClient:
+    """Подмена AI-клиента, которая возвращает заранее заданный transcript."""
+
     def __init__(self, transcript: str | None) -> None:
         self.transcript = transcript
         self.calls: list[dict] = []
@@ -29,10 +35,12 @@ class FakeTranscriptionClient:
 
 
 def _settings(*, max_bytes: int = 100) -> SimpleNamespace:
+    """Создает минимальную конфигурацию для media intake tests."""
     return SimpleNamespace(telegram_media_max_download_bytes=max_bytes)
 
 
 def test_telegram_media_intake_transcribes_voice_message() -> None:
+    """Проверяет успешный путь voice -> bytes -> transcript."""
     client = FakeTranscriptionClient("danko_ai_bot привези цемент")
     service = TelegramMediaIntakeService(_settings(), client=client)
     message = SimpleNamespace(
@@ -48,6 +56,7 @@ def test_telegram_media_intake_transcribes_voice_message() -> None:
 
 
 def test_telegram_media_intake_rejects_large_audio_before_download() -> None:
+    """Проверяет отказ от скачивания файла, который уже слишком большой по metadata."""
     client = FakeTranscriptionClient("ignored")
     service = TelegramMediaIntakeService(_settings(max_bytes=3), client=client)
     message = SimpleNamespace(

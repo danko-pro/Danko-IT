@@ -1,3 +1,5 @@
+"""Тесты общего AI-клиента и парсеров ответов."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -17,6 +19,7 @@ def _settings(
     mistral_api_key: str | None = None,
     openrouter_api_key: str | None = None,
 ) -> SimpleNamespace:
+    """Создает минимальный settings-объект без чтения реального env-файла."""
     return SimpleNamespace(
         supply_dialogue_enabled=enabled,
         supply_dialogue_primary_provider=primary_provider,
@@ -36,6 +39,7 @@ def _settings(
 
 
 def test_llm_provider_candidates_prioritize_configured_provider() -> None:
+    """Проверяет, что primary provider идет первым, а fallback остается доступным."""
     client = LlmProviderClient(
         _settings(
             primary_provider="openrouter",
@@ -48,6 +52,7 @@ def test_llm_provider_candidates_prioritize_configured_provider() -> None:
 
 
 def test_llm_provider_client_disabled_without_keys() -> None:
+    """Проверяет отключенное состояние, когда нет ни одного ключа провайдера."""
     client = LlmProviderClient(_settings())
 
     assert client.provider_candidates() == []
@@ -55,6 +60,7 @@ def test_llm_provider_client_disabled_without_keys() -> None:
 
 
 def test_llm_provider_client_disabled_by_feature_flag() -> None:
+    """Проверяет, что feature flag отключает AI даже при наличии ключа."""
     client = LlmProviderClient(_settings(enabled=False, mistral_api_key="mistral-key"))
 
     assert client.provider_candidates() == ["mistral"]
@@ -62,6 +68,7 @@ def test_llm_provider_client_disabled_by_feature_flag() -> None:
 
 
 def test_settings_llm_enabled_accepts_fallback_provider_key() -> None:
+    """Проверяет, что AI включается, если доступен fallback-ключ провайдера."""
     with TemporaryDirectory() as tmp_dir:
         config_path = Path(tmp_dir) / ".env.test"
         config_path.write_text(
@@ -83,6 +90,7 @@ def test_settings_llm_enabled_accepts_fallback_provider_key() -> None:
 
 
 def test_extract_responses_text_reads_output_items() -> None:
+    """Проверяет чтение текста из структуры OpenAI Responses API."""
     assert (
         extract_responses_text(
             {

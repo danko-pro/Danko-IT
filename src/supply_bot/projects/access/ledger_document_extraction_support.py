@@ -1,3 +1,9 @@
+"""Поддержка извлечения данных из ledger-документов.
+
+Модуль хранит схему ответа, системный prompt и нормализацию результата AI.
+Он не обращается к внешним API и не пишет данные в storage.
+"""
+
 from __future__ import annotations
 
 from typing import Any
@@ -19,6 +25,7 @@ LEDGER_DOCUMENT_EXTRACTION_SYSTEM_PROMPT = (
 
 
 def normalize_ledger_document_payload(payload: dict[str, Any] | None, *, kind: str) -> dict[str, Any] | None:
+    """Приводит ответ AI к безопасному payload для обновления invoice/act документа."""
     if not isinstance(payload, dict):
         return None
 

@@ -1,3 +1,9 @@
+"""Интеллектуальная обработка проектных документов.
+
+Модуль объединяет извлечение текста из файлов и доменное извлечение данных.
+Routes используют этот слой, чтобы не знать деталей PDF, OCR и AI-провайдеров.
+"""
+
 from __future__ import annotations
 
 import inspect
@@ -32,12 +38,15 @@ async def read_project_document_text(
     mime_type: str | None,
     text_reader: Callable[..., Any] = extract_contract_text,
 ) -> str:
+    """Возвращает текст документа из PDF/text или запускает OCR для изображения."""
     try:
+        # text_reader оставлен внедряемым, чтобы route-тесты могли подменять старую точку patch.
         text_result = text_reader(file_path, mime_type=mime_type)
         if inspect.isawaitable(text_result):
             text_result = await text_result
         return str(text_result or "")
     except ProjectDocumentTextExtractionError:
+        # Неизвестные бинарные форматы не отправляем в OCR, если они не распознаны как изображения.
         if not is_image_document(file_path, mime_type=mime_type):
             raise
 
@@ -53,7 +62,10 @@ async def read_project_document_text(
 
 
 class ProjectLedgerDocumentExtractor:
+    """Извлекает учетные поля из счета или закрывающего акта."""
+
     def __init__(self, settings: Settings) -> None:
+        """Создает AI-клиент для JSON extraction."""
         self.client = LlmProviderClient(settings)
 
     async def extract_document(
@@ -63,6 +75,7 @@ class ProjectLedgerDocumentExtractor:
         file_name: str,
         document_text: str,
     ) -> dict[str, Any] | None:
+        """Преобразует текст ledger-документа в нормализованные поля title/date/amount."""
         if not self.client.enabled:
             return None
 
@@ -87,6 +100,7 @@ class ProjectLedgerDocumentExtractor:
 
         for provider in self.client.provider_candidates():
             try:
+                # Любой провайдер может дать невалидный JSON; следующий provider остается fallback.
                 result = await self.client.complete_json(messages, provider=provider)
                 normalized = normalize_ledger_document_payload(result, kind=kind)
                 if normalized:

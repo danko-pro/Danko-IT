@@ -1,4 +1,4 @@
-"""Routes for project ledger entry documents."""
+"""Маршруты файлов и metadata для документов проектного ledger."""
 
 from __future__ import annotations
 
@@ -44,6 +44,7 @@ SUPPORTED_PROJECT_DOCUMENT_KINDS = {"invoice", "act"}
 
 
 def ensure_supported_project_document_kind(kind: str) -> None:
+    """Проверяет, что route работает только с поддерживаемым типом документа."""
     if kind not in SUPPORTED_PROJECT_DOCUMENT_KINDS:
         raise HTTPException(status_code=404, detail="Unsupported document kind")
 
@@ -53,6 +54,8 @@ def register_project_ledger_document_routes(
     *,
     project_ledger_document_update_payload_model,
 ) -> None:
+    """Регистрирует upload/update/download endpoints для invoice и act документов."""
+
     async def upload_project_ledger_document(
         request: Request,
         project_id: int,
@@ -61,6 +64,7 @@ def register_project_ledger_document_routes(
         file: UploadFile = File(...),
         _session: AdminSession = Depends(require_admin_session),
     ) -> dict[str, Any]:
+        """Сохраняет исходный файл документа и создает или обновляет его metadata."""
         ensure_supported_project_document_kind(kind)
 
         storage_obj = get_project_route_storage(request)
@@ -127,6 +131,7 @@ def register_project_ledger_document_routes(
         payload,
         _session: AdminSession = Depends(require_admin_session),
     ) -> dict[str, Any]:
+        """Обновляет ручные или reviewable поля документа без замены исходного файла."""
         ensure_supported_project_document_kind(kind)
 
         storage_obj = get_project_route_storage(request)
@@ -175,6 +180,7 @@ def register_project_ledger_document_routes(
         kind: str,
         _session: AdminSession = Depends(require_admin_session),
     ) -> FileResponse:
+        """Возвращает исходный файл документа для скачивания."""
         ensure_supported_project_document_kind(kind)
 
         storage_obj = get_project_route_storage(request)

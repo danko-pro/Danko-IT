@@ -39,6 +39,7 @@ def extract_json_content(payload: dict[str, Any]) -> dict[str, Any] | None:
 
 
 def extract_responses_text(payload: dict[str, Any]) -> str | None:
+    """Достает текст из ответа OpenAI Responses API."""
     output_text = payload.get("output_text")
     if isinstance(output_text, str) and output_text.strip():
         return output_text.strip()

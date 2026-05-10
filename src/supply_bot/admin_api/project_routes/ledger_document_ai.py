@@ -1,4 +1,8 @@
-"""AI extraction routes for project ledger documents."""
+"""AI-маршруты для документов проектного ledger.
+
+Маршрут читает уже загруженный invoice/act, запускает text extraction и применяет
+полученные поля как reviewable metadata без автоматической пользовательской верификации.
+"""
 
 from __future__ import annotations
 
@@ -34,6 +38,8 @@ from supply_bot.projects.service import build_project_document_update_values
 
 
 def register_project_ledger_document_ai_routes(app: FastAPI) -> None:
+    """Регистрирует endpoint извлечения данных из ledger-документа."""
+
     @app.post("/api/projects/{project_id}/ledger/{entry_id}/documents/{kind}/extract")
     async def extract_project_ledger_document(
         request: Request,
@@ -42,8 +48,10 @@ def register_project_ledger_document_ai_routes(app: FastAPI) -> None:
         kind: str,
         _session: AdminSession = Depends(require_admin_session),
     ) -> dict[str, Any]:
+        """Извлекает title/date/amount из invoice или act и обновляет документ."""
         ensure_supported_project_document_kind(kind)
 
+        # Route-слой только собирает зависимости и переводит ошибки в HTTP.
         storage_obj = get_project_route_storage(request)
         settings_obj = get_project_route_settings(request)
         await resolve_or_not_found(require_project(storage_obj, project_id))
@@ -54,6 +62,7 @@ def register_project_ledger_document_ai_routes(app: FastAPI) -> None:
             require_project_ledger_document(storage_obj, entry_id=entry_id, kind=kind)
         )
 
+        # Текст документа может прийти из PDF/text reader или из OCR для изображений.
         file_path = resolve_document_file_path_or_http(
             settings_obj,
             storage_key=read_document_storage_key(document),
@@ -74,6 +83,7 @@ def register_project_ledger_document_ai_routes(app: FastAPI) -> None:
         if not document_text.strip():
             raise HTTPException(status_code=422, detail="Project document text is empty after extraction")
 
+        # Результат AI не считается проверенным пользователем до ручного подтверждения в UI.
         extracted_document = await ProjectLedgerDocumentExtractor(settings_obj).extract_document(
             kind=kind,
             file_name=str(document["source_file_name"] or file_path.name),

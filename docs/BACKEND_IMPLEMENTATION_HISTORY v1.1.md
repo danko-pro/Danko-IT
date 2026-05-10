@@ -1,8 +1,8 @@
-# Backend Implementation History v1.0
+# Backend Implementation History v1.1
 
 Дата среза: 2026-05-10.
 
-Этот документ фиксирует историю backend-укрепления после начала подготовки проекта к более умному Telegram/admin backend. Он не заменяет `BACKEND_INTELLIGENCE_LAYER v1.1.md`; здесь хранится конкретная хронология сделанных изменений, проверок и текущая стоп-линия.
+Этот документ фиксирует историю backend-укрепления после начала подготовки проекта к более умному Telegram/admin backend. Он не заменяет `BACKEND_INTELLIGENCE_LAYER v1.2.md`; здесь хранится конкретная хронология сделанных изменений, проверок и текущая стоп-линия.
 
 ## Цель
 
@@ -105,6 +105,26 @@ Backend должен стать устойчивым рабочим слоем, 
 - поиск материалов безопаснее использовать для привязки заявки к `family/variant/sku`;
 - снижается риск ошибок из-за отсутствующих или неверно названных ключей.
 
+### 5. Admin UI для Telegram outbox
+
+Коммит:
+
+- `632595a feat: surface telegram outbox in admin`
+
+Что изменилось:
+
+- В экран заявок добавлен блок `RequestsTelegramOutboxPanel`.
+- Admin UI загружает pending-уведомления через `GET /api/notifications/telegram`.
+- Админ может вручную отправить очередь через `POST /api/notifications/telegram/flush`.
+- Для очереди добавлены явные UI-типы `TelegramNotification` и `TelegramNotificationFlushResult`.
+- Блок зарегистрирован в `requestsWorkspaceRegistry` как `requests.telegram-outbox`, чтобы движок видел его как отдельный управляемый компонент.
+
+Зачем:
+
+- зависшие Telegram-сообщения теперь видны в интерфейсе, а не только через HTTP endpoint;
+- после сетевого сбоя админ может вручную дожать отправку;
+- рабочая область заявок получила явный наблюдаемый блок устойчивости бота.
+
 ## Проверки
 
 Последний полный прогон после backend DTO/material search:
@@ -112,6 +132,14 @@ Backend должен стать устойчивым рабочим слоем, 
 ```text
 pytest
 94 passed
+```
+
+Проверки после добавления UI для Telegram outbox:
+
+```text
+npm run build
+pytest tests/test_notifications.py
+3 passed
 ```
 
 После каждого backend-шага перезапускались:
@@ -126,7 +154,6 @@ GET /api/health -> ok
 
 Следующий backend-шаг считается полезным, если он закрывает одну из практических задач:
 
-- вывод outbox-очереди в UI админки, а не только HTTP endpoint;
 - более строгие доменные DTO для request detail/items;
 - единые правила материалов: единицы измерения, размеры, дубли, архивность;
 - автоматический retry outbox по расписанию, а не только при ручном flush/следующем уведомлении;

@@ -18,6 +18,7 @@ from supply_bot.admin_api.project_routes.document_transport import (
 )
 from supply_bot.admin_api.project_routes.shared import (
     extract_patch_payload,
+    get_project_route_file_storage,
     get_project_route_settings,
     get_project_route_storage,
     raise_bad_request,
@@ -69,6 +70,7 @@ def register_project_ledger_document_routes(
 
         storage_obj = get_project_route_storage(request)
         settings_obj = get_project_route_settings(request)
+        file_storage = get_project_route_file_storage(request)
         await resolve_or_not_found(require_project(storage_obj, project_id))
         entry = await resolve_or_not_found(
             require_project_ledger_entry(storage_obj, project_id=project_id, entry_id=entry_id)
@@ -80,6 +82,7 @@ def register_project_ledger_document_routes(
         previous_storage_key = read_document_storage_key(existing_document)
         storage_key, mime_type = await resolve_document_storage_or_bad_request(
             store_project_ledger_document_file(
+                file_storage,
                 settings_obj,
                 project_id=project_id,
                 entry_id=entry_id,
@@ -104,8 +107,8 @@ def register_project_ledger_document_routes(
             **document_values,
         )
 
-        delete_replaced_document_file_or_bad_request(
-            settings_obj,
+        await delete_replaced_document_file_or_bad_request(
+            file_storage,
             previous_storage_key=previous_storage_key,
             next_storage_key=storage_key,
         )
@@ -184,7 +187,7 @@ def register_project_ledger_document_routes(
         ensure_supported_project_document_kind(kind)
 
         storage_obj = get_project_route_storage(request)
-        settings_obj = get_project_route_settings(request)
+        file_storage = get_project_route_file_storage(request)
         await resolve_or_not_found(require_project(storage_obj, project_id))
         await resolve_or_not_found(
             require_project_ledger_entry(storage_obj, project_id=project_id, entry_id=entry_id)
@@ -195,7 +198,7 @@ def register_project_ledger_document_routes(
 
         return build_document_download_response_or_http(
             build_project_ledger_document_download_response,
-            settings_obj,
+            file_storage,
             document,
             missing_detail="Project document file not found",
         )

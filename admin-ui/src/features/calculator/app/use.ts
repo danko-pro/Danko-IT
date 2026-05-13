@@ -1,4 +1,4 @@
-import { type Dispatch, type SetStateAction, useEffect, useState } from "react";
+import { type Dispatch, type SetStateAction, useEffect, useRef, useState } from "react";
 
 import type { CalculatorProject, CalculatorProjectDetail, CalculatorRoomDetail } from "../model/types";
 import type { ScreenKey } from "../../../shared/types";
@@ -29,6 +29,7 @@ export function useAdminCalculatorController(props: CalculatorControllerOptions)
   const [calculatorRoomLoading, setCalculatorRoomLoading] = useState(false);
   const [calculatorBusyKey, setCalculatorBusyKey] = useState<string | null>(null);
   const [calculatorError, setCalculatorError] = useState<string | null>(null);
+  const calculatorProjectsAutoLoadRequestedRef = useRef(false);
 
   const { loadCalculatorProjects, loadCalculatorProjectDetail, loadCalculatorRoomDetail } = createAdminCalculatorLoadersController({
     setCalculatorLoading,
@@ -82,9 +83,17 @@ export function useAdminCalculatorController(props: CalculatorControllerOptions)
   }, [calculatorProjects, selectedCalculatorProjectId]);
 
   useEffect(() => {
-    if (props.screen === "calculator" && !calculatorLoading && !calculatorProjects.length) {
-      void loadCalculatorProjects();
+    if (props.screen !== "calculator") {
+      calculatorProjectsAutoLoadRequestedRef.current = false;
+      return;
     }
+
+    if (calculatorLoading || calculatorProjects.length || calculatorProjectsAutoLoadRequestedRef.current) {
+      return;
+    }
+
+    calculatorProjectsAutoLoadRequestedRef.current = true;
+    void loadCalculatorProjects();
   }, [props.screen, calculatorLoading, calculatorProjects.length]);
 
   useEffect(() => {

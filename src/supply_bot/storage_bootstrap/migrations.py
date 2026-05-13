@@ -1,14 +1,63 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import aiosqlite
 
 from supply_bot.storage_bootstrap.contracts import ConnectionFactory
 
-# Миграционные добивки поверх базовой SQL-схемы.
+ESTIMATE_OWNER_TABLES = (
+    "estimate_projects",
+    "estimate_rooms",
+    "estimate_room_walls",
+    "estimate_room_floor_sections",
+    "estimate_room_openings",
+    "estimate_warm_floor_configs",
+    "estimate_warm_floor_rooms",
+    "estimate_flooring_coverings",
+    "estimate_flooring_preparations",
+    "estimate_flooring_layouts",
+    "estimate_flooring_configs",
+    "estimate_flooring_rooms",
+    "estimate_flooring_room_zones",
+    "estimate_wall_finish_coverings",
+    "estimate_wall_finish_preparations",
+    "estimate_wall_finish_layouts",
+    "estimate_wall_finish_configs",
+    "estimate_wall_finish_rooms",
+    "estimate_wall_finish_room_zones",
+    "estimate_door_catalog",
+    "estimate_door_component_catalog",
+    "estimate_project_doors",
+    "estimate_project_door_components",
+)
+
+# РњРёРіСЂР°С†РёРѕРЅРЅС‹Рµ РґРѕР±РёРІРєРё РїРѕРІРµСЂС… Р±Р°Р·РѕРІРѕР№ SQL-СЃС…РµРјС‹.
 
 
 async def apply_storage_migrations(connection_factory: ConnectionFactory) -> None:
     async with connection_factory() as db:
+        for table in (
+            "material_families",
+            "material_variants",
+            "material_skus",
+            "material_aliases",
+            "unknown_terms",
+            "request_drafts",
+            "request_items",
+            "request_draft_participants",
+            "group_profiles",
+            "group_message_history",
+            "telegram_notification_outbox",
+            "projects",
+            "project_advances",
+            "project_ledger_entries",
+            "project_ledger_documents",
+            "project_contracts",
+            "project_contract_milestones",
+        ):
+            await _ensure_column(db, table=table, column="owner_user_id", definition="INTEGER")
+        await _ensure_column(db, table="request_items", column="material_name_snapshot", definition="TEXT")
+        await _ensure_column(db, table="request_items", column="unit_snapshot", definition="TEXT")
+
         for column, definition in (
             ("residential_complex", "TEXT NOT NULL DEFAULT ''"),
             ("address", "TEXT NOT NULL DEFAULT ''"),
@@ -151,7 +200,11 @@ async def apply_storage_migrations(connection_factory: ConnectionFactory) -> Non
                 definition="REAL",
             )
         for column, definition in (
-            ("pipe_material_title", "TEXT NOT NULL DEFAULT 'Труба PEX-a 16x2 для водяного тёплого пола'"),
+            (
+                "pipe_material_title",
+                "TEXT NOT NULL DEFAULT 'РўСЂСѓР±Р° PEX-a 16x2 РґР»СЏ РІРѕРґСЏРЅРѕРіРѕ "
+                "С‚С‘РїР»РѕРіРѕ РїРѕР»Р°'",
+            ),
             ("manifold_material_items_json", "TEXT NOT NULL DEFAULT ''"),
             ("pump_material_items_json", "TEXT NOT NULL DEFAULT ''"),
             ("consumable_material_items_json", "TEXT NOT NULL DEFAULT ''"),
@@ -210,6 +263,8 @@ async def apply_storage_migrations(connection_factory: ConnectionFactory) -> Non
             ON telegram_notification_outbox(status, next_attempt_at, id)
             """
         )
+        for table in ESTIMATE_OWNER_TABLES:
+            await _ensure_column(db, table=table, column="owner_user_id", definition="INTEGER")
         await db.commit()
 
 
@@ -222,6 +277,8 @@ async def _ensure_column(
 ) -> None:
     cursor = await db.execute(f"PRAGMA table_info({table})")
     rows = await cursor.fetchall()
+    if not rows:
+        return
     existing = {row["name"] for row in rows}
     if column in existing:
         return
@@ -229,3 +286,5 @@ async def _ensure_column(
 
 
 __all__ = ["apply_storage_migrations"]
+
+

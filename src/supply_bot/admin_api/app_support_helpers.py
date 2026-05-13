@@ -3,7 +3,6 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
-import aiosqlite
 from fastapi import HTTPException
 
 from supply_bot.storage import BotStorage
@@ -61,11 +60,3 @@ def _admin_status_message(status: str) -> str | None:
     return messages.get(status)
 
 
-async def _fetch_scalar(
-    db: aiosqlite.Connection,
-    query: str,
-    params: tuple[Any, ...] = (),
-) -> int:
-    cursor = await db.execute(query, params)
-    row = await cursor.fetchone()
-    return int(row[0]) if row and row[0] is not None else 0

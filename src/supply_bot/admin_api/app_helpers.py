@@ -3,7 +3,6 @@ from __future__ import annotations
 from supply_bot.admin_api.app_support_helpers import (
     _admin_status_message,
     _family_overview,
-    _fetch_scalar,
     _parse_hhmm,
     _request_detail_payload,
     _split_alias_values,
@@ -33,7 +32,6 @@ __all__ = [
     "_estimate_wall_finish_payload",
     "_estimate_warm_floor_payload",
     "_family_overview",
-    "_fetch_scalar",
     "_parse_hhmm",
     "_plural_contours",
     "_request_detail_payload",

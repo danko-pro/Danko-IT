@@ -1,18 +1,95 @@
 from __future__ import annotations
 
+import os
 import sqlite3
+import unittest
 from contextlib import closing
+from dataclasses import replace
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from uuid import uuid4
 
 from fastapi.testclient import TestClient
 
 from supply_bot.admin_api.app import create_admin_app
+from supply_bot.admin_api.auth import SESSION_COOKIE_NAME
 from supply_bot.config import load_settings
 from tests.admin_projects_routes_case import AdminProjectsRouteCase
 
 
 class AdminProjectsCalculatorRouteTests(AdminProjectsRouteCase):
+    def test_registered_users_have_isolated_calculator_routes_and_project_linkage(self) -> None:
+        with TemporaryDirectory() as tmp_dir:
+            root = Path(tmp_dir)
+            suffix = uuid4().hex
+            settings = replace(
+                load_settings(self._create_settings_file(root)),
+                admin_session_secret=f"phase6d-test-session-secret-{suffix}",
+            )
+
+            with TestClient(create_admin_app(settings)) as client:
+                user_one_response = client.post(
+                    "/api/auth/register",
+                    json={
+                        "email": f"phase6d-user-one-{suffix}@example.test",
+                        "password": "password-one",
+                        "display_name": "Phase 6D user one",
+                    },
+                )
+                self.assertEqual(user_one_response.status_code, 200)
+                user_one_cookie = client.cookies.get(SESSION_COOKIE_NAME)
+
+                calculator_project_response = client.post(
+                    "/api/calculator/projects",
+                    json={"name": "User one calculator project"},
+                )
+                self.assertEqual(calculator_project_response.status_code, 200)
+                estimate_project_id = int(calculator_project_response.json()["project"]["id"])
+
+                linked_project_response = client.post(
+                    "/api/projects",
+                    json={
+                        "code": "CALC / 01",
+                        "name": "Linked project",
+                        "address": "Kaliningrad",
+                        "estimate_project_id": estimate_project_id,
+                    },
+                )
+                self.assertEqual(linked_project_response.status_code, 200)
+                self.assertEqual(int(linked_project_response.json()["estimate_project_id"]), estimate_project_id)
+
+                user_two_response = client.post(
+                    "/api/auth/register",
+                    json={
+                        "email": f"phase6d-user-two-{suffix}@example.test",
+                        "password": "password-two",
+                        "display_name": "Phase 6D user two",
+                    },
+                )
+                self.assertEqual(user_two_response.status_code, 200)
+
+                user_two_projects = client.get("/api/calculator/projects")
+                self.assertEqual(user_two_projects.status_code, 200)
+                self.assertEqual(user_two_projects.json(), [])
+                self.assertEqual(client.get(f"/api/calculator/projects/{estimate_project_id}").status_code, 404)
+
+                cross_link_response = client.post(
+                    "/api/projects",
+                    json={
+                        "code": "CALC / 02",
+                        "name": "Cross linked project",
+                        "address": "Kaliningrad",
+                        "estimate_project_id": estimate_project_id,
+                    },
+                )
+                self.assertIn(cross_link_response.status_code, {400, 404})
+
+                client.cookies.set(SESSION_COOKIE_NAME, user_one_cookie)
+                user_one_project = client.get(f"/api/calculator/projects/{estimate_project_id}")
+                self.assertEqual(user_one_project.status_code, 200)
+                self.assertEqual(int(user_one_project.json()["project"]["id"]), estimate_project_id)
+
+    @unittest.skipIf(os.getenv("DATABASE_URL"), "Legacy SQLite migration smoke запускается только без DATABASE_URL.")
     def test_legacy_estimate_project_schema_migrates_passport_columns(self) -> None:
         with TemporaryDirectory() as tmp_dir:
             root = Path(tmp_dir)

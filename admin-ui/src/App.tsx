@@ -61,7 +61,12 @@ export default function App() {
             </div>
           </div>
         ) : showAuthGate ? (
-          <AdminAuthScreen loading={controller.authPending} error={controller.authError} onLogin={controller.handleLogin} />
+          <AdminAuthScreen
+            loading={controller.authPending}
+            error={controller.authError}
+            onLogin={controller.handleLogin}
+            onRegister={controller.handleRegister}
+          />
         ) : (
           <div className="grid flex-1 grid-cols-1 gap-4 lg:grid-cols-[272px_minmax(0,1fr)]">
             <AppShellSidebar

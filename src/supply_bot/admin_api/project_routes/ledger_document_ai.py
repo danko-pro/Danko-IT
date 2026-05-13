@@ -18,6 +18,7 @@ from supply_bot.admin_api.project_routes.document_transport import (
 )
 from supply_bot.admin_api.project_routes.ledger_documents import ensure_supported_project_document_kind
 from supply_bot.admin_api.project_routes.shared import (
+    get_project_route_file_storage,
     get_project_route_settings,
     get_project_route_storage,
     resolve_or_not_found,
@@ -54,6 +55,7 @@ def register_project_ledger_document_ai_routes(app: FastAPI) -> None:
         # Route-слой только собирает зависимости и переводит ошибки в HTTP.
         storage_obj = get_project_route_storage(request)
         settings_obj = get_project_route_settings(request)
+        file_storage = get_project_route_file_storage(request)
         await resolve_or_not_found(require_project(storage_obj, project_id))
         entry = await resolve_or_not_found(
             require_project_ledger_entry(storage_obj, project_id=project_id, entry_id=entry_id)
@@ -64,7 +66,7 @@ def register_project_ledger_document_ai_routes(app: FastAPI) -> None:
 
         # Текст документа может прийти из PDF/text reader или из OCR для изображений.
         file_path = resolve_document_file_path_or_http(
-            settings_obj,
+            file_storage,
             storage_key=read_document_storage_key(document),
             missing_detail="Project document file not found",
         )

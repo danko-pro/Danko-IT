@@ -1,42 +1,27 @@
-"""Файловые helpers для документов проекта.
+﻿"""Файловые helper'ы для документов проекта.
 
-Модуль инкапсулирует работу с файловой системой:
-- вычисляет безопасные пути внутри project-documents каталога;
-- сохраняет загруженные файлы;
-- удаляет старые файлы;
-- строит download response для API.
+Этот слой работает через file storage adapter и не дает routes напрямую знать,
+где физически лежит PROJECT_DOCUMENTS_DIR.
 """
 
 from __future__ import annotations
 
 import secrets
-from pathlib import Path
+from collections.abc import AsyncIterator
+from pathlib import Path, PurePosixPath
 from typing import Any, Mapping
 
 from fastapi import UploadFile
 from fastapi.responses import FileResponse
 
 from supply_bot.config import Settings
+from supply_bot.file_storage import FileStorageAdapter
 
 PROJECT_DOCUMENT_UPLOAD_CHUNK_SIZE = 1024 * 1024
 
 
-# Ошибка файлового слоя проекта. Её потом переводит HTTP-слой.
 class ProjectDocumentStorageError(ValueError):
-    pass
-
-
-# Базовые helpers для safe path handling.
-def _project_documents_root(settings_obj: Settings) -> Path:
-    return settings_obj.project_documents_dir.resolve()
-
-
-def _ensure_within_project_documents_root(root: Path, target_path: Path) -> Path:
-    try:
-        target_path.relative_to(root)
-    except ValueError as exc:
-        raise ProjectDocumentStorageError("Invalid project document path") from exc
-    return target_path
+    """Ошибка файлового слоя project documents."""
 
 
 def _document_suffix(file_name: str | None) -> str:
@@ -48,20 +33,37 @@ def _project_document_max_upload_bytes(settings_obj: Settings) -> int:
     return max(1, int(settings_obj.project_document_max_upload_bytes))
 
 
-def resolve_project_document_path(settings_obj: Settings, storage_key: str) -> Path:
-    root = _project_documents_root(settings_obj)
-    normalized_storage_key = str(storage_key or "").strip()
-    if not normalized_storage_key:
+def _normalize_project_document_storage_key(storage_key: str) -> str:
+    normalized_storage_key = str(storage_key or "").strip().replace("\\", "/")
+    if not normalized_storage_key or normalized_storage_key in {".", ".."}:
         raise ProjectDocumentStorageError("Project document path is empty")
 
-    resolved_path = (root / normalized_storage_key).resolve()
-    if resolved_path == root:
+    posix_path = PurePosixPath(normalized_storage_key)
+    parts = posix_path.parts
+    if posix_path.is_absolute() or not parts or parts[0].endswith(":") or ".." in parts:
         raise ProjectDocumentStorageError("Invalid project document path")
-    return _ensure_within_project_documents_root(root, resolved_path)
+    return posix_path.as_posix()
 
 
-def resolve_existing_project_document_path(settings_obj: Settings, storage_key: str) -> Path:
-    resolved_path = resolve_project_document_path(settings_obj, storage_key)
+async def _uploaded_file_chunks(uploaded_file: UploadFile) -> AsyncIterator[bytes]:
+    while chunk := await uploaded_file.read(PROJECT_DOCUMENT_UPLOAD_CHUNK_SIZE):
+        yield chunk
+
+
+def resolve_project_document_path(file_storage: FileStorageAdapter, storage_key: str) -> Path:
+    normalized_storage_key = _normalize_project_document_storage_key(storage_key)
+
+    try:
+        resolved_path = file_storage.resolve_local_path(normalized_storage_key)
+    except ValueError as exc:
+        raise ProjectDocumentStorageError(str(exc)) from exc
+    if resolved_path is None:
+        raise ProjectDocumentStorageError("Project document is not available through local file storage")
+    return resolved_path
+
+
+def resolve_existing_project_document_path(file_storage: FileStorageAdapter, storage_key: str) -> Path:
+    resolved_path = resolve_project_document_path(file_storage, storage_key)
     if not resolved_path.exists():
         raise FileNotFoundError(storage_key)
     if not resolved_path.is_file():
@@ -69,24 +71,24 @@ def resolve_existing_project_document_path(settings_obj: Settings, storage_key: 
     return resolved_path
 
 
-def delete_project_document_file(settings_obj: Settings, *, storage_key: str | None) -> None:
+async def delete_project_document_file(file_storage: FileStorageAdapter, *, storage_key: str | None) -> None:
     normalized_storage_key = str(storage_key or "").strip()
     if not normalized_storage_key:
         return
 
-    file_path = resolve_project_document_path(settings_obj, normalized_storage_key)
-    if file_path.exists():
-        file_path.unlink()
+    try:
+        await file_storage.delete(normalized_storage_key)
+    except ValueError as exc:
+        raise ProjectDocumentStorageError(str(exc)) from exc
 
 
-# Блок ответов на скачивание документов.
 def _build_project_document_download_response(
-    settings_obj: Settings,
+    file_storage: FileStorageAdapter,
     document_record: Mapping[str, Any],
     *,
     file_name: str,
 ) -> FileResponse:
-    file_path = resolve_existing_project_document_path(settings_obj, str(document_record["source_storage_key"]))
+    file_path = resolve_existing_project_document_path(file_storage, str(document_record["source_storage_key"]))
     return FileResponse(
         path=file_path,
         media_type=str(document_record["source_mime_type"] or "application/octet-stream"),
@@ -95,68 +97,59 @@ def _build_project_document_download_response(
 
 
 def build_project_contract_download_response(
-    settings_obj: Settings,
+    file_storage: FileStorageAdapter,
     contract: Mapping[str, Any],
 ) -> FileResponse:
     return _build_project_document_download_response(
-        settings_obj,
+        file_storage,
         contract,
         file_name=str(contract["source_file_name"] or contract["file_name"] or "contract"),
     )
 
 
 def build_project_ledger_document_download_response(
-    settings_obj: Settings,
+    file_storage: FileStorageAdapter,
     document: Mapping[str, Any],
 ) -> FileResponse:
     return _build_project_document_download_response(
-        settings_obj,
+        file_storage,
         document,
         file_name=str(document["source_file_name"]),
     )
 
 
-# Блок сохранения новых файлов в project storage.
 async def _store_project_document_file(
+    file_storage: FileStorageAdapter,
     settings_obj: Settings,
     *,
     relative_directory: Path,
     storage_prefix: str,
     uploaded_file: UploadFile,
 ) -> tuple[str, str]:
-    root = _project_documents_root(settings_obj)
-    target_dir = _ensure_within_project_documents_root(root, (root / relative_directory).resolve())
-    target_dir.mkdir(parents=True, exist_ok=True)
-
     storage_name = f"{storage_prefix}-{secrets.token_hex(8)}{_document_suffix(uploaded_file.filename)}"
-    target_path = _ensure_within_project_documents_root(root, (target_dir / storage_name).resolve())
-    bytes_written = 0
-    max_upload_bytes = _project_document_max_upload_bytes(settings_obj)
+    storage_key = (relative_directory / storage_name).as_posix()
     try:
-        with target_path.open("wb") as target:
-            while chunk := await uploaded_file.read(PROJECT_DOCUMENT_UPLOAD_CHUNK_SIZE):
-                bytes_written += len(chunk)
-                if bytes_written > max_upload_bytes:
-                    raise ProjectDocumentStorageError("Project document upload is too large")
-                target.write(chunk)
-    except ProjectDocumentStorageError:
-        if target_path.exists():
-            target_path.unlink()
-        raise
+        stored_file = await file_storage.put_stream(
+            storage_key,
+            _uploaded_file_chunks(uploaded_file),
+            content_type=uploaded_file.content_type or "application/octet-stream",
+            max_bytes=_project_document_max_upload_bytes(settings_obj),
+        )
+    except ValueError as exc:
+        raise ProjectDocumentStorageError(str(exc)) from exc
 
-    return (
-        target_path.relative_to(root).as_posix(),
-        uploaded_file.content_type or "application/octet-stream",
-    )
+    return stored_file.key, stored_file.content_type
 
 
 async def store_project_contract_file(
+    file_storage: FileStorageAdapter,
     settings_obj: Settings,
     *,
     project_id: int,
     uploaded_file: UploadFile,
 ) -> tuple[str, str]:
     return await _store_project_document_file(
+        file_storage,
         settings_obj,
         relative_directory=Path(f"project-{project_id}") / "contract",
         storage_prefix="contract",
@@ -165,6 +158,7 @@ async def store_project_contract_file(
 
 
 async def store_project_ledger_document_file(
+    file_storage: FileStorageAdapter,
     settings_obj: Settings,
     *,
     project_id: int,
@@ -173,6 +167,7 @@ async def store_project_ledger_document_file(
     uploaded_file: UploadFile,
 ) -> tuple[str, str]:
     return await _store_project_document_file(
+        file_storage,
         settings_obj,
         relative_directory=Path(f"project-{project_id}") / "ledger" / f"entry-{entry_id}",
         storage_prefix=kind,

@@ -26,6 +26,7 @@ a_settings/credentials.json
 
 # Logs and runtime artifacts
 *.log
+.local-smoke-logs/
 data/*.log
 .tmp/
 snapshots/

@@ -12,8 +12,9 @@ from typing import Any, Awaitable, TypeVar
 
 from fastapi import HTTPException, Request
 
-from supply_bot.admin_api.deps import get_settings, get_storage
+from supply_bot.admin_api.deps import get_file_storage, get_settings, get_storage
 from supply_bot.config import Settings
+from supply_bot.file_storage import FileStorageAdapter
 from supply_bot.projects.orchestration import ProjectLookupError, ProjectOperationError
 from supply_bot.storage import BotStorage
 
@@ -40,6 +41,10 @@ def get_project_route_storage(request: Request) -> BotStorage:
 
 def get_project_route_settings(request: Request) -> Settings:
     return get_settings(request)
+
+
+def get_project_route_file_storage(request: Request) -> FileStorageAdapter:
+    return get_file_storage(request)
 
 
 def extract_patch_payload(payload: Any) -> dict[str, Any]:

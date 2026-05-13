@@ -25,6 +25,7 @@ from supply_bot.admin_api.project_routes.document_transport import (
     resolve_document_storage_or_bad_request,
 )
 from supply_bot.admin_api.project_routes.shared import (
+    get_project_route_file_storage,
     get_project_route_settings,
     get_project_route_storage,
     resolve_or_not_found,
@@ -52,11 +53,13 @@ def register_project_contract_file_routes(app: FastAPI) -> None:
     ) -> dict[str, Any]:
         storage_obj = get_project_route_storage(request)
         settings_obj = get_project_route_settings(request)
+        file_storage = get_project_route_file_storage(request)
         await resolve_or_not_found(require_project(storage_obj, project_id))
         file_name = require_uploaded_document_name(file, detail="Contract file is required")
 
         storage_key, mime_type = await resolve_document_storage_or_bad_request(
             store_project_contract_file(
+                file_storage,
                 settings_obj,
                 project_id=project_id,
                 uploaded_file=file,
@@ -78,8 +81,8 @@ def register_project_contract_file_routes(app: FastAPI) -> None:
             **contract_values,
         )
 
-        delete_replaced_document_file_or_bad_request(
-            settings_obj,
+        await delete_replaced_document_file_or_bad_request(
+            file_storage,
             previous_storage_key=previous_storage_key,
             next_storage_key=storage_key,
         )
@@ -101,15 +104,15 @@ def register_project_contract_file_routes(app: FastAPI) -> None:
         _session: AdminSession = Depends(require_admin_session),
     ) -> dict[str, Any]:
         storage_obj = get_project_route_storage(request)
-        settings_obj = get_project_route_settings(request)
+        file_storage = get_project_route_file_storage(request)
         await resolve_or_not_found(require_project(storage_obj, project_id))
 
         deleted_contract = await storage_obj.delete_project_contract(project_id)
         if not deleted_contract:
             raise HTTPException(status_code=404, detail="Project contract not found")
 
-        delete_document_file_or_bad_request(
-            settings_obj,
+        await delete_document_file_or_bad_request(
+            file_storage,
             storage_key=read_document_storage_key(deleted_contract),
         )
 
@@ -122,13 +125,13 @@ def register_project_contract_file_routes(app: FastAPI) -> None:
         _session: AdminSession = Depends(require_admin_session),
     ) -> FileResponse:
         storage_obj = get_project_route_storage(request)
-        settings_obj = get_project_route_settings(request)
+        file_storage = get_project_route_file_storage(request)
         await resolve_or_not_found(require_project(storage_obj, project_id))
         contract = await resolve_or_not_found(require_project_contract_file(storage_obj, project_id))
 
         return build_document_download_response_or_http(
             build_project_contract_download_response,
-            settings_obj,
+            file_storage,
             contract,
             missing_detail="Project contract file not found",
         )

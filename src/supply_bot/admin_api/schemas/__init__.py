@@ -1,6 +1,6 @@
 """Схемы admin API, разложенные по доменам."""
 
-from supply_bot.admin_api.schemas.auth import AdminLoginPayload
+from supply_bot.admin_api.schemas.auth import AdminLoginPayload, UserRegisterPayload
 from supply_bot.admin_api.schemas.calculator import (
     CalculatorDoorCatalogPayload,
     CalculatorDoorComponentCatalogPayload,
@@ -96,4 +96,5 @@ __all__ = [
     "RequestStatusPayload",
     "SkuCreatePayload",
     "VariantCreatePayload",
+    "UserRegisterPayload",
 ]

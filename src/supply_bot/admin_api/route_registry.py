@@ -43,6 +43,7 @@ from supply_bot.admin_api.schemas import (
     RequestItemPayload,
     RequestStatusPayload,
     SkuCreatePayload,
+    UserRegisterPayload,
     VariantCreatePayload,
 )
 
@@ -51,6 +52,7 @@ def register_admin_routes(app: FastAPI) -> None:
     register_auth_routes(
         app,
         admin_login_payload_model=AdminLoginPayload,
+        user_register_payload_model=UserRegisterPayload,
     )
     register_support_routes(
         app,

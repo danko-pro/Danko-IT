@@ -142,13 +142,13 @@ export function useAdminAppController() {
     }
   }
 
-  async function handleLogin(password: string) {
+  async function handleLogin(email: string, password: string) {
     try {
       setAuthPending(true);
       setAuthError(null);
       const session = await fetchJson<AdminAuthSession>("/api/auth/login", {
         method: "POST",
-        body: JSON.stringify({ password }),
+        body: JSON.stringify({ email, password }),
       });
       setAuthSession(session);
 
@@ -157,10 +157,34 @@ export function useAdminAppController() {
       }
     } catch (loginError) {
       if (loginError instanceof ApiError && loginError.status === 401) {
-        setAuthError("Неверный пароль администратора.");
+        setAuthError("Неверный email или пароль.");
         return;
       }
-      setAuthError(loginError instanceof Error ? loginError.message : "Не удалось войти в admin-панель");
+      setAuthError(loginError instanceof Error ? loginError.message : "Не удалось войти");
+    } finally {
+      setAuthPending(false);
+    }
+  }
+
+  async function handleRegister(displayName: string, email: string, password: string) {
+    try {
+      setAuthPending(true);
+      setAuthError(null);
+      const session = await fetchJson<AdminAuthSession>("/api/auth/register", {
+        method: "POST",
+        body: JSON.stringify({ display_name: displayName, email, password }),
+      });
+      setAuthSession(session);
+
+      if (isAuthenticatedSession(session)) {
+        await loadOverview();
+      }
+    } catch (registerError) {
+      if (registerError instanceof ApiError && registerError.status === 409) {
+        setAuthError("Этот email уже зарегистрирован.");
+        return;
+      }
+      setAuthError(registerError instanceof Error ? registerError.message : "Не удалось зарегистрироваться");
     } finally {
       setAuthPending(false);
     }
@@ -206,6 +230,7 @@ export function useAdminAppController() {
     bootstrapAdminApp,
     loadOverview,
     handleLogin,
+    handleRegister,
     handleLogout,
     handleSaveDeliverySettings,
     ...requestsController,

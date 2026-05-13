@@ -115,3 +115,4 @@ V1 валидирует координаты и операции внутри э
 3. Добавить V3 validation report до подключения реального движка.
 4. Позже заменить host-side preview на вызов `navigation-engine`.
 5. Не смешивать global navigation, workspace navigation и block navigation.
+

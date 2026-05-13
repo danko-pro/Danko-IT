@@ -9,6 +9,8 @@ from supply_bot.admin_api.app_helpers import _parse_hhmm
 from supply_bot.domain.request_lifecycle import (
     ADMIN_REQUEST_STATUSES,
     RequestLifecycleError,
+)
+from supply_bot.domain.request_lifecycle import (
     normalize_request_status as normalize_lifecycle_status,
 )
 

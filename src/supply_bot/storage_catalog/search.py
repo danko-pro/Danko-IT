@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Any
-
 from supply_bot.domain.materials import MaterialSearchTarget
 from supply_bot.utils import normalize_text
 

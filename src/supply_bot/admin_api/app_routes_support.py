@@ -1,13 +1,12 @@
 # pyright: reportInvalidTypeForm=false
 # mypy: disable-error-code=valid-type
 
-from datetime import date
 from typing import Any
 
 from fastapi import FastAPI, Request
 
-from supply_bot.admin_api.app_helpers import _fetch_scalar, _parse_hhmm
-from supply_bot.admin_api.deps import get_settings, get_storage
+from supply_bot.admin_api.app_helpers import _parse_hhmm
+from supply_bot.admin_api.deps import get_dashboard_read_model, get_settings, get_storage
 from supply_bot.services.notifications import TelegramNotificationOutboxService
 
 
@@ -26,70 +25,11 @@ def register_support_routes(
 
     @app.get("/api/dashboard/summary")
     async def dashboard_summary(request: Request) -> dict[str, Any]:
-        storage_obj = get_storage(request)
-        today = date.today().isoformat()
-        async with storage_obj.connection() as db:
-            return {
-                "families_count": await _fetch_scalar(
-                    db,
-                    "SELECT COUNT(*) FROM material_families WHERE is_active = 1",
-                ),
-                "skus_count": await _fetch_scalar(
-                    db,
-                    "SELECT COUNT(*) FROM material_skus WHERE is_active = 1",
-                ),
-                "groups_count": await _fetch_scalar(
-                    db,
-                    "SELECT COUNT(*) FROM group_profiles",
-                ),
-                "active_drafts_count": await _fetch_scalar(
-                    db,
-                    "SELECT COUNT(*) FROM request_drafts WHERE status IN ('collecting', 'awaiting_confirmation')",
-                ),
-                "confirmed_requests_count": await _fetch_scalar(
-                    db,
-                    "SELECT COUNT(*) FROM request_drafts WHERE status = 'confirmed'",
-                ),
-                "confirmed_today_count": await _fetch_scalar(
-                    db,
-                    """
-                    SELECT COUNT(*) FROM request_drafts
-                    WHERE status = 'confirmed' AND substr(updated_at, 1, 10) = ?
-                    """,
-                    (today,),
-                ),
-                "new_unknown_terms_count": await _fetch_scalar(
-                    db,
-                    "SELECT COUNT(*) FROM unknown_terms WHERE status = 'new'",
-                ),
-            }
+        return await get_dashboard_read_model(request).get_summary()
 
     @app.get("/api/groups")
     async def groups(request: Request, limit: int = 20) -> list[dict[str, Any]]:
-        storage_obj = get_storage(request)
-        async with storage_obj.connection() as db:
-            cursor = await db.execute(
-                """
-                SELECT
-                    chat_id,
-                    title,
-                    object_name,
-                    address,
-                    flat,
-                    floor,
-                    elevator,
-                    delivery_start,
-                    delivery_end,
-                    delivery_fallback,
-                    updated_at
-                FROM group_profiles
-                ORDER BY updated_at DESC
-                LIMIT ?
-                """,
-                (max(1, min(limit, 100)),),
-            )
-            rows = await cursor.fetchall()
-        return [dict(row) for row in rows]
+        return await get_storage(request).list_group_profiles(limit=limit)
 
     @app.get("/api/notifications/telegram")
     async def telegram_notifications(

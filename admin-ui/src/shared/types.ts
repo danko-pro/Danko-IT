@@ -9,8 +9,11 @@ export type AdminAuthSession = {
   authenticated: boolean;
   mode: "session" | "local-bypass";
   user: {
+    id: number | null;
     subject: string;
     role: string;
+    email: string | null;
+    display_name: string | null;
   } | null;
   expires_at: string | null;
 };

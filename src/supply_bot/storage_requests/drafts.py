@@ -2,11 +2,11 @@ from __future__ import annotations
 
 from typing import Any
 
-from supply_bot.domain.requests import RequestSummary
 from supply_bot.domain.request_lifecycle import (
     ACTIVE_REQUEST_STATUSES,
     validate_request_status_transition,
 )
+from supply_bot.domain.requests import RequestSummary
 
 # Черновики заявок и их жизненный цикл до подтверждения.
 

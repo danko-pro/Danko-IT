@@ -1,13 +1,18 @@
 from __future__ import annotations
 
 import asyncio
+import unittest
+from dataclasses import replace
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from uuid import uuid4
 
 from fastapi.testclient import TestClient
 
 from supply_bot.admin_api.app import create_admin_app
+from supply_bot.admin_api.auth import SESSION_COOKIE_NAME
 from supply_bot.config import load_settings
+from supply_bot.services.notifications import TelegramHttpMessageSender
 
 
 def _create_settings_file(root: Path) -> Path:
@@ -311,3 +316,126 @@ def test_storage_recent_request_summary_is_typed() -> None:
             assert summary.status == "collecting"
             assert summary.items_count == 0
             assert summary.to_api_dict()["id"] == draft_id
+
+
+def test_registered_users_have_isolated_request_routes_and_notifications() -> None:
+    async def fake_send_message(self, *, chat_id: int, text: str) -> None:
+        del self, chat_id, text
+        return None
+
+    async def create_draft_with_item(repository) -> int:
+        draft_id = await repository.create_draft(
+            chat_id=1001,
+            master_id=2002,
+            master_name="Route owner",
+        )
+        await repository.create_request_item(
+            draft_id=draft_id,
+            family_id=None,
+            variant_id=None,
+            sku_id=None,
+            raw_name="Route material",
+            normalized_name="route material",
+            quantity=2,
+            unit="pcs",
+        )
+        return draft_id
+
+    async def create_group_profile(repository) -> None:
+        await repository.upsert_group_profile(
+            {
+                "chat_id": 1001,
+                "title": "Owner route group",
+                "raw_description": None,
+                "object_name": "Owner isolated object",
+                "address": "Owner address",
+                "flat": None,
+                "floor": None,
+                "elevator": None,
+                "delivery_rules": None,
+                "delivery_start": None,
+                "delivery_end": None,
+                "delivery_fallback": None,
+            }
+        )
+
+    async def list_notifications(repository):
+        return await repository.list_telegram_notifications(limit=10)
+
+    original_send_message = TelegramHttpMessageSender.send_message
+    TelegramHttpMessageSender.send_message = fake_send_message
+    try:
+        with TemporaryDirectory() as tmp_dir:
+            root = Path(tmp_dir)
+            suffix = uuid4().hex
+            settings = replace(
+                load_settings(_create_settings_file(root)),
+                admin_session_secret=f"phase4-test-session-secret-{suffix}",
+            )
+
+            with TestClient(create_admin_app(settings)) as client:
+                user_one_response = client.post(
+                    "/api/auth/register",
+                    json={
+                        "email": f"phase4-user-one-{suffix}@example.test",
+                        "password": "password-one",
+                        "display_name": "Phase 4 user one",
+                    },
+                )
+                assert user_one_response.status_code == 200
+                user_one_id = int(user_one_response.json()["user"]["id"])
+                user_one_cookie = client.cookies.get(SESSION_COOKIE_NAME)
+
+                user_one_requests = client.app.state.request_repository.for_owner(user_one_id)
+                client.portal.call(create_group_profile, user_one_requests)
+                draft_id = client.portal.call(create_draft_with_item, user_one_requests)
+
+                user_one_recent = client.get("/api/requests/recent")
+                assert user_one_recent.status_code == 200
+                assert any(row["id"] == draft_id for row in user_one_recent.json())
+                user_one_groups = client.get("/api/groups")
+                assert user_one_groups.status_code == 200
+                assert [row["chat_id"] for row in user_one_groups.json()] == [1001]
+
+                user_two_response = client.post(
+                    "/api/auth/register",
+                    json={
+                        "email": f"phase4-user-two-{suffix}@example.test",
+                        "password": "password-two",
+                        "display_name": "Phase 4 user two",
+                    },
+                )
+                assert user_two_response.status_code == 200
+                user_two_id = int(user_two_response.json()["user"]["id"])
+
+                assert client.get(f"/api/requests/{draft_id}").status_code == 404
+                user_two_recent = client.get("/api/requests/recent")
+                assert user_two_recent.status_code == 200
+                assert all(row["id"] != draft_id for row in user_two_recent.json())
+                user_two_groups = client.get("/api/groups")
+                assert user_two_groups.status_code == 200
+                assert user_two_groups.json() == []
+
+                client.cookies.set(SESSION_COOKIE_NAME, user_one_cookie)
+                status_response = client.patch(f"/api/requests/{draft_id}/status", json={"status": "confirmed"})
+                assert status_response.status_code == 200
+                assert status_response.json()["notified"] is True
+
+                user_one_notifications = client.portal.call(
+                    list_notifications,
+                    client.app.state.notification_repository.for_owner(user_one_id),
+                )
+                user_two_notifications = client.portal.call(
+                    list_notifications,
+                    client.app.state.notification_repository.for_owner(user_two_id),
+                )
+                assert len(user_one_notifications) == 1
+                assert user_one_notifications[0].status == "sent"
+                assert user_two_notifications == []
+    finally:
+        TelegramHttpMessageSender.send_message = original_send_message
+
+
+class AdminRequestRouteSmokeTests(unittest.TestCase):
+    def test_registered_users_have_isolated_request_routes_and_notifications(self) -> None:
+        test_registered_users_have_isolated_request_routes_and_notifications()

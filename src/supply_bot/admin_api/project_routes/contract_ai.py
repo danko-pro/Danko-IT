@@ -13,6 +13,7 @@ from supply_bot.admin_api.project_routes.document_transport import (
     resolve_document_file_path_or_http,
 )
 from supply_bot.admin_api.project_routes.shared import (
+    get_project_route_file_storage,
     get_project_route_settings,
     get_project_route_storage,
     raise_bad_request,
@@ -45,6 +46,7 @@ def register_project_contract_ai_routes(
     ) -> dict[str, Any]:
         """Читает файл договора, запускает AI extraction и применяет результат к договору."""
         settings_obj = get_project_route_settings(request)
+        file_storage = get_project_route_file_storage(request)
         if not settings_obj.llm_enabled:
             raise HTTPException(status_code=503, detail="LLM extraction is not configured")
 
@@ -53,7 +55,7 @@ def register_project_contract_ai_routes(
         contract = await resolve_or_not_found(require_project_contract_file(storage_obj, project_id))
 
         file_path = resolve_document_file_path_or_http(
-            settings_obj,
+            file_storage,
             storage_key=read_document_storage_key(contract),
             missing_detail="Project contract file not found",
         )

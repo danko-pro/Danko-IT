@@ -20,6 +20,9 @@ class AdminSession:
     subject: str
     role: str
     expires_at: int
+    user_id: int | None = None
+    email: str | None = None
+    display_name: str | None = None
     mode: str = "session"
 
     @property
@@ -86,19 +89,32 @@ def create_admin_session_token(
     ttl_seconds: int,
     subject: str = "admin",
     role: str = "admin",
+    user_id: int | None = None,
+    email: str | None = None,
+    display_name: str | None = None,
 ) -> tuple[str, AdminSession]:
     expires_at = int(time.time()) + max(60, ttl_seconds)
     payload = {
         "sub": subject,
         "role": role,
         "exp": expires_at,
+        "uid": user_id,
+        "email": email,
+        "name": display_name,
     }
     payload_token = _b64url_encode(
         json.dumps(payload, separators=(",", ":"), sort_keys=True).encode("utf-8")
     )
     signature = hmac.new(secret.encode("utf-8"), payload_token.encode("utf-8"), hashlib.sha256).digest()
     signed_token = f"{payload_token}.{_b64url_encode(signature)}"
-    return signed_token, AdminSession(subject=subject, role=role, expires_at=expires_at)
+    return signed_token, AdminSession(
+        subject=subject,
+        role=role,
+        expires_at=expires_at,
+        user_id=user_id,
+        email=email,
+        display_name=display_name,
+    )
 
 
 def read_admin_session_token(token: str | None, secret: str | None) -> AdminSession | None:
@@ -130,11 +146,27 @@ def read_admin_session_token(token: str | None, secret: str | None) -> AdminSess
     subject = payload.get("sub")
     role = payload.get("role")
     expires_at = payload.get("exp")
+    user_id = payload.get("uid")
+    email = payload.get("email")
+    display_name = payload.get("name")
     if not isinstance(subject, str) or not isinstance(role, str) or not isinstance(expires_at, int):
+        return None
+    if user_id is not None and not isinstance(user_id, int):
+        return None
+    if email is not None and not isinstance(email, str):
+        return None
+    if display_name is not None and not isinstance(display_name, str):
         return None
     if expires_at <= int(time.time()):
         return None
-    return AdminSession(subject=subject, role=role, expires_at=expires_at)
+    return AdminSession(
+        subject=subject,
+        role=role,
+        expires_at=expires_at,
+        user_id=user_id,
+        email=email,
+        display_name=display_name,
+    )
 
 
 def set_admin_session_cookie(

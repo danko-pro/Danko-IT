@@ -129,9 +129,7 @@ async def resolve_estimate_project_id_for_door(
     *,
     detail: str,
 ) -> int:
-    async with storage_obj.connection() as db:
-        cursor = await db.execute("SELECT project_id FROM estimate_project_doors WHERE id = ?", (door_id,))
-        row = await cursor.fetchone()
-    if row is None:
+    project_id = await storage_obj.get_estimate_project_id_for_project_door(door_id)
+    if project_id is None:
         raise HTTPException(status_code=500, detail=detail)
-    return int(row["project_id"])
+    return int(project_id)

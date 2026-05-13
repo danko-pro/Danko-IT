@@ -16,6 +16,7 @@ PLACEHOLDER_VALUES = {
     "your_notion_token_here",
     "your_admin_password_hash_here",
     "your_admin_session_secret_here",
+    "your_database_url_here",
 }
 
 
@@ -65,6 +66,8 @@ class Settings:
     # Максимальный размер Telegram-медиа, которое backend скачивает перед AI-обработкой.
     telegram_media_max_download_bytes: int
     config_path: Path
+    database_url: str | None = None
+    file_storage_backend: str = "local"
 
     @property
     def llm_enabled(self) -> bool:
@@ -89,6 +92,10 @@ class Settings:
 
     @property
     def admin_auth_enabled(self) -> bool:
+        return bool(self.admin_session_secret)
+
+    @property
+    def admin_password_enabled(self) -> bool:
         return bool(self.admin_password_hash and self.admin_session_secret)
 
 
@@ -137,8 +144,21 @@ def discover_config_path(base_dir: Path | None = None) -> Path:
 
 
 def load_settings(config_path: Path | None = None) -> Settings:
-    path = (config_path or discover_config_path()).resolve()
-    env = _read_env_file(path)
+    if config_path is not None:
+        path = config_path.resolve()
+        file_env = _read_env_file(path)
+    else:
+        try:
+            path = discover_config_path().resolve()
+            file_env = _read_env_file(path)
+        except FileNotFoundError:
+            path = (Path.cwd() / ".env.runtime").resolve()
+            file_env = {}
+
+    env = {
+        **file_env,
+        **{key: value for key, value in os.environ.items() if isinstance(value, str)},
+    }
     base_dir = path.parent
 
     bot_token = env.get("BOT_TOKEN", "").strip()
@@ -194,4 +214,6 @@ def load_settings(config_path: Path | None = None) -> Settings:
         ),
         telegram_media_max_download_bytes=int(env.get("TELEGRAM_MEDIA_MAX_DOWNLOAD_BYTES", "26214400")),
         config_path=path,
+        database_url=_optional_secret(env.get("DATABASE_URL")),
+        file_storage_backend=(env.get("FILE_STORAGE_BACKEND", "local").strip().lower() or "local"),
     )

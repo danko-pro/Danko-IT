@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from supply_bot.admin_api.calculator_payloads.ceilings import _estimate_ceilings_payload
 from supply_bot.admin_api.calculator_payloads.core import (
     _estimate_project_payload,
     _estimate_room_detail,
@@ -16,6 +17,7 @@ _estimate_room_stats = estimate_room_stats
 
 __all__ = [
     "_estimate_flooring_payload",
+    "_estimate_ceilings_payload",
     "_estimate_opening_area",
     "_estimate_project_doors",
     "_estimate_project_payload",

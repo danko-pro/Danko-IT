@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from fastapi import FastAPI
 
+from supply_bot.admin_api.calculator_routes.ceilings import register_calculator_ceiling_routes
 from supply_bot.admin_api.calculator_routes.core import register_calculator_core_routes
 from supply_bot.admin_api.calculator_routes.doors import register_calculator_door_routes
 from supply_bot.admin_api.calculator_routes.flooring import register_calculator_flooring_routes
@@ -62,6 +63,7 @@ def register_calculator_routes(
         calculator_project_door_payload_model=calculator_project_door_payload_model,
         calculator_project_door_component_payload_model=calculator_project_door_component_payload_model,
     )
+    register_calculator_ceiling_routes(app)
 
 
 __all__ = ["register_calculator_routes"]

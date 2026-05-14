@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from supply_bot.admin_api.calculator_payloads.ceilings import _estimate_ceilings_payload
 from supply_bot.admin_api.calculator_payloads.doors import _estimate_project_doors
 from supply_bot.admin_api.calculator_payloads.flooring import _estimate_flooring_payload
 from supply_bot.admin_api.calculator_payloads.wall_finish import _estimate_wall_finish_payload
@@ -82,6 +83,7 @@ async def _estimate_project_payload(storage: BotStorage, project: dict[str, Any]
     warm_floor = await _estimate_warm_floor_payload(storage, project, room_payloads)
     flooring = await _estimate_flooring_payload(storage, project, room_payloads)
     wall_finishes = await _estimate_wall_finish_payload(storage, project, room_payloads)
+    ceilings = await _estimate_ceilings_payload(storage, project, room_payloads)
 
     return {
         "project": {
@@ -93,6 +95,7 @@ async def _estimate_project_payload(storage: BotStorage, project: dict[str, Any]
         "warm_floor": warm_floor,
         "flooring": flooring,
         "wall_finishes": wall_finishes,
+        "ceilings": ceilings,
         "doors": project_doors,
         "door_catalog": door_catalog,
         "door_component_catalog": door_component_catalog,

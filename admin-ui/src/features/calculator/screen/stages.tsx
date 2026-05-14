@@ -1,3 +1,5 @@
+import { CeilingsStageSection } from "../ceilings/stage";
+import type { CeilingsStageSectionProps } from "../ceilings/stage";
 import { DoorsStageSection } from "../doors/stage";
 import type { DoorsStageSectionProps } from "../doors/stage";
 import { FlooringStageSection } from "../flooring/stage";
@@ -18,13 +20,13 @@ type CalculatorEstimateStagesFacadeProps = {
   actions: Pick<CalculatorScreenActionProps, "onDeleteProjectDoor" | "onDeleteProjectDoorComponent">;
   stageFlags: Pick<
     CalculatorScreenState["stageFlags"],
-    "isDoorsStage" | "isWarmFloorStage" | "isFlooringStage" | "isWallFinishStage"
+    "isCeilingsStage" | "isDoorsStage" | "isWarmFloorStage" | "isFlooringStage" | "isWallFinishStage"
   >;
   doors: CalculatorScreenState["doors"];
   warmFloor: CalculatorScreenState["warmFloor"];
   flooring: CalculatorScreenState["flooring"];
   wallFinish: CalculatorScreenState["wallFinish"];
-  forcedStage?: Extract<CalculatorStage, "doors" | "warmfloor" | "flooring" | "wallfinish">;
+  forcedStage?: Extract<CalculatorStage, "ceilings" | "doors" | "warmfloor" | "flooring" | "wallfinish">;
 };
 
 // Screen-level facade between the root screen and estimate stages.
@@ -48,7 +50,17 @@ export function CalculatorEstimateStagesFacade(props: CalculatorEstimateStagesFa
     return <WallFinishStageSection {...buildWallFinishStageProps(props)} />;
   }
 
+  if (forcedStage === "ceilings" || (!forcedStage && stageFlags.isCeilingsStage)) {
+    return <CeilingsStageSection {...buildCeilingsStageProps(props)} />;
+  }
+
   return null;
+}
+
+function buildCeilingsStageProps(props: CalculatorEstimateStagesFacadeProps): CeilingsStageSectionProps {
+  return {
+    projectDetail: props.data.projectDetail,
+  };
 }
 
 function buildDoorsStageProps(props: CalculatorEstimateStagesFacadeProps): DoorsStageSectionProps {

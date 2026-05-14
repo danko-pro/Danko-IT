@@ -4,6 +4,7 @@ import type {
   CalculatorDoorComponentCatalogItem,
   CalculatorProjectDoor,
 } from "../doors/model";
+import type { CalculatorCeilingsDetail } from "../ceilings/model";
 import type { CalculatorFlooringDetail } from "../flooring/model";
 import type { CalculatorRoomSummary } from "../room/model";
 import type { CalculatorWallFinishDetail } from "../wall-finish/model";
@@ -18,6 +19,7 @@ export type CalculatorProjectDetail = {
   warm_floor: CalculatorWarmFloorDetail;
   flooring: CalculatorFlooringDetail;
   wall_finishes: CalculatorWallFinishDetail;
+  ceilings: CalculatorCeilingsDetail;
   doors: CalculatorProjectDoor[];
   door_catalog: CalculatorDoorCatalogItem[];
   door_component_catalog: CalculatorDoorComponentCatalogItem[];

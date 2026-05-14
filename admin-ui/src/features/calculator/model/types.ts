@@ -2,6 +2,7 @@
 // Импорты по проекту остаются прежними, а типы разложены по доменным подмодулям.
 
 export * from "./core";
+export * from "../ceilings/model";
 export * from "../doors/model";
 export * from "../flooring/model";
 export * from "../project/model";

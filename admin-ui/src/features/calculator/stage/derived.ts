@@ -15,6 +15,7 @@ export type CalculatorStageFlags = {
   isWarmFloorStage: boolean;
   isFlooringStage: boolean;
   isWallFinishStage: boolean;
+  isCeilingsStage: boolean;
   isDoorsStage: boolean;
 };
 
@@ -34,6 +35,7 @@ export function buildCalculatorStageFlags(activeStage: CalculatorStage): Calcula
     isWarmFloorStage: activeStage === "warmfloor",
     isFlooringStage: activeStage === "flooring",
     isWallFinishStage: activeStage === "wallfinish",
+    isCeilingsStage: activeStage === "ceilings",
     isDoorsStage: activeStage === "doors",
   };
 }

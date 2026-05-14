@@ -66,6 +66,18 @@ export const CALCULATOR_STAGE_OPTIONS: CalculatorStageOption[] = [
     ),
   },
   {
+    stage: "ceilings",
+    label: "Потолки",
+    icon: (
+      <svg viewBox="0 0 24 24" className="h-4 w-4 fill-none stroke-current" strokeWidth="1.8">
+        <path d="M5 6.5h14" />
+        <path d="M7 10h10" />
+        <path d="M8.5 13.5h7" />
+        <path d="M10 17h4" />
+      </svg>
+    ),
+  },
+  {
     stage: "doors",
     label: "Двери",
     icon: (

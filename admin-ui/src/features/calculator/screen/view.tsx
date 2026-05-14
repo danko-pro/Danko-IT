@@ -7,7 +7,15 @@ import { CalculatorProjectRoomsStage } from "../project/flow";
 import type { CalculatorScreenProps, CalculatorScreenState } from "./types";
 import { useCalculatorSceneHeight } from "../stage/use-scene-height";
 
-const CALCULATOR_STAGE_ORDER: CalculatorStage[] = ["project", "rooms", "warmfloor", "flooring", "wallfinish", "doors"];
+const CALCULATOR_STAGE_ORDER: CalculatorStage[] = [
+  "project",
+  "rooms",
+  "warmfloor",
+  "flooring",
+  "wallfinish",
+  "ceilings",
+  "doors",
+];
 
 function getStageDirection(stage: CalculatorStage, previousStage: CalculatorStage): "forward" | "backward" {
   return CALCULATOR_STAGE_ORDER.indexOf(stage) >= CALCULATOR_STAGE_ORDER.indexOf(previousStage) ? "forward" : "backward";
@@ -101,6 +109,8 @@ export function CalculatorScreenContent(props: {
     stageNode = <CalculatorEstimateStagesFacade {...estimateStageProps} forcedStage="flooring" />;
   } else if (stageFlags.isWallFinishStage) {
     stageNode = <CalculatorEstimateStagesFacade {...estimateStageProps} forcedStage="wallfinish" />;
+  } else if (stageFlags.isCeilingsStage) {
+    stageNode = <CalculatorEstimateStagesFacade {...estimateStageProps} forcedStage="ceilings" />;
   } else {
     stageNode = <CalculatorEstimateStagesFacade {...estimateStageProps} forcedStage="doors" />;
   }

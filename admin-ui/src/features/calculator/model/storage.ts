@@ -1,6 +1,6 @@
 import type { CalculatorStage } from "../model/types";
 
-const calculatorStageOptions: CalculatorStage[] = ["project", "rooms", "doors", "warmfloor", "flooring", "wallfinish"];
+const calculatorStageOptions: CalculatorStage[] = ["project", "rooms", "doors", "warmfloor", "flooring", "wallfinish", "ceilings"];
 
 // Storage-ключи и persist helpers калькулятора.
 // Этот модуль отвечает только за чтение/запись UI-настроек и draft-ключей в session/local storage.

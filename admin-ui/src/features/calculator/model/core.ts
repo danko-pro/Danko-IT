@@ -38,4 +38,4 @@ export type CalculatorSummary = {
   perimeter_source?: string;
 };
 
-export type CalculatorStage = "project" | "rooms" | "doors" | "warmfloor" | "flooring" | "wallfinish";
+export type CalculatorStage = "project" | "rooms" | "doors" | "warmfloor" | "flooring" | "wallfinish" | "ceilings";

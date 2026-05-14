@@ -8,7 +8,7 @@ URL: `https://docs.google.com/spreadsheets/d/1PWoIgBbEC10g7DKAV2LVIZBywcEvx3TaJB
 
 Scope: только инвентаризация и техническая спецификация будущего переноса потолочного калькулятора. Runtime-код, миграции, repositories, routes, payload builders, tests и frontend не изменялись.
 
-Repository note: `Gap-map file not found in repo`. Локальный файл `docs/calculator-google-sheets-gap-map.md` существует, но на момент проверки не отслеживается git как файл репозитория.
+Repository note: `Gap-map file is tracked in repo: docs/calculator-google-sheets-gap-map.md`.
 
 ## 1. Executive summary
 

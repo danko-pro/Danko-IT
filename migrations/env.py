@@ -33,6 +33,9 @@ current_dialect_name: str | None = None
 SQLITE_ESTIMATE_TABLES = {
     "estimate_door_catalog",
     "estimate_door_component_catalog",
+    "estimate_ceiling_catalog_items",
+    "estimate_ceiling_configs",
+    "estimate_ceiling_rooms",
     "estimate_flooring_configs",
     "estimate_flooring_coverings",
     "estimate_flooring_layouts",
@@ -41,6 +44,7 @@ SQLITE_ESTIMATE_TABLES = {
     "estimate_flooring_rooms",
     "estimate_project_door_components",
     "estimate_project_doors",
+    "estimate_project_ceiling_items",
     "estimate_projects",
     "estimate_room_floor_sections",
     "estimate_room_openings",

@@ -461,6 +461,95 @@ estimate_project_door_components = Table(
     Column("updated_at", Text, nullable=False, server_default=text("CURRENT_TIMESTAMP")),
 )
 
+estimate_ceiling_configs = Table(
+    "estimate_ceiling_configs",
+    metadata,
+    Column("project_id", Integer, ForeignKey("estimate_projects.id", ondelete="CASCADE"), primary_key=True),
+    Column("owner_user_id", Integer, ForeignKey("app_users.id", ondelete="CASCADE"), nullable=True),
+    Column("default_package_code", Text),
+    Column("price_factor", Float, nullable=False, server_default=text("1")),
+    Column("note", Text),
+    Column("created_at", Text, nullable=False, server_default=text("CURRENT_TIMESTAMP")),
+    Column("updated_at", Text, nullable=False, server_default=text("CURRENT_TIMESTAMP")),
+)
+
+estimate_ceiling_catalog_items = Table(
+    "estimate_ceiling_catalog_items",
+    metadata,
+    Column("id", Integer, primary_key=True, autoincrement=True),
+    Column("owner_user_id", Integer, ForeignKey("app_users.id", ondelete="CASCADE"), nullable=True),
+    Column("source_code", Text, nullable=False),
+    Column("title", Text, nullable=False),
+    Column("category", Text, nullable=False),
+    Column("unit", Text, nullable=False),
+    Column("work_price", Float, nullable=False, server_default=text("0")),
+    Column("material_price", Float, nullable=False, server_default=text("0")),
+    Column("equipment_price", Float, nullable=False, server_default=text("0")),
+    Column("consumables_price", Float, nullable=False, server_default=text("0")),
+    Column("price_factor", Float, nullable=False, server_default=text("1")),
+    Column("quantity_source", Text),
+    Column("quantity_formula", Text),
+    Column("include_section", Text, nullable=False, server_default=text("'ceilings'")),
+    Column("package_code", Text),
+    Column("note", Text),
+    Column("is_active", Integer, nullable=False, server_default=text("1")),
+    Column("sort_order", Integer, nullable=False, server_default=text("100")),
+    Column("created_at", Text, nullable=False, server_default=text("CURRENT_TIMESTAMP")),
+    Column("updated_at", Text, nullable=False, server_default=text("CURRENT_TIMESTAMP")),
+)
+
+estimate_ceiling_rooms = Table(
+    "estimate_ceiling_rooms",
+    metadata,
+    Column("id", Integer, primary_key=True, autoincrement=True),
+    Column("owner_user_id", Integer, ForeignKey("app_users.id", ondelete="CASCADE"), nullable=True),
+    Column("project_id", Integer, ForeignKey("estimate_projects.id", ondelete="CASCADE"), nullable=False),
+    Column("room_id", Integer, ForeignKey("estimate_rooms.id", ondelete="CASCADE"), nullable=False),
+    Column("default_catalog_item_id", Integer, ForeignKey("estimate_ceiling_catalog_items.id", ondelete="SET NULL")),
+    Column("is_enabled", Integer, nullable=False, server_default=text("1")),
+    Column("ceiling_area_m2", Float),
+    Column("area_source", Text, nullable=False, server_default=text("'room_area'")),
+    Column("perimeter_m", Float),
+    Column("perimeter_source", Text, nullable=False, server_default=text("'room_perimeter'")),
+    Column("package_code_snapshot", Text),
+    Column("note", Text),
+    Column("sort_order", Integer, nullable=False, server_default=text("100")),
+    Column("created_at", Text, nullable=False, server_default=text("CURRENT_TIMESTAMP")),
+    Column("updated_at", Text, nullable=False, server_default=text("CURRENT_TIMESTAMP")),
+)
+
+estimate_project_ceiling_items = Table(
+    "estimate_project_ceiling_items",
+    metadata,
+    Column("id", Integer, primary_key=True, autoincrement=True),
+    Column("owner_user_id", Integer, ForeignKey("app_users.id", ondelete="CASCADE"), nullable=True),
+    Column("project_id", Integer, ForeignKey("estimate_projects.id", ondelete="CASCADE"), nullable=False),
+    Column("room_id", Integer, ForeignKey("estimate_rooms.id", ondelete="SET NULL")),
+    Column("source_catalog_item_id", Integer, ForeignKey("estimate_ceiling_catalog_items.id", ondelete="SET NULL")),
+    Column("source_code_snapshot", Text),
+    Column("title_snapshot", Text, nullable=False),
+    Column("category_snapshot", Text),
+    Column("unit_snapshot", Text, nullable=False),
+    Column("quantity", Float, nullable=False, server_default=text("0")),
+    Column("quantity_source", Text, nullable=False, server_default=text("'manual'")),
+    Column("quantity_formula_snapshot", Text),
+    Column("work_price_snapshot", Float, nullable=False, server_default=text("0")),
+    Column("material_price_snapshot", Float, nullable=False, server_default=text("0")),
+    Column("equipment_price_snapshot", Float, nullable=False, server_default=text("0")),
+    Column("consumables_price_snapshot", Float, nullable=False, server_default=text("0")),
+    Column("price_factor_snapshot", Float, nullable=False, server_default=text("1")),
+    Column("work_total", Float, nullable=False, server_default=text("0")),
+    Column("material_total", Float, nullable=False, server_default=text("0")),
+    Column("equipment_total", Float, nullable=False, server_default=text("0")),
+    Column("consumables_total", Float, nullable=False, server_default=text("0")),
+    Column("total", Float, nullable=False, server_default=text("0")),
+    Column("note_snapshot", Text),
+    Column("is_enabled", Integer, nullable=False, server_default=text("1")),
+    Column("sort_order", Integer, nullable=False, server_default=text("100")),
+    Column("created_at", Text, nullable=False, server_default=text("CURRENT_TIMESTAMP")),
+    Column("updated_at", Text, nullable=False, server_default=text("CURRENT_TIMESTAMP")),
+)
+
 Index(
     "ix_estimate_projects_owner_updated",
     estimate_projects.c.owner_user_id,
@@ -674,7 +763,89 @@ Index(
     estimate_project_door_components.c.project_door_id,
 )
 
+Index("ix_estimate_ceiling_configs_owner", estimate_ceiling_configs.c.owner_user_id)
+Index("ix_estimate_ceiling_configs_project", estimate_ceiling_configs.c.project_id)
+Index(
+    "ix_estimate_ceiling_configs_owner_project",
+    estimate_ceiling_configs.c.owner_user_id,
+    estimate_ceiling_configs.c.project_id,
+)
+Index("ix_estimate_ceiling_catalog_items_owner", estimate_ceiling_catalog_items.c.owner_user_id)
+Index("ix_estimate_ceiling_catalog_items_source_code", estimate_ceiling_catalog_items.c.source_code)
+Index(
+    "ix_estimate_ceiling_catalog_items_owner_active",
+    estimate_ceiling_catalog_items.c.owner_user_id,
+    estimate_ceiling_catalog_items.c.is_active,
+)
+Index(
+    "uq_estimate_ceiling_catalog_items_global_source_code",
+    estimate_ceiling_catalog_items.c.source_code,
+    unique=True,
+    sqlite_where=estimate_ceiling_catalog_items.c.owner_user_id.is_(None),
+    postgresql_where=estimate_ceiling_catalog_items.c.owner_user_id.is_(None),
+)
+Index(
+    "uq_estimate_ceiling_catalog_items_owner_source_code",
+    estimate_ceiling_catalog_items.c.owner_user_id,
+    estimate_ceiling_catalog_items.c.source_code,
+    unique=True,
+    sqlite_where=estimate_ceiling_catalog_items.c.owner_user_id.is_not(None),
+    postgresql_where=estimate_ceiling_catalog_items.c.owner_user_id.is_not(None),
+)
+Index("ix_estimate_ceiling_rooms_owner", estimate_ceiling_rooms.c.owner_user_id)
+Index("ix_estimate_ceiling_rooms_project", estimate_ceiling_rooms.c.project_id)
+Index("ix_estimate_ceiling_rooms_room", estimate_ceiling_rooms.c.room_id)
+Index(
+    "ix_estimate_ceiling_rooms_owner_project",
+    estimate_ceiling_rooms.c.owner_user_id,
+    estimate_ceiling_rooms.c.project_id,
+)
+Index(
+    "ix_estimate_ceiling_rooms_owner_project_room",
+    estimate_ceiling_rooms.c.owner_user_id,
+    estimate_ceiling_rooms.c.project_id,
+    estimate_ceiling_rooms.c.room_id,
+)
+Index(
+    "uq_estimate_ceiling_rooms_global_project_room",
+    estimate_ceiling_rooms.c.project_id,
+    estimate_ceiling_rooms.c.room_id,
+    unique=True,
+    sqlite_where=estimate_ceiling_rooms.c.owner_user_id.is_(None),
+    postgresql_where=estimate_ceiling_rooms.c.owner_user_id.is_(None),
+)
+Index(
+    "uq_estimate_ceiling_rooms_owner_project_room",
+    estimate_ceiling_rooms.c.owner_user_id,
+    estimate_ceiling_rooms.c.project_id,
+    estimate_ceiling_rooms.c.room_id,
+    unique=True,
+    sqlite_where=estimate_ceiling_rooms.c.owner_user_id.is_not(None),
+    postgresql_where=estimate_ceiling_rooms.c.owner_user_id.is_not(None),
+)
+Index("ix_estimate_project_ceiling_items_owner", estimate_project_ceiling_items.c.owner_user_id)
+Index("ix_estimate_project_ceiling_items_project", estimate_project_ceiling_items.c.project_id)
+Index("ix_estimate_project_ceiling_items_room", estimate_project_ceiling_items.c.room_id)
+Index(
+    "ix_estimate_project_ceiling_items_source_catalog",
+    estimate_project_ceiling_items.c.source_catalog_item_id,
+)
+Index(
+    "ix_estimate_project_ceiling_items_owner_project",
+    estimate_project_ceiling_items.c.owner_user_id,
+    estimate_project_ceiling_items.c.project_id,
+)
+Index(
+    "ix_estimate_project_ceiling_items_owner_project_room",
+    estimate_project_ceiling_items.c.owner_user_id,
+    estimate_project_ceiling_items.c.project_id,
+    estimate_project_ceiling_items.c.room_id,
+)
+
 __all__ = [
+    "estimate_ceiling_catalog_items",
+    "estimate_ceiling_configs",
+    "estimate_ceiling_rooms",
     "estimate_door_catalog",
     "estimate_door_component_catalog",
     "estimate_flooring_configs",
@@ -685,6 +856,7 @@ __all__ = [
     "estimate_flooring_rooms",
     "estimate_project_door_components",
     "estimate_project_doors",
+    "estimate_project_ceiling_items",
     "estimate_projects",
     "estimate_room_floor_sections",
     "estimate_room_openings",

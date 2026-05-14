@@ -12,12 +12,12 @@ import {
   trimFloat,
 } from "../shared";
 import { CalculatorStageShell } from "../stage/shell";
-import type { ProjectCeilingItemPayload } from "./payload";
 import type {
   CalculatorCeilingRoom,
   CalculatorCeilingSpecificationItem,
   CalculatorProjectCeilingItem,
 } from "./model";
+import type { ProjectCeilingItemPayload } from "./payload";
 
 type CeilingItemFormState = {
   title: string;
@@ -44,10 +44,10 @@ export type CeilingsStageSectionProps = {
 };
 
 const quantitySourceOptions = [
-  { value: "manual", label: "Р’СЂСѓС‡РЅСѓСЋ" },
-  { value: "room_area", label: "РџРѕ РїР»РѕС‰Р°РґРё" },
-  { value: "room_perimeter", label: "РџРѕ РїРµСЂРёРјРµС‚СЂСѓ" },
-  { value: "pieces", label: "РЁС‚СѓРєРё" },
+  { value: "manual", label: "Вручную" },
+  { value: "room_area", label: "По площади" },
+  { value: "room_perimeter", label: "По периметру" },
+  { value: "pieces", label: "Штуки" },
 ];
 
 export function CeilingsStageSection(props: CeilingsStageSectionProps) {
@@ -62,22 +62,22 @@ export function CeilingsStageSection(props: CeilingsStageSectionProps) {
   return (
     <CalculatorStageShell
       className="ceilings-stage"
-      eyebrow="РџРѕС‚РѕР»РєРё"
-      title="РџРѕС‚РѕР»РѕС‡РЅС‹Р№ РєР°Р»СЊРєСѓР»СЏС‚РѕСЂ"
+      eyebrow="Потолки"
+      title="Потолочный калькулятор"
       isReady={Boolean(props.projectDetail)}
     >
       {!ceilings || !projectId ? (
-        <CalculatorStageEmptyState>РЎРЅР°С‡Р°Р»Р° РІС‹Р±РµСЂРёС‚Рµ РѕР±СЉРµРєС‚ РєР°Р»СЊРєСѓР»СЏС‚РѕСЂР°.</CalculatorStageEmptyState>
+        <CalculatorStageEmptyState>Сначала выберите объект калькулятора.</CalculatorStageEmptyState>
       ) : (
         <div className="space-y-4">
           <section className="subpanel calculator-stage-section warmfloor-summary-panel flooring-summary-panel p-3">
             <CalculatorStageSectionHeader
-              kicker="РЎРІРѕРґРєР°"
-              title="РџРѕС‚РѕР»РєРё РїРѕ РѕР±СЉРµРєС‚Сѓ"
-              note={configPackageCode ? `РџР°РєРµС‚: ${configPackageCode}` : "РџР°РєРµС‚ РїРѕС‚РѕР»РєРѕРІ РЅРµ РІС‹Р±СЂР°РЅ"}
+              kicker="Сводка"
+              title="Потолки по объекту"
+              note={configPackageCode ? `Пакет: ${configPackageCode}` : "Пакет потолков не выбран"}
               actions={
                 <Button type="button" onClick={() => setCreateFormOpen((current) => !current)}>
-                  {createFormOpen ? "РЎРєСЂС‹С‚СЊ С„РѕСЂРјСѓ" : "Р”РѕР±Р°РІРёС‚СЊ РїРѕР·РёС†РёСЋ"}
+                  {createFormOpen ? "Скрыть форму" : "Добавить позицию"}
                 </Button>
               }
             />
@@ -85,27 +85,27 @@ export function CeilingsStageSection(props: CeilingsStageSectionProps) {
               <>
                 <div className="warmfloor-summary-total">
                   <div>
-                    <div className="warmfloor-summary-label">РС‚РѕРіРѕ РїРѕ РїРѕС‚РѕР»РєР°Рј</div>
+                    <div className="warmfloor-summary-label">Итого по потолкам</div>
                     <div className="warmfloor-summary-value">{formatMoney(summary.grand_total)}</div>
                   </div>
                   <div className="warmfloor-summary-rate">
-                    {summary.enabled_items_count} / {summary.items_count} РїРѕР·РёС†РёР№ РІРєР»СЋС‡РµРЅРѕ
+                    {summary.enabled_items_count} / {summary.items_count} позиций включено
                   </div>
                 </div>
                 <div className="warmfloor-summary-strip">
-                  <MetricChip label="Р Р°Р±РѕС‚С‹" value={formatMoney(summary.work_total)} />
-                  <MetricChip label="РњР°С‚РµСЂРёР°Р»С‹" value={formatMoney(summary.material_total)} />
-                  <MetricChip label="РћР±РѕСЂСѓРґРѕРІР°РЅРёРµ" value={formatMoney(summary.equipment_total)} />
-                  <MetricChip label="Р Р°СЃС…РѕРґРЅРёРєРё" value={formatMoney(summary.consumables_total)} />
+                  <MetricChip label="Работы" value={formatMoney(summary.work_total)} />
+                  <MetricChip label="Материалы" value={formatMoney(summary.material_total)} />
+                  <MetricChip label="Оборудование" value={formatMoney(summary.equipment_total)} />
+                  <MetricChip label="Расходники" value={formatMoney(summary.consumables_total)} />
                 </div>
               </>
             ) : null}
             {!hasCeilingData ? (
               <CalculatorStageEmptyState>
                 <div className="space-y-3">
-                  <div>РџРѕС‚РѕР»РѕС‡РЅС‹Рµ РїРѕР·РёС†РёРё РїРѕРєР° РЅРµ РґРѕР±Р°РІР»РµРЅС‹.</div>
+                  <div>Потолочные позиции пока не добавлены.</div>
                   <Button type="button" onClick={() => setCreateFormOpen(true)}>
-                    Р”РѕР±Р°РІРёС‚СЊ РїРѕР·РёС†РёСЋ
+                    Добавить позицию
                   </Button>
                 </div>
               </CalculatorStageEmptyState>
@@ -117,7 +117,7 @@ export function CeilingsStageSection(props: CeilingsStageSectionProps) {
               busy={props.busyKey === `calculator-ceiling-item-create-${projectId}`}
               projectId={projectId}
               rooms={ceilings.rooms}
-              submitLabel="РЎРѕР·РґР°С‚СЊ РїРѕР·РёС†РёСЋ"
+              submitLabel="Создать позицию"
               onCancel={() => setCreateFormOpen(false)}
               onSubmit={async (payload) => {
                 await props.onCreateProjectCeilingItem(projectId, payload);
@@ -148,9 +148,9 @@ function CeilingRoomsList(props: { rooms: CalculatorCeilingRoom[] }) {
   return (
     <section className="subpanel calculator-stage-section p-3">
       <CalculatorStageSectionHeader
-        kicker="РџРѕРјРµС‰РµРЅРёСЏ"
-        title="РџРѕС‚РѕР»РѕС‡РЅС‹Рµ РЅР°СЃС‚СЂРѕР№РєРё РїРѕ РєРѕРјРЅР°С‚Р°Рј"
-        note={`${props.rooms.length} РїРѕРјРµС‰РµРЅРёР№`}
+        kicker="Помещения"
+        title="Потолочные настройки по комнатам"
+        note={`${props.rooms.length} помещений`}
       />
       {props.rooms.length ? (
         <div className="warmfloor-estimate-list">
@@ -158,13 +158,13 @@ function CeilingRoomsList(props: { rooms: CalculatorCeilingRoom[] }) {
             <article className="warmfloor-estimate-row-shell" key={room.room_id}>
               <div className="warmfloor-estimate-row">
                 <div className="warmfloor-estimate-main">
-                  <span className="warmfloor-estimate-kind">{room.is_enabled ? "Р’РєР»СЋС‡РµРЅРѕ" : "Р’С‹РєР»СЋС‡РµРЅРѕ"}</span>
-                  <span>{room.room_name || `РџРѕРјРµС‰РµРЅРёРµ #${room.room_id}`}</span>
+                  <span className="warmfloor-estimate-kind">{room.is_enabled ? "Включено" : "Выключено"}</span>
+                  <span>{room.room_name || `Помещение #${room.room_id}`}</span>
                 </div>
                 <div className="warmfloor-estimate-meta">
                   <span>{formatArea(room.ceiling_area_m2 ?? room.base_ceiling_area_m2 ?? 0)}</span>
                   <span>{formatMeters(room.perimeter_m ?? room.base_perimeter_m ?? 0)}</span>
-                  <span>{room.package_code_snapshot || "РџР°РєРµС‚ РЅРµ Р·Р°РґР°РЅ"}</span>
+                  <span>{room.package_code_snapshot || "Пакет не задан"}</span>
                 </div>
               </div>
               {room.note ? <div className="warmfloor-estimate-children">{room.note}</div> : null}
@@ -172,7 +172,7 @@ function CeilingRoomsList(props: { rooms: CalculatorCeilingRoom[] }) {
           ))}
         </div>
       ) : (
-        <CalculatorStageEmptyState>РџРѕ РїРѕС‚РѕР»РєР°Рј РїРѕРєР° РЅРµС‚ РЅР°СЃС‚СЂРѕРµРє РїРѕРјРµС‰РµРЅРёР№.</CalculatorStageEmptyState>
+        <CalculatorStageEmptyState>По потолкам пока нет настроек помещений.</CalculatorStageEmptyState>
       )}
     </section>
   );
@@ -190,14 +190,14 @@ function CeilingItemsList(props: {
 }) {
   return (
     <section className="subpanel calculator-stage-section warmfloor-estimate-panel p-3">
-      <CalculatorStageSectionHeader kicker="РџРѕР·РёС†РёРё" title="РџРѕС‚РѕР»РѕС‡РЅР°СЏ РІРµРґРѕРјРѕСЃС‚СЊ" note={`${props.items.length} СЃС‚СЂРѕРє`} />
+      <CalculatorStageSectionHeader kicker="Позиции" title="Потолочная ведомость" note={`${props.items.length} строк`} />
       {props.items.length ? (
         <div className="warmfloor-estimate-list">
           {props.items.map((item) => (
             <article className="warmfloor-estimate-row-shell" key={item.id}>
               <div className="warmfloor-estimate-row">
                 <div className="warmfloor-estimate-main">
-                  <span className="warmfloor-estimate-kind">{item.category_snapshot || "РџРѕС‚РѕР»РєРё"}</span>
+                  <span className="warmfloor-estimate-kind">{item.category_snapshot || "Потолки"}</span>
                   <span>{item.title_snapshot}</span>
                 </div>
                 <div className="warmfloor-estimate-meta">
@@ -209,12 +209,12 @@ function CeilingItemsList(props: {
               </div>
               <div className="warmfloor-estimate-children">
                 <CeilingMoneyBreakdown item={item} />
-                {!item.is_enabled ? <span>РџРѕР·РёС†РёСЏ РІС‹РєР»СЋС‡РµРЅР° РёР· РёС‚РѕРіРѕРІ.</span> : null}
+                {!item.is_enabled ? <span>Позиция выключена из итогов.</span> : null}
                 {item.note_snapshot ? <span>{item.note_snapshot}</span> : null}
               </div>
               <div className="mt-3 flex flex-wrap gap-2">
                 <Button type="button" variant="secondary" onClick={() => props.setEditingItemId(props.editingItemId === item.id ? null : item.id)}>
-                  {props.editingItemId === item.id ? "Р—Р°РєСЂС‹С‚СЊ" : "РР·РјРµРЅРёС‚СЊ"}
+                  {props.editingItemId === item.id ? "Закрыть" : "Изменить"}
                 </Button>
                 <Button
                   disabled={props.busyKey === `calculator-ceiling-item-delete-${item.id}`}
@@ -222,7 +222,7 @@ function CeilingItemsList(props: {
                   variant="secondary"
                   onClick={() => void props.onDeleteProjectCeilingItem(item.id)}
                 >
-                  РЈРґР°Р»РёС‚СЊ
+                  Удалить
                 </Button>
               </div>
               {props.editingItemId === item.id ? (
@@ -232,7 +232,7 @@ function CeilingItemsList(props: {
                     initialItem={item}
                     projectId={props.projectId}
                     rooms={props.rooms}
-                    submitLabel="РЎРѕС…СЂР°РЅРёС‚СЊ"
+                    submitLabel="Сохранить"
                     onCancel={() => props.setEditingItemId(null)}
                     onSubmit={async (payload) => {
                       await props.onUpdateProjectCeilingItem(item.id, { ...payload, project_id: props.projectId });
@@ -245,7 +245,7 @@ function CeilingItemsList(props: {
           ))}
         </div>
       ) : (
-        <CalculatorStageEmptyState>РџРѕС‚РѕР»РѕС‡РЅС‹Рµ РїРѕР·РёС†РёРё РїРѕРєР° РЅРµ РґРѕР±Р°РІР»РµРЅС‹.</CalculatorStageEmptyState>
+        <CalculatorStageEmptyState>Потолочные позиции пока не добавлены.</CalculatorStageEmptyState>
       )}
     </section>
   );
@@ -279,11 +279,11 @@ function CeilingItemForm(props: {
   return (
     <form className="subpanel calculator-stage-section p-3 space-y-3" onSubmit={(event) => void handleSubmit(event)}>
       <div className="grid gap-3 md:grid-cols-2">
-        <CeilingTextField label="РќР°Р·РІР°РЅРёРµ РїРѕР·РёС†РёРё" value={state.title} onChange={(value) => updateField("title", value)} />
-        <CeilingTextField label="РљР°С‚РµРіРѕСЂРёСЏ" value={state.category} onChange={(value) => updateField("category", value)} />
-        <CeilingTextField label="Р•РґРёРЅРёС†Р°" value={state.unit} onChange={(value) => updateField("unit", value)} />
+        <CeilingTextField label="Название позиции" value={state.title} onChange={(value) => updateField("title", value)} />
+        <CeilingTextField label="Категория" value={state.category} onChange={(value) => updateField("category", value)} />
+        <CeilingTextField label="Единица" value={state.unit} onChange={(value) => updateField("unit", value)} />
         <label className="block space-y-1">
-          <span className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">РСЃС‚РѕС‡РЅРёРє РєРѕР»-РІР°</span>
+          <span className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Источник кол-ва</span>
           <select
             className="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-3 py-2 text-sm text-slate-50 outline-none"
             disabled={props.busy}
@@ -297,36 +297,36 @@ function CeilingItemForm(props: {
             ))}
           </select>
         </label>
-        <CeilingNumberField label="РљРѕР»-РІРѕ" value={state.quantity} onChange={(value) => updateField("quantity", value)} />
+        <CeilingNumberField label="Кол-во" value={state.quantity} onChange={(value) => updateField("quantity", value)} />
         <label className="block space-y-1">
-          <span className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">РџРѕРјРµС‰РµРЅРёРµ</span>
+          <span className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Помещение</span>
           <select
             className="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-3 py-2 text-sm text-slate-50 outline-none"
             disabled={props.busy}
             value={state.roomId}
             onChange={(event) => updateField("roomId", event.target.value)}
           >
-            <option value="">Р‘РµР· РїСЂРёРІСЏР·РєРё</option>
+            <option value="">Без привязки</option>
             {props.rooms.map((room) => (
               <option key={room.room_id} value={String(room.room_id)}>
-                {room.room_name || `РџРѕРјРµС‰РµРЅРёРµ #${room.room_id}`}
+                {room.room_name || `Помещение #${room.room_id}`}
               </option>
             ))}
           </select>
         </label>
-        <CeilingNumberField label="Р Р°Р±РѕС‚Р° С†РµРЅР°" value={state.workPrice} onChange={(value) => updateField("workPrice", value)} />
-        <CeilingNumberField label="РњР°С‚РµСЂРёР°Р» С†РµРЅР°" value={state.materialPrice} onChange={(value) => updateField("materialPrice", value)} />
-        <CeilingNumberField label="РћР±РѕСЂСѓРґ. С†РµРЅР°" value={state.equipmentPrice} onChange={(value) => updateField("equipmentPrice", value)} />
-        <CeilingNumberField label="Р Р°СЃС…РѕРґРЅРёРєРё С†РµРЅР°" value={state.consumablesPrice} onChange={(value) => updateField("consumablesPrice", value)} />
-        <CeilingNumberField label="РљРѕСЌС„С„РёС†РёРµРЅС‚" value={state.priceFactor} onChange={(value) => updateField("priceFactor", value)} />
+        <CeilingNumberField label="Работа цена" value={state.workPrice} onChange={(value) => updateField("workPrice", value)} />
+        <CeilingNumberField label="Материал цена" value={state.materialPrice} onChange={(value) => updateField("materialPrice", value)} />
+        <CeilingNumberField label="Оборуд. цена" value={state.equipmentPrice} onChange={(value) => updateField("equipmentPrice", value)} />
+        <CeilingNumberField label="Расходники цена" value={state.consumablesPrice} onChange={(value) => updateField("consumablesPrice", value)} />
+        <CeilingNumberField label="Коэффициент" value={state.priceFactor} onChange={(value) => updateField("priceFactor", value)} />
         <label className="flex items-center gap-2 pt-7 text-sm text-slate-200">
           <input checked={state.isEnabled} disabled={props.busy} type="checkbox" onChange={(event) => updateField("isEnabled", event.target.checked)} />
-          Р’РєР»СЋС‡РёС‚СЊ РІ РёС‚РѕРіРё
+          Включить в итоги
         </label>
       </div>
 
       <label className="block space-y-1">
-        <span className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">РџСЂРёРјРµС‡Р°РЅРёРµ</span>
+        <span className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Примечание</span>
         <textarea
           className="min-h-20 w-full rounded-2xl border border-white/10 bg-slate-950/50 px-3 py-2 text-sm text-slate-50 outline-none"
           disabled={props.busy}
@@ -336,18 +336,18 @@ function CeilingItemForm(props: {
       </label>
 
       <div className="warmfloor-summary-strip">
-        <MetricChip label="Р Р°Р±РѕС‚С‹" value={formatMoney(previewTotals.work_total)} />
-        <MetricChip label="РњР°С‚РµСЂРёР°Р»С‹" value={formatMoney(previewTotals.material_total)} />
-        <MetricChip label="РћР±РѕСЂСѓРґРѕРІР°РЅРёРµ" value={formatMoney(previewTotals.equipment_total)} />
-        <MetricChip label="РС‚РѕРі" value={formatMoney(previewTotals.total)} />
+        <MetricChip label="Работы" value={formatMoney(previewTotals.work_total)} />
+        <MetricChip label="Материалы" value={formatMoney(previewTotals.material_total)} />
+        <MetricChip label="Оборудование" value={formatMoney(previewTotals.equipment_total)} />
+        <MetricChip label="Итог" value={formatMoney(previewTotals.total)} />
       </div>
 
       <div className="flex flex-wrap justify-end gap-2">
         <Button disabled={props.busy} type="button" variant="secondary" onClick={props.onCancel}>
-          РћС‚РјРµРЅР°
+          Отмена
         </Button>
         <Button disabled={props.busy || !canSubmit} type="submit">
-          {props.busy ? "РЎРѕС…СЂР°РЅСЏСЋ..." : props.submitLabel}
+          {props.busy ? "Сохраняю..." : props.submitLabel}
         </Button>
       </div>
     </form>
@@ -388,9 +388,9 @@ function CeilingSpecificationList(props: { specification: CalculatorCeilingSpeci
   return (
     <section className="subpanel calculator-stage-section warmfloor-estimate-panel p-3">
       <CalculatorStageSectionHeader
-        kicker="РЎРїРµС†РёС„РёРєР°С†РёСЏ"
-        title="РЎРіСЂСѓРїРїРёСЂРѕРІР°РЅРЅС‹Рµ РїРѕС‚РѕР»РѕС‡РЅС‹Рµ РїРѕР·РёС†РёРё"
-        note={`${props.specification.length} РіСЂСѓРїРї`}
+        kicker="Спецификация"
+        title="Сгруппированные потолочные позиции"
+        note={`${props.specification.length} групп`}
       />
       {props.specification.length ? (
         <div className="warmfloor-estimate-list">
@@ -398,7 +398,7 @@ function CeilingSpecificationList(props: { specification: CalculatorCeilingSpeci
             <article className="warmfloor-estimate-row-shell" key={`${item.category}-${item.title}-${item.unit}`}>
               <div className="warmfloor-estimate-row">
                 <div className="warmfloor-estimate-main">
-                  <span className="warmfloor-estimate-kind">{item.category || "РџРѕС‚РѕР»РєРё"}</span>
+                  <span className="warmfloor-estimate-kind">{item.category || "Потолки"}</span>
                   <span>{item.title}</span>
                 </div>
                 <div className="warmfloor-estimate-meta">
@@ -415,7 +415,7 @@ function CeilingSpecificationList(props: { specification: CalculatorCeilingSpeci
           ))}
         </div>
       ) : (
-        <CalculatorStageEmptyState>РЎРїРµС†РёС„РёРєР°С†РёСЏ РїРѕ РїРѕС‚РѕР»РєР°Рј РїРѕРєР° РїСѓСЃС‚Р°СЏ.</CalculatorStageEmptyState>
+        <CalculatorStageEmptyState>Спецификация по потолкам пока пустая.</CalculatorStageEmptyState>
       )}
     </section>
   );
@@ -429,10 +429,10 @@ function CeilingMoneyBreakdown(props: {
 }) {
   return (
     <>
-      <span>Р Р°Р±РѕС‚С‹: {formatMoney(props.item.work_total)}</span>
-      <span>РњР°С‚РµСЂРёР°Р»С‹: {formatMoney(props.item.material_total)}</span>
-      <span>РћР±РѕСЂСѓРґРѕРІР°РЅРёРµ: {formatMoney(props.item.equipment_total)}</span>
-      <span>Р Р°СЃС…РѕРґРЅРёРєРё: {formatMoney(props.item.consumables_total)}</span>
+      <span>Работы: {formatMoney(props.item.work_total)}</span>
+      <span>Материалы: {formatMoney(props.item.material_total)}</span>
+      <span>Оборудование: {formatMoney(props.item.equipment_total)}</span>
+      <span>Расходники: {formatMoney(props.item.consumables_total)}</span>
     </>
   );
 }
@@ -440,8 +440,8 @@ function CeilingMoneyBreakdown(props: {
 function buildInitialCeilingItemFormState(item?: CalculatorProjectCeilingItem): CeilingItemFormState {
   return {
     title: item?.title_snapshot ?? "",
-    category: item?.category_snapshot ?? "РџРѕС‚РѕР»РєРё",
-    unit: item?.unit_snapshot ?? "РјВІ",
+    category: item?.category_snapshot ?? "Потолки",
+    unit: item?.unit_snapshot ?? "м²",
     quantity: item ? String(item.quantity) : "1",
     quantitySource: item?.quantity_source ?? "manual",
     roomId: item?.room_id ? String(item.room_id) : "",

@@ -136,7 +136,7 @@ function CeilingRoomsPanel(props: { rooms: CalculatorCeilingRoom[] }) {
               <div className="warmfloor-estimate-row">
                 <div className="warmfloor-estimate-main">
                   <span className="warmfloor-estimate-kind">{room.is_enabled ? "Включено" : "Выключено"}</span>
-                  <span>{room.room_name || `Помещение #${room.room_id}`}</span>
+                  <strong>{room.room_name || `Помещение #${room.room_id}`}</strong>
                 </div>
                 <div className="warmfloor-estimate-meta">
                   <span>{formatArea(room.ceiling_area_m2 ?? room.base_ceiling_area_m2 ?? 0)}</span>
@@ -170,7 +170,7 @@ function CeilingItemsPanel(props: { items: CalculatorProjectCeilingItem[] }) {
               <div className="warmfloor-estimate-row">
                 <div className="warmfloor-estimate-main">
                   <span className="warmfloor-estimate-kind">{item.category_snapshot || "Потолки"}</span>
-                  <span>{item.title_snapshot}</span>
+                  <strong>{item.title_snapshot}</strong>
                 </div>
                 <div className="warmfloor-estimate-meta">
                   <span>

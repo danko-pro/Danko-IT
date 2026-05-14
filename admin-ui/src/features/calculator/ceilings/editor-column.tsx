@@ -28,46 +28,52 @@ export function CeilingsEditorColumn(props: CeilingsEditorColumnProps) {
   const enabledItemsCount = props.ceilings.items.filter((item) => item.is_enabled).length;
 
   return (
-    <section className="subpanel calculator-stage-section warmfloor-estimate-panel p-3">
+    <section className="subpanel calculator-stage-section warmfloor-estimate-panel ceilings-editor-panel p-3">
       <CalculatorStageSectionHeader
         kicker="Позиции"
         title="Потолочная ведомость"
         note={`${enabledItemsCount} / ${props.ceilings.items.length} позиций включено`}
         actions={
-          <Button type="button" onClick={() => setCreateFormOpen((current) => !current)}>
+          <Button
+            type="button"
+            onClick={() => {
+              setCreateFormOpen((current) => !current);
+              setEditingItemId(null);
+            }}
+          >
             {createFormOpen ? "Скрыть форму" : "Добавить позицию"}
           </Button>
         }
       />
 
-        {createFormOpen ? (
-          <div className="mt-3">
-            <CeilingItemForm
-              busy={props.busyKey === `calculator-ceiling-item-create-${props.projectId}`}
-              projectId={props.projectId}
-              rooms={props.ceilings.rooms}
-              submitLabel="Создать позицию"
-              surface="embedded"
-              onCancel={() => setCreateFormOpen(false)}
-              onSubmit={async (payload) => {
-                await props.onCreateProjectCeilingItem(props.projectId, payload);
-                setCreateFormOpen(false);
-                props.setPanelMode("summary");
-              }}
-            />
-          </div>
-        ) : null}
+      {createFormOpen ? (
+        <div className="ceilings-inline-form">
+          <CeilingItemForm
+            busy={props.busyKey === `calculator-ceiling-item-create-${props.projectId}`}
+            projectId={props.projectId}
+            rooms={props.ceilings.rooms}
+            submitLabel="Создать позицию"
+            surface="embedded"
+            onCancel={() => setCreateFormOpen(false)}
+            onSubmit={async (payload) => {
+              await props.onCreateProjectCeilingItem(props.projectId, payload);
+              setCreateFormOpen(false);
+              props.setPanelMode("summary");
+            }}
+          />
+        </div>
+      ) : null}
 
-        {!createFormOpen && props.ceilings.items.length === 0 ? (
-          <CalculatorStageEmptyState>
-            <div className="space-y-3">
-              <div>Потолочные позиции пока не добавлены.</div>
-              <Button type="button" onClick={() => setCreateFormOpen(true)}>
-                Добавить позицию
-              </Button>
-            </div>
-          </CalculatorStageEmptyState>
-        ) : null}
+      {!createFormOpen && props.ceilings.items.length === 0 ? (
+        <CalculatorStageEmptyState className="ceilings-empty-state">
+          <div className="space-y-3">
+            <div>Потолочные позиции пока не добавлены.</div>
+            <Button type="button" onClick={() => setCreateFormOpen(true)}>
+              Добавить позицию
+            </Button>
+          </div>
+        </CalculatorStageEmptyState>
+      ) : null}
 
       <CeilingItemsList
         busyKey={props.busyKey}
@@ -96,61 +102,81 @@ function CeilingItemsList(props: {
   if (!props.items.length) {
     return null;
   }
+  const roomNameById = new Map(
+    props.rooms.map((room) => [room.room_id, room.room_name || `Помещение #${room.room_id}`]),
+  );
 
   return (
     <div className="mt-3">
       <div className="warmfloor-estimate-list">
-        {props.items.map((item) => (
-          <article className="warmfloor-estimate-row-shell" key={item.id}>
-            <div className="warmfloor-estimate-row">
-              <div className="warmfloor-estimate-main">
-                <span className="warmfloor-estimate-kind">{item.category_snapshot || "Потолки"}</span>
-                <span>{item.title_snapshot}</span>
+        {props.items.map((item) => {
+          const roomName = item.room_id ? roomNameById.get(item.room_id) ?? `Помещение #${item.room_id}` : null;
+
+          return (
+            <article
+              className={
+                item.is_enabled
+                  ? "warmfloor-estimate-row-shell ceilings-item-row"
+                  : "warmfloor-estimate-row-shell ceilings-item-row ceilings-item-row-disabled"
+              }
+              key={item.id}
+            >
+              <div className="warmfloor-estimate-row">
+                <div className="warmfloor-estimate-main">
+                  <span className="warmfloor-estimate-kind">{item.category_snapshot || "Потолки"}</span>
+                  <strong>{item.title_snapshot}</strong>
+                </div>
+                <div className="warmfloor-estimate-meta">
+                  <span>
+                    {trimFloat(item.quantity)} {item.unit_snapshot}
+                  </span>
+                  <span>{formatMoney(item.total)}</span>
+                </div>
               </div>
-              <div className="warmfloor-estimate-meta">
-                <span>
-                  {trimFloat(item.quantity)} {item.unit_snapshot}
-                </span>
-                <span>{formatMoney(item.total)}</span>
+              <div className="warmfloor-estimate-children">
+                <CeilingMoneyBreakdown item={item} />
+                <span>{roomName ? `Помещение: ${roomName}` : "Без привязки к помещению"}</span>
+                {!item.is_enabled ? <span>Позиция выключена из итогов.</span> : null}
+                {item.note_snapshot ? <span>{item.note_snapshot}</span> : null}
               </div>
-            </div>
-            <div className="warmfloor-estimate-children">
-              <CeilingMoneyBreakdown item={item} />
-              {!item.is_enabled ? <span>Позиция выключена из итогов.</span> : null}
-              {item.note_snapshot ? <span>{item.note_snapshot}</span> : null}
-            </div>
-            <div className="mt-3 flex flex-wrap gap-2">
-              <Button type="button" variant="secondary" onClick={() => props.setEditingItemId(props.editingItemId === item.id ? null : item.id)}>
-                {props.editingItemId === item.id ? "Закрыть" : "Изменить"}
-              </Button>
-              <Button
-                disabled={props.busyKey === `calculator-ceiling-item-delete-${item.id}`}
-                type="button"
-                variant="secondary"
-                onClick={() => void props.onDeleteProjectCeilingItem(item.id)}
-              >
-                Удалить
-              </Button>
-            </div>
-            {props.editingItemId === item.id ? (
-              <div className="mt-3">
-                <CeilingItemForm
-                  busy={props.busyKey === `calculator-ceiling-item-save-${item.id}`}
-                  initialItem={item}
-                  projectId={props.projectId}
-                  rooms={props.rooms}
-                  submitLabel="Сохранить"
-                  surface="embedded"
-                  onCancel={() => props.setEditingItemId(null)}
-                  onSubmit={async (payload) => {
-                    await props.onUpdateProjectCeilingItem(item.id, { ...payload, project_id: props.projectId });
-                    props.setEditingItemId(null);
-                  }}
-                />
+              <div className="ceilings-item-actions">
+                <Button
+                  type="button"
+                  variant="micro"
+                  onClick={() => props.setEditingItemId(props.editingItemId === item.id ? null : item.id)}
+                >
+                  {props.editingItemId === item.id ? "Закрыть" : "Изменить"}
+                </Button>
+                <Button
+                  disabled={props.busyKey === `calculator-ceiling-item-delete-${item.id}`}
+                  type="button"
+                  tone="danger"
+                  variant="micro"
+                  onClick={() => void props.onDeleteProjectCeilingItem(item.id)}
+                >
+                  Удалить
+                </Button>
               </div>
-            ) : null}
-          </article>
-        ))}
+              {props.editingItemId === item.id ? (
+                <div className="ceilings-inline-form">
+                  <CeilingItemForm
+                    busy={props.busyKey === `calculator-ceiling-item-save-${item.id}`}
+                    initialItem={item}
+                    projectId={props.projectId}
+                    rooms={props.rooms}
+                    submitLabel="Сохранить"
+                    surface="embedded"
+                    onCancel={() => props.setEditingItemId(null)}
+                    onSubmit={async (payload) => {
+                      await props.onUpdateProjectCeilingItem(item.id, { ...payload, project_id: props.projectId });
+                      props.setEditingItemId(null);
+                    }}
+                  />
+                </div>
+              ) : null}
+            </article>
+          );
+        })}
       </div>
     </div>
   );

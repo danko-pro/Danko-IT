@@ -136,6 +136,104 @@
     font-size: 11px;
   }
 
+  .ceilings-stage .panel-title {
+    font-size: 0.92rem;
+  }
+
+  .ceilings-stage .subpanel {
+    border-radius: 14px;
+  }
+
+  .ceilings-stage .field-label {
+    font-size: 10px;
+  }
+
+  .ceilings-stage .text-input {
+    padding: 0.62rem 0.78rem;
+    font-size: 13px;
+  }
+
+  .ceilings-stage .action-button,
+  .ceilings-stage .secondary-button {
+    padding: 0.68rem 0.95rem;
+    font-size: 0.82rem;
+  }
+
+  .ceilings-stage .micro-action {
+    min-height: 1.8rem;
+    border-radius: 10px;
+    padding: 0.34rem 0.56rem;
+    font-size: 10px;
+  }
+
+  .ceilings-stage .stat-chip,
+  .ceilings-stage .slot-chip {
+    padding: 0.28rem 0.52rem;
+    font-size: 10px;
+  }
+
+  .ceilings-editor-panel {
+    gap: 0.75rem;
+  }
+
+  .ceilings-inline-form {
+    margin-top: 0.72rem;
+    min-width: 0;
+  }
+
+  .ceilings-empty-state {
+    padding: 1.2rem 0.9rem;
+  }
+
+  .ceilings-item-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.42rem;
+    margin-top: 0.55rem;
+  }
+
+  .ceilings-item-row-disabled {
+    opacity: 0.68;
+  }
+
+  .ceilings-item-form {
+    overflow: visible;
+  }
+
+  .ceilings-form-grid {
+    display: grid;
+    gap: 0.38rem;
+    min-width: 0;
+  }
+
+  .ceilings-form-grid-main {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 8.2rem), 1fr));
+  }
+
+  .ceilings-form-grid-rates {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 6.9rem), 1fr));
+  }
+
+  .ceilings-form-toggle {
+    width: max-content;
+    max-width: 100%;
+  }
+
+  .ceilings-note-input {
+    min-height: 4.6rem;
+    resize: vertical;
+  }
+
+  .ceilings-stage .ceilings-item-form select.text-input-select-with-help {
+    background-position: 0 0, right 0.62rem center;
+    padding-right: 1.85rem;
+  }
+
+  .ceilings-form-total {
+    margin-top: 0.1rem;
+  }
+
   .flooring-room-card {
     overflow: hidden;
   }

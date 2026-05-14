@@ -27,7 +27,10 @@ export function CeilingItemForm(props: CeilingItemFormProps) {
   const [state, setState] = useState<CeilingItemFormState>(() => buildInitialCeilingItemFormState(props.initialItem));
   const previewTotals = calculateCeilingTotals(state);
   const canSubmit = Boolean(state.title.trim() && state.unit.trim());
-  const formClassName = props.surface === "embedded" ? "flooring-techmap-form" : "subpanel calculator-stage-section p-3 flooring-techmap-form";
+  const formClassName =
+    props.surface === "embedded"
+      ? "flooring-techmap-form ceilings-item-form"
+      : "subpanel calculator-stage-section p-3 flooring-techmap-form ceilings-item-form";
 
   function updateField(field: keyof CeilingItemFormState, value: string | boolean) {
     setState((current) => ({ ...current, [field]: value }));
@@ -45,82 +48,125 @@ export function CeilingItemForm(props: CeilingItemFormProps) {
     <form className={formClassName} onSubmit={(event) => void handleSubmit(event)}>
       <div className="flooring-techmap-form-body">
         <CeilingFormStep title="1. Позиция" note="Название, категория и единица измерения">
-          <div className="grid gap-3 md:grid-cols-3">
-            <CeilingTextField label="Название позиции" value={state.title} onChange={(value) => updateField("title", value)} />
-            <CeilingTextField label="Категория" value={state.category} onChange={(value) => updateField("category", value)} />
-            <CeilingTextField label="Единица" value={state.unit} onChange={(value) => updateField("unit", value)} />
+          <div className="ceilings-form-grid ceilings-form-grid-main">
+            <CeilingTextField
+              disabled={props.busy}
+              label="Название позиции"
+              value={state.title}
+              onChange={(value) => updateField("title", value)}
+            />
+            <CeilingTextField
+              disabled={props.busy}
+              label="Категория"
+              value={state.category}
+              onChange={(value) => updateField("category", value)}
+            />
+            <CeilingTextField
+              disabled={props.busy}
+              label="Единица"
+              value={state.unit}
+              onChange={(value) => updateField("unit", value)}
+            />
           </div>
         </CeilingFormStep>
 
         <CeilingFormStep title="2. Количество и помещение" note="Источник количества и привязка к комнате">
-          <div className="grid gap-3 md:grid-cols-3">
-            <label className="block space-y-1">
-              <span className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Источник кол-ва</span>
-              <select
-                className="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-3 py-2 text-sm text-slate-50 outline-none"
-                disabled={props.busy}
-                value={state.quantitySource}
-                onChange={(event) => updateField("quantitySource", event.target.value)}
-              >
-                {quantitySourceOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <CeilingNumberField label="Кол-во" value={state.quantity} onChange={(value) => updateField("quantity", value)} />
-            <label className="block space-y-1">
-              <span className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Помещение</span>
-              <select
-                className="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-3 py-2 text-sm text-slate-50 outline-none"
-                disabled={props.busy}
-                value={state.roomId}
-                onChange={(event) => updateField("roomId", event.target.value)}
-              >
-                <option value="">Без привязки</option>
-                {props.rooms.map((room) => (
-                  <option key={room.room_id} value={String(room.room_id)}>
-                    {room.room_name || `Помещение #${room.room_id}`}
-                  </option>
-                ))}
-              </select>
-            </label>
+          <div className="ceilings-form-grid ceilings-form-grid-main">
+            <CeilingSelectField
+              disabled={props.busy}
+              label="Источник кол-ва"
+              options={quantitySourceOptions}
+              value={state.quantitySource}
+              onChange={(value) => updateField("quantitySource", value)}
+            />
+            <CeilingNumberField
+              disabled={props.busy}
+              label="Кол-во"
+              value={state.quantity}
+              onChange={(value) => updateField("quantity", value)}
+            />
+            <CeilingSelectField
+              disabled={props.busy}
+              label="Помещение"
+              options={[
+                { value: "", label: "Без привязки" },
+                ...props.rooms.map((room) => ({
+                  value: String(room.room_id),
+                  label: room.room_name || `Помещение #${room.room_id}`,
+                })),
+              ]}
+              value={state.roomId}
+              onChange={(value) => updateField("roomId", value)}
+            />
           </div>
         </CeilingFormStep>
 
         <CeilingFormStep title="3. Ставки" note="Работы, материалы, оборудование, расходники и коэффициент">
-          <div className="grid gap-3 md:grid-cols-5">
-            <CeilingNumberField label="Работа цена" value={state.workPrice} onChange={(value) => updateField("workPrice", value)} />
-            <CeilingNumberField label="Материал цена" value={state.materialPrice} onChange={(value) => updateField("materialPrice", value)} />
-            <CeilingNumberField label="Оборуд. цена" value={state.equipmentPrice} onChange={(value) => updateField("equipmentPrice", value)} />
-            <CeilingNumberField label="Расходники цена" value={state.consumablesPrice} onChange={(value) => updateField("consumablesPrice", value)} />
-            <CeilingNumberField label="Коэффициент" value={state.priceFactor} onChange={(value) => updateField("priceFactor", value)} />
+          <div className="ceilings-form-grid ceilings-form-grid-rates">
+            <CeilingNumberField
+              disabled={props.busy}
+              label="Работа цена"
+              value={state.workPrice}
+              onChange={(value) => updateField("workPrice", value)}
+            />
+            <CeilingNumberField
+              disabled={props.busy}
+              label="Материал цена"
+              value={state.materialPrice}
+              onChange={(value) => updateField("materialPrice", value)}
+            />
+            <CeilingNumberField
+              disabled={props.busy}
+              label="Оборуд. цена"
+              value={state.equipmentPrice}
+              onChange={(value) => updateField("equipmentPrice", value)}
+            />
+            <CeilingNumberField
+              disabled={props.busy}
+              label="Расходники цена"
+              value={state.consumablesPrice}
+              onChange={(value) => updateField("consumablesPrice", value)}
+            />
+            <CeilingNumberField
+              disabled={props.busy}
+              label="Коэффициент"
+              value={state.priceFactor}
+              onChange={(value) => updateField("priceFactor", value)}
+            />
           </div>
         </CeilingFormStep>
 
-        <CeilingFormStep title="4. Примечание и итог" note="Preview перед сохранением">
-          <label className="block space-y-1">
-            <span className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Примечание</span>
-            <textarea
-              className="min-h-20 w-full rounded-2xl border border-white/10 bg-slate-950/50 px-3 py-2 text-sm text-slate-50 outline-none"
+        <CeilingFormStep title="4. Примечание и итог" note="Предпросмотр перед сохранением">
+          <label className="flooring-techmap-toggle ceilings-form-toggle">
+            <input
+              checked={state.isEnabled}
               disabled={props.busy}
-              value={state.note}
-              onChange={(event) => updateField("note", event.target.value)}
+              type="checkbox"
+              onChange={(event) => updateField("isEnabled", event.target.checked)}
             />
+            <span>
+              <strong>Включить в итоги</strong>
+            </span>
           </label>
+
+          <CeilingTextAreaField
+            disabled={props.busy}
+            label="Примечание"
+            value={state.note}
+            onChange={(value) => updateField("note", value)}
+          />
 
           <div className="warmfloor-summary-strip">
             <MetricChip label="Работы" value={formatMoney(previewTotals.work_total)} />
             <MetricChip label="Материалы" value={formatMoney(previewTotals.material_total)} />
             <MetricChip label="Оборудование" value={formatMoney(previewTotals.equipment_total)} />
-            <MetricChip label="Итог" value={formatMoney(previewTotals.total)} />
+            <MetricChip label="Расходники" value={formatMoney(previewTotals.consumables_total)} />
           </div>
 
-          <label className="flex items-center gap-2 text-sm text-slate-200">
-            <input checked={state.isEnabled} disabled={props.busy} type="checkbox" onChange={(event) => updateField("isEnabled", event.target.checked)} />
-            Включить в итоги
-          </label>
+          <div className="warmfloor-estimate-total ceilings-form-total">
+            <span>Итого позиции</span>
+            <strong>{formatMoney(previewTotals.total)}</strong>
+          </div>
         </CeilingFormStep>
 
         <div className="flooring-techmap-actions">
@@ -148,32 +194,84 @@ function CeilingFormStep(props: { title: string; note: string; children: ReactNo
   );
 }
 
-function CeilingTextField(props: { label: string; value: string; onChange: (value: string) => void }) {
+function CeilingTextField(props: { disabled: boolean; label: string; value: string; onChange: (value: string) => void }) {
   return (
-    <label className="block space-y-1">
-      <span className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">{props.label}</span>
+    <CeilingFieldShell label={props.label}>
       <input
-        className="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-3 py-2 text-sm text-slate-50 outline-none"
+        className="text-input text-input-compact"
+        disabled={props.disabled}
         type="text"
         value={props.value}
         onChange={(event) => props.onChange(event.target.value)}
       />
-    </label>
+    </CeilingFieldShell>
   );
 }
 
-function CeilingNumberField(props: { label: string; value: string; onChange: (value: string) => void }) {
+function CeilingNumberField(props: { disabled: boolean; label: string; value: string; onChange: (value: string) => void }) {
   return (
-    <label className="block space-y-1">
-      <span className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">{props.label}</span>
+    <CeilingFieldShell label={props.label}>
       <input
-        className="w-full rounded-2xl border border-white/10 bg-slate-950/50 px-3 py-2 text-sm text-slate-50 outline-none"
+        className="text-input text-input-compact"
+        disabled={props.disabled}
         min="0"
         step="0.01"
         type="number"
         value={props.value}
         onChange={(event) => props.onChange(event.target.value)}
       />
+    </CeilingFieldShell>
+  );
+}
+
+function CeilingSelectField(props: {
+  disabled: boolean;
+  label: string;
+  options: Array<{ value: string; label: string }>;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <CeilingFieldShell label={props.label}>
+      <select
+        className="text-input text-input-compact text-input-select-with-help"
+        disabled={props.disabled}
+        value={props.value}
+        onChange={(event) => props.onChange(event.target.value)}
+      >
+        {props.options.map((option) => (
+          <option key={option.value || "empty"} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    </CeilingFieldShell>
+  );
+}
+
+function CeilingTextAreaField(props: {
+  disabled: boolean;
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <CeilingFieldShell label={props.label}>
+      <textarea
+        className="text-input text-input-compact ceilings-note-input"
+        disabled={props.disabled}
+        value={props.value}
+        onChange={(event) => props.onChange(event.target.value)}
+      />
+    </CeilingFieldShell>
+  );
+}
+
+function CeilingFieldShell(props: { label: string; children: ReactNode }) {
+  return (
+    <label className="block">
+      <div className="field-label field-label-compact">{props.label}</div>
+      <div className="field-control-shell">{props.children}</div>
     </label>
   );
 }

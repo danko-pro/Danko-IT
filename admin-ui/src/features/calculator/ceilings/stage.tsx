@@ -33,7 +33,7 @@ export function CeilingsStageSection(props: CeilingsStageSectionProps) {
     <CalculatorStageShell
       className="ceilings-stage"
       eyebrow="Потолки"
-      title="Потолочный калькулятор"
+      title="Потолочные работы, материалы, оборудование и расходники"
       actions={
         <>
           {ceilingPanelModes.map((option) => (

@@ -33,7 +33,7 @@ export function DashboardScreen() {
 
       {loading && !project ? (
         <section className="glass-panel p-5">
-          <div className="empty-state">Р—Р°РіСЂСѓР¶Р°СЋ РѕР±СЉРµРєС‚С‹...</div>
+          <div className="empty-state">Загружаю объекты...</div>
         </section>
       ) : null}
 
@@ -45,7 +45,7 @@ export function DashboardScreen() {
 
       {!loading && !project && !error ? (
         <section className="glass-panel p-5">
-          <div className="empty-state">РћР±СЉРµРєС‚РѕРІ РїРѕРєР° РЅРµС‚. Р”РѕР±Р°РІСЊС‚Рµ РЅРѕРІС‹Р№ СЃРїСЂР°РІР° РІ СЃС‚СЂРѕРєРµ РІРєР»Р°РґРѕРє.</div>
+          <div className="empty-state">Объектов пока нет. Добавьте новый справа в строке вкладок.</div>
         </section>
       ) : null}
 

@@ -15,7 +15,7 @@ import { normalizeDashboardText } from "./project-text-normalization";
 export function mapAdvanceRecord(record: DashboardProjectAdvanceApiRecord): ProjectCardAdvanceItem {
   return {
     id: String(record.id),
-    title: record.title,
+    title: normalizeDashboardText(record.title),
     amount: record.amount,
     date: record.date,
     status: record.status,
@@ -26,12 +26,12 @@ export function mapLedgerDocumentRecord(record: DashboardProjectLedgerDocumentAp
   return {
     id: String(record.id),
     kind: record.kind,
-    title: record.title,
+    title: normalizeDashboardText(record.title),
     date: record.date,
     amount: record.amount,
     sourceFile: {
       id: record.source_file.id,
-      fileName: record.source_file.file_name,
+      fileName: normalizeDashboardText(record.source_file.file_name),
       mimeType: record.source_file.mime_type,
       uploadedAt: record.source_file.uploaded_at,
     },
@@ -42,19 +42,19 @@ export function mapLedgerDocumentRecord(record: DashboardProjectLedgerDocumentAp
 
 export function mapContractRecord(record: DashboardProjectContractApiRecord): ProjectCardContract {
   return {
-    fileName: record.file_name,
-    title: record.title,
-    number: record.number,
+    fileName: normalizeDashboardText(record.file_name),
+    title: normalizeDashboardText(record.title),
+    number: normalizeDashboardText(record.number),
     signedAt: record.signed_at,
     startDate: record.start_date,
     plannedEndDate: record.planned_end_date,
     amount: record.amount,
-    advanceTerms: record.advance_terms,
+    advanceTerms: normalizeDashboardText(record.advance_terms),
     extractionStatus: record.extraction_status,
     sourceFile: record.source_file
       ? {
           id: record.source_file.id,
-          fileName: record.source_file.file_name,
+          fileName: normalizeDashboardText(record.source_file.file_name),
           mimeType: record.source_file.mime_type,
           uploadedAt: record.source_file.uploaded_at,
         }
@@ -63,10 +63,10 @@ export function mapContractRecord(record: DashboardProjectContractApiRecord): Pr
     milestones: record.milestones.map((milestone) => ({
       id: String(milestone.id),
       kind: milestone.kind,
-      title: milestone.title,
+      title: normalizeDashboardText(milestone.title),
       plannedDate: milestone.planned_date,
       amount: typeof milestone.amount === "number" ? milestone.amount : undefined,
-      note: milestone.note || undefined,
+      note: milestone.note ? normalizeDashboardText(milestone.note) : undefined,
       status: milestone.status,
     })),
   };
@@ -84,7 +84,7 @@ export function mapLedgerRecord(
     id: String(record.id),
     category: normalizeDashboardText(record.category),
     item: normalizeDashboardText(record.item),
-    owner: record.owner,
+    owner: normalizeDashboardText(record.owner),
     counterparty: normalizeDashboardText(record.counterparty),
     counterpartyDetails: record.counterparty_details
       ? {

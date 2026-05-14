@@ -12,6 +12,7 @@ import {
   resolveProjectRecordSeed,
   type MergeProjectRecordOptions,
 } from "./project-state-merge-helpers";
+import { normalizeDashboardText } from "../model/project-text-normalization";
 
 // Слияние server-records в UI state вынесено отдельно, чтобы hook оставался
 // orchestrator-слоем, а правила пересборки проекта жили в чистых helper'ах.
@@ -25,24 +26,24 @@ export function mergeProjectRecord(
   return {
     ...seed,
     id: String(projectRecord.id),
-    code: projectRecord.code,
-    name: projectRecord.name,
-    address: projectRecord.address,
-    entranceSection: projectRecord.entrance_section,
-    apartment: projectRecord.apartment,
-    floor: projectRecord.floor,
+    code: normalizeDashboardText(projectRecord.code),
+    name: normalizeDashboardText(projectRecord.name),
+    address: normalizeDashboardText(projectRecord.address),
+    entranceSection: normalizeDashboardText(projectRecord.entrance_section),
+    apartment: normalizeDashboardText(projectRecord.apartment),
+    floor: normalizeDashboardText(projectRecord.floor),
     roomCount: projectRecord.room_count,
     hasElevator: projectRecord.has_elevator,
-    siteAccess: projectRecord.site_access,
-    accessHours: projectRecord.access_hours,
-    intercomCode: projectRecord.intercom_code,
-    responsiblePerson: projectRecord.responsible_person,
-    comment: projectRecord.comment,
-    stageLabel: projectRecord.stage_label,
+    siteAccess: normalizeDashboardText(projectRecord.site_access),
+    accessHours: normalizeDashboardText(projectRecord.access_hours),
+    intercomCode: normalizeDashboardText(projectRecord.intercom_code),
+    responsiblePerson: normalizeDashboardText(projectRecord.responsible_person),
+    comment: normalizeDashboardText(projectRecord.comment),
+    stageLabel: normalizeDashboardText(projectRecord.stage_label),
     stageTone: projectRecord.stage_tone,
     areaM2: projectRecord.area_m2,
     ceilingHeightM: projectRecord.ceiling_height_m,
-    estimateSource: projectRecord.estimate_source,
+    estimateSource: normalizeDashboardText(projectRecord.estimate_source),
     receivedTotal: projectRecord.received_total,
     remainingTotal: projectRecord.remaining_total,
     deferredTotal: projectRecord.deferred_total,
@@ -51,7 +52,7 @@ export function mergeProjectRecord(
     workPerM2: projectRecord.work_per_m2,
     materialsPerM2: projectRecord.materials_per_m2,
     plannedMarginPercent: projectRecord.planned_margin_percent,
-    nextDeliveryLabel: projectRecord.next_delivery_label,
+    nextDeliveryLabel: normalizeDashboardText(projectRecord.next_delivery_label),
   };
 }
 

@@ -95,6 +95,9 @@ export function CalculatorScreenContent(props: {
       busyKey: data.busyKey,
     },
     actions: {
+      onCreateProjectCeilingItem: actions.onCreateProjectCeilingItem,
+      onUpdateProjectCeilingItem: actions.onUpdateProjectCeilingItem,
+      onDeleteProjectCeilingItem: actions.onDeleteProjectCeilingItem,
       onDeleteProjectDoor: actions.onDeleteProjectDoor,
       onDeleteProjectDoorComponent: actions.onDeleteProjectDoorComponent,
     },

@@ -28,6 +28,14 @@ export type CalculatorScreenControllerSlice = Pick<
   | "handleCreateCalculatorProjectDoorComponent"
   | "handleUpdateCalculatorProjectDoorComponent"
   | "handleDeleteCalculatorProjectDoorComponent"
+  | "handleLoadCalculatorCeilings"
+  | "handleSaveCalculatorCeilingConfig"
+  | "handleCreateCalculatorCeilingCatalogItem"
+  | "handleUpdateCalculatorCeilingCatalogItem"
+  | "handleReplaceCalculatorCeilingRooms"
+  | "handleCreateCalculatorProjectCeilingItem"
+  | "handleUpdateCalculatorProjectCeilingItem"
+  | "handleDeleteCalculatorProjectCeilingItem"
   | "handleSaveCalculatorWarmFloor"
   | "handleSaveCalculatorFlooring"
   | "handleCreateCalculatorFlooringCovering"
@@ -71,6 +79,14 @@ export function buildCalculatorScreenProps(controller: CalculatorScreenControlle
       onCreateProjectDoorComponent: controller.handleCreateCalculatorProjectDoorComponent,
       onUpdateProjectDoorComponent: controller.handleUpdateCalculatorProjectDoorComponent,
       onDeleteProjectDoorComponent: controller.handleDeleteCalculatorProjectDoorComponent,
+      onLoadCeilings: controller.handleLoadCalculatorCeilings,
+      onSaveCeilingConfig: controller.handleSaveCalculatorCeilingConfig,
+      onCreateCeilingCatalogItem: controller.handleCreateCalculatorCeilingCatalogItem,
+      onUpdateCeilingCatalogItem: controller.handleUpdateCalculatorCeilingCatalogItem,
+      onReplaceCeilingRooms: controller.handleReplaceCalculatorCeilingRooms,
+      onCreateProjectCeilingItem: controller.handleCreateCalculatorProjectCeilingItem,
+      onUpdateProjectCeilingItem: controller.handleUpdateCalculatorProjectCeilingItem,
+      onDeleteProjectCeilingItem: controller.handleDeleteCalculatorProjectCeilingItem,
       onSaveWarmFloor: controller.handleSaveCalculatorWarmFloor,
       onSaveFlooring: controller.handleSaveCalculatorFlooring,
       onCreateFlooringCovering: controller.handleCreateCalculatorFlooringCovering,

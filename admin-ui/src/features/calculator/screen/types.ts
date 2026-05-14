@@ -20,6 +20,12 @@ import type {
   ProjectDoorComponentPayload as CalculatorProjectDoorComponentPayload,
   ProjectDoorPayload as CalculatorProjectDoorPayload,
 } from "../model/payloads";
+import type {
+  CeilingCatalogItemPayload,
+  CeilingConfigUpdatePayload,
+  CeilingRoomsReplacePayload,
+  ProjectCeilingItemPayload,
+} from "../ceilings/payload";
 import type { buildCalculatorHeaderTotals, buildCalculatorStageFlags } from "../model/derived";
 import type {
   useCalculatorDoorsController,
@@ -80,6 +86,14 @@ export type CalculatorScreenActionProps = {
     payload: CalculatorProjectDoorComponentPayload,
   ) => Promise<void>;
   onDeleteProjectDoorComponent: (componentId: number) => Promise<void>;
+  onLoadCeilings: (projectId: number) => Promise<unknown>;
+  onSaveCeilingConfig: (projectId: number, payload: CeilingConfigUpdatePayload) => Promise<void>;
+  onCreateCeilingCatalogItem: (payload: CeilingCatalogItemPayload) => Promise<unknown>;
+  onUpdateCeilingCatalogItem: (itemId: number, payload: Partial<CeilingCatalogItemPayload>) => Promise<unknown>;
+  onReplaceCeilingRooms: (projectId: number, payload: CeilingRoomsReplacePayload) => Promise<void>;
+  onCreateProjectCeilingItem: (projectId: number, payload: ProjectCeilingItemPayload) => Promise<void>;
+  onUpdateProjectCeilingItem: (itemId: number, payload: ProjectCeilingItemPayload) => Promise<void>;
+  onDeleteProjectCeilingItem: (itemId: number) => Promise<void>;
   onSaveWarmFloor: (
     projectId: number,
     payload: CalculatorWarmFloorPayload,

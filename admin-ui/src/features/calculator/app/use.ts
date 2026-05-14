@@ -3,6 +3,7 @@ import { type Dispatch, type SetStateAction, useEffect, useRef, useState } from 
 import type { CalculatorProject, CalculatorProjectDetail, CalculatorRoomDetail } from "../model/types";
 import type { ScreenKey } from "../../../shared/types";
 import { createAdminCalculatorDoorsController } from "./doors";
+import { createAdminCalculatorCeilingsController } from "./ceilings";
 import { createAdminCalculatorFinishesController } from "./finishes";
 import { createAdminCalculatorLoadersController } from "./load";
 import { createAdminCalculatorProjectActionsController } from "./project";
@@ -149,6 +150,14 @@ export function useAdminCalculatorController(props: CalculatorControllerOptions)
     loadCalculatorRoomDetail,
   });
 
+  const ceilingsController = createAdminCalculatorCeilingsController({
+    selectedCalculatorProjectId,
+    setCalculatorBusyKey,
+    setCalculatorError,
+    setCalculatorProjectDetail,
+    setSuccessMessage: props.setSuccessMessage,
+  });
+
   return {
     calculatorProjects,
     selectedCalculatorProjectId,
@@ -175,5 +184,6 @@ export function useAdminCalculatorController(props: CalculatorControllerOptions)
     handleQuickCreateCalculatorProject,
     ...finishesController,
     ...doorsController,
+    ...ceilingsController,
   };
 }

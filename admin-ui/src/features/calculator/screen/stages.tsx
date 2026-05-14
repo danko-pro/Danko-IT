@@ -17,7 +17,14 @@ import type { CalculatorStage } from "../model/types";
 
 type CalculatorEstimateStagesFacadeProps = {
   data: Pick<CalculatorScreenDataProps, "projectDetail" | "busyKey">;
-  actions: Pick<CalculatorScreenActionProps, "onDeleteProjectDoor" | "onDeleteProjectDoorComponent">;
+  actions: Pick<
+    CalculatorScreenActionProps,
+    | "onCreateProjectCeilingItem"
+    | "onUpdateProjectCeilingItem"
+    | "onDeleteProjectCeilingItem"
+    | "onDeleteProjectDoor"
+    | "onDeleteProjectDoorComponent"
+  >;
   stageFlags: Pick<
     CalculatorScreenState["stageFlags"],
     "isCeilingsStage" | "isDoorsStage" | "isWarmFloorStage" | "isFlooringStage" | "isWallFinishStage"
@@ -60,6 +67,10 @@ export function CalculatorEstimateStagesFacade(props: CalculatorEstimateStagesFa
 function buildCeilingsStageProps(props: CalculatorEstimateStagesFacadeProps): CeilingsStageSectionProps {
   return {
     projectDetail: props.data.projectDetail,
+    busyKey: props.data.busyKey,
+    onCreateProjectCeilingItem: props.actions.onCreateProjectCeilingItem,
+    onUpdateProjectCeilingItem: props.actions.onUpdateProjectCeilingItem,
+    onDeleteProjectCeilingItem: props.actions.onDeleteProjectCeilingItem,
   };
 }
 

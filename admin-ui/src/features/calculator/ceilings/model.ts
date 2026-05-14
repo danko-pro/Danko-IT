@@ -1,7 +1,9 @@
 export type CalculatorCeilingConfig = {
   id?: number;
   project_id?: number;
+  default_package_code?: string | null;
   package_code?: string | null;
+  price_factor?: number;
   is_enabled?: boolean;
   note?: string | null;
   created_at?: string;
@@ -15,6 +17,9 @@ export type CalculatorCeilingCatalogItem = {
   category: string;
   unit: string;
   quantity_source?: string | null;
+  quantity_formula?: string | null;
+  include_section?: string | null;
+  package_code?: string | null;
   work_price: number;
   material_price: number;
   equipment_price: number;
@@ -37,9 +42,9 @@ export type CalculatorCeilingRoom = {
   is_enabled: boolean;
   base_ceiling_area_m2?: number;
   base_perimeter_m?: number;
-  ceiling_area_m2: number;
+  ceiling_area_m2: number | null;
   area_source?: string | null;
-  perimeter_m: number;
+  perimeter_m: number | null;
   perimeter_source?: string | null;
   package_code_snapshot?: string | null;
   note?: string | null;

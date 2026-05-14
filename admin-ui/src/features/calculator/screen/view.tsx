@@ -1,4 +1,4 @@
-import { useEffect, useRef, type ReactNode } from "react";
+﻿import { useEffect, useRef, type ReactNode } from "react";
 
 import { CalculatorEstimateStagesFacade } from "./stages";
 import { CalculatorHeaderSection } from "./header";
@@ -22,8 +22,8 @@ function getStageDirection(stage: CalculatorStage, previousStage: CalculatorStag
   return CALCULATOR_STAGE_ORDER.indexOf(stage) >= CALCULATOR_STAGE_ORDER.indexOf(previousStage) ? "forward" : "backward";
 }
 
-// View-СЃР»РѕР№ РєРѕСЂРЅРµРІРѕРіРѕ СЌРєСЂР°РЅР° РєР°Р»СЊРєСѓР»СЏС‚РѕСЂР°.
-// РљРѕРјРїРѕРЅРµРЅС‚ РїРѕР»СѓС‡Р°РµС‚ СѓР¶Рµ СЃРѕР±СЂР°РЅРЅС‹Р№ controller state Рё С‚РѕР»СЊРєРѕ СЂР°СЃРєР»Р°РґС‹РІР°РµС‚ stage-СЃРµРєС†РёРё РїРѕ РјРµСЃС‚Сѓ.
+// View-слой корневого экрана калькулятора.
+// Компонент получает уже собранный controller state и только раскладывает stage-секции по месту.
 export function CalculatorScreenContent(props: {
   props: CalculatorScreenProps;
   state: CalculatorScreenState;
@@ -146,6 +146,10 @@ export function CalculatorScreenContent(props: {
         headerWarmFloorMaterialTotal={headerTotals.warmFloorMaterialTotal}
         headerWallFinishWorkTotal={headerTotals.wallFinishWorkTotal}
         headerWallFinishMaterialTotal={headerTotals.wallFinishMaterialTotal}
+        headerCeilingWorkTotal={headerTotals.ceilingWorkTotal}
+        headerCeilingMaterialTotal={headerTotals.ceilingMaterialTotal}
+        headerCeilingEquipmentTotal={headerTotals.ceilingEquipmentTotal}
+        headerCeilingConsumablesTotal={headerTotals.ceilingConsumablesTotal}
         projectForm={project}
         onReload={actions.onReload}
         activeStage={activeStage}

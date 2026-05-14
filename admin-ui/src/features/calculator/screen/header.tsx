@@ -1,4 +1,4 @@
-import { Button } from "../../../shared/controls";
+﻿import { Button } from "../../../shared/controls";
 import type { CalculatorProjectDetail, CalculatorStage } from "../model/types";
 import type { UseCalculatorProjectControllerResult } from "../project/use";
 import { MetricChip, formatArea, formatMeters, formatMoney } from "../shared";
@@ -16,6 +16,10 @@ type CalculatorHeaderSectionProps = {
   headerWarmFloorMaterialTotal: number;
   headerWallFinishWorkTotal: number;
   headerWallFinishMaterialTotal: number;
+  headerCeilingWorkTotal: number;
+  headerCeilingMaterialTotal: number;
+  headerCeilingEquipmentTotal: number;
+  headerCeilingConsumablesTotal: number;
   projectForm: CalculatorProjectForm;
   onReload: () => Promise<void> | void;
   activeStage: CalculatorStage;
@@ -46,6 +50,10 @@ export function CalculatorHeaderSection(props: CalculatorHeaderSectionProps) {
     headerWarmFloorMaterialTotal,
     headerWallFinishWorkTotal,
     headerWallFinishMaterialTotal,
+    headerCeilingWorkTotal,
+    headerCeilingMaterialTotal,
+    headerCeilingEquipmentTotal,
+    headerCeilingConsumablesTotal,
     projectForm,
     onReload,
     activeStage,
@@ -59,11 +67,22 @@ export function CalculatorHeaderSection(props: CalculatorHeaderSectionProps) {
   const flooringTotal = headerFlooringWorkTotal + headerFlooringMaterialTotal;
   const warmFloorTotal = headerWarmFloorWorkTotal + headerWarmFloorMaterialTotal;
   const wallFinishTotal = headerWallFinishWorkTotal + headerWallFinishMaterialTotal;
+  const ceilingMaterialBucket =
+    headerCeilingMaterialTotal + headerCeilingEquipmentTotal + headerCeilingConsumablesTotal;
+  const ceilingTotal = headerCeilingWorkTotal + ceilingMaterialBucket;
   const doorClientTotal = doorSaleTotal + doorInstallTotal;
   const objectWorkTotal =
-    headerFlooringWorkTotal + headerWarmFloorWorkTotal + headerWallFinishWorkTotal + doorInstallTotal;
+    headerFlooringWorkTotal +
+    headerWarmFloorWorkTotal +
+    headerWallFinishWorkTotal +
+    headerCeilingWorkTotal +
+    doorInstallTotal;
   const objectMaterialTotal =
-    headerFlooringMaterialTotal + headerWarmFloorMaterialTotal + headerWallFinishMaterialTotal + doorSaleTotal;
+    headerFlooringMaterialTotal +
+    headerWarmFloorMaterialTotal +
+    headerWallFinishMaterialTotal +
+    ceilingMaterialBucket +
+    doorSaleTotal;
   const objectEstimateTotal = objectWorkTotal + objectMaterialTotal;
   const objectRate = floorArea > 0 ? objectEstimateTotal / floorArea : 0;
   const objectWorkRate = floorArea > 0 ? objectWorkTotal / floorArea : 0;
@@ -121,16 +140,16 @@ export function CalculatorHeaderSection(props: CalculatorHeaderSectionProps) {
                   <div className="calculator-object-summary-rate">
                     <div className="calculator-object-rate-main">
                       <span>Цена за м²</span>
-                      <strong>{objectRate > 0 ? formatMoney(objectRate) : "—"}</strong>
+                      <strong>{objectRate > 0 ? formatMoney(objectRate) : "-"}</strong>
                     </div>
                     <div className="calculator-object-rate-split">
                       <div>
                         <span>Работы</span>
-                        <strong>{objectWorkRate > 0 ? formatMoney(objectWorkRate) : "—"}</strong>
+                        <strong>{objectWorkRate > 0 ? formatMoney(objectWorkRate) : "-"}</strong>
                       </div>
                       <div>
                         <span>Материалы</span>
-                        <strong>{objectMaterialRate > 0 ? formatMoney(objectMaterialRate) : "—"}</strong>
+                        <strong>{objectMaterialRate > 0 ? formatMoney(objectMaterialRate) : "-"}</strong>
                       </div>
                     </div>
                   </div>
@@ -161,6 +180,10 @@ export function CalculatorHeaderSection(props: CalculatorHeaderSectionProps) {
                     <div className="calculator-object-money-row" data-testid="calculator-header-wall-finish-total">
                       <span>Отделка стен</span>
                       <strong>{formatMoney(wallFinishTotal)}</strong>
+                    </div>
+                    <div className="calculator-object-money-row" data-testid="calculator-header-ceilings-total">
+                      <span>Потолки</span>
+                      <strong>{formatMoney(ceilingTotal)}</strong>
                     </div>
                     <div className="calculator-object-money-row" data-testid="calculator-header-doors-total">
                       <span>Двери</span>

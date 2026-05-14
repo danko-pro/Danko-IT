@@ -1,4 +1,4 @@
-import type {
+﻿import type {
   CalculatorFlooringDetail,
   CalculatorProjectDetail,
   CalculatorStage,
@@ -6,7 +6,7 @@ import type {
   CalculatorWarmFloorDetail,
 } from "../model/types";
 
-// Derived helpers верхнего уровня экрана калькулятора.
+// Производные данные верхнего уровня экрана калькулятора.
 // Здесь считаются stage flags и итоговые суммы для шапки без деталей конкретных stage-контроллеров.
 
 export type CalculatorStageFlags = {
@@ -26,6 +26,10 @@ export type CalculatorHeaderTotals = {
   flooringMaterialTotal: number;
   wallFinishWorkTotal: number;
   wallFinishMaterialTotal: number;
+  ceilingWorkTotal: number;
+  ceilingMaterialTotal: number;
+  ceilingEquipmentTotal: number;
+  ceilingConsumablesTotal: number;
 };
 
 export function buildCalculatorStageFlags(activeStage: CalculatorStage): CalculatorStageFlags {
@@ -55,5 +59,9 @@ export function buildCalculatorHeaderTotals(
     wallFinishWorkTotal: wallFinishPreview?.summary.work_total ?? projectDetail?.wall_finishes.summary.work_total ?? 0,
     wallFinishMaterialTotal:
       wallFinishPreview?.summary.material_total ?? projectDetail?.wall_finishes.summary.material_total ?? 0,
+    ceilingWorkTotal: projectDetail?.ceilings.summary.work_total ?? 0,
+    ceilingMaterialTotal: projectDetail?.ceilings.summary.material_total ?? 0,
+    ceilingEquipmentTotal: projectDetail?.ceilings.summary.equipment_total ?? 0,
+    ceilingConsumablesTotal: projectDetail?.ceilings.summary.consumables_total ?? 0,
   };
 }

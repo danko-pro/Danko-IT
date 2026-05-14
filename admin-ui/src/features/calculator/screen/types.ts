@@ -41,14 +41,18 @@ export type CalculatorScreenDataProps = {
   projectDetail: CalculatorProjectDetail | null;
   roomDetail: CalculatorRoomDetail | null;
   selectedRoomId: number | null;
+  loading: boolean;
   detailLoading: boolean;
   roomLoading: boolean;
   busyKey: string | null;
   error: string | null;
+  createPanelOpen: boolean;
 };
 
 export type CalculatorScreenActionProps = {
   onReload: () => Promise<void>;
+  onCreateProject: (payload: CalculatorProjectCreatePayload) => Promise<void>;
+  onCreateProjectPanelOpenChange: (open: boolean) => void;
   onSelectRoom: (roomId: number) => void;
   onSaveProject: (
     projectId: number,

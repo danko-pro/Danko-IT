@@ -23,6 +23,7 @@ export function useAdminCalculatorController(props: CalculatorControllerOptions)
   const [calculatorProjectDetail, setCalculatorProjectDetail] = useState<CalculatorProjectDetail | null>(null);
   const [selectedCalculatorRoomId, setSelectedCalculatorRoomId] = useState<number | null>(null);
   const [calculatorRoomDetail, setCalculatorRoomDetail] = useState<CalculatorRoomDetail | null>(null);
+  const [calculatorCreatePanelOpen, setCalculatorCreatePanelOpen] = useState(false);
 
   const [calculatorLoading, setCalculatorLoading] = useState(false);
   const [calculatorProjectLoading, setCalculatorProjectLoading] = useState(false);
@@ -51,6 +52,7 @@ export function useAdminCalculatorController(props: CalculatorControllerOptions)
       setSelectedCalculatorProjectId,
       setSelectedCalculatorRoomId,
       setCalculatorProjectDetail,
+      openCreatePanel: () => setCalculatorCreatePanelOpen(true),
       loadCalculatorProjects,
     });
 
@@ -152,6 +154,8 @@ export function useAdminCalculatorController(props: CalculatorControllerOptions)
     selectedCalculatorProjectId,
     setSelectedCalculatorProjectId,
     calculatorProjectDetail,
+    calculatorCreatePanelOpen,
+    setCalculatorCreatePanelOpen,
     selectedCalculatorRoomId,
     setSelectedCalculatorRoomId,
     calculatorRoomDetail,

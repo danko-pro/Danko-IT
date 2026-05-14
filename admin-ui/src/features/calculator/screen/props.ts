@@ -6,12 +6,16 @@ export type CalculatorScreenControllerSlice = Pick<
   | "calculatorProjectDetail"
   | "calculatorRoomDetail"
   | "selectedCalculatorRoomId"
+  | "calculatorLoading"
   | "calculatorProjectLoading"
   | "calculatorRoomLoading"
   | "calculatorBusyKey"
   | "calculatorError"
+  | "calculatorCreatePanelOpen"
+  | "setCalculatorCreatePanelOpen"
   | "loadCalculatorProjects"
   | "setSelectedCalculatorRoomId"
+  | "handleCreateCalculatorProject"
   | "handleSaveCalculatorProject"
   | "handleCreateCalculatorRoom"
   | "handleSaveCalculatorRoom"
@@ -43,13 +47,17 @@ export function buildCalculatorScreenProps(controller: CalculatorScreenControlle
       projectDetail: controller.calculatorProjectDetail,
       roomDetail: controller.calculatorRoomDetail,
       selectedRoomId: controller.selectedCalculatorRoomId,
+      loading: controller.calculatorLoading,
       detailLoading: controller.calculatorProjectLoading,
       roomLoading: controller.calculatorRoomLoading,
       busyKey: controller.calculatorBusyKey,
       error: controller.calculatorError,
+      createPanelOpen: controller.calculatorCreatePanelOpen,
     },
     actions: {
       onReload: controller.loadCalculatorProjects,
+      onCreateProject: controller.handleCreateCalculatorProject,
+      onCreateProjectPanelOpenChange: controller.setCalculatorCreatePanelOpen,
       onSelectRoom: controller.setSelectedCalculatorRoomId,
       onSaveProject: controller.handleSaveCalculatorProject,
       onCreateRoom: controller.handleCreateCalculatorRoom,

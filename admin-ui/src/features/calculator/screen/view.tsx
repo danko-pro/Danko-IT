@@ -3,6 +3,7 @@ import { useEffect, useRef, type ReactNode } from "react";
 import { CalculatorEstimateStagesFacade } from "./stages";
 import { CalculatorHeaderSection } from "./header";
 import type { CalculatorStage } from "../model/types";
+import { CalculatorProjectCreateFlow } from "../project/create-flow";
 import { CalculatorProjectRoomsStage } from "../project/flow";
 import type { CalculatorScreenProps, CalculatorScreenState } from "./types";
 import { useCalculatorSceneHeight } from "../stage/use-scene-height";
@@ -51,6 +52,17 @@ export function CalculatorScreenContent(props: {
   const previousStage = previousStageRef.current;
   const stageDirection = getStageDirection(activeStage, previousStage);
   const sceneHeightState = useCalculatorSceneHeight(activeStage, sceneRef);
+  const createFlowNode = (
+    <CalculatorProjectCreateFlow
+      busyKey={data.busyKey}
+      error={data.error}
+      hasProject={Boolean(projectDetailView)}
+      loading={data.loading || data.detailLoading}
+      open={data.createPanelOpen}
+      onCreateProject={actions.onCreateProject}
+      onOpenChange={actions.onCreateProjectPanelOpenChange}
+    />
+  );
 
   useEffect(() => {
     previousStageRef.current = activeStage;
@@ -115,8 +127,14 @@ export function CalculatorScreenContent(props: {
     stageNode = <CalculatorEstimateStagesFacade {...estimateStageProps} forcedStage="doors" />;
   }
 
+  if (!projectDetailView) {
+    return <div className="space-y-4">{createFlowNode}</div>;
+  }
+
   return (
     <div className="space-y-4">
+      {createFlowNode}
+
       <CalculatorHeaderSection
         projectDetail={projectDetailView}
         headerFlooringWorkTotal={headerTotals.flooringWorkTotal}

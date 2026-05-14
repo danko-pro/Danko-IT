@@ -15,6 +15,7 @@ type CalculatorProjectActionsControllerOptions = {
   setSelectedCalculatorProjectId: Dispatch<SetStateAction<number | null>>;
   setSelectedCalculatorRoomId: Dispatch<SetStateAction<number | null>>;
   setCalculatorProjectDetail: Dispatch<SetStateAction<CalculatorProjectDetail | null>>;
+  openCreatePanel: () => void;
   loadCalculatorProjects: () => Promise<void>;
 };
 
@@ -52,15 +53,8 @@ export function createAdminCalculatorProjectActionsController(props: CalculatorP
   }
 
   async function handleQuickCreateCalculatorProject() {
-    const name = window.prompt("Название нового объекта / проекта:");
-    if (!name || !name.trim()) {
-      return;
-    }
     props.setScreen("calculator");
-    await handleCreateCalculatorProject({
-      name: name.trim(),
-      note: "",
-    });
+    props.openCreatePanel();
   }
 
   async function handleSaveCalculatorProject(

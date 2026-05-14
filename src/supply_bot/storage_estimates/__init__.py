@@ -3,6 +3,7 @@
 Пакет группирует mixin-модули по подзонам estimates, чтобы корень supply_bot не был забит flat storage-файлами.
 """
 
+from supply_bot.storage_estimates.ceiling_repository import SqlAlchemyCeilingRepository
 from supply_bot.storage_estimates.core import EstimateCoreStorageMixin
 from supply_bot.storage_estimates.doors import EstimateDoorsStorageMixin
 from supply_bot.storage_estimates.flooring import EstimateFlooringStorageMixin
@@ -13,4 +14,5 @@ __all__ = [
     "EstimateDoorsStorageMixin",
     "EstimateFlooringStorageMixin",
     "EstimateWallFinishStorageMixin",
+    "SqlAlchemyCeilingRepository",
 ]

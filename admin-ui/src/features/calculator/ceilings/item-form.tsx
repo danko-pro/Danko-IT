@@ -18,6 +18,7 @@ type CeilingItemFormProps = {
   initialItem?: CalculatorProjectCeilingItem;
   submitLabel: string;
   busy: boolean;
+  surface?: "panel" | "embedded";
   onSubmit: (payload: ProjectCeilingItemPayload) => Promise<void>;
   onCancel: () => void;
 };
@@ -26,6 +27,10 @@ export function CeilingItemForm(props: CeilingItemFormProps) {
   const [state, setState] = useState<CeilingItemFormState>(() => buildInitialCeilingItemFormState(props.initialItem));
   const previewTotals = calculateCeilingTotals(state);
   const canSubmit = Boolean(state.title.trim() && state.unit.trim());
+  const formClassName =
+    props.surface === "embedded"
+      ? "calculator-stage-section rounded-3xl border border-white/10 bg-slate-950/20 p-3 space-y-3"
+      : "subpanel calculator-stage-section p-3 space-y-3";
 
   function updateField(field: keyof CeilingItemFormState, value: string | boolean) {
     setState((current) => ({ ...current, [field]: value }));
@@ -40,7 +45,7 @@ export function CeilingItemForm(props: CeilingItemFormProps) {
   }
 
   return (
-    <form className="subpanel calculator-stage-section p-3 space-y-3" onSubmit={(event) => void handleSubmit(event)}>
+    <form className={formClassName} onSubmit={(event) => void handleSubmit(event)}>
       <div className="grid gap-3 md:grid-cols-2">
         <CeilingTextField label="Название позиции" value={state.title} onChange={(value) => updateField("title", value)} />
         <CeilingTextField label="Категория" value={state.category} onChange={(value) => updateField("category", value)} />

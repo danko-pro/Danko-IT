@@ -25,20 +25,39 @@ type CeilingsEditorColumnProps = {
 export function CeilingsEditorColumn(props: CeilingsEditorColumnProps) {
   const [createFormOpen, setCreateFormOpen] = useState(false);
   const [editingItemId, setEditingItemId] = useState<number | null>(null);
+  const enabledItemsCount = props.ceilings.items.filter((item) => item.is_enabled).length;
 
   return (
-    <>
-      <section className="subpanel calculator-stage-section warmfloor-estimate-panel p-3">
-        <CalculatorStageSectionHeader
-          kicker="Позиции"
-          title="Потолочная ведомость"
-          note={`${props.ceilings.items.length} строк`}
-          actions={
-            <Button type="button" onClick={() => setCreateFormOpen((current) => !current)}>
-              {createFormOpen ? "Скрыть форму" : "Добавить позицию"}
-            </Button>
-          }
-        />
+    <section className="subpanel calculator-stage-section warmfloor-estimate-panel p-3">
+      <CalculatorStageSectionHeader
+        kicker="Позиции"
+        title="Потолочная ведомость"
+        note={`${enabledItemsCount} / ${props.ceilings.items.length} позиций включено`}
+        actions={
+          <Button type="button" onClick={() => setCreateFormOpen((current) => !current)}>
+            {createFormOpen ? "Скрыть форму" : "Добавить позицию"}
+          </Button>
+        }
+      />
+
+        {createFormOpen ? (
+          <div className="mt-3">
+            <CeilingItemForm
+              busy={props.busyKey === `calculator-ceiling-item-create-${props.projectId}`}
+              projectId={props.projectId}
+              rooms={props.ceilings.rooms}
+              submitLabel="Создать позицию"
+              surface="embedded"
+              onCancel={() => setCreateFormOpen(false)}
+              onSubmit={async (payload) => {
+                await props.onCreateProjectCeilingItem(props.projectId, payload);
+                setCreateFormOpen(false);
+                props.setPanelMode("summary");
+              }}
+            />
+          </div>
+        ) : null}
+
         {!createFormOpen && props.ceilings.items.length === 0 ? (
           <CalculatorStageEmptyState>
             <div className="space-y-3">
@@ -49,22 +68,6 @@ export function CeilingsEditorColumn(props: CeilingsEditorColumnProps) {
             </div>
           </CalculatorStageEmptyState>
         ) : null}
-      </section>
-
-      {createFormOpen ? (
-        <CeilingItemForm
-          busy={props.busyKey === `calculator-ceiling-item-create-${props.projectId}`}
-          projectId={props.projectId}
-          rooms={props.ceilings.rooms}
-          submitLabel="Создать позицию"
-          onCancel={() => setCreateFormOpen(false)}
-          onSubmit={async (payload) => {
-            await props.onCreateProjectCeilingItem(props.projectId, payload);
-            setCreateFormOpen(false);
-            props.setPanelMode("summary");
-          }}
-        />
-      ) : null}
 
       <CeilingItemsList
         busyKey={props.busyKey}
@@ -76,7 +79,7 @@ export function CeilingsEditorColumn(props: CeilingsEditorColumnProps) {
         onDeleteProjectCeilingItem={props.onDeleteProjectCeilingItem}
         onUpdateProjectCeilingItem={props.onUpdateProjectCeilingItem}
       />
-    </>
+    </section>
   );
 }
 
@@ -95,7 +98,7 @@ function CeilingItemsList(props: {
   }
 
   return (
-    <section className="subpanel calculator-stage-section warmfloor-estimate-panel p-3">
+    <div className="mt-3">
       <div className="warmfloor-estimate-list">
         {props.items.map((item) => (
           <article className="warmfloor-estimate-row-shell" key={item.id}>
@@ -137,6 +140,7 @@ function CeilingItemsList(props: {
                   projectId={props.projectId}
                   rooms={props.rooms}
                   submitLabel="Сохранить"
+                  surface="embedded"
                   onCancel={() => props.setEditingItemId(null)}
                   onSubmit={async (payload) => {
                     await props.onUpdateProjectCeilingItem(item.id, { ...payload, project_id: props.projectId });
@@ -148,6 +152,6 @@ function CeilingItemsList(props: {
           </article>
         ))}
       </div>
-    </section>
+    </div>
   );
 }

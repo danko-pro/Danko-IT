@@ -37,19 +37,9 @@ export function CeilingsStageSection(props: CeilingsStageSectionProps) {
       actions={
         <>
           {ceilingPanelModes.map((option) => (
-            <Button
-              key={option.mode}
-              type="button"
-              variant="secondary"
-              className={
-                panelMode === option.mode
-                  ? "calculator-stage-settings calculator-stage-settings-active"
-                  : "calculator-stage-settings"
-              }
-              onClick={() => setPanelMode(option.mode)}
-            >
+            <StageModeButton key={option.mode} active={panelMode === option.mode} onClick={() => setPanelMode(option.mode)}>
               {option.label}
-            </Button>
+            </StageModeButton>
           ))}
         </>
       }
@@ -81,5 +71,18 @@ export function CeilingsStageSection(props: CeilingsStageSectionProps) {
         />
       )}
     </CalculatorStageShell>
+  );
+}
+
+function StageModeButton(props: { active: boolean; children: string; onClick: () => void }) {
+  return (
+    <Button
+      type="button"
+      variant="secondary"
+      className={props.active ? "calculator-stage-settings calculator-stage-settings-active" : "calculator-stage-settings"}
+      onClick={props.onClick}
+    >
+      {props.children}
+    </Button>
   );
 }

@@ -30,6 +30,93 @@ Render Postgres             -> shared production database
 
 Backend and bot must run outside Russia in an environment where OpenAI API access is available. Keep AI provider keys only in backend/worker environment variables, never in frontend variables.
 
+## Deploy-1 current status: Render backend deployed
+
+Status date: 2026-05-15.
+
+```text
+Render Postgres: created
+Backend Web Service: created
+Backend technical URL: https://danko-it.onrender.com
+Docker build: OK
+Backend startup: OK
+Production migrations: OK
+Custom backend domain: api.danko39.ru pending DNS verification
+Current blocker: DNS propagation / reg.ru / ispmanager CNAME visibility
+```
+
+Production pre-deploy command:
+
+```bash
+alembic upgrade head
+```
+
+Applied production migrations:
+
+```text
+0001_initial_base
+0002_create_app_users
+0003_create_material_catalog
+0004_create_request_runtime
+0005_create_project_workspace
+0006_create_estimate_calculator
+0007_create_estimate_ceilings
+```
+
+Backend health smoke:
+
+```text
+https://danko-it.onrender.com/api/health -> {"status":"ok"}
+```
+
+Backend root URL:
+
+```text
+https://danko-it.onrender.com/ -> {"detail":"Not Found"}
+```
+
+This is expected because the Render Web Service is an API backend, not the frontend site.
+
+Protected endpoint smoke without session cookie:
+
+```text
+https://danko-it.onrender.com/api/dashboard/summary -> {"detail":"Admin authentication required"}
+```
+
+This is expected and confirms that protected API routes are not public without authentication.
+
+Custom backend domain:
+
+```text
+api.danko39.ru
+```
+
+Render requested DNS:
+
+```text
+api -> danko-it.onrender.com
+```
+
+The CNAME was created in ispmanager/reg.ru:
+
+```text
+api.danko39.ru. CNAME danko-it.onrender.com.
+```
+
+Current DNS check result:
+
+```powershell
+nslookup -type=CNAME api.danko39.ru ns1.hosting.reg.ru
+```
+
+Current observed result:
+
+```text
+Non-existent domain
+```
+
+Render custom domain verification remains pending until the CNAME is visible from DNS.
+
 ## Hosting choice for the first production deployment
 
 Recommended first deployment target: Render.
@@ -121,6 +208,40 @@ Initial size: 1-5 GB
 Only files written under `/app/data` are persistent. Without the disk, uploaded project documents will be lost on redeploy or restart.
 
 The file storage adapter is intentionally isolated so it can later move to S3/R2 without rewriting routes.
+
+## Temporary Deploy-2 plan while api.danko39.ru is pending
+
+Do not wait passively for DNS propagation before preparing the frontend technical deployment.
+
+Temporary frontend plan:
+
+```text
+Create Render Static Site
+Use temporary frontend technical URL from Render
+Set VITE_API_BASE_URL=https://danko-it.onrender.com
+Add temporary frontend technical URL to backend CORS
+Smoke frontend against backend technical URL
+```
+
+Temporary backend CORS example after the frontend technical URL is known:
+
+```env
+ADMIN_API_CORS_ORIGINS=https://danko39.ru,https://www.danko39.ru,https://<frontend-service>.onrender.com
+```
+
+After `api.danko39.ru` is verified in Render:
+
+```text
+Replace frontend VITE_API_BASE_URL with https://api.danko39.ru
+Redeploy frontend
+Run production smoke again
+```
+
+Final frontend production env:
+
+```env
+VITE_API_BASE_URL=https://api.danko39.ru
+```
 
 ## Deploy-1 checklist: Render Postgres + Backend Web Service
 

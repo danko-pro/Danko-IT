@@ -14,6 +14,10 @@ from supply_bot.admin_api.calculator_routes.shared import (
     require_estimate_room,
     require_non_empty_text,
 )
+from supply_bot.estimates.application.create_project import (
+    CreateEstimateProjectCommand,
+    CreateEstimateProjectUseCase,
+)
 
 
 def register_calculator_core_routes(
@@ -35,11 +39,16 @@ def register_calculator_core_routes(
         payload: calculator_project_create_payload_model,
     ) -> dict[str, Any]:
         storage_obj = get_calculator_route_storage(request)
-        project_id = await storage_obj.create_estimate_project(
-            name=require_non_empty_text(payload.name, detail="Project name is required"),
-            note=normalize_optional_text(payload.note),
+        command = CreateEstimateProjectCommand(
+            name=payload.name,
+            note=payload.note,
             group_chat_id=payload.group_chat_id,
         )
+        try:
+            project_id = await CreateEstimateProjectUseCase(storage_obj).execute(command)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+
         return await load_estimate_project_payload(storage_obj, project_id, detail="Project was not created")
 
     @app.get("/api/calculator/projects/{project_id}")

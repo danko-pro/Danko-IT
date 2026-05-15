@@ -7,8 +7,6 @@ from supply_bot.admin_api.calculator_routes.shared import (
     get_calculator_route_storage,
     load_estimate_project_payload,
     load_estimate_room_detail,
-    require_estimate_project,
-    require_estimate_room,
 )
 from supply_bot.estimates.application.create_project import (
     CreateEstimateProjectCommand,
@@ -22,6 +20,15 @@ from supply_bot.estimates.application.delete_room import (
     DeleteEstimateRoomCommand,
     DeleteEstimateRoomUseCase,
 )
+from supply_bot.estimates.application.get_project import (
+    GetEstimateProjectCommand,
+    GetEstimateProjectUseCase,
+)
+from supply_bot.estimates.application.get_room import (
+    GetEstimateRoomCommand,
+    GetEstimateRoomUseCase,
+)
+from supply_bot.estimates.application.list_projects import ListEstimateProjectsUseCase
 from supply_bot.estimates.application.update_project import (
     UpdateEstimateProjectCommand,
     UpdateEstimateProjectUseCase,
@@ -45,7 +52,7 @@ def register_calculator_core_routes(
     @app.get("/api/calculator/projects")
     async def calculator_projects(request: Request) -> list[dict[str, Any]]:
         storage_obj = get_calculator_route_storage(request)
-        return await storage_obj.list_estimate_projects()
+        return await ListEstimateProjectsUseCase(storage_obj).execute()
 
     @app.post("/api/calculator/projects")
     async def create_calculator_project(
@@ -68,7 +75,12 @@ def register_calculator_core_routes(
     @app.get("/api/calculator/projects/{project_id}")
     async def calculator_project_detail(request: Request, project_id: int) -> dict[str, Any]:
         storage_obj = get_calculator_route_storage(request)
-        project = await require_estimate_project(storage_obj, project_id)
+        command = GetEstimateProjectCommand(project_id=project_id)
+        try:
+            project = await GetEstimateProjectUseCase(storage_obj).execute(command)
+        except ValueError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+
         return await _estimate_project_payload(storage_obj, project)
 
     @app.patch("/api/calculator/projects/{project_id}")
@@ -126,7 +138,12 @@ def register_calculator_core_routes(
     @app.get("/api/calculator/rooms/{room_id}")
     async def calculator_room_detail(request: Request, room_id: int) -> dict[str, Any]:
         storage_obj = get_calculator_route_storage(request)
-        room = await require_estimate_room(storage_obj, room_id)
+        command = GetEstimateRoomCommand(room_id=room_id)
+        try:
+            room = await GetEstimateRoomUseCase(storage_obj).execute(command)
+        except ValueError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+
         return await _estimate_room_detail(storage_obj, room)
 
     @app.patch("/api/calculator/rooms/{room_id}")

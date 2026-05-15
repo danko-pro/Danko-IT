@@ -18,6 +18,10 @@ from supply_bot.estimates.application.create_project import (
     CreateEstimateProjectCommand,
     CreateEstimateProjectUseCase,
 )
+from supply_bot.estimates.application.create_room import (
+    CreateEstimateRoomCommand,
+    CreateEstimateRoomUseCase,
+)
 
 
 def register_calculator_core_routes(
@@ -92,17 +96,20 @@ def register_calculator_core_routes(
         payload: calculator_room_create_payload_model,
     ) -> dict[str, Any]:
         storage_obj = get_calculator_route_storage(request)
-        await require_estimate_project(storage_obj, project_id)
-        existing_rooms = await storage_obj.list_estimate_rooms(project_id)
-        room_id = await storage_obj.create_estimate_room(
+        command = CreateEstimateRoomCommand(
             project_id=project_id,
-            name=normalize_optional_text(payload.name) or f"Помещение {len(existing_rooms) + 1}",
-            ceiling_height_m=clamp_minimum(payload.ceiling_height_m, 0.1),
+            name=payload.name,
+            ceiling_height_m=payload.ceiling_height_m,
             auto_perimeter_calc=payload.auto_perimeter_calc,
-            perimeter_factor=clamp_minimum(payload.perimeter_factor, 1.0),
+            perimeter_factor=payload.perimeter_factor,
         )
-        return await load_estimate_room_detail(storage_obj, room_id, detail="Room was not created")
+        try:
+            room_id = await CreateEstimateRoomUseCase(storage_obj).execute(command)
+        except ValueError as exc:
+            status_code = 404 if str(exc) == "Calculator project not found" else 400
+            raise HTTPException(status_code=status_code, detail=str(exc)) from exc
 
+        return await load_estimate_room_detail(storage_obj, room_id, detail="Room was not created")
     @app.get("/api/calculator/rooms/{room_id}")
     async def calculator_room_detail(request: Request, room_id: int) -> dict[str, Any]:
         storage_obj = get_calculator_route_storage(request)

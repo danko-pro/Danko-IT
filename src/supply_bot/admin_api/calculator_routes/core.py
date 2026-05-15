@@ -122,6 +122,7 @@ def register_calculator_core_routes(
             raise HTTPException(status_code=status_code, detail=str(exc)) from exc
 
         return await load_estimate_room_detail(storage_obj, room_id, detail="Room was not created")
+
     @app.get("/api/calculator/rooms/{room_id}")
     async def calculator_room_detail(request: Request, room_id: int) -> dict[str, Any]:
         storage_obj = get_calculator_route_storage(request)

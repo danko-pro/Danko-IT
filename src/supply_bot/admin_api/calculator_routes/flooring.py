@@ -3,16 +3,22 @@ from typing import Any
 
 from fastapi import FastAPI, HTTPException, Request
 
-from supply_bot.admin_api.calculator_payloads.flooring_custom_consumables import custom_consumables_to_json
 from supply_bot.admin_api.calculator_routes.shared import (
-    clamp_minimum,
     clamp_non_negative,
     get_calculator_route_storage,
     load_created_catalog_item,
     load_estimate_project_payload,
     normalize_optional_text,
     require_estimate_project,
-    require_non_empty_text,
+)
+from supply_bot.estimates.application.create_flooring_catalog import (
+    CreateFlooringCoveringCommand,
+    CreateFlooringCoveringConsumableCommand,
+    CreateFlooringCoveringUseCase,
+    CreateFlooringLayoutCommand,
+    CreateFlooringLayoutUseCase,
+    CreateFlooringPreparationCommand,
+    CreateFlooringPreparationUseCase,
 )
 
 
@@ -30,30 +36,43 @@ def register_calculator_flooring_routes(
         payload: calculator_flooring_covering_payload_model,
     ) -> dict[str, Any]:
         storage_obj = get_calculator_route_storage(request)
-        covering_id = await storage_obj.create_estimate_flooring_covering(
-            title=require_non_empty_text(payload.title, detail="Floor covering title is required"),
-            material_price_per_m2=clamp_non_negative(payload.material_price_per_m2),
-            labor_price_per_m2=clamp_non_negative(payload.labor_price_per_m2),
-            base_waste_percent=clamp_non_negative(payload.base_waste_percent),
-            underlay_mode=(payload.underlay_mode.strip() or "none"),
-            underlay_consumption_per_m2=clamp_non_negative(payload.underlay_consumption_per_m2),
-            glue_consumption_per_m2=clamp_non_negative(payload.glue_consumption_per_m2),
-            glue_unit=payload.glue_unit.strip() or "кг",
-            glue_price_per_unit=clamp_non_negative(payload.glue_price_per_unit),
-            primer_consumption_per_m2=clamp_non_negative(payload.primer_consumption_per_m2),
-            primer_unit=payload.primer_unit.strip() or "л",
-            primer_price_per_unit=clamp_non_negative(payload.primer_price_per_unit),
-            svp_consumption_per_m2=clamp_non_negative(payload.svp_consumption_per_m2),
-            svp_unit=payload.svp_unit.strip() or "шт",
-            svp_price_per_unit=clamp_non_negative(payload.svp_price_per_unit),
-            grout_consumption_per_m2=clamp_non_negative(payload.grout_consumption_per_m2),
-            grout_unit=payload.grout_unit.strip() or "кг",
-            grout_price_per_unit=clamp_non_negative(payload.grout_price_per_unit),
-            custom_consumables_json=custom_consumables_to_json(payload.custom_consumables, clamp_non_negative),
+        command = CreateFlooringCoveringCommand(
+            title=payload.title,
+            material_price_per_m2=payload.material_price_per_m2,
+            labor_price_per_m2=payload.labor_price_per_m2,
+            base_waste_percent=payload.base_waste_percent,
+            underlay_mode=payload.underlay_mode,
+            underlay_consumption_per_m2=payload.underlay_consumption_per_m2,
+            glue_consumption_per_m2=payload.glue_consumption_per_m2,
+            glue_unit=payload.glue_unit,
+            glue_price_per_unit=payload.glue_price_per_unit,
+            primer_consumption_per_m2=payload.primer_consumption_per_m2,
+            primer_unit=payload.primer_unit,
+            primer_price_per_unit=payload.primer_price_per_unit,
+            svp_consumption_per_m2=payload.svp_consumption_per_m2,
+            svp_unit=payload.svp_unit,
+            svp_price_per_unit=payload.svp_price_per_unit,
+            grout_consumption_per_m2=payload.grout_consumption_per_m2,
+            grout_unit=payload.grout_unit,
+            grout_price_per_unit=payload.grout_price_per_unit,
+            custom_consumables=[
+                CreateFlooringCoveringConsumableCommand(
+                    title=item.title,
+                    consumption_per_m2=item.consumption_per_m2,
+                    unit=item.unit,
+                    price_per_unit=item.price_per_unit,
+                )
+                for item in payload.custom_consumables
+            ],
             needs_plinth=payload.needs_plinth,
-            instrument_price_per_m2=clamp_non_negative(payload.instrument_price_per_m2),
-            note=normalize_optional_text(payload.note),
+            instrument_price_per_m2=payload.instrument_price_per_m2,
+            note=payload.note,
         )
+        try:
+            covering_id = await CreateFlooringCoveringUseCase(storage_obj).execute(command)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+
         return await load_created_catalog_item(
             storage_obj.list_estimate_flooring_coverings,
             created_id=covering_id,
@@ -66,15 +85,20 @@ def register_calculator_flooring_routes(
         payload: calculator_flooring_preparation_payload_model,
     ) -> dict[str, Any]:
         storage_obj = get_calculator_route_storage(request)
-        preparation_id = await storage_obj.create_estimate_flooring_preparation(
-            title=require_non_empty_text(payload.title, detail="Floor preparation title is required"),
-            labor_price_per_m2=clamp_non_negative(payload.labor_price_per_m2),
-            material_price_per_m2=clamp_non_negative(payload.material_price_per_m2),
-            primer_consumption_per_m2=clamp_non_negative(payload.primer_consumption_per_m2),
-            primer_unit=payload.primer_unit.strip() or "л",
-            primer_price_per_unit=clamp_non_negative(payload.primer_price_per_unit),
-            note=normalize_optional_text(payload.note),
+        command = CreateFlooringPreparationCommand(
+            title=payload.title,
+            labor_price_per_m2=payload.labor_price_per_m2,
+            material_price_per_m2=payload.material_price_per_m2,
+            primer_consumption_per_m2=payload.primer_consumption_per_m2,
+            primer_unit=payload.primer_unit,
+            primer_price_per_unit=payload.primer_price_per_unit,
+            note=payload.note,
         )
+        try:
+            preparation_id = await CreateFlooringPreparationUseCase(storage_obj).execute(command)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+
         return await load_created_catalog_item(
             storage_obj.list_estimate_flooring_preparations,
             created_id=preparation_id,
@@ -87,18 +111,22 @@ def register_calculator_flooring_routes(
         payload: calculator_flooring_layout_payload_model,
     ) -> dict[str, Any]:
         storage_obj = get_calculator_route_storage(request)
-        layout_id = await storage_obj.create_estimate_flooring_layout(
-            title=require_non_empty_text(payload.title, detail="Floor layout title is required"),
-            labor_multiplier=clamp_minimum(payload.labor_multiplier, 0.1),
-            extra_waste_percent=clamp_non_negative(payload.extra_waste_percent),
-            note=normalize_optional_text(payload.note),
+        command = CreateFlooringLayoutCommand(
+            title=payload.title,
+            labor_multiplier=payload.labor_multiplier,
+            extra_waste_percent=payload.extra_waste_percent,
+            note=payload.note,
         )
+        try:
+            layout_id = await CreateFlooringLayoutUseCase(storage_obj).execute(command)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+
         return await load_created_catalog_item(
             storage_obj.list_estimate_flooring_layouts,
             created_id=layout_id,
             detail="Floor layout catalog item was not created",
         )
-
     @app.patch("/api/calculator/projects/{project_id}/flooring")
     async def update_calculator_flooring(
         request: Request,

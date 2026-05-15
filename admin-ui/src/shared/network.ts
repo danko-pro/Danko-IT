@@ -2,7 +2,22 @@ import type { AdminAuthSession } from "./types";
 
 // Сетевые helper'ы admin UI: базовый URL, HTTP-ошибки, JSON-запросы и скачивание файлов.
 
-export const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "http://127.0.0.1:8000";
+const DEV_API_BASE = "http://127.0.0.1:8000";
+
+function resolveApiBase(): string {
+  const rawApiBase = import.meta.env.VITE_API_BASE_URL?.trim();
+  if (rawApiBase) {
+    return rawApiBase.replace(/\/+$/, "");
+  }
+
+  if (import.meta.env.PROD) {
+    throw new Error("VITE_API_BASE_URL is required for production frontend build/runtime");
+  }
+
+  return DEV_API_BASE;
+}
+
+export const API_BASE = resolveApiBase();
 
 export class ApiError extends Error {
   status: number;

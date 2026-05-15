@@ -174,6 +174,8 @@ Frontend Static Site:
 VITE_API_BASE_URL=https://api.danko39.ru
 ```
 
+`VITE_API_BASE_URL` is a Vite build-time variable. After changing it in Render Static Site settings, rebuild/redeploy the frontend. Production frontend builds must never fall back to `localhost` or `127.0.0.1`; if `VITE_API_BASE_URL` is missing in production, the app fails loudly instead of sending users' browsers to a local backend.
+
 Generate `ADMIN_SESSION_SECRET` locally:
 
 ```powershell

@@ -20,6 +20,10 @@ from supply_bot.estimates.application.create_room import (
     CreateEstimateRoomCommand,
     CreateEstimateRoomUseCase,
 )
+from supply_bot.estimates.application.delete_room import (
+    DeleteEstimateRoomCommand,
+    DeleteEstimateRoomUseCase,
+)
 from supply_bot.estimates.application.update_room import (
     UpdateEstimateRoomCommand,
     UpdateEstimateRoomFloorSectionCommand,
@@ -166,9 +170,13 @@ def register_calculator_core_routes(
     @app.delete("/api/calculator/rooms/{room_id}")
     async def delete_calculator_room(request: Request, room_id: int) -> dict[str, Any]:
         storage_obj = get_calculator_route_storage(request)
-        room = await require_estimate_room(storage_obj, room_id)
-        project_id = int(room["project_id"])
-        await storage_obj.delete_estimate_room(room_id)
+        command = DeleteEstimateRoomCommand(room_id=room_id)
+        try:
+            project_id = await DeleteEstimateRoomUseCase(storage_obj).execute(command)
+        except ValueError as exc:
+            status_code = 404 if str(exc) == "Calculator room not found" else 400
+            raise HTTPException(status_code=status_code, detail=str(exc)) from exc
+
         return await load_estimate_project_payload(
             storage_obj,
             project_id,

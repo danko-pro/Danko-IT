@@ -3,6 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Protocol
 
+from supply_bot.estimates.application.shared import normalize_optional_text, normalize_required_text
+
 
 @dataclass(frozen=True)
 class CreateEstimateProjectCommand:
@@ -28,22 +30,10 @@ class CreateEstimateProjectUseCase:
         self._storage = storage
 
     async def execute(self, command: CreateEstimateProjectCommand) -> int:
-        name = self._normalize_required_name(command.name)
-        note = self._normalize_optional_text(command.note)
+        name = normalize_required_text(command.name, error_message="Project name is required")
+        note = normalize_optional_text(command.note)
         return await self._storage.create_estimate_project(
             name=name,
             note=note,
             group_chat_id=command.group_chat_id,
         )
-
-    @staticmethod
-    def _normalize_required_name(value: str | None) -> str:
-        normalized = (value or "").strip()
-        if not normalized:
-            raise ValueError("Project name is required")
-        return normalized
-
-    @staticmethod
-    def _normalize_optional_text(value: str | None) -> str | None:
-        normalized = (value or "").strip()
-        return normalized or None

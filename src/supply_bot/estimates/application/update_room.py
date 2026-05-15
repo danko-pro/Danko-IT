@@ -3,6 +3,14 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Protocol
 
+from supply_bot.estimates.application.shared import (
+    clamp_minimum,
+    clamp_non_negative,
+    clamp_optional_non_negative,
+    normalize_optional_text,
+    normalize_required_text,
+)
+
 
 @dataclass(frozen=True)
 class UpdateEstimateRoomFloorSectionCommand:
@@ -75,7 +83,7 @@ class UpdateEstimateRoomUseCase:
         if not room:
             raise ValueError("Calculator room not found")
 
-        name = self._normalize_required_name(command.name)
+        name = normalize_required_text(command.name, error_message="Room name is required")
         manual_floor_area_m2 = command.manual_floor_area_m2
         if manual_floor_area_m2 is not None and manual_floor_area_m2 < 0:
             raise ValueError("Floor area cannot be negative")
@@ -83,11 +91,11 @@ class UpdateEstimateRoomUseCase:
         await self._storage.update_estimate_room(
             command.room_id,
             name=name,
-            ceiling_height_m=self._clamp_minimum(command.ceiling_height_m, 0.1),
+            ceiling_height_m=clamp_minimum(command.ceiling_height_m, 0.1),
             manual_floor_area_m2=manual_floor_area_m2,
             auto_perimeter_calc=command.auto_perimeter_calc,
-            perimeter_factor=self._clamp_minimum(command.perimeter_factor, 1.0),
-            note=self._normalize_optional_text(command.note),
+            perimeter_factor=clamp_minimum(command.perimeter_factor, 1.0),
+            note=normalize_optional_text(command.note),
         )
         await self._storage.replace_estimate_room_walls(
             command.room_id,
@@ -97,8 +105,8 @@ class UpdateEstimateRoomUseCase:
             command.room_id,
             [
                 {
-                    "length_m": self._clamp_non_negative(section.length_m or 0.0),
-                    "width_m": self._clamp_non_negative(section.width_m or 0.0),
+                    "length_m": clamp_non_negative(section.length_m or 0.0),
+                    "width_m": clamp_non_negative(section.width_m or 0.0),
                 }
                 for section in command.floor_sections
             ],
@@ -108,39 +116,13 @@ class UpdateEstimateRoomUseCase:
             [
                 {
                     "opening_type": section.opening_type,
-                    "width_m": self._clamp_optional_non_negative(section.width_m),
-                    "height_m": self._clamp_optional_non_negative(section.height_m),
-                    "quantity": self._clamp_optional_non_negative(section.quantity),
-                    "area_m2": self._clamp_optional_non_negative(section.area_m2),
+                    "width_m": clamp_optional_non_negative(section.width_m),
+                    "height_m": clamp_optional_non_negative(section.height_m),
+                    "quantity": clamp_optional_non_negative(section.quantity),
+                    "area_m2": clamp_optional_non_negative(section.area_m2),
                     "note": section.note,
                 }
                 for section in command.openings
             ],
         )
         return command.room_id
-
-    @staticmethod
-    def _normalize_required_name(value: str | None) -> str:
-        normalized = (value or "").strip()
-        if not normalized:
-            raise ValueError("Room name is required")
-        return normalized
-
-    @staticmethod
-    def _normalize_optional_text(value: str | None) -> str | None:
-        normalized = (value or "").strip()
-        return normalized or None
-
-    @staticmethod
-    def _clamp_minimum(value: float | int, minimum: float) -> float:
-        return max(float(value), minimum)
-
-    @staticmethod
-    def _clamp_non_negative(value: float | int) -> float:
-        return max(float(value), 0.0)
-
-    @classmethod
-    def _clamp_optional_non_negative(cls, value: float | int | None) -> float | None:
-        if value is None:
-            return None
-        return cls._clamp_non_negative(value)

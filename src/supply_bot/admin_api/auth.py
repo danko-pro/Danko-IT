@@ -175,23 +175,28 @@ def set_admin_session_cookie(
     token: str,
     max_age: int,
     secure: bool = False,
+    samesite: str = "lax",
 ) -> None:
+    if samesite == "none" and not secure:
+        raise ValueError("SameSite=None requires Secure=True for admin session cookie")
     response.set_cookie(
         key=SESSION_COOKIE_NAME,
         value=token,
         httponly=True,
-        samesite="lax",
+        samesite=samesite,
         secure=secure,
         max_age=max_age,
         path="/",
     )
 
 
-def clear_admin_session_cookie(response: Response, *, secure: bool = False) -> None:
+def clear_admin_session_cookie(response: Response, *, secure: bool = False, samesite: str = "lax") -> None:
+    if samesite == "none" and not secure:
+        raise ValueError("SameSite=None requires Secure=True for admin session cookie")
     response.delete_cookie(
         key=SESSION_COOKIE_NAME,
         httponly=True,
-        samesite="lax",
+        samesite=samesite,
         secure=secure,
         path="/",
     )

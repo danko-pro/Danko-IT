@@ -10,7 +10,16 @@ from supply_bot.admin_api.auth import hash_admin_password
 from supply_bot.config import load_settings
 
 
-def _create_auth_settings_file(root: Path, *, cookie_secure: bool = False) -> Path:
+def _create_auth_settings_file(
+    root: Path,
+    *,
+    cookie_secure: bool = False,
+    cookie_samesite: str | None = None,
+) -> Path:
+    cookie_settings = [f"ADMIN_SESSION_COOKIE_SECURE={int(cookie_secure)}"]
+    if cookie_samesite is not None:
+        cookie_settings.append(f"ADMIN_SESSION_COOKIE_SAMESITE={cookie_samesite}")
+
     config_path = root / ".env.test"
     config_path.write_text(
         "\n".join(
@@ -21,7 +30,7 @@ def _create_auth_settings_file(root: Path, *, cookie_secure: bool = False) -> Pa
                 f"ADMIN_PASSWORD_HASH={hash_admin_password('admin-pass', salt='fixed-salt', iterations=120000)}",
                 "ADMIN_SESSION_SECRET=test-session-secret",
                 "ADMIN_SESSION_TTL_SECONDS=3600",
-                f"ADMIN_SESSION_COOKIE_SECURE={int(cookie_secure)}",
+                *cookie_settings,
                 "PROJECT_DOCUMENTS_DIR=./project-documents",
             ]
         ),
@@ -77,3 +86,49 @@ def test_admin_session_cookie_secure_flag_is_configurable() -> None:
 
             assert login_response.status_code == 200
             assert "secure" in login_response.headers["set-cookie"].lower()
+
+
+def test_admin_session_cookie_samesite_defaults_to_lax() -> None:
+    with TemporaryDirectory() as tmp_dir:
+        root = Path(tmp_dir)
+        settings = load_settings(_create_auth_settings_file(root))
+
+        assert settings.admin_session_cookie_samesite == "lax"
+
+        with TestClient(create_admin_app(settings)) as client:
+            login_response = client.post("/api/auth/login", json={"password": "admin-pass"})
+
+            assert login_response.status_code == 200
+            assert "samesite=lax" in login_response.headers["set-cookie"].lower()
+
+
+def test_admin_session_cookie_samesite_none_is_configurable_for_cross_origin_render() -> None:
+    with TemporaryDirectory() as tmp_dir:
+        root = Path(tmp_dir)
+        settings = load_settings(
+            _create_auth_settings_file(root, cookie_secure=True, cookie_samesite="None")
+        )
+
+        assert settings.admin_session_cookie_samesite == "none"
+
+        with TestClient(create_admin_app(settings)) as client:
+            login_response = client.post("/api/auth/login", json={"password": "admin-pass"})
+            logout_response = client.post("/api/auth/logout")
+
+            assert login_response.status_code == 200
+            assert "secure" in login_response.headers["set-cookie"].lower()
+            assert "samesite=none" in login_response.headers["set-cookie"].lower()
+            assert logout_response.status_code == 200
+            assert "samesite=none" in logout_response.headers["set-cookie"].lower()
+
+
+def test_admin_session_cookie_samesite_none_requires_secure_cookie() -> None:
+    with TemporaryDirectory() as tmp_dir:
+        root = Path(tmp_dir)
+
+        try:
+            load_settings(_create_auth_settings_file(root, cookie_secure=False, cookie_samesite="None"))
+        except ValueError as exc:
+            assert "ADMIN_SESSION_COOKIE_SAMESITE=None requires ADMIN_SESSION_COOKIE_SECURE=True" in str(exc)
+        else:
+            raise AssertionError("SameSite=None without Secure=True must be rejected")

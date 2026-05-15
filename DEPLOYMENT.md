@@ -221,6 +221,7 @@ Backend Web Service and Bot Worker:
 DATABASE_URL=postgresql+asyncpg://USER:PASSWORD@HOST:5432/DATABASE
 ADMIN_SESSION_SECRET=replace-with-generated-secret
 ADMIN_SESSION_COOKIE_SECURE=True
+ADMIN_SESSION_COOKIE_SAMESITE=None
 ADMIN_API_CORS_ORIGINS=https://danko39.ru,https://www.danko39.ru
 BOT_TOKEN=replace-with-telegram-bot-token
 OPENAI_API_KEY=replace-with-openai-api-key
@@ -236,6 +237,15 @@ VITE_API_BASE_URL=https://api.danko39.ru
 ```
 
 `VITE_API_BASE_URL` is a Vite build-time variable. After changing it in Render Static Site settings, rebuild/redeploy the frontend. Production frontend builds must never fall back to `localhost` or `127.0.0.1`; if `VITE_API_BASE_URL` is missing in production, the app fails loudly instead of sending users' browsers to a local backend.
+
+For Render frontend and backend on different `onrender.com` domains, admin session cookies must be cross-site cookies:
+
+```env
+ADMIN_SESSION_COOKIE_SECURE=True
+ADMIN_SESSION_COOKIE_SAMESITE=None
+```
+
+Without `SameSite=None`, registration/login can succeed but the browser will not send the session cookie on later API requests, causing `401 Unauthorized`.
 
 Generate `ADMIN_SESSION_SECRET` locally:
 

@@ -61,6 +61,7 @@ class Settings:
     admin_session_secret: str | None
     admin_session_ttl_seconds: int
     admin_session_cookie_secure: bool
+    admin_session_cookie_samesite: str
     project_document_max_upload_bytes: int
     project_documents_dir: Path
     # Максимальный размер Telegram-медиа, которое backend скачивает перед AI-обработкой.
@@ -126,6 +127,13 @@ def _optional_secret(value: str | None) -> str | None:
     return stripped
 
 
+def _normalize_admin_session_cookie_samesite(value: str | None) -> str:
+    normalized = (value or "lax").strip().lower()
+    if normalized not in {"lax", "strict", "none"}:
+        raise ValueError("ADMIN_SESSION_COOKIE_SAMESITE must be one of: lax, strict, none")
+    return normalized
+
+
 def discover_config_path(base_dir: Path | None = None) -> Path:
     root = base_dir or Path.cwd()
     override = os.getenv("SUPPLY_BOT_CONFIG")
@@ -164,6 +172,13 @@ def load_settings(config_path: Path | None = None) -> Settings:
     bot_token = env.get("BOT_TOKEN", "").strip()
     if not bot_token or bot_token in PLACEHOLDER_VALUES:
         raise ValueError("BOT_TOKEN не задан в конфиге.")
+
+    admin_session_cookie_secure = parse_bool(env.get("ADMIN_SESSION_COOKIE_SECURE"))
+    admin_session_cookie_samesite = _normalize_admin_session_cookie_samesite(
+        env.get("ADMIN_SESSION_COOKIE_SAMESITE")
+    )
+    if admin_session_cookie_samesite == "none" and not admin_session_cookie_secure:
+        raise ValueError("ADMIN_SESSION_COOKIE_SAMESITE=None requires ADMIN_SESSION_COOKIE_SECURE=True")
 
     return Settings(
         bot_token=bot_token,
@@ -205,7 +220,8 @@ def load_settings(config_path: Path | None = None) -> Settings:
         admin_password_hash=_optional_secret(env.get("ADMIN_PASSWORD_HASH")),
         admin_session_secret=_optional_secret(env.get("ADMIN_SESSION_SECRET")),
         admin_session_ttl_seconds=int(env.get("ADMIN_SESSION_TTL_SECONDS", "43200")),
-        admin_session_cookie_secure=parse_bool(env.get("ADMIN_SESSION_COOKIE_SECURE")),
+        admin_session_cookie_secure=admin_session_cookie_secure,
+        admin_session_cookie_samesite=admin_session_cookie_samesite,
         project_document_max_upload_bytes=int(env.get("PROJECT_DOCUMENT_MAX_UPLOAD_BYTES", "26214400")),
         project_documents_dir=_pick_path(
             base_dir,

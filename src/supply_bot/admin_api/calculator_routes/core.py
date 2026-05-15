@@ -7,10 +7,8 @@ from supply_bot.admin_api.calculator_routes.shared import (
     get_calculator_route_storage,
     load_estimate_project_payload,
     load_estimate_room_detail,
-    normalize_optional_text,
     require_estimate_project,
     require_estimate_room,
-    require_non_empty_text,
 )
 from supply_bot.estimates.application.create_project import (
     CreateEstimateProjectCommand,
@@ -23,6 +21,10 @@ from supply_bot.estimates.application.create_room import (
 from supply_bot.estimates.application.delete_room import (
     DeleteEstimateRoomCommand,
     DeleteEstimateRoomUseCase,
+)
+from supply_bot.estimates.application.update_project import (
+    UpdateEstimateProjectCommand,
+    UpdateEstimateProjectUseCase,
 )
 from supply_bot.estimates.application.update_room import (
     UpdateEstimateRoomCommand,
@@ -76,25 +78,27 @@ def register_calculator_core_routes(
         payload: calculator_project_update_payload_model,
     ) -> dict[str, Any]:
         storage_obj = get_calculator_route_storage(request)
-        await require_estimate_project(storage_obj, project_id)
-
-        lift_type = normalize_optional_text(payload.lift_type) or ""
-        await storage_obj.update_estimate_project(
-            project_id,
-            name=require_non_empty_text(payload.name, detail="Project name is required"),
-            residential_complex=normalize_optional_text(payload.residential_complex) or "",
-            address=normalize_optional_text(payload.address) or "",
-            entrance_section=normalize_optional_text(payload.entrance_section) or "",
-            apartment=normalize_optional_text(payload.apartment) or "",
-            floor=normalize_optional_text(payload.floor) or "",
-            has_elevator=0 if lift_type in {"", "none"} else 1,
-            lift_type=lift_type,
-            site_access=normalize_optional_text(payload.site_access) or "",
-            intercom_code=normalize_optional_text(payload.intercom_code) or "",
-            loading_zone=normalize_optional_text(payload.loading_zone) or "",
-            responsible_person=normalize_optional_text(payload.responsible_person) or "",
-            note=normalize_optional_text(payload.note),
+        command = UpdateEstimateProjectCommand(
+            project_id=project_id,
+            name=payload.name,
+            residential_complex=payload.residential_complex,
+            address=payload.address,
+            entrance_section=payload.entrance_section,
+            apartment=payload.apartment,
+            floor=payload.floor,
+            lift_type=payload.lift_type,
+            site_access=payload.site_access,
+            intercom_code=payload.intercom_code,
+            loading_zone=payload.loading_zone,
+            responsible_person=payload.responsible_person,
+            note=payload.note,
         )
+        try:
+            await UpdateEstimateProjectUseCase(storage_obj).execute(command)
+        except ValueError as exc:
+            status_code = 404 if str(exc) == "Calculator project not found" else 400
+            raise HTTPException(status_code=status_code, detail=str(exc)) from exc
+
         return await load_estimate_project_payload(storage_obj, project_id, detail="Project update failed")
 
     @app.post("/api/calculator/projects/{project_id}/rooms")

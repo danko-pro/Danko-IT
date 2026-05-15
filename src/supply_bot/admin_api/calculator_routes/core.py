@@ -4,8 +4,6 @@ from fastapi import FastAPI, HTTPException, Request
 
 from supply_bot.admin_api.calculator_payloads import _estimate_project_payload, _estimate_room_detail
 from supply_bot.admin_api.calculator_routes.shared import (
-    clamp_minimum,
-    clamp_non_negative,
     get_calculator_route_storage,
     load_estimate_project_payload,
     load_estimate_room_detail,
@@ -21,6 +19,12 @@ from supply_bot.estimates.application.create_project import (
 from supply_bot.estimates.application.create_room import (
     CreateEstimateRoomCommand,
     CreateEstimateRoomUseCase,
+)
+from supply_bot.estimates.application.update_room import (
+    UpdateEstimateRoomCommand,
+    UpdateEstimateRoomFloorSectionCommand,
+    UpdateEstimateRoomOpeningCommand,
+    UpdateEstimateRoomUseCase,
 )
 
 
@@ -123,49 +127,40 @@ def register_calculator_core_routes(
         payload: calculator_room_create_payload_model | calculator_room_update_payload_model,
     ) -> dict[str, Any]:
         storage_obj = get_calculator_route_storage(request)
-        await require_estimate_room(storage_obj, room_id)
-
-        manual_floor_area_m2 = payload.manual_floor_area_m2
-        if manual_floor_area_m2 is not None and manual_floor_area_m2 < 0:
-            raise HTTPException(status_code=400, detail="Floor area cannot be negative")
-
-        await storage_obj.update_estimate_room(
-            room_id,
-            name=require_non_empty_text(payload.name, detail="Room name is required"),
-            ceiling_height_m=clamp_minimum(payload.ceiling_height_m, 0.1),
-            manual_floor_area_m2=manual_floor_area_m2,
+        command = UpdateEstimateRoomCommand(
+            room_id=room_id,
+            name=payload.name,
+            ceiling_height_m=payload.ceiling_height_m,
+            manual_floor_area_m2=payload.manual_floor_area_m2,
             auto_perimeter_calc=payload.auto_perimeter_calc,
-            perimeter_factor=clamp_minimum(payload.perimeter_factor, 1.0),
-            note=normalize_optional_text(payload.note),
-        )
-        await storage_obj.replace_estimate_room_walls(
-            room_id,
-            [float(value) for value in payload.walls_m if value and value > 0],
-        )
-        await storage_obj.replace_estimate_room_floor_sections(
-            room_id,
-            [
-                {
-                    "length_m": clamp_non_negative(section.length_m),
-                    "width_m": clamp_non_negative(section.width_m),
-                }
+            perimeter_factor=payload.perimeter_factor,
+            note=payload.note,
+            walls_m=payload.walls_m,
+            floor_sections=[
+                UpdateEstimateRoomFloorSectionCommand(
+                    length_m=section.length_m,
+                    width_m=section.width_m,
+                )
                 for section in payload.floor_sections
             ],
-        )
-        await storage_obj.replace_estimate_room_openings(
-            room_id,
-            [
-                {
-                    "opening_type": section.opening_type,
-                    "width_m": clamp_non_negative(section.width_m) if section.width_m is not None else None,
-                    "height_m": clamp_non_negative(section.height_m) if section.height_m is not None else None,
-                    "quantity": clamp_non_negative(section.quantity) if section.quantity is not None else None,
-                    "area_m2": clamp_non_negative(section.area_m2) if section.area_m2 is not None else None,
-                    "note": section.note,
-                }
+            openings=[
+                UpdateEstimateRoomOpeningCommand(
+                    opening_type=section.opening_type,
+                    width_m=section.width_m,
+                    height_m=section.height_m,
+                    quantity=section.quantity,
+                    area_m2=section.area_m2,
+                    note=section.note,
+                )
                 for section in payload.openings
             ],
         )
+        try:
+            await UpdateEstimateRoomUseCase(storage_obj).execute(command)
+        except ValueError as exc:
+            status_code = 404 if str(exc) == "Calculator room not found" else 400
+            raise HTTPException(status_code=status_code, detail=str(exc)) from exc
+
         return await load_estimate_room_detail(storage_obj, room_id, detail="Room update failed")
 
     @app.delete("/api/calculator/rooms/{room_id}")

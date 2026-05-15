@@ -117,6 +117,67 @@ Non-existent domain
 
 Render custom domain verification remains pending until the CNAME is visible from DNS.
 
+## Deploy-2 current status: Render frontend Static Site
+
+Status date: 2026-05-15.
+
+```text
+Frontend Static Site: created
+Frontend technical URL: https://name-danko-site.onrender.com
+Backend technical URL: https://danko-it.onrender.com
+Temporary VITE_API_BASE_URL: https://danko-it.onrender.com
+Login/register form: visible
+/api/auth/session: 200 after env fix and redeploy
+CORS error: resolved after env fix and backend CORS update
+```
+
+Initial frontend symptom:
+
+```text
+Frontend opened the registration page.
+Registration/login requests failed with Failed to fetch.
+Production bundle contained http://127.0.0.1:8000.
+```
+
+Code fix already applied:
+
+```text
+e8f9148 Fix production frontend API base fallback
+```
+
+After this fix, production frontend no longer silently falls back to localhost. If `VITE_API_BASE_URL` is missing in production, the app fails loudly. Dev fallback to `http://127.0.0.1:8000` remains available only for local development.
+
+Actual Render Static Site issue:
+
+```text
+Wrong env name: VITE_API_BASE_UR
+Correct env name: VITE_API_BASE_URL
+Correct temporary value: https://danko-it.onrender.com
+```
+
+After fixing the env name and redeploying the Static Site:
+
+```text
+Frontend opened again
+/api/auth/session returned 200
+CORS error disappeared
+Login/register form displayed correctly
+```
+
+Backend CORS must include the frontend technical origin while the final domain is pending:
+
+```env
+ADMIN_API_CORS_ORIGINS=https://danko39.ru,https://www.danko39.ru,https://name-danko-site.onrender.com
+```
+
+After `api.danko39.ru` is verified, switch frontend env to:
+
+```env
+VITE_API_BASE_URL=https://api.danko39.ru
+```
+
+Then rebuild/redeploy the frontend again.
+
 ## Hosting choice for the first production deployment
 
 Recommended first deployment target: Render.
@@ -295,6 +356,37 @@ www.danko39.ru
 6. Configure DNS at reg.ru according to hosting provider instructions.
 7. Wait for HTTPS.
 8. Open frontend and verify login/register.
+
+## Troubleshooting: frontend blank page or Failed to fetch
+
+Common causes:
+
+```text
+VITE_API_BASE_URL is not set in Render Static Site environment
+VITE_API_BASE_URL is misspelled, for example VITE_API_BASE_UR
+Frontend was not rebuilt after changing VITE_API_BASE_URL
+Backend ADMIN_API_CORS_ORIGINS does not include the frontend origin
+Frontend bundle was built with an old API base URL
+```
+
+Checks:
+
+```text
+Open DevTools Network and inspect the request URL
+Search built bundle for 127.0.0.1 or localhost
+Check Render Static Site Environment variables
+Check Render backend ADMIN_API_CORS_ORIGINS
+Run Clear build cache & deploy in Render Static Site
+```
+
+Expected temporary Deploy-2 values while `api.danko39.ru` is pending:
+
+```env
+VITE_API_BASE_URL=https://danko-it.onrender.com
+ADMIN_API_CORS_ORIGINS=https://danko39.ru,https://www.danko39.ru,https://name-danko-site.onrender.com
+```
+
+Production frontend must not fall back to localhost. Localhost fallback is allowed only in dev mode.
 
 ## Deploy-3 checklist: Telegram bot worker
 

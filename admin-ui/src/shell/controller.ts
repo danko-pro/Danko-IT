@@ -73,7 +73,7 @@ export function useAdminAppController() {
 
       setLoading(false);
     } catch (loadError) {
-      setAuthError(loadError instanceof Error ? loadError.message : "Не удалось проверить admin-сессию");
+      setAuthError(loadError instanceof Error ? loadError.message : "Не удалось проверить сессию доступа");
       setLoading(false);
     } finally {
       setAuthLoading(false);
@@ -114,7 +114,7 @@ export function useAdminAppController() {
                 expires_at: null,
               },
         );
-        setAuthError("Admin-сессия завершена. Войдите снова.");
+        setAuthError("Сессия доступа завершена. Войдите снова.");
         setLoading(false);
         return;
       }
@@ -157,7 +157,7 @@ export function useAdminAppController() {
       }
     } catch (loginError) {
       if (loginError instanceof ApiError && loginError.status === 401) {
-        setAuthError("Неверный email или пароль.");
+        setAuthError("Неверная почта или пароль.");
         return;
       }
       setAuthError(loginError instanceof Error ? loginError.message : "Не удалось войти");
@@ -203,7 +203,7 @@ export function useAdminAppController() {
       setSettingsError(null);
       setLoading(false);
     } catch (logoutError) {
-      setAuthError(logoutError instanceof Error ? logoutError.message : "Не удалось завершить admin-сессию");
+      setAuthError(logoutError instanceof Error ? logoutError.message : "Не удалось завершить сессию доступа");
     } finally {
       setAuthPending(false);
     }

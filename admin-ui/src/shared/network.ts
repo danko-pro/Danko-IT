@@ -1,4 +1,4 @@
-import type { AdminAuthSession } from "./types";
+﻿import type { AdminAuthSession } from "./types";
 
 // Сетевые helper'ы admin UI: базовый URL, HTTP-ошибки, JSON-запросы и скачивание файлов.
 
@@ -37,7 +37,7 @@ export async function fetchJson<T>(path: string, init?: RequestInit): Promise<T>
     headers.set("Content-Type", "application/json");
   }
 
-  const response = await fetch(`${API_BASE}${path}`, {
+  const response = await fetchWithLocalizedNetworkError(`${API_BASE}${path}`, {
     credentials: "include",
     ...init,
     headers,
@@ -45,7 +45,11 @@ export async function fetchJson<T>(path: string, init?: RequestInit): Promise<T>
 
   if (!response.ok) {
     const payload = (await safeJson(response)) as { detail?: string } | null;
-    throw new ApiError(payload?.detail ?? `API ${response.status}: ${response.statusText}`, response.status, payload);
+    throw new ApiError(
+      localizeApiError(payload?.detail, response.status, response.statusText),
+      response.status,
+      payload,
+    );
   }
 
   return (await response.json()) as T;
@@ -59,13 +63,17 @@ export function buildApiUrl(path: string): string {
 }
 
 export async function downloadFile(path: string, preferredFileName?: string): Promise<void> {
-  const response = await fetch(buildApiUrl(path), {
+  const response = await fetchWithLocalizedNetworkError(buildApiUrl(path), {
     credentials: "include",
   });
 
   if (!response.ok) {
     const payload = (await safeJson(response)) as { detail?: string } | null;
-    throw new ApiError(payload?.detail ?? `API ${response.status}: ${response.statusText}`, response.status, payload);
+    throw new ApiError(
+      localizeApiError(payload?.detail, response.status, response.statusText),
+      response.status,
+      payload,
+    );
   }
 
   const blob = await response.blob();
@@ -108,4 +116,40 @@ function extractDownloadFileName(response: Response): string | null {
 
   const plainMatch = contentDisposition.match(/filename="?([^";]+)"?/i);
   return plainMatch?.[1] ?? null;
+}
+
+function localizeApiError(detail: string | undefined, status: number, statusText: string): string {
+  if (detail === "Admin authentication required") {
+    return "Требуется вход в аккаунт.";
+  }
+  if (detail === "Invalid credentials") {
+    return "Неверная почта или пароль.";
+  }
+  if (detail === "User registration requires ADMIN_SESSION_SECRET") {
+    return "Регистрация временно недоступна: не настроена сессия.";
+  }
+  if (detail === "Valid email is required") {
+    return "Укажите корректную электронную почту.";
+  }
+  if (detail === "Password must contain at least 8 characters") {
+    return "Пароль должен содержать минимум 8 символов.";
+  }
+  if (detail?.includes("already exists")) {
+    return "Пользователь с такой почтой уже зарегистрирован.";
+  }
+  if (detail) {
+    return detail;
+  }
+  return `Ошибка API ${status}: ${statusText}`;
+}
+
+async function fetchWithLocalizedNetworkError(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+  try {
+    return await fetch(input, init);
+  } catch (error) {
+    if (error instanceof TypeError) {
+      throw new Error("Не удалось подключиться к API. Проверьте соединение и адрес сервера.");
+    }
+    throw error;
+  }
 }

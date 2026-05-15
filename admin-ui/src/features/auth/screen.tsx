@@ -28,7 +28,7 @@ export function AdminAuthScreen(props: {
     <div className="flex min-h-[calc(100vh-1.5rem)] items-center justify-center">
       <div className="glass-panel w-full max-w-[460px] px-6 py-6">
         <div className="space-y-2">
-          <div className="eyebrow">Danko Access</div>
+          <div className="eyebrow">Доступ Danko</div>
           <h1 className="text-[2rem] font-semibold tracking-[-0.04em] text-slate-50">
             {mode === "register" ? "Регистрация" : "Вход в Danko IT"}
           </h1>
@@ -74,14 +74,14 @@ export function AdminAuthScreen(props: {
           ) : null}
 
           <label className="block">
-            <div className="field-label">Email</div>
+            <div className="field-label">Электронная почта</div>
             <input
               type="email"
               className="text-input"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               autoComplete="email"
-              placeholder="you@example.com"
+              placeholder="mail@example.com"
             />
           </label>
 
@@ -104,7 +104,7 @@ export function AdminAuthScreen(props: {
           ) : null}
 
           <div className="flex items-center justify-between gap-3 pt-1">
-            <div className="text-xs uppercase tracking-[0.18em] text-slate-500">HttpOnly session</div>
+            <div className="text-xs uppercase tracking-[0.18em] text-slate-500">Защищённая сессия</div>
             <Button type="submit" className="min-w-[10.5rem]" disabled={!canSubmit}>
               {props.loading ? "Обработка..." : mode === "register" ? "Создать" : "Войти"}
             </Button>

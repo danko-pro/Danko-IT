@@ -56,7 +56,7 @@ export default function App() {
         {controller.authLoading ? (
           <div className="glass-panel flex min-h-[calc(100vh-8rem)] items-center justify-center">
             <div className="space-y-2 text-center">
-              <div className="eyebrow">Admin Session</div>
+              <div className="eyebrow">Сессия доступа</div>
               <div className="text-lg font-semibold text-slate-100">Проверка доступа...</div>
             </div>
           </div>

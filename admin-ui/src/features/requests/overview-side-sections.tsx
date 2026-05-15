@@ -24,7 +24,7 @@ export function RequestsOverviewSideSections(props: RequestsOverviewSideSections
             <div className="dashboard-compact-value">{props.deliverySettings?.delivery_end ?? "—"}</div>
           </div>
           <div className="dashboard-compact-stat">
-            <div className="dashboard-compact-label">Fallback</div>
+            <div className="dashboard-compact-label">Резерв</div>
             <div className="dashboard-compact-value">{props.deliverySettings?.delivery_fallback ?? "—"}</div>
           </div>
         </div>

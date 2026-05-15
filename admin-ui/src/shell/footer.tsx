@@ -12,15 +12,15 @@ export function AppShellFooter(props: {
 }) {
   const authEnabled = props.authSession?.auth_enabled ?? false;
   const authenticated = props.authSession?.authenticated ?? false;
-  const authLabel = authEnabled ? (authenticated ? "Admin session" : "Без доступа") : "Local bypass";
+  const authLabel = authEnabled ? (authenticated ? "Сессия активна" : "Без доступа") : "Локальный режим";
   const authTone = authEnabled ? (authenticated ? "active" : "error") : "neutral";
 
   return (
     <footer className="glass-panel flex flex-wrap items-center justify-between gap-3 px-4 py-3 text-xs text-slate-400">
       <div className="flex flex-wrap items-center gap-2">
-        <StatusBadge label={props.loading ? "Синхронизация" : "API online"} tone={props.loading ? "warn" : "ok"} />
+        <StatusBadge label={props.loading ? "Синхронизация" : "API доступен"} tone={props.loading ? "warn" : "ok"} />
         <StatusBadge label={authLabel} tone={authTone} />
-        <span className="slot-chip">React + FastAPI</span>
+        <span className="slot-chip">Интерфейс + API</span>
       </div>
 
       <div className="flex flex-wrap items-center gap-3">

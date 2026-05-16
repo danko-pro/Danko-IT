@@ -19,6 +19,11 @@ from supply_bot.estimates.application.ceiling_catalog import (
     UpdateCeilingCatalogItemCommand,
     UpdateCeilingCatalogItemUseCase,
 )
+from supply_bot.estimates.application.replace_ceiling_rooms import (
+    ReplaceCeilingRoomCommand,
+    ReplaceCeilingRoomsCommand,
+    ReplaceCeilingRoomsUseCase,
+)
 from supply_bot.estimates.application.update_ceiling_config import (
     UpdateCeilingConfigCommand,
     UpdateCeilingConfigUseCase,
@@ -115,33 +120,29 @@ def register_calculator_ceiling_routes(app: FastAPI) -> None:
         payload: dict[str, Any],
     ) -> dict[str, Any]:
         storage_obj = get_calculator_route_storage(request)
-        await require_estimate_project(storage_obj, project_id)
-        room_ids = {int(room["id"]) for room in await storage_obj.list_estimate_rooms(project_id)}
-        catalog_ids = {int(item["id"]) for item in await storage_obj.list_estimate_ceiling_catalog_items()}
-        rows = []
-        for index, room_payload in enumerate(payload.get("rooms") or [], start=1):
-            room_id = int(room_payload["room_id"])
-            if room_id not in room_ids:
-                raise HTTPException(status_code=400, detail="Unknown ceiling room selected")
-            catalog_item_id = room_payload.get("default_catalog_item_id")
-            if catalog_item_id is not None and int(catalog_item_id) not in catalog_ids:
-                raise HTTPException(status_code=400, detail="Unknown ceiling catalog item selected")
-            rows.append(
-                {
-                    "room_id": room_id,
-                    "default_catalog_item_id": catalog_item_id,
-                    "is_enabled": bool(room_payload.get("is_enabled", True)),
-                    "ceiling_area_m2": _optional_non_negative(room_payload.get("ceiling_area_m2")),
-                    "area_source": normalize_optional_text(room_payload.get("area_source")) or "room_area",
-                    "perimeter_m": _optional_non_negative(room_payload.get("perimeter_m")),
-                    "perimeter_source": normalize_optional_text(room_payload.get("perimeter_source"))
-                    or "room_perimeter",
-                    "package_code_snapshot": normalize_optional_text(room_payload.get("package_code_snapshot")),
-                    "note": normalize_optional_text(room_payload.get("note")),
-                    "sort_order": int(room_payload.get("sort_order") or index * 10),
-                }
-            )
-        await storage_obj.replace_estimate_ceiling_rooms(project_id, rows)
+        command = ReplaceCeilingRoomsCommand(
+            project_id=project_id,
+            rooms=[
+                ReplaceCeilingRoomCommand(
+                    room_id=int(room_payload["room_id"]),
+                    default_catalog_item_id=room_payload.get("default_catalog_item_id"),
+                    is_enabled=room_payload.get("is_enabled", True),
+                    ceiling_area_m2=room_payload.get("ceiling_area_m2"),
+                    area_source=room_payload.get("area_source"),
+                    perimeter_m=room_payload.get("perimeter_m"),
+                    perimeter_source=room_payload.get("perimeter_source"),
+                    package_code_snapshot=room_payload.get("package_code_snapshot"),
+                    note=room_payload.get("note"),
+                    sort_order=room_payload.get("sort_order"),
+                )
+                for room_payload in payload.get("rooms") or []
+            ],
+        )
+        try:
+            await ReplaceCeilingRoomsUseCase(storage_obj).execute(command)
+        except ValueError as exc:
+            status_code = 404 if str(exc) == "Calculator project not found" else 400
+            raise HTTPException(status_code=status_code, detail=str(exc)) from exc
         return await _load_ceiling_payload_by_project_id(storage_obj, project_id)
 
     @app.post("/api/calculator/projects/{project_id}/ceilings/items")

@@ -3,15 +3,21 @@ from typing import Any
 from fastapi import FastAPI, HTTPException, Request
 
 from supply_bot.admin_api.calculator_routes.shared import (
-    catalog_consumables_to_json,
-    clamp_minimum,
     clamp_non_negative,
     get_calculator_route_storage,
     load_created_catalog_item,
     load_estimate_project_payload,
     normalize_optional_text,
     require_estimate_project,
-    require_non_empty_text,
+)
+from supply_bot.estimates.application.create_wall_finish_catalog import (
+    CreateWallFinishCoveringCommand,
+    CreateWallFinishCoveringConsumableCommand,
+    CreateWallFinishCoveringUseCase,
+    CreateWallFinishLayoutCommand,
+    CreateWallFinishLayoutUseCase,
+    CreateWallFinishPreparationCommand,
+    CreateWallFinishPreparationUseCase,
 )
 
 
@@ -29,27 +35,40 @@ def register_calculator_wall_finish_routes(
         payload: calculator_wall_finish_covering_payload_model,
     ) -> dict[str, Any]:
         storage_obj = get_calculator_route_storage(request)
-        covering_id = await storage_obj.create_estimate_wall_finish_covering(
-            title=require_non_empty_text(payload.title, detail="Wall finish title is required"),
-            material_price_per_m2=clamp_non_negative(payload.material_price_per_m2),
-            labor_price_per_m2=clamp_non_negative(payload.labor_price_per_m2),
-            base_waste_percent=clamp_non_negative(payload.base_waste_percent),
-            glue_consumption_per_m2=clamp_non_negative(payload.glue_consumption_per_m2),
-            glue_unit=payload.glue_unit.strip() or "кг",
-            glue_price_per_unit=clamp_non_negative(payload.glue_price_per_unit),
-            primer_consumption_per_m2=clamp_non_negative(payload.primer_consumption_per_m2),
-            primer_unit=payload.primer_unit.strip() or "л",
-            primer_price_per_unit=clamp_non_negative(payload.primer_price_per_unit),
-            putty_consumption_per_m2=clamp_non_negative(payload.putty_consumption_per_m2),
-            putty_unit=payload.putty_unit.strip() or "кг",
-            putty_price_per_unit=clamp_non_negative(payload.putty_price_per_unit),
-            mesh_consumption_per_m2=clamp_non_negative(payload.mesh_consumption_per_m2),
-            mesh_unit=payload.mesh_unit.strip() or "м²",
-            mesh_price_per_unit=clamp_non_negative(payload.mesh_price_per_unit),
-            custom_consumables_json=catalog_consumables_to_json(payload.custom_consumables),
-            instrument_price_per_m2=clamp_non_negative(payload.instrument_price_per_m2),
-            note=normalize_optional_text(payload.note),
+        command = CreateWallFinishCoveringCommand(
+            title=payload.title,
+            material_price_per_m2=payload.material_price_per_m2,
+            labor_price_per_m2=payload.labor_price_per_m2,
+            base_waste_percent=payload.base_waste_percent,
+            glue_consumption_per_m2=payload.glue_consumption_per_m2,
+            glue_unit=payload.glue_unit,
+            glue_price_per_unit=payload.glue_price_per_unit,
+            primer_consumption_per_m2=payload.primer_consumption_per_m2,
+            primer_unit=payload.primer_unit,
+            primer_price_per_unit=payload.primer_price_per_unit,
+            putty_consumption_per_m2=payload.putty_consumption_per_m2,
+            putty_unit=payload.putty_unit,
+            putty_price_per_unit=payload.putty_price_per_unit,
+            mesh_consumption_per_m2=payload.mesh_consumption_per_m2,
+            mesh_unit=payload.mesh_unit,
+            mesh_price_per_unit=payload.mesh_price_per_unit,
+            custom_consumables=[
+                CreateWallFinishCoveringConsumableCommand(
+                    title=item.title,
+                    consumption_per_m2=item.consumption_per_m2,
+                    unit=item.unit,
+                    price_per_unit=item.price_per_unit,
+                )
+                for item in payload.custom_consumables
+            ],
+            instrument_price_per_m2=payload.instrument_price_per_m2,
+            note=payload.note,
         )
+        try:
+            covering_id = await CreateWallFinishCoveringUseCase(storage_obj).execute(command)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+
         return await load_created_catalog_item(
             storage_obj.list_estimate_wall_finish_coverings,
             created_id=covering_id,
@@ -62,15 +81,20 @@ def register_calculator_wall_finish_routes(
         payload: calculator_wall_finish_preparation_payload_model,
     ) -> dict[str, Any]:
         storage_obj = get_calculator_route_storage(request)
-        preparation_id = await storage_obj.create_estimate_wall_finish_preparation(
-            title=require_non_empty_text(payload.title, detail="Wall preparation title is required"),
-            labor_price_per_m2=clamp_non_negative(payload.labor_price_per_m2),
-            material_price_per_m2=clamp_non_negative(payload.material_price_per_m2),
-            primer_consumption_per_m2=clamp_non_negative(payload.primer_consumption_per_m2),
-            primer_unit=payload.primer_unit.strip() or "л",
-            primer_price_per_unit=clamp_non_negative(payload.primer_price_per_unit),
-            note=normalize_optional_text(payload.note),
+        command = CreateWallFinishPreparationCommand(
+            title=payload.title,
+            labor_price_per_m2=payload.labor_price_per_m2,
+            material_price_per_m2=payload.material_price_per_m2,
+            primer_consumption_per_m2=payload.primer_consumption_per_m2,
+            primer_unit=payload.primer_unit,
+            primer_price_per_unit=payload.primer_price_per_unit,
+            note=payload.note,
         )
+        try:
+            preparation_id = await CreateWallFinishPreparationUseCase(storage_obj).execute(command)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+
         return await load_created_catalog_item(
             storage_obj.list_estimate_wall_finish_preparations,
             created_id=preparation_id,
@@ -83,18 +107,22 @@ def register_calculator_wall_finish_routes(
         payload: calculator_wall_finish_layout_payload_model,
     ) -> dict[str, Any]:
         storage_obj = get_calculator_route_storage(request)
-        layout_id = await storage_obj.create_estimate_wall_finish_layout(
-            title=require_non_empty_text(payload.title, detail="Wall layout title is required"),
-            labor_multiplier=clamp_minimum(payload.labor_multiplier, 0.1),
-            extra_waste_percent=clamp_non_negative(payload.extra_waste_percent),
-            note=normalize_optional_text(payload.note),
+        command = CreateWallFinishLayoutCommand(
+            title=payload.title,
+            labor_multiplier=payload.labor_multiplier,
+            extra_waste_percent=payload.extra_waste_percent,
+            note=payload.note,
         )
+        try:
+            layout_id = await CreateWallFinishLayoutUseCase(storage_obj).execute(command)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+
         return await load_created_catalog_item(
             storage_obj.list_estimate_wall_finish_layouts,
             created_id=layout_id,
             detail="Wall layout catalog item was not created",
         )
-
     @app.patch("/api/calculator/projects/{project_id}/wall-finishes")
     async def update_calculator_wall_finishes(
         request: Request,

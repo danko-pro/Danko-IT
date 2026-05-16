@@ -13,6 +13,12 @@ from supply_bot.admin_api.calculator_routes.shared import (
     require_estimate_project,
     require_non_empty_text,
 )
+from supply_bot.estimates.application.ceiling_catalog import (
+    CreateCeilingCatalogItemCommand,
+    CreateCeilingCatalogItemUseCase,
+    UpdateCeilingCatalogItemCommand,
+    UpdateCeilingCatalogItemUseCase,
+)
 from supply_bot.estimates.application.update_ceiling_config import (
     UpdateCeilingConfigCommand,
     UpdateCeilingConfigUseCase,
@@ -52,24 +58,28 @@ def register_calculator_ceiling_routes(app: FastAPI) -> None:
         payload: dict[str, Any],
     ) -> dict[str, Any]:
         storage_obj = get_calculator_route_storage(request)
-        item_id = await storage_obj.create_estimate_ceiling_catalog_item(
-            source_code=require_non_empty_text(payload.get("source_code"), detail="Ceiling source code is required"),
-            title=require_non_empty_text(payload.get("title"), detail="Ceiling title is required"),
-            category=require_non_empty_text(payload.get("category"), detail="Ceiling category is required"),
-            unit=require_non_empty_text(payload.get("unit"), detail="Ceiling unit is required"),
-            work_price=clamp_non_negative(payload.get("work_price")),
-            material_price=clamp_non_negative(payload.get("material_price")),
-            equipment_price=clamp_non_negative(payload.get("equipment_price")),
-            consumables_price=clamp_non_negative(payload.get("consumables_price")),
-            price_factor=_clamp_factor(payload.get("price_factor")),
-            quantity_source=normalize_optional_text(payload.get("quantity_source")),
-            quantity_formula=normalize_optional_text(payload.get("quantity_formula")),
-            include_section=normalize_optional_text(payload.get("include_section")) or "ceilings",
-            package_code=normalize_optional_text(payload.get("package_code")),
-            note=normalize_optional_text(payload.get("note")),
-            is_active=bool(payload.get("is_active", True)),
-            sort_order=max(0, int(payload.get("sort_order") or 100)),
+        command = CreateCeilingCatalogItemCommand(
+            source_code=payload.get("source_code"),
+            title=payload.get("title"),
+            category=payload.get("category"),
+            unit=payload.get("unit"),
+            work_price=payload.get("work_price"),
+            material_price=payload.get("material_price"),
+            equipment_price=payload.get("equipment_price"),
+            consumables_price=payload.get("consumables_price"),
+            price_factor=payload.get("price_factor"),
+            quantity_source=payload.get("quantity_source"),
+            quantity_formula=payload.get("quantity_formula"),
+            include_section=payload.get("include_section"),
+            package_code=payload.get("package_code"),
+            note=payload.get("note"),
+            is_active=payload.get("is_active", True),
+            sort_order=payload.get("sort_order"),
         )
+        try:
+            item_id = await CreateCeilingCatalogItemUseCase(storage_obj).execute(command)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
         return await load_created_catalog_item(
             storage_obj.list_estimate_ceiling_catalog_items,
             created_id=item_id,
@@ -83,14 +93,12 @@ def register_calculator_ceiling_routes(app: FastAPI) -> None:
         payload: dict[str, Any],
     ) -> dict[str, Any]:
         storage_obj = get_calculator_route_storage(request)
-        updates = _catalog_updates(payload)
-        updated = await storage_obj.update_estimate_ceiling_catalog_item(item_id, **updates)
-        if not updated:
-            raise HTTPException(status_code=404, detail="Ceiling catalog item not found")
-        item = await storage_obj.get_estimate_ceiling_catalog_item(item_id)
-        if not item:
-            raise HTTPException(status_code=404, detail="Ceiling catalog item not found")
-        return item
+        command = UpdateCeilingCatalogItemCommand(item_id=item_id, payload=payload)
+        try:
+            return await UpdateCeilingCatalogItemUseCase(storage_obj).execute(command)
+        except ValueError as exc:
+            status_code = 404 if str(exc) == "Ceiling catalog item not found" else 400
+            raise HTTPException(status_code=status_code, detail=str(exc)) from exc
 
     @put_or_post(app, "/api/calculator/projects/{project_id}/ceilings/config")
     async def put_calculator_ceiling_config(
@@ -213,41 +221,6 @@ async def _load_ceiling_payload(storage_obj, project: dict[str, Any]) -> dict[st
         for room in rooms
     ]
     return await _estimate_ceilings_payload(storage_obj, project_payload, room_payloads)
-
-
-def _catalog_updates(payload: dict[str, Any]) -> dict[str, Any]:
-    updates: dict[str, Any] = {}
-    text_fields = {
-        "source_code",
-        "title",
-        "category",
-        "unit",
-        "quantity_source",
-        "quantity_formula",
-        "include_section",
-        "package_code",
-        "note",
-    }
-    price_fields = {
-        "work_price",
-        "material_price",
-        "equipment_price",
-        "consumables_price",
-        "price_factor",
-    }
-    for field in text_fields:
-        if field in payload:
-            updates[field] = normalize_optional_text(payload.get(field))
-    for field in price_fields:
-        if field in payload:
-            updates[field] = _clamp_factor(payload.get(field)) if field == "price_factor" else clamp_non_negative(
-                payload.get(field)
-            )
-    if "is_active" in payload:
-        updates["is_active"] = bool(payload.get("is_active"))
-    if "sort_order" in payload:
-        updates["sort_order"] = max(0, int(payload.get("sort_order") or 0))
-    return updates
 
 
 async def _validate_project_item_refs(storage_obj, project_id: int, payload: dict[str, Any]) -> None:

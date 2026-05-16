@@ -2,7 +2,7 @@
 
 ## Статус документа
 
-Этот документ фиксирует целевую архитектуру проекта после этапа `ARCH-1`.
+Этот документ фиксирует целевую архитектуру проекта и текущий baseline backend-калькулятора после этапов `ARCH-1`...`ARCH-15`.
 
 `ARCH-1` является только документационным и подготовительным этапом:
 
@@ -187,6 +187,40 @@ Route должен оставаться тонким:
 - получить текущего пользователя/session context;
 - вызвать use-case;
 - вернуть response.
+
+## Calculator architecture baseline
+
+После `ARCH-1`...`ARCH-15` backend-калькулятор приведен к схеме:
+
+```text
+FastAPI routes
+  -> application use-cases
+  -> storage/repository protocols
+  -> payload builders / response assembly
+```
+
+Покрытые calculator-модули:
+
+- core;
+- warm_floor;
+- flooring;
+- wall_finish;
+- doors;
+- ceilings.
+
+Route-файлы в `src/supply_bot/admin_api/calculator_routes/` теперь должны рассматриваться как HTTP adapter layer:
+
+- получить storage из request context;
+- собрать command из HTTP payload;
+- вызвать application use-case;
+- преобразовать `ValueError` в `HTTPException`;
+- вызвать payload builder или helper загрузки ответа.
+
+Application слой в `src/supply_bot/estimates/application/` не должен импортировать FastAPI, SQLAlchemy, `Request`, `Response`, route helpers или runtime settings. Use-case должен зависеть от переданного storage/repository через `Protocol` или совместимый интерфейс.
+
+Payload builders пока остаются в `src/supply_bot/admin_api/calculator_payloads/` как response assembly layer. В рамках текущего baseline они не переносятся в application/domain, чтобы не менять API response shape.
+
+Новые calculator-сценарии должны начинаться с application use-case. Логика сценария не должна расти внутри route-функции.
 
 ## Граница `ARCH-1`
 

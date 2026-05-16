@@ -3,12 +3,14 @@ from __future__ import annotations
 import unittest
 
 from supply_bot.estimates.application.shared import (
+    clamp_factor,
     clamp_minimum,
     clamp_non_negative,
     clamp_optional_non_negative,
     normalize_optional_text,
     normalize_required_text,
     normalize_room_name_or_fallback,
+    optional_non_negative,
     require_positive_number,
 )
 
@@ -41,6 +43,18 @@ class EstimatesApplicationSharedTests(unittest.TestCase):
         self.assertIsNone(clamp_optional_non_negative(None))
         self.assertEqual(clamp_optional_non_negative(-5), 0.0)
         self.assertEqual(clamp_optional_non_negative(3), 3.0)
+
+    def test_clamp_factor(self) -> None:
+        self.assertEqual(clamp_factor(None), 1.0)
+        self.assertEqual(clamp_factor(""), 1.0)
+        self.assertEqual(clamp_factor(-5), 0.0)
+        self.assertEqual(clamp_factor(2), 2.0)
+
+    def test_optional_non_negative(self) -> None:
+        self.assertIsNone(optional_non_negative(None))
+        self.assertIsNone(optional_non_negative(""))
+        self.assertEqual(optional_non_negative(-5), 0.0)
+        self.assertEqual(optional_non_negative(3), 3.0)
 
     def test_require_positive_number(self) -> None:
         self.assertEqual(require_positive_number(3, error_message="Positive required"), 3.0)

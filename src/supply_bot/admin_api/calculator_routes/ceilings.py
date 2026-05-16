@@ -13,6 +13,10 @@ from supply_bot.admin_api.calculator_routes.shared import (
     require_estimate_project,
     require_non_empty_text,
 )
+from supply_bot.estimates.application.update_ceiling_config import (
+    UpdateCeilingConfigCommand,
+    UpdateCeilingConfigUseCase,
+)
 
 
 def register_calculator_ceiling_routes(app: FastAPI) -> None:
@@ -29,13 +33,17 @@ def register_calculator_ceiling_routes(app: FastAPI) -> None:
         payload: dict[str, Any],
     ) -> dict[str, Any]:
         storage_obj = get_calculator_route_storage(request)
-        await require_estimate_project(storage_obj, project_id)
-        await storage_obj.update_estimate_ceiling_config(
-            project_id,
-            default_package_code=normalize_optional_text(payload.get("default_package_code")),
-            price_factor=_clamp_factor(payload.get("price_factor")),
-            note=normalize_optional_text(payload.get("note")),
+        command = UpdateCeilingConfigCommand(
+            project_id=project_id,
+            default_package_code=payload.get("default_package_code"),
+            price_factor=payload.get("price_factor"),
+            note=payload.get("note"),
         )
+        try:
+            await UpdateCeilingConfigUseCase(storage_obj).execute(command)
+        except ValueError as exc:
+            status_code = 404 if str(exc) == "Calculator project not found" else 400
+            raise HTTPException(status_code=status_code, detail=str(exc)) from exc
         return await _load_ceiling_payload_by_project_id(storage_obj, project_id)
 
     @app.post("/api/calculator/ceilings/catalog-items")

@@ -27,6 +27,18 @@ def clamp_optional_non_negative(value: float | int | None) -> float | None:
     return clamp_non_negative(value)
 
 
+def clamp_factor(value: object) -> float:
+    if value in (None, ""):
+        return 1.0
+    return clamp_non_negative(float(value))
+
+
+def optional_non_negative(value: object) -> float | None:
+    if value in (None, ""):
+        return None
+    return clamp_non_negative(float(value))
+
+
 def require_positive_number(value: float | int | None, *, error_message: str) -> float:
     if value is None:
         raise ValueError(error_message)

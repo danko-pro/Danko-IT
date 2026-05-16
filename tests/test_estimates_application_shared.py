@@ -9,6 +9,7 @@ from supply_bot.estimates.application.shared import (
     normalize_optional_text,
     normalize_required_text,
     normalize_room_name_or_fallback,
+    require_positive_number,
 )
 
 
@@ -40,6 +41,18 @@ class EstimatesApplicationSharedTests(unittest.TestCase):
         self.assertIsNone(clamp_optional_non_negative(None))
         self.assertEqual(clamp_optional_non_negative(-5), 0.0)
         self.assertEqual(clamp_optional_non_negative(3), 3.0)
+
+    def test_require_positive_number(self) -> None:
+        self.assertEqual(require_positive_number(3, error_message="Positive required"), 3.0)
+
+        with self.assertRaisesRegex(ValueError, "Positive required"):
+            require_positive_number(None, error_message="Positive required")
+
+        with self.assertRaisesRegex(ValueError, "Positive required"):
+            require_positive_number(0, error_message="Positive required")
+
+        with self.assertRaisesRegex(ValueError, "Positive required"):
+            require_positive_number(-1, error_message="Positive required")
 
     def test_normalize_room_name_or_fallback(self) -> None:
         self.assertEqual(normalize_room_name_or_fallback("  Kitchen  ", fallback_index=3), "Kitchen")

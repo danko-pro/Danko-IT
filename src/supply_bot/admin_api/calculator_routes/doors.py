@@ -10,13 +10,17 @@ from supply_bot.admin_api.calculator_routes.shared import (
     get_calculator_route_storage,
     load_created_catalog_item,
     load_estimate_project_payload,
-    normalize_optional_text,
     require_estimate_project,
-    require_non_empty_text,
-    require_positive_number,
     resolve_estimate_project_id_for_door,
 )
-from supply_bot.utils import normalize_text
+from supply_bot.estimates.application.door_catalog import (
+    CreateDoorCatalogItemCommand,
+    CreateDoorCatalogItemUseCase,
+    CreateDoorComponentCatalogItemCommand,
+    CreateDoorComponentCatalogItemUseCase,
+    ListDoorCatalogUseCase,
+    ListDoorComponentCatalogUseCase,
+)
 
 
 def register_calculator_door_routes(
@@ -30,7 +34,7 @@ def register_calculator_door_routes(
     @app.get("/api/calculator/door-catalog")
     async def calculator_door_catalog(request: Request) -> list[dict[str, Any]]:
         storage_obj = get_calculator_route_storage(request)
-        return await storage_obj.list_estimate_door_catalog()
+        return await ListDoorCatalogUseCase(storage_obj).execute()
 
     @app.post("/api/calculator/door-catalog")
     async def create_calculator_door_catalog_item(
@@ -38,16 +42,21 @@ def register_calculator_door_routes(
         payload: calculator_door_catalog_payload_model,
     ) -> dict[str, Any]:
         storage_obj = get_calculator_route_storage(request)
-        door_id = await storage_obj.create_estimate_door_catalog_item(
-            title=require_non_empty_text(payload.title, detail="Door title is required"),
-            width_mm=require_positive_number(payload.width_mm, detail="Door width and height must be positive"),
-            height_mm=require_positive_number(payload.height_mm, detail="Door width and height must be positive"),
+        command = CreateDoorCatalogItemCommand(
+            title=payload.title,
+            width_mm=payload.width_mm,
+            height_mm=payload.height_mm,
             thickness_mm=payload.thickness_mm,
             purchase_price=payload.purchase_price,
             sale_price=payload.sale_price,
             install_price=payload.install_price,
-            note=normalize_optional_text(payload.note),
+            note=payload.note,
         )
+        try:
+            door_id = await CreateDoorCatalogItemUseCase(storage_obj).execute(command)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+
         return await load_created_catalog_item(
             storage_obj.list_estimate_door_catalog,
             created_id=door_id,
@@ -57,7 +66,7 @@ def register_calculator_door_routes(
     @app.get("/api/calculator/door-component-catalog")
     async def calculator_door_component_catalog(request: Request) -> list[dict[str, Any]]:
         storage_obj = get_calculator_route_storage(request)
-        return await storage_obj.list_estimate_door_component_catalog()
+        return await ListDoorComponentCatalogUseCase(storage_obj).execute()
 
     @app.post("/api/calculator/door-component-catalog")
     async def create_calculator_door_component_catalog_item(
@@ -65,20 +74,24 @@ def register_calculator_door_routes(
         payload: calculator_door_component_catalog_payload_model,
     ) -> dict[str, Any]:
         storage_obj = get_calculator_route_storage(request)
-        component_id = await storage_obj.create_estimate_door_component_catalog_item(
-            category_code=normalize_text(payload.category_code) or "misc",
-            title=require_non_empty_text(payload.title, detail="Door component title is required"),
-            unit=payload.unit.strip() or "С€С‚",
+        command = CreateDoorComponentCatalogItemCommand(
+            category_code=payload.category_code,
+            title=payload.title,
+            unit=payload.unit,
             purchase_price=payload.purchase_price,
             sale_price=payload.sale_price,
-            note=normalize_optional_text(payload.note),
+            note=payload.note,
         )
+        try:
+            component_id = await CreateDoorComponentCatalogItemUseCase(storage_obj).execute(command)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+
         return await load_created_catalog_item(
             storage_obj.list_estimate_door_component_catalog,
             created_id=component_id,
             detail="Door component catalog item was not created",
         )
-
     @app.post("/api/calculator/projects/{project_id}/doors")
     async def create_calculator_project_door(
         request: Request,

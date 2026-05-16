@@ -27,6 +27,15 @@ def clamp_optional_non_negative(value: float | int | None) -> float | None:
     return clamp_non_negative(value)
 
 
+def require_positive_number(value: float | int | None, *, error_message: str) -> float:
+    if value is None:
+        raise ValueError(error_message)
+    normalized = float(value)
+    if normalized <= 0:
+        raise ValueError(error_message)
+    return normalized
+
+
 def normalize_room_name_or_fallback(value: str | None, *, fallback_index: int) -> str:
     normalized = (value or "").strip()
     return normalized or f"Помещение {fallback_index}"

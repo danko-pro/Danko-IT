@@ -1,6 +1,6 @@
 from typing import Any
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, Request
 
 from supply_bot.admin_api.calculator_routes.shared import (
     get_calculator_route_storage,
@@ -8,6 +8,7 @@ from supply_bot.admin_api.calculator_routes.shared import (
     load_estimate_project_payload,
     require_estimate_project,
 )
+from supply_bot.admin_api.error_mapping import resolve_application_result
 from supply_bot.estimates.application.create_wall_finish_catalog import (
     CreateWallFinishCoveringCommand,
     CreateWallFinishCoveringConsumableCommand,
@@ -68,10 +69,7 @@ def register_calculator_wall_finish_routes(
             instrument_price_per_m2=payload.instrument_price_per_m2,
             note=payload.note,
         )
-        try:
-            covering_id = await CreateWallFinishCoveringUseCase(storage_obj).execute(command)
-        except ValueError as exc:
-            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        covering_id = await resolve_application_result(CreateWallFinishCoveringUseCase(storage_obj).execute(command))
 
         return await load_created_catalog_item(
             storage_obj.list_estimate_wall_finish_coverings,
@@ -94,10 +92,9 @@ def register_calculator_wall_finish_routes(
             primer_price_per_unit=payload.primer_price_per_unit,
             note=payload.note,
         )
-        try:
-            preparation_id = await CreateWallFinishPreparationUseCase(storage_obj).execute(command)
-        except ValueError as exc:
-            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        preparation_id = await resolve_application_result(
+            CreateWallFinishPreparationUseCase(storage_obj).execute(command)
+        )
 
         return await load_created_catalog_item(
             storage_obj.list_estimate_wall_finish_preparations,
@@ -117,10 +114,7 @@ def register_calculator_wall_finish_routes(
             extra_waste_percent=payload.extra_waste_percent,
             note=payload.note,
         )
-        try:
-            layout_id = await CreateWallFinishLayoutUseCase(storage_obj).execute(command)
-        except ValueError as exc:
-            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        layout_id = await resolve_application_result(CreateWallFinishLayoutUseCase(storage_obj).execute(command))
 
         return await load_created_catalog_item(
             storage_obj.list_estimate_wall_finish_layouts,
@@ -170,10 +164,7 @@ def register_calculator_wall_finish_routes(
                 for room_payload in payload.rooms
             ],
         )
-        try:
-            await UpdateWallFinishUseCase(storage_obj).execute(command)
-        except ValueError as exc:
-            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        project_id = await resolve_application_result(UpdateWallFinishUseCase(storage_obj).execute(command))
 
         return await load_estimate_project_payload(
             storage_obj,

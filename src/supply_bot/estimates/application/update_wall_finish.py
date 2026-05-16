@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Protocol
 
+from supply_bot.application.errors import ValidationError
 from supply_bot.estimates.application.shared import clamp_non_negative, normalize_optional_text
 
 
@@ -120,7 +121,7 @@ def _build_wall_finish_rows(
             layout_ids=layout_ids,
         )
         if room_payload.area_m2_override is not None and room_payload.area_m2_override < 0:
-            raise ValueError("Wall finish override cannot be negative")
+            raise ValidationError("Wall finish override cannot be negative")
 
         room_base_area = next(
             (float(room.get("wall_area_net_m2") or 0) for room in rooms if int(room["id"]) == room_id),
@@ -165,11 +166,11 @@ def _build_wall_finish_rows(
                 layout_ids=layout_ids,
             )
             if zone_payload["area_m2"] is not None and zone_payload["area_m2"] < 0:
-                raise ValueError("Wall finish zone area cannot be negative")
+                raise ValidationError("Wall finish zone area cannot be negative")
             if zone_payload["area_m2"] is not None:
                 zone_area_total += float(zone_payload["area_m2"])
         if zone_area_total > float(room_effective_area) + 0.0001:
-            raise ValueError("Wall finish zones cannot exceed room area")
+            raise ValidationError("Wall finish zones cannot exceed room area")
 
         rows.append(
             {
@@ -206,8 +207,8 @@ def _validate_wall_finish_catalog_ids(
     layout_ids: set[int],
 ) -> None:
     if covering_id is not None and covering_id not in covering_ids:
-        raise ValueError("Unknown wall finish selected")
+        raise ValidationError("Unknown wall finish selected")
     if preparation_id is not None and preparation_id not in preparation_ids:
-        raise ValueError("Unknown wall preparation selected")
+        raise ValidationError("Unknown wall preparation selected")
     if layout_id is not None and layout_id not in layout_ids:
-        raise ValueError("Unknown wall layout selected")
+        raise ValidationError("Unknown wall layout selected")

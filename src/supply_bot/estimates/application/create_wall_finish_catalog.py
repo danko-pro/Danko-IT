@@ -4,6 +4,7 @@ import json
 from dataclasses import dataclass
 from typing import Protocol
 
+from supply_bot.application.errors import ValidationError
 from supply_bot.estimates.application.shared import (
     clamp_minimum,
     clamp_non_negative,
@@ -116,8 +117,9 @@ class CreateWallFinishCoveringUseCase:
         self._storage = storage
 
     async def execute(self, command: CreateWallFinishCoveringCommand) -> int:
+        title = _normalize_required_text(command.title, error_message="Wall finish title is required")
         return await self._storage.create_estimate_wall_finish_covering(
-            title=normalize_required_text(command.title, error_message="Wall finish title is required"),
+            title=title,
             material_price_per_m2=clamp_non_negative(command.material_price_per_m2),
             labor_price_per_m2=clamp_non_negative(command.labor_price_per_m2),
             base_waste_percent=clamp_non_negative(command.base_waste_percent),
@@ -146,8 +148,9 @@ class CreateWallFinishPreparationUseCase:
         self._storage = storage
 
     async def execute(self, command: CreateWallFinishPreparationCommand) -> int:
+        title = _normalize_required_text(command.title, error_message="Wall preparation title is required")
         return await self._storage.create_estimate_wall_finish_preparation(
-            title=normalize_required_text(command.title, error_message="Wall preparation title is required"),
+            title=title,
             labor_price_per_m2=clamp_non_negative(command.labor_price_per_m2),
             material_price_per_m2=clamp_non_negative(command.material_price_per_m2),
             primer_consumption_per_m2=clamp_non_negative(command.primer_consumption_per_m2),
@@ -164,8 +167,9 @@ class CreateWallFinishLayoutUseCase:
         self._storage = storage
 
     async def execute(self, command: CreateWallFinishLayoutCommand) -> int:
+        title = _normalize_required_text(command.title, error_message="Wall layout title is required")
         return await self._storage.create_estimate_wall_finish_layout(
-            title=normalize_required_text(command.title, error_message="Wall layout title is required"),
+            title=title,
             labor_multiplier=clamp_minimum(command.labor_multiplier, 0.1),
             extra_waste_percent=clamp_non_negative(command.extra_waste_percent),
             note=normalize_optional_text(command.note),
@@ -186,3 +190,10 @@ def _wall_finish_custom_consumables_to_json(items: list[CreateWallFinishCovering
         ],
         ensure_ascii=False,
     )
+
+
+def _normalize_required_text(value: str | None, *, error_message: str) -> str:
+    try:
+        return normalize_required_text(value, error_message=error_message)
+    except ValueError as exc:
+        raise ValidationError(str(exc)) from exc

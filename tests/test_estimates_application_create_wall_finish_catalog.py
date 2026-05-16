@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import unittest
 
+from supply_bot.application.errors import ValidationError
 from supply_bot.estimates.application.create_wall_finish_catalog import (
     CreateWallFinishCoveringCommand,
     CreateWallFinishCoveringConsumableCommand,
@@ -119,7 +120,7 @@ class CreateWallFinishCatalogUseCaseTests(unittest.IsolatedAsyncioTestCase):
     async def test_covering_create_rejects_empty_title(self) -> None:
         storage = FakeWallFinishCatalogStorage()
 
-        with self.assertRaisesRegex(ValueError, "Wall finish title is required"):
+        with self.assertRaisesRegex(ValidationError, "Wall finish title is required"):
             await CreateWallFinishCoveringUseCase(storage).execute(_covering_command(title="   "))
 
         storage.assert_no_writes(self)
@@ -173,7 +174,7 @@ class CreateWallFinishCatalogUseCaseTests(unittest.IsolatedAsyncioTestCase):
             note=None,
         )
 
-        with self.assertRaisesRegex(ValueError, "Wall preparation title is required"):
+        with self.assertRaisesRegex(ValidationError, "Wall preparation title is required"):
             await CreateWallFinishPreparationUseCase(storage).execute(command)
 
         storage.assert_no_writes(self)
@@ -211,7 +212,7 @@ class CreateWallFinishCatalogUseCaseTests(unittest.IsolatedAsyncioTestCase):
             note=None,
         )
 
-        with self.assertRaisesRegex(ValueError, "Wall layout title is required"):
+        with self.assertRaisesRegex(ValidationError, "Wall layout title is required"):
             await CreateWallFinishLayoutUseCase(storage).execute(command)
 
         storage.assert_no_writes(self)

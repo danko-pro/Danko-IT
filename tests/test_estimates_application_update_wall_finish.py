@@ -3,6 +3,7 @@ from __future__ import annotations
 import unittest
 from typing import Any
 
+from supply_bot.application.errors import ValidationError
 from supply_bot.estimates.application.update_wall_finish import (
     UpdateWallFinishCommand,
     UpdateWallFinishRoomCommand,
@@ -191,14 +192,14 @@ class UpdateWallFinishUseCaseTests(unittest.IsolatedAsyncioTestCase):
         for room, message in cases:
             storage = FakeWallFinishStorage()
             with self.subTest(message=message):
-                with self.assertRaisesRegex(ValueError, message):
+                with self.assertRaisesRegex(ValidationError, message):
                     await UpdateWallFinishUseCase(storage).execute(_command(rooms=[room]))
                 storage.assert_no_writes(self)
 
     async def test_execute_rejects_negative_override(self) -> None:
         storage = FakeWallFinishStorage()
 
-        with self.assertRaisesRegex(ValueError, "Wall finish override cannot be negative"):
+        with self.assertRaisesRegex(ValidationError, "Wall finish override cannot be negative"):
             await UpdateWallFinishUseCase(storage).execute(_command(rooms=[_room(area_m2_override=-1)]))
 
         storage.assert_no_writes(self)
@@ -231,14 +232,14 @@ class UpdateWallFinishUseCaseTests(unittest.IsolatedAsyncioTestCase):
         for zone, message in cases:
             storage = FakeWallFinishStorage()
             with self.subTest(message=message):
-                with self.assertRaisesRegex(ValueError, message):
+                with self.assertRaisesRegex(ValidationError, message):
                     await UpdateWallFinishUseCase(storage).execute(_command(rooms=[_room(zones=[zone])]))
                 storage.assert_no_writes(self)
 
     async def test_execute_rejects_negative_zone_area(self) -> None:
         storage = FakeWallFinishStorage()
 
-        with self.assertRaisesRegex(ValueError, "Wall finish zone area cannot be negative"):
+        with self.assertRaisesRegex(ValidationError, "Wall finish zone area cannot be negative"):
             await UpdateWallFinishUseCase(storage).execute(_command(rooms=[_room(zones=[_zone(area_m2=-1)])]))
 
         storage.assert_no_writes(self)
@@ -246,7 +247,7 @@ class UpdateWallFinishUseCaseTests(unittest.IsolatedAsyncioTestCase):
     async def test_execute_rejects_zones_exceeding_room_area(self) -> None:
         storage = FakeWallFinishStorage()
 
-        with self.assertRaisesRegex(ValueError, "Wall finish zones cannot exceed room area"):
+        with self.assertRaisesRegex(ValidationError, "Wall finish zones cannot exceed room area"):
             await UpdateWallFinishUseCase(storage).execute(_command(rooms=[_room(zones=[_zone(area_m2=13)])]))
 
         storage.assert_no_writes(self)

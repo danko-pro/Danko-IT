@@ -19,6 +19,15 @@ from supply_bot.estimates.application.ceiling_catalog import (
     UpdateCeilingCatalogItemCommand,
     UpdateCeilingCatalogItemUseCase,
 )
+from supply_bot.estimates.application.ceiling_project_items import (
+    CeilingProjectItemValuesCommand,
+    CreateCeilingProjectItemCommand,
+    CreateCeilingProjectItemUseCase,
+    DeleteCeilingProjectItemCommand,
+    DeleteCeilingProjectItemUseCase,
+    UpdateCeilingProjectItemCommand,
+    UpdateCeilingProjectItemUseCase,
+)
 from supply_bot.estimates.application.replace_ceiling_rooms import (
     ReplaceCeilingRoomCommand,
     ReplaceCeilingRoomsCommand,
@@ -152,14 +161,15 @@ def register_calculator_ceiling_routes(app: FastAPI) -> None:
         payload: dict[str, Any],
     ) -> dict[str, Any]:
         storage_obj = get_calculator_route_storage(request)
-        await require_estimate_project(storage_obj, project_id)
-        await _validate_project_item_refs(storage_obj, project_id, payload)
-        item_id = await storage_obj.create_estimate_project_ceiling_item(
+        command = CreateCeilingProjectItemCommand(
             project_id=project_id,
-            **_project_item_values(payload),
+            item=_ceiling_project_item_values_command(payload),
         )
-        if not item_id:
-            raise HTTPException(status_code=404, detail="Calculator project not found")
+        try:
+            await CreateCeilingProjectItemUseCase(storage_obj).execute(command)
+        except ValueError as exc:
+            status_code = 404 if str(exc) == "Calculator project not found" else 400
+            raise HTTPException(status_code=status_code, detail=str(exc)) from exc
         return await _load_ceiling_payload_by_project_id(storage_obj, project_id)
 
     @app.patch("/api/calculator/ceilings/items/{item_id}")
@@ -170,25 +180,28 @@ def register_calculator_ceiling_routes(app: FastAPI) -> None:
     ) -> dict[str, Any]:
         storage_obj = get_calculator_route_storage(request)
         project_id = payload.get("project_id")
-        if project_id is None:
-            raise HTTPException(status_code=400, detail="Ceiling project_id is required")
-        project_id = int(project_id)
-        await require_estimate_project(storage_obj, project_id)
-        await _validate_project_item_refs(storage_obj, project_id, payload)
-        updated_project_id = await storage_obj.update_estimate_project_ceiling_item(
-            item_id,
-            **_project_item_values(payload),
+        command = UpdateCeilingProjectItemCommand(
+            item_id=item_id,
+            project_id=int(project_id) if project_id is not None else None,
+            item=_ceiling_project_item_values_command(payload),
         )
-        if updated_project_id is None:
-            raise HTTPException(status_code=404, detail="Ceiling project item not found")
+        try:
+            updated_project_id = await UpdateCeilingProjectItemUseCase(storage_obj).execute(command)
+        except ValueError as exc:
+            status_code = 404 if str(exc) in {"Calculator project not found", "Ceiling project item not found"} else 400
+            raise HTTPException(status_code=status_code, detail=str(exc)) from exc
         return await _load_ceiling_payload_by_project_id(storage_obj, updated_project_id)
 
     @app.delete("/api/calculator/ceilings/items/{item_id}")
     async def delete_calculator_project_ceiling_item(request: Request, item_id: int) -> dict[str, Any]:
         storage_obj = get_calculator_route_storage(request)
-        project_id = await storage_obj.delete_estimate_project_ceiling_item(item_id)
-        if project_id is None:
-            raise HTTPException(status_code=404, detail="Ceiling project item not found")
+        try:
+            project_id = await DeleteCeilingProjectItemUseCase(storage_obj).execute(
+                DeleteCeilingProjectItemCommand(item_id=item_id)
+            )
+        except ValueError as exc:
+            status_code = 404 if str(exc) == "Ceiling project item not found" else 400
+            raise HTTPException(status_code=status_code, detail=str(exc)) from exc
         return await _load_ceiling_payload_by_project_id(storage_obj, project_id)
 
 
@@ -274,3 +287,30 @@ def _clamp_factor(value: Any) -> float:
     if value in (None, ""):
         return 1.0
     return clamp_non_negative(value)
+
+
+def _ceiling_project_item_values_command(payload: dict[str, Any]) -> CeilingProjectItemValuesCommand:
+    return CeilingProjectItemValuesCommand(
+        room_id=payload.get("room_id"),
+        source_catalog_item_id=payload.get("source_catalog_item_id"),
+        source_code_snapshot=payload.get("source_code_snapshot"),
+        title_snapshot=payload.get("title_snapshot"),
+        category_snapshot=payload.get("category_snapshot"),
+        unit_snapshot=payload.get("unit_snapshot"),
+        quantity=payload.get("quantity"),
+        quantity_source=payload.get("quantity_source"),
+        quantity_formula_snapshot=payload.get("quantity_formula_snapshot"),
+        work_price_snapshot=payload.get("work_price_snapshot"),
+        material_price_snapshot=payload.get("material_price_snapshot"),
+        equipment_price_snapshot=payload.get("equipment_price_snapshot"),
+        consumables_price_snapshot=payload.get("consumables_price_snapshot"),
+        price_factor_snapshot=payload.get("price_factor_snapshot"),
+        work_total=payload.get("work_total"),
+        material_total=payload.get("material_total"),
+        equipment_total=payload.get("equipment_total"),
+        consumables_total=payload.get("consumables_total"),
+        total=payload.get("total"),
+        note_snapshot=payload.get("note_snapshot"),
+        is_enabled=payload.get("is_enabled", True),
+        sort_order=payload.get("sort_order"),
+    )

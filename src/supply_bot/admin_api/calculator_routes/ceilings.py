@@ -6,12 +6,9 @@ from fastapi import FastAPI, HTTPException, Request
 
 from supply_bot.admin_api.calculator_payloads.ceilings import _estimate_ceilings_payload
 from supply_bot.admin_api.calculator_routes.shared import (
-    clamp_non_negative,
     get_calculator_route_storage,
     load_created_catalog_item,
-    normalize_optional_text,
     require_estimate_project,
-    require_non_empty_text,
 )
 from supply_bot.estimates.application.ceiling_catalog import (
     CreateCeilingCatalogItemCommand,
@@ -235,58 +232,6 @@ async def _load_ceiling_payload(storage_obj, project: dict[str, Any]) -> dict[st
         for room in rooms
     ]
     return await _estimate_ceilings_payload(storage_obj, project_payload, room_payloads)
-
-
-async def _validate_project_item_refs(storage_obj, project_id: int, payload: dict[str, Any]) -> None:
-    room_id = payload.get("room_id")
-    if room_id is not None:
-        room_ids = {int(room["id"]) for room in await storage_obj.list_estimate_rooms(project_id)}
-        if int(room_id) not in room_ids:
-            raise HTTPException(status_code=400, detail="Unknown ceiling room selected")
-    catalog_item_id = payload.get("source_catalog_item_id")
-    if catalog_item_id is not None:
-        item = await storage_obj.get_estimate_ceiling_catalog_item(int(catalog_item_id))
-        if not item:
-            raise HTTPException(status_code=400, detail="Unknown ceiling catalog item selected")
-
-
-def _project_item_values(payload: dict[str, Any]) -> dict[str, Any]:
-    return {
-        "room_id": payload.get("room_id"),
-        "source_catalog_item_id": payload.get("source_catalog_item_id"),
-        "source_code_snapshot": normalize_optional_text(payload.get("source_code_snapshot")),
-        "title_snapshot": require_non_empty_text(payload.get("title_snapshot"), detail="Ceiling title is required"),
-        "category_snapshot": normalize_optional_text(payload.get("category_snapshot")),
-        "unit_snapshot": require_non_empty_text(payload.get("unit_snapshot"), detail="Ceiling unit is required"),
-        "quantity": clamp_non_negative(payload.get("quantity")),
-        "quantity_source": normalize_optional_text(payload.get("quantity_source")) or "manual",
-        "quantity_formula_snapshot": normalize_optional_text(payload.get("quantity_formula_snapshot")),
-        "work_price_snapshot": clamp_non_negative(payload.get("work_price_snapshot")),
-        "material_price_snapshot": clamp_non_negative(payload.get("material_price_snapshot")),
-        "equipment_price_snapshot": clamp_non_negative(payload.get("equipment_price_snapshot")),
-        "consumables_price_snapshot": clamp_non_negative(payload.get("consumables_price_snapshot")),
-        "price_factor_snapshot": _clamp_factor(payload.get("price_factor_snapshot")),
-        "work_total": clamp_non_negative(payload.get("work_total")),
-        "material_total": clamp_non_negative(payload.get("material_total")),
-        "equipment_total": clamp_non_negative(payload.get("equipment_total")),
-        "consumables_total": clamp_non_negative(payload.get("consumables_total")),
-        "total": clamp_non_negative(payload.get("total")),
-        "note_snapshot": normalize_optional_text(payload.get("note_snapshot")),
-        "is_enabled": bool(payload.get("is_enabled", True)),
-        "sort_order": max(0, int(payload.get("sort_order") or 100)),
-    }
-
-
-def _optional_non_negative(value: Any) -> float | None:
-    if value in (None, ""):
-        return None
-    return clamp_non_negative(value)
-
-
-def _clamp_factor(value: Any) -> float:
-    if value in (None, ""):
-        return 1.0
-    return clamp_non_negative(value)
 
 
 def _ceiling_project_item_values_command(payload: dict[str, Any]) -> CeilingProjectItemValuesCommand:

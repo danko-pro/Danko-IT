@@ -4,6 +4,7 @@ import json
 from dataclasses import dataclass
 from typing import Protocol
 
+from supply_bot.application.errors import ValidationError
 from supply_bot.estimates.application.shared import (
     clamp_minimum,
     clamp_non_negative,
@@ -122,8 +123,9 @@ class CreateFlooringCoveringUseCase:
         self._storage = storage
 
     async def execute(self, command: CreateFlooringCoveringCommand) -> int:
+        title = _normalize_required_text(command.title, error_message="Floor covering title is required")
         return await self._storage.create_estimate_flooring_covering(
-            title=normalize_required_text(command.title, error_message="Floor covering title is required"),
+            title=title,
             material_price_per_m2=clamp_non_negative(command.material_price_per_m2),
             labor_price_per_m2=clamp_non_negative(command.labor_price_per_m2),
             base_waste_percent=clamp_non_negative(command.base_waste_percent),
@@ -155,8 +157,9 @@ class CreateFlooringPreparationUseCase:
         self._storage = storage
 
     async def execute(self, command: CreateFlooringPreparationCommand) -> int:
+        title = _normalize_required_text(command.title, error_message="Floor preparation title is required")
         return await self._storage.create_estimate_flooring_preparation(
-            title=normalize_required_text(command.title, error_message="Floor preparation title is required"),
+            title=title,
             labor_price_per_m2=clamp_non_negative(command.labor_price_per_m2),
             material_price_per_m2=clamp_non_negative(command.material_price_per_m2),
             primer_consumption_per_m2=clamp_non_negative(command.primer_consumption_per_m2),
@@ -173,8 +176,9 @@ class CreateFlooringLayoutUseCase:
         self._storage = storage
 
     async def execute(self, command: CreateFlooringLayoutCommand) -> int:
+        title = _normalize_required_text(command.title, error_message="Floor layout title is required")
         return await self._storage.create_estimate_flooring_layout(
-            title=normalize_required_text(command.title, error_message="Floor layout title is required"),
+            title=title,
             labor_multiplier=clamp_minimum(command.labor_multiplier, 0.1),
             extra_waste_percent=clamp_non_negative(command.extra_waste_percent),
             note=normalize_optional_text(command.note),
@@ -195,3 +199,10 @@ def _flooring_custom_consumables_to_json(items: list[CreateFlooringCoveringConsu
         ],
         ensure_ascii=False,
     )
+
+
+def _normalize_required_text(value: str | None, *, error_message: str) -> str:
+    try:
+        return normalize_required_text(value, error_message=error_message)
+    except ValueError as exc:
+        raise ValidationError(str(exc)) from exc

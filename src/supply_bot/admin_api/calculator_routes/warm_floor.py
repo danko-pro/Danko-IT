@@ -1,11 +1,12 @@
 ﻿from typing import Any
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, Request
 
 from supply_bot.admin_api.calculator_routes.shared import (
     get_calculator_route_storage,
     load_estimate_project_payload,
 )
+from supply_bot.admin_api.error_mapping import resolve_application_result
 from supply_bot.estimates.application.update_warm_floor import (
     UpdateWarmFloorCommand,
     UpdateWarmFloorMaterialItemCommand,
@@ -77,11 +78,7 @@ def register_calculator_warm_floor_routes(
                 for room in payload.rooms
             ],
         )
-        try:
-            await UpdateWarmFloorUseCase(storage_obj).execute(command)
-        except ValueError as exc:
-            status_code = 404 if str(exc) == "Calculator project not found" else 400
-            raise HTTPException(status_code=status_code, detail=str(exc)) from exc
+        project_id = await resolve_application_result(UpdateWarmFloorUseCase(storage_obj).execute(command))
 
         return await load_estimate_project_payload(
             storage_obj,

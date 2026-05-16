@@ -4,6 +4,7 @@ import json
 import unittest
 from typing import Any
 
+from supply_bot.application.errors import NotFoundError, ValidationError
 from supply_bot.estimates.application.update_flooring import (
     UpdateFlooringCommand,
     UpdateFlooringGlobalItemCommand,
@@ -265,7 +266,7 @@ class UpdateFlooringUseCaseTests(unittest.IsolatedAsyncioTestCase):
     async def test_execute_rejects_missing_project(self) -> None:
         storage = _storage(project=None)
 
-        with self.assertRaisesRegex(ValueError, "Calculator project not found"):
+        with self.assertRaisesRegex(NotFoundError, "Calculator project not found"):
             await UpdateFlooringUseCase(storage).execute(_command())
 
         storage.assert_no_writes(self)
@@ -273,7 +274,7 @@ class UpdateFlooringUseCaseTests(unittest.IsolatedAsyncioTestCase):
     async def test_execute_rejects_unknown_default_preparation(self) -> None:
         storage = _storage()
 
-        with self.assertRaisesRegex(ValueError, "Unknown floor preparation selected"):
+        with self.assertRaisesRegex(ValidationError, "Unknown floor preparation selected"):
             await UpdateFlooringUseCase(storage).execute(_command(default_preparation_id=999))
 
         storage.assert_no_writes(self)
@@ -296,7 +297,7 @@ class UpdateFlooringUseCaseTests(unittest.IsolatedAsyncioTestCase):
         for room, message in cases:
             storage = _storage()
             with self.subTest(message=message):
-                with self.assertRaisesRegex(ValueError, message):
+                with self.assertRaisesRegex(ValidationError, message):
                     await UpdateFlooringUseCase(storage).execute(_command(rooms=[room]))
                 storage.assert_no_writes(self)
 
@@ -309,7 +310,7 @@ class UpdateFlooringUseCaseTests(unittest.IsolatedAsyncioTestCase):
         for room in cases:
             storage = _storage()
             with self.subTest(room=room):
-                with self.assertRaisesRegex(ValueError, "Flooring overrides cannot be negative"):
+                with self.assertRaisesRegex(ValidationError, "Flooring overrides cannot be negative"):
                     await UpdateFlooringUseCase(storage).execute(_command(rooms=[room]))
                 storage.assert_no_writes(self)
 
@@ -341,14 +342,14 @@ class UpdateFlooringUseCaseTests(unittest.IsolatedAsyncioTestCase):
         for zone, message in cases:
             storage = _storage()
             with self.subTest(message=message):
-                with self.assertRaisesRegex(ValueError, message):
+                with self.assertRaisesRegex(ValidationError, message):
                     await UpdateFlooringUseCase(storage).execute(_command(rooms=[_room(zones=[zone])]))
                 storage.assert_no_writes(self)
 
     async def test_execute_rejects_negative_zone_area(self) -> None:
         storage = _storage()
 
-        with self.assertRaisesRegex(ValueError, "Flooring zone area cannot be negative"):
+        with self.assertRaisesRegex(ValidationError, "Flooring zone area cannot be negative"):
             await UpdateFlooringUseCase(storage).execute(_command(rooms=[_room(zones=[_zone(area_m2=-1)])]))
 
         storage.assert_no_writes(self)
@@ -356,7 +357,7 @@ class UpdateFlooringUseCaseTests(unittest.IsolatedAsyncioTestCase):
     async def test_execute_rejects_zones_exceeding_room_area(self) -> None:
         storage = _storage(rooms=[{"id": 1, "floor_area_m2": 5}])
 
-        with self.assertRaisesRegex(ValueError, "Flooring zones cannot exceed room area"):
+        with self.assertRaisesRegex(ValidationError, "Flooring zones cannot exceed room area"):
             await UpdateFlooringUseCase(storage).execute(_command(rooms=[_room(zones=[_zone(area_m2=6)])]))
 
         storage.assert_no_writes(self)

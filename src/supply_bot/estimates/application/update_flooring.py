@@ -4,6 +4,7 @@ import json
 from dataclasses import dataclass
 from typing import Any, Protocol
 
+from supply_bot.application.errors import NotFoundError, ValidationError
 from supply_bot.estimates.application.shared import clamp_non_negative, normalize_optional_text
 
 
@@ -109,7 +110,7 @@ class UpdateFlooringUseCase:
     async def execute(self, command: UpdateFlooringCommand) -> int:
         project = await self._storage.get_estimate_project(command.project_id)
         if not project:
-            raise ValueError("Calculator project not found")
+            raise NotFoundError("Calculator project not found")
 
         rooms = await self._storage.list_estimate_rooms(command.project_id)
         room_ids = {int(room["id"]) for room in rooms}
@@ -117,7 +118,7 @@ class UpdateFlooringUseCase:
         preparation_ids = {int(item["id"]) for item in await self._storage.list_estimate_flooring_preparations()}
         layout_ids = {int(item["id"]) for item in await self._storage.list_estimate_flooring_layouts()}
         if command.default_preparation_id is not None and command.default_preparation_id not in preparation_ids:
-            raise ValueError("Unknown floor preparation selected")
+            raise ValidationError("Unknown floor preparation selected")
 
         rows, zone_rows = _build_flooring_rows(
             command,
@@ -178,7 +179,7 @@ def _build_flooring_rows(
             room_payload.plinth_m_override,
         ):
             if value is not None and value < 0:
-                raise ValueError("Flooring overrides cannot be negative")
+                raise ValidationError("Flooring overrides cannot be negative")
 
         room_base_area = next(
             (
@@ -227,11 +228,11 @@ def _build_flooring_rows(
                 layout_ids=layout_ids,
             )
             if zone_payload["area_m2"] is not None and zone_payload["area_m2"] < 0:
-                raise ValueError("Flooring zone area cannot be negative")
+                raise ValidationError("Flooring zone area cannot be negative")
             if zone_payload["area_m2"] is not None:
                 zone_area_total += float(zone_payload["area_m2"])
         if room_effective_area and zone_area_total > float(room_effective_area) + 0.0001:
-            raise ValueError("Flooring zones cannot exceed room area")
+            raise ValidationError("Flooring zones cannot exceed room area")
 
         rows.append(
             {
@@ -270,11 +271,11 @@ def _validate_flooring_catalog_ids(
     layout_ids: set[int],
 ) -> None:
     if covering_id is not None and covering_id not in covering_ids:
-        raise ValueError("Unknown floor covering selected")
+        raise ValidationError("Unknown floor covering selected")
     if preparation_id is not None and preparation_id not in preparation_ids:
-        raise ValueError("Unknown floor preparation selected")
+        raise ValidationError("Unknown floor preparation selected")
     if layout_id is not None and layout_id not in layout_ids:
-        raise ValueError("Unknown floor layout selected")
+        raise ValidationError("Unknown floor layout selected")
 
 
 def _global_item_payloads(items: list[UpdateFlooringGlobalItemCommand]) -> list[dict[str, object]]:

@@ -1,12 +1,13 @@
 from typing import Any
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, Request
 
 from supply_bot.admin_api.calculator_routes.shared import (
     get_calculator_route_storage,
     load_created_catalog_item,
     load_estimate_project_payload,
 )
+from supply_bot.admin_api.error_mapping import resolve_application_result
 from supply_bot.estimates.application.create_flooring_catalog import (
     CreateFlooringCoveringCommand,
     CreateFlooringCoveringConsumableCommand,
@@ -71,10 +72,7 @@ def register_calculator_flooring_routes(
             instrument_price_per_m2=payload.instrument_price_per_m2,
             note=payload.note,
         )
-        try:
-            covering_id = await CreateFlooringCoveringUseCase(storage_obj).execute(command)
-        except ValueError as exc:
-            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        covering_id = await resolve_application_result(CreateFlooringCoveringUseCase(storage_obj).execute(command))
 
         return await load_created_catalog_item(
             storage_obj.list_estimate_flooring_coverings,
@@ -97,10 +95,9 @@ def register_calculator_flooring_routes(
             primer_price_per_unit=payload.primer_price_per_unit,
             note=payload.note,
         )
-        try:
-            preparation_id = await CreateFlooringPreparationUseCase(storage_obj).execute(command)
-        except ValueError as exc:
-            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        preparation_id = await resolve_application_result(
+            CreateFlooringPreparationUseCase(storage_obj).execute(command)
+        )
 
         return await load_created_catalog_item(
             storage_obj.list_estimate_flooring_preparations,
@@ -120,10 +117,7 @@ def register_calculator_flooring_routes(
             extra_waste_percent=payload.extra_waste_percent,
             note=payload.note,
         )
-        try:
-            layout_id = await CreateFlooringLayoutUseCase(storage_obj).execute(command)
-        except ValueError as exc:
-            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        layout_id = await resolve_application_result(CreateFlooringLayoutUseCase(storage_obj).execute(command))
 
         return await load_created_catalog_item(
             storage_obj.list_estimate_flooring_layouts,
@@ -187,11 +181,7 @@ def register_calculator_flooring_routes(
                 for room_payload in payload.rooms
             ],
         )
-        try:
-            await UpdateFlooringUseCase(storage_obj).execute(command)
-        except ValueError as exc:
-            status_code = 404 if str(exc) == "Calculator project not found" else 400
-            raise HTTPException(status_code=status_code, detail=str(exc)) from exc
+        project_id = await resolve_application_result(UpdateFlooringUseCase(storage_obj).execute(command))
 
         return await load_estimate_project_payload(
             storage_obj,

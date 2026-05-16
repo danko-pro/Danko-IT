@@ -3,6 +3,7 @@
 import json
 import unittest
 
+from supply_bot.application.errors import ValidationError
 from supply_bot.estimates.application.create_flooring_catalog import (
     CreateFlooringCoveringCommand,
     CreateFlooringCoveringConsumableCommand,
@@ -125,7 +126,7 @@ class CreateFlooringCatalogUseCaseTests(unittest.IsolatedAsyncioTestCase):
     async def test_covering_create_rejects_empty_title(self) -> None:
         storage = FakeFlooringCatalogStorage()
 
-        with self.assertRaisesRegex(ValueError, "Floor covering title is required"):
+        with self.assertRaisesRegex(ValidationError, "Floor covering title is required"):
             await CreateFlooringCoveringUseCase(storage).execute(_covering_command(title="   "))
 
         storage.assert_no_writes(self)
@@ -179,7 +180,7 @@ class CreateFlooringCatalogUseCaseTests(unittest.IsolatedAsyncioTestCase):
             note=None,
         )
 
-        with self.assertRaisesRegex(ValueError, "Floor preparation title is required"):
+        with self.assertRaisesRegex(ValidationError, "Floor preparation title is required"):
             await CreateFlooringPreparationUseCase(storage).execute(command)
 
         storage.assert_no_writes(self)
@@ -217,7 +218,7 @@ class CreateFlooringCatalogUseCaseTests(unittest.IsolatedAsyncioTestCase):
             note=None,
         )
 
-        with self.assertRaisesRegex(ValueError, "Floor layout title is required"):
+        with self.assertRaisesRegex(ValidationError, "Floor layout title is required"):
             await CreateFlooringLayoutUseCase(storage).execute(command)
 
         storage.assert_no_writes(self)

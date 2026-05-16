@@ -4,6 +4,7 @@ import json
 import unittest
 from typing import Any
 
+from supply_bot.application.errors import NotFoundError, ValidationError
 from supply_bot.estimates.application.update_warm_floor import (
     UpdateWarmFloorCommand,
     UpdateWarmFloorMaterialItemCommand,
@@ -178,7 +179,7 @@ class UpdateWarmFloorUseCaseTests(unittest.IsolatedAsyncioTestCase):
     async def test_execute_rejects_missing_project(self) -> None:
         storage = FakeWarmFloorStorage(project=None)
 
-        with self.assertRaisesRegex(ValueError, "Calculator project not found"):
+        with self.assertRaisesRegex(NotFoundError, "Calculator project not found"):
             await UpdateWarmFloorUseCase(storage).execute(_command())
 
         storage.assert_no_writes(self)
@@ -186,7 +187,7 @@ class UpdateWarmFloorUseCaseTests(unittest.IsolatedAsyncioTestCase):
     async def test_execute_validates_prices_and_consumption(self) -> None:
         storage = FakeWarmFloorStorage(project={"id": 10})
 
-        with self.assertRaisesRegex(ValueError, "Warm floor prices and consumption must be non-negative"):
+        with self.assertRaisesRegex(ValidationError, "Warm floor prices and consumption must be non-negative"):
             await UpdateWarmFloorUseCase(storage).execute(_command(work_price_per_m2=-1))
 
         storage.assert_no_writes(self)
@@ -194,7 +195,7 @@ class UpdateWarmFloorUseCaseTests(unittest.IsolatedAsyncioTestCase):
     async def test_execute_validates_contour_parameters(self) -> None:
         storage = FakeWarmFloorStorage(project={"id": 10})
 
-        with self.assertRaisesRegex(ValueError, "Warm floor contour and zone parameters are invalid"):
+        with self.assertRaisesRegex(ValidationError, "Warm floor contour and zone parameters are invalid"):
             await UpdateWarmFloorUseCase(storage).execute(_command(max_contour_area_m2=0))
 
         storage.assert_no_writes(self)
@@ -202,7 +203,7 @@ class UpdateWarmFloorUseCaseTests(unittest.IsolatedAsyncioTestCase):
     async def test_execute_validates_node_prices(self) -> None:
         storage = FakeWarmFloorStorage(project={"id": 10})
 
-        with self.assertRaisesRegex(ValueError, "Warm floor node prices must be non-negative"):
+        with self.assertRaisesRegex(ValidationError, "Warm floor node prices must be non-negative"):
             await UpdateWarmFloorUseCase(storage).execute(_command(manifold_work_price=-1))
 
         storage.assert_no_writes(self)
@@ -210,7 +211,7 @@ class UpdateWarmFloorUseCaseTests(unittest.IsolatedAsyncioTestCase):
     async def test_execute_validates_pump_thresholds(self) -> None:
         storage = FakeWarmFloorStorage(project={"id": 10})
 
-        with self.assertRaisesRegex(ValueError, "Pump thresholds must be positive integers"):
+        with self.assertRaisesRegex(ValidationError, "Pump thresholds must be positive integers"):
             await UpdateWarmFloorUseCase(storage).execute(_command(pump_rooms_threshold=0))
 
         storage.assert_no_writes(self)
@@ -218,7 +219,7 @@ class UpdateWarmFloorUseCaseTests(unittest.IsolatedAsyncioTestCase):
     async def test_execute_validates_selected_area_override(self) -> None:
         storage = FakeWarmFloorStorage(project={"id": 10}, rooms=[{"id": 1}])
 
-        with self.assertRaisesRegex(ValueError, "Warm floor area override cannot be negative"):
+        with self.assertRaisesRegex(ValidationError, "Warm floor area override cannot be negative"):
             await UpdateWarmFloorUseCase(storage).execute(_command(rooms=[_room(room_id=1, area_m2_override=-1)]))
 
         storage.assert_no_writes(self)

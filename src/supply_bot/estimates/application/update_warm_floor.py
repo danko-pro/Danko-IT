@@ -4,6 +4,7 @@ import json
 from dataclasses import dataclass
 from typing import Any, Protocol
 
+from supply_bot.application.errors import NotFoundError, ValidationError
 from supply_bot.estimates.application.shared import clamp_non_negative, normalize_optional_text
 
 
@@ -86,7 +87,7 @@ class UpdateWarmFloorUseCase:
     async def execute(self, command: UpdateWarmFloorCommand) -> int:
         project = await self._storage.get_estimate_project(command.project_id)
         if not project:
-            raise ValueError("Calculator project not found")
+            raise NotFoundError("Calculator project not found")
 
         manifold_material_price = _effective_material_price(
             configured_price=command.manifold_material_price,
@@ -142,18 +143,18 @@ class UpdateWarmFloorUseCase:
         pump_material_price: float | int,
     ) -> None:
         if command.work_price_per_m2 < 0 or command.pipe_m_per_m2 < 0 or command.pipe_price_per_m < 0:
-            raise ValueError("Warm floor prices and consumption must be non-negative")
+            raise ValidationError("Warm floor prices and consumption must be non-negative")
         if command.max_contour_area_m2 <= 0 or command.small_zone_area_m2 < 0:
-            raise ValueError("Warm floor contour and zone parameters are invalid")
+            raise ValidationError("Warm floor contour and zone parameters are invalid")
         if (
             command.manifold_work_price < 0
             or manifold_material_price < 0
             or command.pump_work_price < 0
             or pump_material_price < 0
         ):
-            raise ValueError("Warm floor node prices must be non-negative")
+            raise ValidationError("Warm floor node prices must be non-negative")
         if command.pump_rooms_threshold < 1 or command.pump_contours_threshold < 1:
-            raise ValueError("Pump thresholds must be positive integers")
+            raise ValidationError("Pump thresholds must be positive integers")
 
     async def _build_selected_rows(self, command: UpdateWarmFloorCommand) -> list[dict[str, object]]:
         rooms = await self._storage.list_estimate_rooms(command.project_id)
@@ -167,7 +168,7 @@ class UpdateWarmFloorUseCase:
             seen_room_ids.add(room_id)
             area_override = room_payload.area_m2_override
             if area_override is not None and area_override < 0:
-                raise ValueError("Warm floor area override cannot be negative")
+                raise ValidationError("Warm floor area override cannot be negative")
             selected_rows.append(
                 {
                     "room_id": room_id,

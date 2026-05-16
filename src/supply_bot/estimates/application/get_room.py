@@ -3,6 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Protocol
 
+from supply_bot.application.errors import NotFoundError
+
 
 @dataclass(frozen=True)
 class GetEstimateRoomCommand:
@@ -22,5 +24,5 @@ class GetEstimateRoomUseCase:
     async def execute(self, command: GetEstimateRoomCommand) -> dict[str, Any]:
         room = await self._storage.get_estimate_room(command.room_id)
         if not room:
-            raise ValueError("Calculator room not found")
+            raise NotFoundError("Calculator room not found")
         return room

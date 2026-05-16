@@ -3,6 +3,7 @@ from __future__ import annotations
 import unittest
 from typing import Any
 
+from supply_bot.application.errors import NotFoundError, ValidationError
 from supply_bot.estimates.application.update_room import (
     UpdateEstimateRoomCommand,
     UpdateEstimateRoomFloorSectionCommand,
@@ -153,7 +154,7 @@ class UpdateEstimateRoomUseCaseTests(unittest.IsolatedAsyncioTestCase):
     async def test_execute_rejects_missing_room(self) -> None:
         storage = FakeEstimateRoomUpdateStorage(room=None)
 
-        with self.assertRaisesRegex(ValueError, "Calculator room not found"):
+        with self.assertRaisesRegex(NotFoundError, "Calculator room not found"):
             await UpdateEstimateRoomUseCase(storage).execute(_valid_command())
 
         storage.assert_no_writes(self)
@@ -161,7 +162,7 @@ class UpdateEstimateRoomUseCaseTests(unittest.IsolatedAsyncioTestCase):
     async def test_execute_rejects_empty_name(self) -> None:
         storage = FakeEstimateRoomUpdateStorage(room={"id": 55})
 
-        with self.assertRaisesRegex(ValueError, "Room name is required"):
+        with self.assertRaisesRegex(ValidationError, "Room name is required"):
             await UpdateEstimateRoomUseCase(storage).execute(_valid_command(name="   "))
 
         storage.assert_no_writes(self)
@@ -169,7 +170,7 @@ class UpdateEstimateRoomUseCaseTests(unittest.IsolatedAsyncioTestCase):
     async def test_execute_rejects_negative_manual_floor_area(self) -> None:
         storage = FakeEstimateRoomUpdateStorage(room={"id": 55})
 
-        with self.assertRaisesRegex(ValueError, "Floor area cannot be negative"):
+        with self.assertRaisesRegex(ValidationError, "Floor area cannot be negative"):
             await UpdateEstimateRoomUseCase(storage).execute(_valid_command(manual_floor_area_m2=-1))
 
         storage.assert_no_writes(self)

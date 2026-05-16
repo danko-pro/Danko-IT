@@ -3,6 +3,7 @@ from __future__ import annotations
 import unittest
 from typing import Any
 
+from supply_bot.application.errors import NotFoundError
 from supply_bot.estimates.application.get_project import (
     GetEstimateProjectCommand,
     GetEstimateProjectUseCase,
@@ -56,7 +57,7 @@ class CalculatorReadUseCaseTests(unittest.IsolatedAsyncioTestCase):
     async def test_get_project_rejects_missing_project(self) -> None:
         storage = FakeEstimateReadStorage(project=None)
 
-        with self.assertRaisesRegex(ValueError, "Calculator project not found"):
+        with self.assertRaisesRegex(NotFoundError, "Calculator project not found"):
             await GetEstimateProjectUseCase(storage).execute(GetEstimateProjectCommand(project_id=404))
 
     async def test_get_room_returns_room_as_is(self) -> None:
@@ -70,5 +71,5 @@ class CalculatorReadUseCaseTests(unittest.IsolatedAsyncioTestCase):
     async def test_get_room_rejects_missing_room(self) -> None:
         storage = FakeEstimateReadStorage(room=None)
 
-        with self.assertRaisesRegex(ValueError, "Calculator room not found"):
+        with self.assertRaisesRegex(NotFoundError, "Calculator room not found"):
             await GetEstimateRoomUseCase(storage).execute(GetEstimateRoomCommand(room_id=404))

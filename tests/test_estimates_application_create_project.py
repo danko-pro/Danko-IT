@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import unittest
 
+from supply_bot.application.errors import ValidationError
 from supply_bot.estimates.application.create_project import (
     CreateEstimateProjectCommand,
     CreateEstimateProjectUseCase,
@@ -72,7 +73,7 @@ class CreateEstimateProjectUseCaseTests(unittest.IsolatedAsyncioTestCase):
             group_chat_id=None,
         )
 
-        with self.assertRaisesRegex(ValueError, "Project name is required"):
+        with self.assertRaisesRegex(ValidationError, "Project name is required"):
             await CreateEstimateProjectUseCase(storage).execute(command)
 
         self.assertEqual(storage.calls, [])

@@ -3,6 +3,7 @@ from __future__ import annotations
 import unittest
 from typing import Any
 
+from supply_bot.application.errors import NotFoundError
 from supply_bot.estimates.application.delete_room import (
     DeleteEstimateRoomCommand,
     DeleteEstimateRoomUseCase,
@@ -35,7 +36,7 @@ class DeleteEstimateRoomUseCaseTests(unittest.IsolatedAsyncioTestCase):
         storage = FakeEstimateRoomDeleteStorage(room=None)
         command = DeleteEstimateRoomCommand(room_id=404)
 
-        with self.assertRaisesRegex(ValueError, "Calculator room not found"):
+        with self.assertRaisesRegex(NotFoundError, "Calculator room not found"):
             await DeleteEstimateRoomUseCase(storage).execute(command)
 
         self.assertEqual(storage.deleted_room_ids, [])

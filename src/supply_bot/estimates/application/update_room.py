@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Protocol
 
+from supply_bot.application.errors import NotFoundError, ValidationError
 from supply_bot.estimates.application.shared import (
     clamp_minimum,
     clamp_non_negative,
@@ -81,12 +82,16 @@ class UpdateEstimateRoomUseCase:
     async def execute(self, command: UpdateEstimateRoomCommand) -> int:
         room = await self._storage.get_estimate_room(command.room_id)
         if not room:
-            raise ValueError("Calculator room not found")
+            raise NotFoundError("Calculator room not found")
 
-        name = normalize_required_text(command.name, error_message="Room name is required")
+        try:
+            name = normalize_required_text(command.name, error_message="Room name is required")
+        except ValueError as exc:
+            raise ValidationError(str(exc)) from exc
+
         manual_floor_area_m2 = command.manual_floor_area_m2
         if manual_floor_area_m2 is not None and manual_floor_area_m2 < 0:
-            raise ValueError("Floor area cannot be negative")
+            raise ValidationError("Floor area cannot be negative")
 
         await self._storage.update_estimate_room(
             command.room_id,

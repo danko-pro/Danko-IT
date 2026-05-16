@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Protocol
 
+from supply_bot.application.errors import NotFoundError, ValidationError
 from supply_bot.estimates.application.shared import normalize_optional_text, normalize_required_text
 
 
@@ -55,9 +56,13 @@ class UpdateEstimateProjectUseCase:
     async def execute(self, command: UpdateEstimateProjectCommand) -> int:
         project = await self._storage.get_estimate_project(command.project_id)
         if not project:
-            raise ValueError("Calculator project not found")
+            raise NotFoundError("Calculator project not found")
 
-        name = normalize_required_text(command.name, error_message="Project name is required")
+        try:
+            name = normalize_required_text(command.name, error_message="Project name is required")
+        except ValueError as exc:
+            raise ValidationError(str(exc)) from exc
+
         lift_type = normalize_optional_text(command.lift_type) or ""
         has_elevator = 0 if lift_type in {"", "none"} else 1
 

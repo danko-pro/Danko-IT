@@ -3,6 +3,7 @@
 import unittest
 from typing import Any
 
+from supply_bot.application.errors import NotFoundError
 from supply_bot.estimates.application.create_room import (
     CreateEstimateRoomCommand,
     CreateEstimateRoomUseCase,
@@ -104,7 +105,7 @@ class CreateEstimateRoomUseCaseTests(unittest.IsolatedAsyncioTestCase):
             perimeter_factor=1.15,
         )
 
-        with self.assertRaisesRegex(ValueError, "Calculator project not found"):
+        with self.assertRaisesRegex(NotFoundError, "Calculator project not found"):
             await CreateEstimateRoomUseCase(storage).execute(command)
 
         self.assertEqual(storage.created_rooms, [])

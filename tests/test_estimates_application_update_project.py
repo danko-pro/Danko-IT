@@ -3,6 +3,7 @@ from __future__ import annotations
 import unittest
 from typing import Any
 
+from supply_bot.application.errors import NotFoundError, ValidationError
 from supply_bot.estimates.application.update_project import (
     UpdateEstimateProjectCommand,
     UpdateEstimateProjectUseCase,
@@ -149,7 +150,7 @@ class UpdateEstimateProjectUseCaseTests(unittest.IsolatedAsyncioTestCase):
     async def test_execute_rejects_missing_project(self) -> None:
         storage = FakeEstimateProjectUpdateStorage(project=None)
 
-        with self.assertRaisesRegex(ValueError, "Calculator project not found"):
+        with self.assertRaisesRegex(NotFoundError, "Calculator project not found"):
             await UpdateEstimateProjectUseCase(storage).execute(_valid_command())
 
         self.assertEqual(storage.update_calls, [])
@@ -157,7 +158,7 @@ class UpdateEstimateProjectUseCaseTests(unittest.IsolatedAsyncioTestCase):
     async def test_execute_rejects_empty_name(self) -> None:
         storage = FakeEstimateProjectUpdateStorage(project={"id": 10})
 
-        with self.assertRaisesRegex(ValueError, "Project name is required"):
+        with self.assertRaisesRegex(ValidationError, "Project name is required"):
             await UpdateEstimateProjectUseCase(storage).execute(_valid_command(name="   "))
 
         self.assertEqual(storage.update_calls, [])

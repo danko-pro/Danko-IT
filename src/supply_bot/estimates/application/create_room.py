@@ -3,6 +3,7 @@
 from dataclasses import dataclass
 from typing import Any, Protocol
 
+from supply_bot.application.errors import NotFoundError
 from supply_bot.estimates.application.shared import clamp_minimum, normalize_room_name_or_fallback
 
 
@@ -40,7 +41,7 @@ class CreateEstimateRoomUseCase:
     async def execute(self, command: CreateEstimateRoomCommand) -> int:
         project = await self._storage.get_estimate_project(command.project_id)
         if not project:
-            raise ValueError("Calculator project not found")
+            raise NotFoundError("Calculator project not found")
 
         existing_rooms = await self._storage.list_estimate_rooms(command.project_id)
         name = normalize_room_name_or_fallback(command.name, fallback_index=len(existing_rooms) + 1)

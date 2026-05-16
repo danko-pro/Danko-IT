@@ -3,6 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Protocol
 
+from supply_bot.application.errors import NotFoundError
+
 
 @dataclass(frozen=True)
 class GetEstimateProjectCommand:
@@ -22,5 +24,5 @@ class GetEstimateProjectUseCase:
     async def execute(self, command: GetEstimateProjectCommand) -> dict[str, Any]:
         project = await self._storage.get_estimate_project(command.project_id)
         if not project:
-            raise ValueError("Calculator project not found")
+            raise NotFoundError("Calculator project not found")
         return project

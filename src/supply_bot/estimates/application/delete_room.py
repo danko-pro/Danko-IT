@@ -3,6 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Protocol
 
+from supply_bot.application.errors import NotFoundError
+
 
 @dataclass(frozen=True)
 class DeleteEstimateRoomCommand:
@@ -24,7 +26,7 @@ class DeleteEstimateRoomUseCase:
     async def execute(self, command: DeleteEstimateRoomCommand) -> int:
         room = await self._storage.get_estimate_room(command.room_id)
         if not room:
-            raise ValueError("Calculator room not found")
+            raise NotFoundError("Calculator room not found")
 
         project_id = int(room["project_id"])
         await self._storage.delete_estimate_room(command.room_id)

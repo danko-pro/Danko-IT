@@ -1,6 +1,6 @@
 from typing import Any
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, Request
 
 from supply_bot.admin_api.calculator_payloads import _estimate_project_payload, _estimate_room_detail
 from supply_bot.admin_api.calculator_routes.shared import (
@@ -8,6 +8,7 @@ from supply_bot.admin_api.calculator_routes.shared import (
     load_estimate_project_payload,
     load_estimate_room_detail,
 )
+from supply_bot.admin_api.error_mapping import resolve_application_result
 from supply_bot.estimates.application.create_project import (
     CreateEstimateProjectCommand,
     CreateEstimateProjectUseCase,
@@ -65,10 +66,7 @@ def register_calculator_core_routes(
             note=payload.note,
             group_chat_id=payload.group_chat_id,
         )
-        try:
-            project_id = await CreateEstimateProjectUseCase(storage_obj).execute(command)
-        except ValueError as exc:
-            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        project_id = await resolve_application_result(CreateEstimateProjectUseCase(storage_obj).execute(command))
 
         return await load_estimate_project_payload(storage_obj, project_id, detail="Project was not created")
 
@@ -76,10 +74,7 @@ def register_calculator_core_routes(
     async def calculator_project_detail(request: Request, project_id: int) -> dict[str, Any]:
         storage_obj = get_calculator_route_storage(request)
         command = GetEstimateProjectCommand(project_id=project_id)
-        try:
-            project = await GetEstimateProjectUseCase(storage_obj).execute(command)
-        except ValueError as exc:
-            raise HTTPException(status_code=404, detail=str(exc)) from exc
+        project = await resolve_application_result(GetEstimateProjectUseCase(storage_obj).execute(command))
 
         return await _estimate_project_payload(storage_obj, project)
 
@@ -105,11 +100,7 @@ def register_calculator_core_routes(
             responsible_person=payload.responsible_person,
             note=payload.note,
         )
-        try:
-            await UpdateEstimateProjectUseCase(storage_obj).execute(command)
-        except ValueError as exc:
-            status_code = 404 if str(exc) == "Calculator project not found" else 400
-            raise HTTPException(status_code=status_code, detail=str(exc)) from exc
+        project_id = await resolve_application_result(UpdateEstimateProjectUseCase(storage_obj).execute(command))
 
         return await load_estimate_project_payload(storage_obj, project_id, detail="Project update failed")
 
@@ -127,11 +118,7 @@ def register_calculator_core_routes(
             auto_perimeter_calc=payload.auto_perimeter_calc,
             perimeter_factor=payload.perimeter_factor,
         )
-        try:
-            room_id = await CreateEstimateRoomUseCase(storage_obj).execute(command)
-        except ValueError as exc:
-            status_code = 404 if str(exc) == "Calculator project not found" else 400
-            raise HTTPException(status_code=status_code, detail=str(exc)) from exc
+        room_id = await resolve_application_result(CreateEstimateRoomUseCase(storage_obj).execute(command))
 
         return await load_estimate_room_detail(storage_obj, room_id, detail="Room was not created")
 
@@ -139,10 +126,7 @@ def register_calculator_core_routes(
     async def calculator_room_detail(request: Request, room_id: int) -> dict[str, Any]:
         storage_obj = get_calculator_route_storage(request)
         command = GetEstimateRoomCommand(room_id=room_id)
-        try:
-            room = await GetEstimateRoomUseCase(storage_obj).execute(command)
-        except ValueError as exc:
-            raise HTTPException(status_code=404, detail=str(exc)) from exc
+        room = await resolve_application_result(GetEstimateRoomUseCase(storage_obj).execute(command))
 
         return await _estimate_room_detail(storage_obj, room)
 
@@ -181,11 +165,7 @@ def register_calculator_core_routes(
                 for section in payload.openings
             ],
         )
-        try:
-            await UpdateEstimateRoomUseCase(storage_obj).execute(command)
-        except ValueError as exc:
-            status_code = 404 if str(exc) == "Calculator room not found" else 400
-            raise HTTPException(status_code=status_code, detail=str(exc)) from exc
+        room_id = await resolve_application_result(UpdateEstimateRoomUseCase(storage_obj).execute(command))
 
         return await load_estimate_room_detail(storage_obj, room_id, detail="Room update failed")
 
@@ -193,11 +173,7 @@ def register_calculator_core_routes(
     async def delete_calculator_room(request: Request, room_id: int) -> dict[str, Any]:
         storage_obj = get_calculator_route_storage(request)
         command = DeleteEstimateRoomCommand(room_id=room_id)
-        try:
-            project_id = await DeleteEstimateRoomUseCase(storage_obj).execute(command)
-        except ValueError as exc:
-            status_code = 404 if str(exc) == "Calculator room not found" else 400
-            raise HTTPException(status_code=status_code, detail=str(exc)) from exc
+        project_id = await resolve_application_result(DeleteEstimateRoomUseCase(storage_obj).execute(command))
 
         return await load_estimate_project_payload(
             storage_obj,

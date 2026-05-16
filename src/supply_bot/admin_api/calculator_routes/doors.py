@@ -2,15 +2,11 @@ from typing import Any
 
 from fastapi import FastAPI, HTTPException, Request
 
-from supply_bot.admin_api.calculator_routes.doors_support import (
-    resolve_project_door_component_values,
-    resolve_project_door_values,
-)
+from supply_bot.admin_api.calculator_routes.doors_support import resolve_project_door_component_values
 from supply_bot.admin_api.calculator_routes.shared import (
     get_calculator_route_storage,
     load_created_catalog_item,
     load_estimate_project_payload,
-    require_estimate_project,
     resolve_estimate_project_id_for_door,
 )
 from supply_bot.estimates.application.door_catalog import (
@@ -20,6 +16,15 @@ from supply_bot.estimates.application.door_catalog import (
     CreateDoorComponentCatalogItemUseCase,
     ListDoorCatalogUseCase,
     ListDoorComponentCatalogUseCase,
+)
+from supply_bot.estimates.application.project_doors import (
+    CreateProjectDoorCommand,
+    CreateProjectDoorUseCase,
+    DeleteProjectDoorCommand,
+    DeleteProjectDoorUseCase,
+    ProjectDoorValuesCommand,
+    UpdateProjectDoorCommand,
+    UpdateProjectDoorUseCase,
 )
 
 
@@ -92,6 +97,7 @@ def register_calculator_door_routes(
             created_id=component_id,
             detail="Door component catalog item was not created",
         )
+
     @app.post("/api/calculator/projects/{project_id}/doors")
     async def create_calculator_project_door(
         request: Request,
@@ -99,12 +105,19 @@ def register_calculator_door_routes(
         payload: calculator_project_door_payload_model,
     ) -> dict[str, Any]:
         storage_obj = get_calculator_route_storage(request)
-        await require_estimate_project(storage_obj, project_id)
-        door_values = await resolve_project_door_values(storage_obj, payload)
-        await storage_obj.create_estimate_project_door(project_id=project_id, **door_values)
+        command = CreateProjectDoorCommand(
+            project_id=project_id,
+            door=_project_door_values_command(payload),
+        )
+        try:
+            result_project_id = await CreateProjectDoorUseCase(storage_obj).execute(command)
+        except ValueError as exc:
+            status_code = 404 if str(exc) in {"Calculator project not found", "Door catalog item not found"} else 400
+            raise HTTPException(status_code=status_code, detail=str(exc)) from exc
+
         return await load_estimate_project_payload(
             storage_obj,
-            project_id,
+            result_project_id,
             detail="Project not found after door creation",
         )
 
@@ -115,12 +128,16 @@ def register_calculator_door_routes(
         payload: calculator_project_door_payload_model,
     ) -> dict[str, Any]:
         storage_obj = get_calculator_route_storage(request)
-        project_id = await storage_obj.update_estimate_project_door(
-            door_id,
-            **(await resolve_project_door_values(storage_obj, payload)),
+        command = UpdateProjectDoorCommand(
+            door_id=door_id,
+            door=_project_door_values_command(payload),
         )
-        if project_id is None:
-            raise HTTPException(status_code=404, detail="Project door not found")
+        try:
+            project_id = await UpdateProjectDoorUseCase(storage_obj).execute(command)
+        except ValueError as exc:
+            status_code = 404 if str(exc) in {"Project door not found", "Door catalog item not found"} else 400
+            raise HTTPException(status_code=status_code, detail=str(exc)) from exc
+
         return await load_estimate_project_payload(
             storage_obj,
             project_id,
@@ -130,9 +147,12 @@ def register_calculator_door_routes(
     @app.delete("/api/calculator/project-doors/{door_id}")
     async def delete_calculator_project_door(request: Request, door_id: int) -> dict[str, Any]:
         storage_obj = get_calculator_route_storage(request)
-        project_id = await storage_obj.delete_estimate_project_door(door_id)
-        if project_id is None:
-            raise HTTPException(status_code=404, detail="Project door not found")
+        try:
+            project_id = await DeleteProjectDoorUseCase(storage_obj).execute(DeleteProjectDoorCommand(door_id=door_id))
+        except ValueError as exc:
+            status_code = 404 if str(exc) == "Project door not found" else 400
+            raise HTTPException(status_code=status_code, detail=str(exc)) from exc
+
         return await load_estimate_project_payload(
             storage_obj,
             project_id,
@@ -193,3 +213,20 @@ def register_calculator_door_routes(
             project_id,
             detail="Project not found after component deletion",
         )
+
+
+def _project_door_values_command(payload) -> ProjectDoorValuesCommand:
+    return ProjectDoorValuesCommand(
+        door_catalog_id=payload.door_catalog_id,
+        title=payload.title,
+        opening_kind=payload.opening_kind,
+        width_mm=payload.width_mm,
+        height_mm=payload.height_mm,
+        thickness_mm=payload.thickness_mm,
+        purchase_price=payload.purchase_price,
+        sale_price=payload.sale_price,
+        install_price=payload.install_price,
+        room_a_id=payload.room_a_id,
+        room_b_id=payload.room_b_id,
+        note=payload.note,
+    )

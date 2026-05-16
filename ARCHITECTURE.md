@@ -2,17 +2,11 @@
 
 ## Статус документа
 
-Этот документ фиксирует целевую архитектуру проекта и текущий baseline backend-калькулятора после этапов `ARCH-1`...`ARCH-15`.
+Этот документ фиксирует целевую архитектуру проекта, закрытый baseline backend-калькулятора после этапов `ARCH-1`...`ARCH-15` и план дальнейшей очистки архитектуры по всему проекту.
 
-`ARCH-1` является только документационным и подготовительным этапом:
+`ARCH-1` был документационным и подготовительным этапом. `ARCH-2`...`ARCH-15` перевели backend-калькулятор на application/use-case слой без изменения публичного API, frontend, database schema, migrations или production deployment logic.
 
-- runtime-код не переносится;
-- API-контракты не меняются;
-- схема базы данных не меняется;
-- frontend UI не меняется;
-- production deployment logic не меняется.
-
-Цель этапа - зафиксировать направление развития проекта и подготовить пустой application-layer skeleton для будущих use-case сценариев.
+`ARCH-CLEAN-0` является документационным этапом. Он фиксирует карту остальных доменов и roadmap дальнейшего project-wide hardening. Runtime-код, routes, frontend, API response shape, database schema, migrations и deploy/env на этом этапе не меняются.
 
 ## Целевая схема слоев
 
@@ -79,18 +73,17 @@ Domain слой не должен импортировать FastAPI, SQLAlchemy
 
 ### `src/supply_bot/estimates/application/`
 
-Use-case слой для калькулятора и смет.
+Текущий runtime use-case слой для `estimates/calculator`.
 
-Здесь постепенно должны появляться сценарии:
+Здесь уже живут сценарии backend-калькулятора:
 
-- создать проект расчета;
-- обновить помещение;
-- рассчитать теплый пол;
-- рассчитать напольные покрытия;
-- рассчитать отделку стен;
-- рассчитать потолки;
-- собрать результат расчета;
-- подготовить структурированный payload для ответа API.
+- создать, прочитать и обновить проект расчета;
+- создать, прочитать, обновить и удалить помещение;
+- обновить теплый пол;
+- создать справочники и обновить напольные покрытия;
+- создать справочники и обновить отделку стен;
+- создать и обновить двери и дверные компоненты;
+- обновить потолки.
 
 Use-case слой управляет пользовательским сценарием, вызывает domain functions и работает с repository/storage через переданные зависимости.
 
@@ -163,19 +156,23 @@ domain -> HTTP request/response
 
 Также запрещено:
 
+- application слой не должен импортировать `fastapi`, `HTTPException`, `Request`, `Response`;
+- application слой не должен импортировать SQLAlchemy, database engine или database session;
 - application слой не должен принимать FastAPI `Request` / `Response` как часть бизнес-сценария;
 - application слой не должен напрямую читать env;
+- application слой не должен напрямую вызывать `load_settings()`;
 - application слой не должен напрямую создавать SQLAlchemy engine/session;
+- application слой не должен импортировать admin_api route helpers;
 - frontend не должен быть источником истины для расчетов;
 - payload builders не должны превращаться в место хранения формул и бизнес-правил.
 
-## Как должен выглядеть будущий route
+## Как должен выглядеть route
 
 Целевое направление для новых и постепенно рефакторящихся сценариев:
 
 ```text
 route
-  -> use case
+  -> command / use case
   -> domain functions
   -> repository/storage dependency
   -> payload builder / response
@@ -185,7 +182,9 @@ Route должен оставаться тонким:
 
 - принять HTTP payload;
 - получить текущего пользователя/session context;
+- собрать command;
 - вызвать use-case;
+- преобразовать application error в HTTP response;
 - вернуть response.
 
 ## Calculator architecture baseline
@@ -208,7 +207,7 @@ FastAPI routes
 - doors;
 - ceilings.
 
-Route-файлы в `src/supply_bot/admin_api/calculator_routes/` теперь должны рассматриваться как HTTP adapter layer:
+Route-файлы в `src/supply_bot/admin_api/calculator_routes/` теперь являются HTTP adapter layer:
 
 - получить storage из request context;
 - собрать command из HTTP payload;
@@ -222,33 +221,60 @@ Payload builders пока остаются в `src/supply_bot/admin_api/calculat
 
 Новые calculator-сценарии должны начинаться с application use-case. Логика сценария не должна расти внутри route-функции.
 
-## Граница `ARCH-1`
+## Карта доменов проекта
 
-В рамках `ARCH-1` разрешено только:
+Основные домены и текущие архитектурные ожидания:
 
-- заменить этот архитектурный документ;
-- создать пакет `src/supply_bot/estimates/application/`;
-- добавить README с правилами use-case слоя.
+- `estimates/calculator`: калькулятор смет. Baseline закрыт: routes вызывают `src/supply_bot/estimates/application/`, расчетные функции остаются в `src/supply_bot/estimates/domain/`, persistence остается в `storage_estimates`.
+- `projects`: project workspace, договоры, документы, учет, авансы, ledger. Целевая зона для будущего `projects/application` слоя.
+- `requests`: заявки из Telegram/API, черновики, runtime request state. Сейчас часть сценариев остается в `admin_api/use_cases/requests.py`; целевая зона для отдельного application слоя без HTTP-зависимостей.
+- `materials`: каталог материалов и связанные admin API сценарии. Сейчас часть сценариев остается в `admin_api/use_cases/materials.py`; целевая зона для отдельного application слоя.
+- `dashboard`: агрегированные summary/read models для админки. Должен остаться read/application сценариями поверх storage, без бизнес-логики в route.
+- `notifications`: outbox и уведомления. Должны быть вынесены в application/service layer с infrastructure adapters для Telegram/future MAX/email.
+- `settings/support`: health/support/settings endpoints и вспомогательные операции. Сейчас часть mixed endpoints остается в `app_routes_support.py`; целевая зона для раздельных support/settings adapters.
+- `auth`: admin users, password/session/cookie. Должен оставаться отдельной границей с application-сценариями для login/register/session lifecycle и infrastructure для token/cookie/hash.
+- `files/documents`: uploads, downloads, generated project documents. Должны отделять HTTP multipart/download adapter от application сценариев хранения/проверки/генерации.
+- `future Telegram/MAX adapters`: внешние messaging adapters. Они должны вызывать application use-cases, а не содержать бизнес-сценарии напрямую.
 
-В рамках `ARCH-1` запрещено:
+Целевая схема для каждого домена:
 
-- переносить существующие routes;
-- менять calculator routes;
-- менять payload builders;
-- менять repositories;
-- менять database schema;
-- добавлять migrations;
-- менять frontend UI;
-- менять Render env/secrets;
-- менять auth/session/cookie;
-- менять production deployment logic.
+```text
+admin_api / Telegram / external adapter
+  -> application use-cases
+  -> domain logic
+  -> repository protocols
+  -> infrastructure repositories
+  -> database / external APIs
+```
+
+## Transitional zones
+
+Текущие зоны, которые еще не доведены до целевого состояния:
+
+- `src/supply_bot/admin_api/use_cases/materials.py`: переходный HTTP-зависимый use-case слой. Его нужно постепенно вынести из `admin_api` в доменный application слой и убрать зависимости от HTTP adapter деталей.
+- `src/supply_bot/admin_api/use_cases/requests.py`: переходный HTTP-зависимый use-case слой для request сценариев. Его нужно перевести на чистые commands/use-cases и HTTP error mapping снаружи.
+- `src/supply_bot/admin_api/app_routes_support.py`: mixed support endpoints. Нужен split на support/settings/dashboard adapters и application сценарии.
+- `src/supply_bot/admin_api/project_routes/`: уже лучше разложен по route modules, но project lifecycle, accounting, documents и contracts еще не полностью вынесены в project application layer.
+
+Эти зоны не считаются нарушением текущего calculator baseline. Они являются следующими целями `ARCH-CLEAN`.
+
+## Project-wide cleanup roadmap
+
+Следующие безопасные этапы:
+
+- `ARCH-CLEAN-1`: application errors + HTTP error mapper. Ввести единый способ преобразования application ошибок в HTTP responses без импорта FastAPI в application слой.
+- `ARCH-CLEAN-2`: materials application layer. Вынести materials сценарии из `admin_api/use_cases/materials.py` в чистый application слой.
+- `ARCH-CLEAN-3`: requests application layer. Вынести request/runtime сценарии из `admin_api/use_cases/requests.py` в чистый application слой.
+- `ARCH-CLEAN-4`: projects application layer. Начать перенос project workspace/accounting/documents/contracts сценариев из `admin_api/project_routes/`.
+- `ARCH-CLEAN-5`: support/settings/dashboard split. Разделить mixed support/settings/dashboard endpoints на тонкие adapters и application/read сценарии.
+- `ARCH-CLEAN-6`: global boundary tests for all application layers. Расширить boundary-test подход с estimates application на остальные application packages.
 
 ## Практическое правило для будущих фаз
 
 Если новый код содержит расчетную формулу, он сначала должен рассматриваться как кандидат в `estimates/domain/`.
 
-Если новый код описывает пользовательский сценарий, он должен рассматриваться как кандидат в `estimates/application/`.
+Если новый код описывает пользовательский сценарий, он должен рассматриваться как кандидат в application layer соответствующего домена.
 
 Если новый код знает про SQLAlchemy, таблицы, engine или session, он должен оставаться в infrastructure/storage слое.
 
-Если новый код знает про HTTP, cookie, request, response или route registration, он должен оставаться в `admin_api/`.
+Если новый код знает про HTTP, cookie, request, response или route registration, он должен оставаться в adapter слое, например `admin_api/` или Telegram/MAX adapter.

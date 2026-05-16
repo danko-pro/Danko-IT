@@ -1,8 +1,8 @@
 ﻿# Estimates application layer
 
-Этот пакет предназначен для будущего use-case слоя калькулятора и смет.
+Этот пакет является текущим runtime application layer для `estimates/calculator`.
 
-`ARCH-1` только создает skeleton. Реальные use-case классы и функции пока не подключаются к runtime.
+После `ARCH-2`...`ARCH-15` calculator routes используют use-case классы из этого пакета. Новые calculator сценарии должны начинаться здесь, а не с бизнес-логики внутри FastAPI route.
 
 ## Правила слоя
 
@@ -10,37 +10,57 @@
 - Use-case может вызывать чистые функции из `src/supply_bot/estimates/domain/`.
 - Use-case может работать с repository/storage только через переданный объект.
 - Use-case не должен знать про FastAPI `Request` / `Response`.
+- Use-case не должен импортировать FastAPI, `HTTPException`, SQLAlchemy или admin_api route helpers.
 - Use-case не должен сам читать env.
 - Use-case не должен напрямую вызывать `load_settings()`.
 - Use-case не должен напрямую создавать SQLAlchemy engine/session.
 - Route должен принять HTTP payload, вызвать use-case и вернуть response.
 
-## Будущие кандидаты на use-case сценарии
+Слой защищен boundary-test:
+
+```text
+tests/test_estimates_application_architecture_boundaries.py
+```
+
+## Уже вынесенные calculator сценарии
 
 - Создать проект расчета.
+- Получить список проектов.
+- Получить проект.
+- Обновить проект.
+- Создать помещение.
+- Получить помещение.
 - Обновить помещение.
-- Рассчитать теплый пол.
-- Рассчитать напольные покрытия.
-- Рассчитать отделку стен.
-- Рассчитать потолки.
-- Собрать общий результат расчета.
+- Удалить помещение.
+- Обновить теплый пол.
+- Создать справочники напольных покрытий.
+- Обновить напольные покрытия.
+- Создать справочники отделки стен.
+- Обновить отделку стен.
+- Создать и обновить doors catalog.
+- Создать, обновить и удалить project doors.
+- Создать, обновить и удалить door components.
+- Обновить ceiling config.
+- Создать и обновить ceiling catalog items.
+- Заменить ceiling rooms.
+- Создать, обновить и удалить project ceiling items.
 
-## Минимальный пример будущего направления
+## Текущий route pattern
 
-`POST /api/calculator/projects` должен постепенно прийти к такой структуре:
+Calculator routes должны оставаться в такой структуре:
 
 ```text
 route
-  -> CreateEstimateProjectUseCase
-  -> repository
+  -> Command dataclass
+  -> UseCase(storage).execute(command)
   -> payload builder / response
 ```
 
-В этом примере:
+В этом pattern:
 
 - route отвечает только за HTTP-адаптацию;
-- `CreateEstimateProjectUseCase` управляет сценарием;
-- repository сохраняет данные;
+- command переносит HTTP payload в application слой;
+- use-case управляет сценарием и работает через переданный storage/protocol;
 - payload builder собирает API response.
 
-`ARCH-1` не переносит текущий код на эту схему. Он только фиксирует правило для следующих безопасных фаз.
+Payload builders пока остаются в `src/supply_bot/admin_api/calculator_payloads/`, чтобы не менять response shape.

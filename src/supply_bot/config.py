@@ -100,6 +100,38 @@ class Settings:
         return bool(self.admin_password_hash and self.admin_session_secret)
 
 
+def _is_local_admin_cors_origin(origin: str) -> bool:
+    normalized = origin.strip().lower().rstrip("/")
+    return normalized.startswith(("http://127.0.0.1:", "http://localhost:", "http://[::1]:"))
+
+
+def build_auth_runtime_warnings(
+    settings: Settings,
+    *,
+    cors_origins: tuple[str, ...] = (),
+) -> list[str]:
+    warnings: list[str] = []
+    if not settings.admin_auth_enabled:
+        warnings.append("ADMIN_SESSION_SECRET is not configured; admin auth is disabled/local-bypass.")
+        return warnings
+
+    if settings.admin_session_cookie_samesite == "none" and not settings.admin_session_cookie_secure:
+        warnings.append("ADMIN_SESSION_COOKIE_SAMESITE=none requires ADMIN_SESSION_COOKIE_SECURE=true.")
+
+    if settings.admin_session_cookie_samesite != "none":
+        warnings.append(
+            "Cross-origin frontend/backend deployments usually require ADMIN_SESSION_COOKIE_SAMESITE=none."
+        )
+
+    if not settings.admin_session_cookie_secure:
+        warnings.append("Production HTTPS deployments should use ADMIN_SESSION_COOKIE_SECURE=true.")
+
+    if not cors_origins or all(_is_local_admin_cors_origin(origin) for origin in cors_origins):
+        warnings.append("Production admin frontend origin may be missing from ADMIN_API_CORS_ORIGINS.")
+
+    return warnings
+
+
 def _read_env_file(path: Path) -> dict[str, str]:
     values: dict[str, str] = {}
     for raw_line in path.read_text(encoding="utf-8").splitlines():

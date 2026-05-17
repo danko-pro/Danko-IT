@@ -5,6 +5,7 @@ from typing import Any
 from fastapi import FastAPI, HTTPException, Request, Response
 
 from supply_bot.admin_api.auth import (
+    SESSION_COOKIE_NAME,
     AdminSession,
     clear_admin_session_cookie,
     create_admin_session_token,
@@ -13,7 +14,7 @@ from supply_bot.admin_api.auth import (
     verify_admin_password,
 )
 from supply_bot.admin_api.deps import get_optional_admin_session, get_settings, get_user_auth_repository
-from supply_bot.config import Settings
+from supply_bot.config import Settings, build_auth_runtime_warnings
 from supply_bot.storage_auth import normalize_app_user_email
 
 
@@ -58,6 +59,26 @@ def register_auth_routes(
     admin_login_payload_model,
     user_register_payload_model,
 ) -> None:
+    @app.get("/api/auth/diagnostics")
+    async def auth_diagnostics(request: Request) -> dict[str, Any]:
+        settings_obj = get_settings(request)
+        cors_origins = tuple(getattr(request.app.state, "admin_cors_origins", ()))
+        return {
+            "auth_enabled": settings_obj.admin_auth_enabled,
+            "cookie": {
+                "name": SESSION_COOKIE_NAME,
+                "secure": settings_obj.admin_session_cookie_secure,
+                "samesite": settings_obj.admin_session_cookie_samesite,
+                "httponly": True,
+                "path": "/",
+            },
+            "cors": {
+                "allow_credentials": True,
+                "origins": list(cors_origins),
+            },
+            "warnings": build_auth_runtime_warnings(settings_obj, cors_origins=cors_origins),
+        }
+
     @app.get("/api/auth/session")
     async def auth_session(request: Request) -> dict[str, Any]:
         settings_obj = get_settings(request)

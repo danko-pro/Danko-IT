@@ -372,6 +372,74 @@ CSRF protection for cookie-authenticated unsafe methods.
 - защитить POST/PATCH/PUT/DELETE при cookie-auth;
 - подобрать схему, совместимую с frontend/backend cross-origin deployment.
 
+## AUTH-HARDEN-1 diagnostics
+
+`AUTH-HARDEN-1` добавляет безопасную runtime-диагностику auth/cookie/CORS без изменения существующих auth response bodies.
+
+### `GET /api/auth/diagnostics`
+
+Публичный diagnostics endpoint.
+
+Назначение:
+
+- быстро проверить, включен ли auth;
+- увидеть безопасные cookie flags;
+- увидеть resolved CORS origins;
+- получить предупреждения по production cookie/CORS настройкам.
+
+Endpoint не возвращает:
+
+- `ADMIN_SESSION_SECRET`;
+- `ADMIN_PASSWORD_HASH`;
+- session token;
+- cookie value;
+- user data.
+
+Пример response:
+
+```json
+{
+  "auth_enabled": true,
+  "cookie": {
+    "name": "supply_admin_session",
+    "secure": true,
+    "samesite": "none",
+    "httponly": true,
+    "path": "/"
+  },
+  "cors": {
+    "allow_credentials": true,
+    "origins": ["https://name-danko-site.onrender.com"]
+  },
+  "warnings": []
+}
+```
+
+Возможные warnings:
+
+- `ADMIN_SESSION_SECRET is not configured; admin auth is disabled/local-bypass.`
+- `ADMIN_SESSION_COOKIE_SAMESITE=none requires ADMIN_SESSION_COOKIE_SECURE=true.`
+- `Cross-origin frontend/backend deployments usually require ADMIN_SESSION_COOKIE_SAMESITE=none.`
+- `Production HTTPS deployments should use ADMIN_SESSION_COOKIE_SECURE=true.`
+- `Production admin frontend origin may be missing from ADMIN_API_CORS_ORIGINS.`
+
+### 401 diagnostic headers
+
+Protected endpoints без валидной session cookie по-прежнему возвращают тот же body:
+
+```json
+{"detail":"Admin authentication required"}
+```
+
+Дополнительно backend добавляет безопасные headers:
+
+```text
+X-Auth-Reason: missing-or-invalid-session
+X-Auth-Cookie-Name: supply_admin_session
+```
+
+Headers не содержат token, secret, hash или user data.
+
 ## Troubleshooting
 
 ### Symptoms
@@ -389,13 +457,16 @@ CSRF protection for cookie-authenticated unsafe methods.
 ### Steps
 
 1. Open `GET /api/auth/session` from frontend context.
-2. Check response: `authenticated`, `user`, `expires_at`.
-3. In browser DevTools, open Application -> Cookies.
-4. Check backend domain cookies.
-5. Verify `supply_admin_session` exists.
-6. Check `POST /api/auth/login` Network response headers for `Set-Cookie`.
-7. Verify cookie attributes: `HttpOnly`, `Secure`, `SameSite=None` for cross-origin production.
-8. Verify backend env `ADMIN_API_CORS_ORIGINS` contains the exact frontend origin.
-9. Clear site data if the browser kept an old cookie.
-10. Login again.
-11. Recheck protected endpoint; expected authenticated result is `200`.
+2. Open `GET /api/auth/diagnostics`.
+3. Check `auth_enabled`, `cookie.secure`, `cookie.samesite`, `cors.origins`, `warnings`.
+4. Check protected endpoint response headers `X-Auth-Reason` and `X-Auth-Cookie-Name`.
+5. Check `/api/auth/session` response: `authenticated`, `user`, `expires_at`.
+6. In browser DevTools, open Application -> Cookies.
+7. Check backend domain cookies.
+8. Verify `supply_admin_session` exists.
+9. Check `POST /api/auth/login` Network response headers for `Set-Cookie`.
+10. Verify cookie attributes: `HttpOnly`, `Secure`, `SameSite=None` for cross-origin production.
+11. Verify backend env `ADMIN_API_CORS_ORIGINS` contains the exact frontend origin.
+12. Clear site data if the browser kept an old cookie.
+13. Login again.
+14. Recheck protected endpoint; expected authenticated result is `200`.

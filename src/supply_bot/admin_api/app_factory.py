@@ -32,6 +32,7 @@ from supply_bot.storage_requests import SqlAlchemyRequestRuntimeRepository
 
 PUBLIC_ADMIN_API_PATHS = (
     "/api/health",
+    "/api/auth/diagnostics",
     "/api/auth/session",
     "/api/auth/login",
     "/api/auth/register",
@@ -118,12 +119,15 @@ def create_admin_app(settings: Settings | None = None) -> FastAPI:
 
 
 def configure_admin_cors(app: FastAPI) -> None:
+    cors_origins = resolve_admin_cors_origins()
+    app.state.admin_cors_origins = cors_origins
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=list(resolve_admin_cors_origins()),
+        allow_origins=list(cors_origins),
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
+        expose_headers=["X-Auth-Reason", "X-Auth-Cookie-Name"],
     )
 
 
@@ -144,6 +148,10 @@ def configure_admin_auth(app: FastAPI) -> None:
             return JSONResponse(
                 status_code=401,
                 content={"detail": "Admin authentication required"},
+                headers={
+                    "X-Auth-Reason": "missing-or-invalid-session",
+                    "X-Auth-Cookie-Name": SESSION_COOKIE_NAME,
+                },
             )
         request.state.admin_session = session
         if session.role != "admin" and session.user_id is not None:

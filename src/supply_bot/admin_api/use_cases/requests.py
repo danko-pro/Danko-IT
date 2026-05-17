@@ -11,7 +11,6 @@ from supply_bot.admin_api.app_helpers import (
 from supply_bot.admin_api.app_routes_requests_support import (
     build_request_item_create_values,
     build_request_item_update_values,
-    normalize_request_delivery,
 )
 from supply_bot.admin_api.error_mapping import raise_application_http_error
 from supply_bot.application.errors import ApplicationError
@@ -25,6 +24,10 @@ from supply_bot.requests.application.get_request_detail import (
     GetRequestDetailUseCase,
 )
 from supply_bot.requests.application.list_recent_requests import ListRecentRequestsUseCase
+from supply_bot.requests.application.update_request_delivery import (
+    UpdateRequestDeliveryCommand,
+    UpdateRequestDeliveryUseCase,
+)
 from supply_bot.requests.application.update_request_status import (
     UpdateRequestStatusCommand,
     UpdateRequestStatusUseCase,
@@ -87,27 +90,15 @@ async def delete_request(storage_obj, draft_id: int) -> dict[str, Any]:
 
 
 async def update_request_delivery(storage_obj, draft_id: int, payload) -> dict[str, Any]:
-    draft = await storage_obj.get_draft(draft_id)
-    if not draft:
-        raise HTTPException(status_code=404, detail="Draft not found")
-
-    delivery_date, delivery_time = normalize_request_delivery(payload.delivery_date, payload.delivery_time)
-
-    await storage_obj.replace_draft_delivery(
-        draft_id,
-        requested_date=delivery_date,
-        requested_time=delivery_time,
-        confirmed_date=delivery_date,
-        confirmed_time=delivery_time,
-        proposed_date=None,
-        proposed_time=None,
-        waiting_for="confirmation",
-        status=draft["status"],
-    )
-    fresh = await storage_obj.get_draft(draft_id)
-    if not fresh:
-        raise HTTPException(status_code=500, detail="Draft delivery update failed")
-    return await _request_detail_payload(storage_obj, fresh)
+    try:
+        command = UpdateRequestDeliveryCommand(
+            draft_id=draft_id,
+            delivery_date=payload.delivery_date,
+            delivery_time=payload.delivery_time,
+        )
+        return await UpdateRequestDeliveryUseCase(storage_obj).execute(command)
+    except ApplicationError as exc:
+        raise_application_http_error(exc)
 
 
 async def create_request_item(storage_obj, draft_id: int, payload) -> dict[str, Any]:

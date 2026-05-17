@@ -20,9 +20,10 @@ This package is the clean application layer for request scenarios.
 - Get request detail.
 - Expire stale requests.
 - Update request status.
+- Update request delivery.
 
 ## Transitional scope
 
-Delivery, item, delete, and remaining notification-heavy scenarios still stay in
+Item, delete, and remaining notification-heavy scenarios still stay in
 `src/supply_bot/admin_api/use_cases/requests.py`.
 They should move in separate phases so each mutation path stays small and behavior-preserving.

@@ -18,9 +18,6 @@ from supply_bot.admin_api.use_cases.requests import (
     delete_request_item as delete_request_item_use_case,
 )
 from supply_bot.admin_api.use_cases.requests import (
-    update_request_delivery as update_request_delivery_use_case,
-)
-from supply_bot.admin_api.use_cases.requests import (
     update_request_item as update_request_item_use_case,
 )
 from supply_bot.requests.application.expire_stale_requests import (
@@ -32,6 +29,10 @@ from supply_bot.requests.application.get_request_detail import (
     GetRequestDetailUseCase,
 )
 from supply_bot.requests.application.list_recent_requests import ListRecentRequestsUseCase
+from supply_bot.requests.application.update_request_delivery import (
+    UpdateRequestDeliveryCommand,
+    UpdateRequestDeliveryUseCase,
+)
 from supply_bot.requests.application.update_request_status import (
     UpdateRequestStatusCommand,
     UpdateRequestStatusUseCase,
@@ -106,7 +107,15 @@ def register_request_routes(
         draft_id: int,
         payload,
     ) -> dict[str, Any]:
-        return await update_request_delivery_use_case(get_storage(request), draft_id, payload)
+        storage_obj = get_storage(request)
+        command = UpdateRequestDeliveryCommand(
+            draft_id=draft_id,
+            delivery_date=payload.delivery_date,
+            delivery_time=payload.delivery_time,
+        )
+        return await resolve_application_result(
+            UpdateRequestDeliveryUseCase(storage_obj).execute(command)
+        )
 
     update_request_delivery.__annotations__["payload"] = request_delivery_payload_model
     app.patch("/api/requests/{draft_id}/delivery")(update_request_delivery)

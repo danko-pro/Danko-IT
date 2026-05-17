@@ -223,11 +223,13 @@
         "src/supply_bot/projects"
       ],
       "required_children": [
+        "application",
         "access",
         "domain",
         "use_cases"
       ],
       "allowed_children": [
+        "application",
         "access",
         "domain",
         "use_cases",
@@ -240,7 +242,7 @@
       ],
       "allow_extra_children": false,
       "severity": "error",
-      "message": "Projects core must stay organized into access, domain, and use-case zones."
+      "message": "Projects core must stay organized into application, access, domain, and use-case zones."
     },
     {
       "name": "ui-root",

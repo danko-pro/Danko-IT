@@ -18,6 +18,7 @@ from fastapi import Depends, FastAPI, Request
 
 from supply_bot.admin_api.auth import AdminSession
 from supply_bot.admin_api.deps import require_admin_session
+from supply_bot.admin_api.error_mapping import resolve_application_result
 from supply_bot.admin_api.project_routes.shared import (
     extract_patch_payload,
     get_project_route_storage,
@@ -25,9 +26,15 @@ from supply_bot.admin_api.project_routes.shared import (
     resolve_or_http_error,
     resolve_or_not_found,
 )
-from supply_bot.projects.access.readers import build_project_ledger_payloads
+from supply_bot.projects.application.create_project_ledger_entry import (
+    CreateProjectLedgerEntryCommand,
+    CreateProjectLedgerEntryUseCase,
+)
+from supply_bot.projects.application.list_project_ledger_entries import (
+    ListProjectLedgerEntriesCommand,
+    ListProjectLedgerEntriesUseCase,
+)
 from supply_bot.projects.orchestration import (
-    create_project_ledger_entry_response,
     delete_project_ledger_entry_response,
     require_project,
     require_project_ledger_entry,
@@ -35,7 +42,6 @@ from supply_bot.projects.orchestration import (
 )
 from supply_bot.projects.service import (
     ProjectValidationError,
-    build_project_ledger_create_values,
     build_project_ledger_entry_payload,
     build_project_ledger_update_values,
     build_project_payload,
@@ -56,9 +62,8 @@ def register_project_ledger_entry_routes(
         _session: AdminSession = Depends(require_admin_session),
     ) -> list[dict[str, Any]]:
         storage_obj = get_project_route_storage(request)
-        await resolve_or_not_found(require_project(storage_obj, project_id))
-        entries = await storage_obj.list_project_ledger_entries(project_id)
-        return await build_project_ledger_payloads(storage_obj, project_id=project_id, entries=entries)
+        command = ListProjectLedgerEntriesCommand(project_id=project_id)
+        return await resolve_application_result(ListProjectLedgerEntriesUseCase(storage_obj).execute(command))
 
     async def create_project_ledger_entry(
         request: Request,
@@ -68,20 +73,12 @@ def register_project_ledger_entry_routes(
         _session: AdminSession = Depends(require_admin_session),
     ) -> dict[str, Any]:
         storage_obj = get_project_route_storage(request)
-
-        try:
-            entry_values = build_project_ledger_create_values(payload)
-        except ProjectValidationError as exc:
-            raise_bad_request(exc)
-
-        return await resolve_or_http_error(
-            create_project_ledger_entry_response(
-                storage_obj,
-                project_id=project_id,
-                sync_summary=sync_summary,
-                entry_values=entry_values,
-            )
+        command = CreateProjectLedgerEntryCommand(
+            project_id=project_id,
+            payload=payload,
+            sync_summary=sync_summary,
         )
+        return await resolve_application_result(CreateProjectLedgerEntryUseCase(storage_obj).execute(command))
 
     create_project_ledger_entry.__annotations__["payload"] = project_ledger_entry_create_payload_model
     app.post("/api/projects/{project_id}/ledger")(create_project_ledger_entry)

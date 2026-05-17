@@ -3,6 +3,7 @@ from __future__ import annotations
 import unittest
 from typing import Any
 
+from supply_bot.application.errors import NotFoundError, OperationFailedError, ValidationError
 from supply_bot.estimates.application.project_door_components import (
     CreateProjectDoorComponentCommand,
     CreateProjectDoorComponentUseCase,
@@ -128,7 +129,7 @@ class ProjectDoorComponentUseCaseTests(unittest.IsolatedAsyncioTestCase):
     async def test_create_rejects_missing_component_catalog(self) -> None:
         storage = FakeProjectDoorComponentStorage()
 
-        with self.assertRaisesRegex(ValueError, "Door component catalog item not found"):
+        with self.assertRaisesRegex(NotFoundError, "Door component catalog item not found"):
             await CreateProjectDoorComponentUseCase(storage).execute(
                 CreateProjectDoorComponentCommand(door_id=55, component=_component(component_catalog_id=999))
             )
@@ -138,7 +139,7 @@ class ProjectDoorComponentUseCaseTests(unittest.IsolatedAsyncioTestCase):
     async def test_create_rejects_non_positive_quantity(self) -> None:
         storage = FakeProjectDoorComponentStorage()
 
-        with self.assertRaisesRegex(ValueError, "Door component quantity must be positive"):
+        with self.assertRaisesRegex(ValidationError, "Door component quantity must be positive"):
             await CreateProjectDoorComponentUseCase(storage).execute(
                 CreateProjectDoorComponentCommand(door_id=55, component=_component(quantity=0))
             )
@@ -148,7 +149,7 @@ class ProjectDoorComponentUseCaseTests(unittest.IsolatedAsyncioTestCase):
     async def test_create_rejects_empty_title(self) -> None:
         storage = FakeProjectDoorComponentStorage()
 
-        with self.assertRaisesRegex(ValueError, "Door component title is required"):
+        with self.assertRaisesRegex(ValidationError, "Door component title is required"):
             await CreateProjectDoorComponentUseCase(storage).execute(
                 CreateProjectDoorComponentCommand(door_id=55, component=_component(title="   "))
             )
@@ -158,7 +159,7 @@ class ProjectDoorComponentUseCaseTests(unittest.IsolatedAsyncioTestCase):
     async def test_create_rejects_missing_door(self) -> None:
         storage = FakeProjectDoorComponentStorage(created_component_id=None)
 
-        with self.assertRaisesRegex(ValueError, "Project door not found"):
+        with self.assertRaisesRegex(NotFoundError, "Project door not found"):
             await CreateProjectDoorComponentUseCase(storage).execute(
                 CreateProjectDoorComponentCommand(door_id=55, component=_component())
             )
@@ -166,7 +167,7 @@ class ProjectDoorComponentUseCaseTests(unittest.IsolatedAsyncioTestCase):
     async def test_create_rejects_missing_project_after_component_creation(self) -> None:
         storage = FakeProjectDoorComponentStorage(project_id_for_door=None)
 
-        with self.assertRaisesRegex(ValueError, "Project not found after component creation"):
+        with self.assertRaisesRegex(OperationFailedError, "Project not found after component creation"):
             await CreateProjectDoorComponentUseCase(storage).execute(
                 CreateProjectDoorComponentCommand(door_id=55, component=_component())
             )
@@ -184,7 +185,7 @@ class ProjectDoorComponentUseCaseTests(unittest.IsolatedAsyncioTestCase):
     async def test_update_rejects_missing_component(self) -> None:
         storage = FakeProjectDoorComponentStorage(update_project_id=None)
 
-        with self.assertRaisesRegex(ValueError, "Door component not found"):
+        with self.assertRaisesRegex(NotFoundError, "Door component not found"):
             await UpdateProjectDoorComponentUseCase(storage).execute(
                 UpdateProjectDoorComponentCommand(component_id=66, component=_component())
             )
@@ -202,5 +203,5 @@ class ProjectDoorComponentUseCaseTests(unittest.IsolatedAsyncioTestCase):
     async def test_delete_rejects_missing_component(self) -> None:
         storage = FakeProjectDoorComponentStorage(delete_project_id=None)
 
-        with self.assertRaisesRegex(ValueError, "Door component not found"):
+        with self.assertRaisesRegex(NotFoundError, "Door component not found"):
             await DeleteProjectDoorComponentUseCase(storage).execute(DeleteProjectDoorComponentCommand(component_id=66))

@@ -3,6 +3,7 @@ from __future__ import annotations
 import unittest
 from typing import Any
 
+from supply_bot.application.errors import NotFoundError, ValidationError
 from supply_bot.estimates.application.project_doors import (
     CreateProjectDoorCommand,
     CreateProjectDoorUseCase,
@@ -137,7 +138,7 @@ class ProjectDoorUseCaseTests(unittest.IsolatedAsyncioTestCase):
     async def test_create_rejects_missing_project(self) -> None:
         storage = FakeProjectDoorStorage(project=None)
 
-        with self.assertRaisesRegex(ValueError, "Calculator project not found"):
+        with self.assertRaisesRegex(NotFoundError, "Calculator project not found"):
             await CreateProjectDoorUseCase(storage).execute(
                 CreateProjectDoorCommand(project_id=10, door=_door_values())
             )
@@ -147,7 +148,7 @@ class ProjectDoorUseCaseTests(unittest.IsolatedAsyncioTestCase):
     async def test_create_rejects_missing_catalog(self) -> None:
         storage = FakeProjectDoorStorage(project={"id": 10})
 
-        with self.assertRaisesRegex(ValueError, "Door catalog item not found"):
+        with self.assertRaisesRegex(NotFoundError, "Door catalog item not found"):
             await CreateProjectDoorUseCase(storage).execute(
                 CreateProjectDoorCommand(project_id=10, door=_door_values(door_catalog_id=999))
             )
@@ -157,7 +158,7 @@ class ProjectDoorUseCaseTests(unittest.IsolatedAsyncioTestCase):
     async def test_create_rejects_no_room_selected(self) -> None:
         storage = FakeProjectDoorStorage(project={"id": 10})
 
-        with self.assertRaisesRegex(ValueError, "At least one room must be selected"):
+        with self.assertRaisesRegex(ValidationError, "At least one room must be selected"):
             await CreateProjectDoorUseCase(storage).execute(
                 CreateProjectDoorCommand(project_id=10, door=_door_values(room_a_id=None, room_b_id=None))
             )
@@ -167,7 +168,7 @@ class ProjectDoorUseCaseTests(unittest.IsolatedAsyncioTestCase):
     async def test_create_rejects_empty_title(self) -> None:
         storage = FakeProjectDoorStorage(project={"id": 10})
 
-        with self.assertRaisesRegex(ValueError, "Door title is required"):
+        with self.assertRaisesRegex(ValidationError, "Door title is required"):
             await CreateProjectDoorUseCase(storage).execute(
                 CreateProjectDoorCommand(project_id=10, door=_door_values(title="   "))
             )
@@ -184,7 +185,7 @@ class ProjectDoorUseCaseTests(unittest.IsolatedAsyncioTestCase):
         for door in cases:
             storage = FakeProjectDoorStorage(project={"id": 10})
             with self.subTest(door=door):
-                with self.assertRaisesRegex(ValueError, "Door width and height must be positive"):
+                with self.assertRaisesRegex(ValidationError, "Door width and height must be positive"):
                     await CreateProjectDoorUseCase(storage).execute(CreateProjectDoorCommand(project_id=10, door=door))
                 storage.assert_no_writes(self)
 
@@ -201,7 +202,7 @@ class ProjectDoorUseCaseTests(unittest.IsolatedAsyncioTestCase):
     async def test_update_rejects_missing_door(self) -> None:
         storage = FakeProjectDoorStorage(update_project_id=None)
 
-        with self.assertRaisesRegex(ValueError, "Project door not found"):
+        with self.assertRaisesRegex(NotFoundError, "Project door not found"):
             await UpdateProjectDoorUseCase(storage).execute(UpdateProjectDoorCommand(door_id=55, door=_door_values()))
 
     async def test_delete_returns_project_id(self) -> None:
@@ -215,5 +216,5 @@ class ProjectDoorUseCaseTests(unittest.IsolatedAsyncioTestCase):
     async def test_delete_rejects_missing_door(self) -> None:
         storage = FakeProjectDoorStorage(delete_project_id=None)
 
-        with self.assertRaisesRegex(ValueError, "Project door not found"):
+        with self.assertRaisesRegex(NotFoundError, "Project door not found"):
             await DeleteProjectDoorUseCase(storage).execute(DeleteProjectDoorCommand(door_id=55))

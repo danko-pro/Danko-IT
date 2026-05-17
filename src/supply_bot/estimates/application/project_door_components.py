@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Mapping, Protocol
 
+from supply_bot.application.errors import NotFoundError, OperationFailedError, ValidationError
 from supply_bot.estimates.application.shared import normalize_optional_text, normalize_required_text
 from supply_bot.utils import normalize_text
 
@@ -66,10 +67,10 @@ class CreateProjectDoorComponentUseCase:
             **values,
         )
         if component_id is None:
-            raise ValueError("Project door not found")
+            raise NotFoundError("Project door not found")
         project_id = await self._storage.get_estimate_project_id_for_project_door(command.door_id)
         if project_id is None:
-            raise ValueError("Project not found after component creation")
+            raise OperationFailedError("Project not found after component creation")
         return int(project_id)
 
 
@@ -83,7 +84,7 @@ class UpdateProjectDoorComponentUseCase:
         values = await _resolve_project_door_component_values(self._storage, command.component)
         project_id = await self._storage.update_estimate_project_door_component(command.component_id, **values)
         if project_id is None:
-            raise ValueError("Door component not found")
+            raise NotFoundError("Door component not found")
         return int(project_id)
 
 
@@ -96,7 +97,7 @@ class DeleteProjectDoorComponentUseCase:
     async def execute(self, command: DeleteProjectDoorComponentCommand) -> int:
         project_id = await self._storage.delete_estimate_project_door_component(command.component_id)
         if project_id is None:
-            raise ValueError("Door component not found")
+            raise NotFoundError("Door component not found")
         return int(project_id)
 
 
@@ -117,12 +118,12 @@ async def _resolve_project_door_component_values(
         unit = unit or str(catalog_item["unit"] or "шт")
 
     if command.quantity <= 0:
-        raise ValueError("Door component quantity must be positive")
+        raise ValidationError("Door component quantity must be positive")
 
     return {
         "component_catalog_id": command.component_catalog_id,
         "category_code": normalize_text(category_code) or "misc",
-        "title": normalize_required_text(title, error_message="Door component title is required"),
+        "title": _normalize_required_text(title, error_message="Door component title is required"),
         "unit": unit or "шт",
         "quantity": float(command.quantity),
         "purchase_price": float(purchase_price) if purchase_price is not None else None,
@@ -141,4 +142,11 @@ async def _resolve_component_catalog_item(
     for item in catalog:
         if int(item["id"]) == int(component_catalog_id):
             return item
-    raise ValueError("Door component catalog item not found")
+    raise NotFoundError("Door component catalog item not found")
+
+
+def _normalize_required_text(value: str | None, *, error_message: str) -> str:
+    try:
+        return normalize_required_text(value, error_message=error_message)
+    except ValueError as exc:
+        raise ValidationError(str(exc)) from exc

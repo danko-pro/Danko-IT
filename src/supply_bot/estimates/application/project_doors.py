@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Mapping, Protocol
 
+from supply_bot.application.errors import NotFoundError, ValidationError
 from supply_bot.estimates.application.shared import (
     normalize_optional_text,
     normalize_required_text,
@@ -64,7 +65,7 @@ class CreateProjectDoorUseCase:
     async def execute(self, command: CreateProjectDoorCommand) -> int:
         project = await self._storage.get_estimate_project(command.project_id)
         if not project:
-            raise ValueError("Calculator project not found")
+            raise NotFoundError("Calculator project not found")
         door_values = await _resolve_project_door_values(self._storage, command.door)
         await self._storage.create_estimate_project_door(project_id=command.project_id, **door_values)
         return command.project_id
@@ -80,7 +81,7 @@ class UpdateProjectDoorUseCase:
         door_values = await _resolve_project_door_values(self._storage, command.door)
         project_id = await self._storage.update_estimate_project_door(command.door_id, **door_values)
         if project_id is None:
-            raise ValueError("Project door not found")
+            raise NotFoundError("Project door not found")
         return int(project_id)
 
 
@@ -93,7 +94,7 @@ class DeleteProjectDoorUseCase:
     async def execute(self, command: DeleteProjectDoorCommand) -> int:
         project_id = await self._storage.delete_estimate_project_door(command.door_id)
         if project_id is None:
-            raise ValueError("Project door not found")
+            raise NotFoundError("Project door not found")
         return int(project_id)
 
 
@@ -117,14 +118,14 @@ async def _resolve_project_door_values(
         thickness_mm = catalog_item["thickness_mm"]
 
     if command.room_a_id is None and command.room_b_id is None:
-        raise ValueError("At least one room must be selected")
+        raise ValidationError("At least one room must be selected")
 
     return {
         "door_catalog_id": command.door_catalog_id,
-        "title": normalize_required_text(title, error_message="Door title is required"),
+        "title": _normalize_required_text(title, error_message="Door title is required"),
         "opening_kind": command.opening_kind.strip() or "door",
-        "width_mm": require_positive_number(width_mm, error_message="Door width and height must be positive"),
-        "height_mm": require_positive_number(height_mm, error_message="Door width and height must be positive"),
+        "width_mm": _require_positive_number(width_mm, error_message="Door width and height must be positive"),
+        "height_mm": _require_positive_number(height_mm, error_message="Door width and height must be positive"),
         "thickness_mm": float(thickness_mm) if thickness_mm is not None else None,
         "purchase_price": float(purchase_price) if purchase_price is not None else None,
         "sale_price": float(sale_price) if sale_price is not None else None,
@@ -145,4 +146,18 @@ async def _resolve_door_catalog_item(
     for item in catalog:
         if int(item["id"]) == int(door_catalog_id):
             return item
-    raise ValueError("Door catalog item not found")
+    raise NotFoundError("Door catalog item not found")
+
+
+def _normalize_required_text(value: str | None, *, error_message: str) -> str:
+    try:
+        return normalize_required_text(value, error_message=error_message)
+    except ValueError as exc:
+        raise ValidationError(str(exc)) from exc
+
+
+def _require_positive_number(value: float | int | None, *, error_message: str) -> float:
+    try:
+        return require_positive_number(value, error_message=error_message)
+    except ValueError as exc:
+        raise ValidationError(str(exc)) from exc

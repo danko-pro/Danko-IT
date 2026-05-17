@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import unittest
 
+from supply_bot.application.errors import ValidationError
 from supply_bot.estimates.application.door_catalog import (
     CreateDoorCatalogItemCommand,
     CreateDoorCatalogItemUseCase,
@@ -99,7 +100,7 @@ class DoorCatalogUseCaseTests(unittest.IsolatedAsyncioTestCase):
     async def test_create_door_catalog_rejects_empty_title(self) -> None:
         storage = FakeDoorCatalogStorage()
 
-        with self.assertRaisesRegex(ValueError, "Door title is required"):
+        with self.assertRaisesRegex(ValidationError, "Door title is required"):
             await CreateDoorCatalogItemUseCase(storage).execute(_door_command(title="   "))
 
         storage.assert_no_writes(self)
@@ -114,7 +115,7 @@ class DoorCatalogUseCaseTests(unittest.IsolatedAsyncioTestCase):
         for command in cases:
             storage = FakeDoorCatalogStorage()
             with self.subTest(command=command):
-                with self.assertRaisesRegex(ValueError, "Door width and height must be positive"):
+                with self.assertRaisesRegex(ValidationError, "Door width and height must be positive"):
                     await CreateDoorCatalogItemUseCase(storage).execute(command)
                 storage.assert_no_writes(self)
 
@@ -148,7 +149,7 @@ class DoorCatalogUseCaseTests(unittest.IsolatedAsyncioTestCase):
     async def test_create_component_catalog_rejects_empty_title(self) -> None:
         storage = FakeDoorCatalogStorage()
 
-        with self.assertRaisesRegex(ValueError, "Door component title is required"):
+        with self.assertRaisesRegex(ValidationError, "Door component title is required"):
             await CreateDoorComponentCatalogItemUseCase(storage).execute(_component_command(title="   "))
 
         storage.assert_no_writes(self)

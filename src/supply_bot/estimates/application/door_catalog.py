@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Protocol
 
+from supply_bot.application.errors import ValidationError
 from supply_bot.estimates.application.shared import (
     normalize_optional_text,
     normalize_required_text,
@@ -81,9 +82,12 @@ class CreateDoorCatalogItemUseCase:
 
     async def execute(self, command: CreateDoorCatalogItemCommand) -> int:
         return await self._storage.create_estimate_door_catalog_item(
-            title=normalize_required_text(command.title, error_message="Door title is required"),
-            width_mm=require_positive_number(command.width_mm, error_message="Door width and height must be positive"),
-            height_mm=require_positive_number(
+            title=_normalize_required_text(command.title, error_message="Door title is required"),
+            width_mm=_require_positive_number(
+                command.width_mm,
+                error_message="Door width and height must be positive",
+            ),
+            height_mm=_require_positive_number(
                 command.height_mm,
                 error_message="Door width and height must be positive",
             ),
@@ -114,9 +118,23 @@ class CreateDoorComponentCatalogItemUseCase:
     async def execute(self, command: CreateDoorComponentCatalogItemCommand) -> int:
         return await self._storage.create_estimate_door_component_catalog_item(
             category_code=normalize_text(command.category_code or "") or "misc",
-            title=normalize_required_text(command.title, error_message="Door component title is required"),
+            title=_normalize_required_text(command.title, error_message="Door component title is required"),
             unit=(command.unit or "").strip() or "шт",
             purchase_price=command.purchase_price,
             sale_price=command.sale_price,
             note=normalize_optional_text(command.note),
         )
+
+
+def _normalize_required_text(value: str | None, *, error_message: str) -> str:
+    try:
+        return normalize_required_text(value, error_message=error_message)
+    except ValueError as exc:
+        raise ValidationError(str(exc)) from exc
+
+
+def _require_positive_number(value: float | int | None, *, error_message: str) -> float:
+    try:
+        return require_positive_number(value, error_message=error_message)
+    except ValueError as exc:
+        raise ValidationError(str(exc)) from exc

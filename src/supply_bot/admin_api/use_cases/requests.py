@@ -12,16 +12,23 @@ from supply_bot.admin_api.app_routes_requests_support import (
     build_request_item_create_values,
     build_request_item_update_values,
     normalize_request_delivery,
-    normalize_request_status,
 )
 from supply_bot.admin_api.error_mapping import raise_application_http_error
 from supply_bot.application.errors import ApplicationError
-from supply_bot.domain.request_lifecycle import RequestLifecycleError, can_delete_request_status
+from supply_bot.domain.request_lifecycle import can_delete_request_status
+from supply_bot.requests.application.expire_stale_requests import (
+    ExpireStaleRequestsCommand,
+    ExpireStaleRequestsUseCase,
+)
 from supply_bot.requests.application.get_request_detail import (
     GetRequestDetailCommand,
     GetRequestDetailUseCase,
 )
 from supply_bot.requests.application.list_recent_requests import ListRecentRequestsUseCase
+from supply_bot.requests.application.update_request_status import (
+    UpdateRequestStatusCommand,
+    UpdateRequestStatusUseCase,
+)
 from supply_bot.services.notifications import TelegramNotificationOutboxService
 
 
@@ -33,12 +40,14 @@ async def list_recent_requests(storage_obj, *, limit: int = 20) -> list[dict[str
 
 
 async def expire_stale_requests(storage_obj, settings_obj, *, max_age_hours: int | None = None) -> dict[str, int]:
-    resolved_max_age = settings_obj.request_draft_stale_hours if max_age_hours is None else max_age_hours
-    if resolved_max_age < 0:
-        raise HTTPException(status_code=400, detail="max_age_hours must be non-negative")
-
-    expired_count = await storage_obj.expire_stale_active_drafts(max_age_hours=resolved_max_age)
-    return {"expired_count": expired_count, "max_age_hours": resolved_max_age}
+    try:
+        command = ExpireStaleRequestsCommand(
+            max_age_hours=max_age_hours,
+            default_max_age_hours=settings_obj.request_draft_stale_hours,
+        )
+        return await ExpireStaleRequestsUseCase(storage_obj).execute(command)
+    except ApplicationError as exc:
+        raise_application_http_error(exc)
 
 
 async def get_request_detail(storage_obj, draft_id: int) -> dict[str, Any]:
@@ -50,43 +59,16 @@ async def get_request_detail(storage_obj, draft_id: int) -> dict[str, Any]:
 
 
 async def update_request_status(storage_obj, settings_obj, draft_id: int, status: str) -> dict[str, Any]:
-    draft = await storage_obj.get_draft(draft_id)
-    if not draft:
-        raise HTTPException(status_code=404, detail="Draft not found")
-
-    target_status = normalize_request_status(status)
-
     try:
-        await storage_obj.update_draft_admin_fields(
-            draft_id,
-            status=target_status,
-            waiting_for="confirmation" if target_status == "confirmed" else None,
-        )
-    except RequestLifecycleError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
-    updated_draft = await storage_obj.get_draft(draft_id)
-    if not updated_draft:
-        raise HTTPException(status_code=500, detail="Draft status update failed")
-
-    notification_error: str | None = None
-    notified = False
-    notification_text = _admin_status_message(target_status)
-    if notification_text:
+        command = UpdateRequestStatusCommand(draft_id=draft_id, status=status)
         notifications = TelegramNotificationOutboxService(settings=settings_obj, storage=storage_obj)
-        await notifications.flush_pending(limit=10)
-        result = await notifications.enqueue_and_try_send(
-            chat_id=int(updated_draft["chat_id"]),
-            text=notification_text,
-        )
-        notified = result.delivered
-        notification_error = result.error
-
-    return {
-        "draft_id": draft_id,
-        "status": target_status,
-        "notified": notified,
-        "notification_error": notification_error,
-    }
+        return await UpdateRequestStatusUseCase(
+            storage_obj,
+            notifications=notifications,
+            status_message_resolver=_admin_status_message,
+        ).execute(command)
+    except ApplicationError as exc:
+        raise_application_http_error(exc)
 
 
 async def delete_request(storage_obj, draft_id: int) -> dict[str, Any]:

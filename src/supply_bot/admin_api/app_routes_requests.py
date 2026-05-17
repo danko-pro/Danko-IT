@@ -5,6 +5,7 @@ from typing import Any
 
 from fastapi import FastAPI, Request
 
+from supply_bot.admin_api.app_helpers import _admin_status_message
 from supply_bot.admin_api.deps import get_settings, get_storage
 from supply_bot.admin_api.error_mapping import resolve_application_result
 from supply_bot.admin_api.use_cases.requests import (
@@ -17,22 +18,25 @@ from supply_bot.admin_api.use_cases.requests import (
     delete_request_item as delete_request_item_use_case,
 )
 from supply_bot.admin_api.use_cases.requests import (
-    expire_stale_requests as expire_stale_requests_use_case,
-)
-from supply_bot.admin_api.use_cases.requests import (
     update_request_delivery as update_request_delivery_use_case,
 )
 from supply_bot.admin_api.use_cases.requests import (
     update_request_item as update_request_item_use_case,
 )
-from supply_bot.admin_api.use_cases.requests import (
-    update_request_status as update_request_status_use_case,
+from supply_bot.requests.application.expire_stale_requests import (
+    ExpireStaleRequestsCommand,
+    ExpireStaleRequestsUseCase,
 )
 from supply_bot.requests.application.get_request_detail import (
     GetRequestDetailCommand,
     GetRequestDetailUseCase,
 )
 from supply_bot.requests.application.list_recent_requests import ListRecentRequestsUseCase
+from supply_bot.requests.application.update_request_status import (
+    UpdateRequestStatusCommand,
+    UpdateRequestStatusUseCase,
+)
+from supply_bot.services.notifications import TelegramNotificationOutboxService
 
 
 def register_request_routes(
@@ -54,10 +58,14 @@ def register_request_routes(
 
     @app.post("/api/requests/expire-stale")
     async def expire_stale_requests(request: Request, max_age_hours: int | None = None) -> dict[str, int]:
-        return await expire_stale_requests_use_case(
-            get_storage(request),
-            get_settings(request),
+        settings_obj = get_settings(request)
+        storage_obj = get_storage(request)
+        command = ExpireStaleRequestsCommand(
             max_age_hours=max_age_hours,
+            default_max_age_hours=settings_obj.request_draft_stale_hours,
+        )
+        return await resolve_application_result(
+            ExpireStaleRequestsUseCase(storage_obj).execute(command)
         )
 
     @app.get("/api/requests/{draft_id}")
@@ -73,11 +81,16 @@ def register_request_routes(
         draft_id: int,
         payload,
     ):
-        result = await update_request_status_use_case(
-            get_storage(request),
-            get_settings(request),
-            draft_id,
-            payload.status,
+        settings_obj = get_settings(request)
+        storage_obj = get_storage(request)
+        command = UpdateRequestStatusCommand(draft_id=draft_id, status=payload.status)
+        notifications = TelegramNotificationOutboxService(settings=settings_obj, storage=storage_obj)
+        result = await resolve_application_result(
+            UpdateRequestStatusUseCase(
+                storage_obj,
+                notifications=notifications,
+                status_message_resolver=_admin_status_message,
+            ).execute(command)
         )
         return request_action_result_model(**result)
 

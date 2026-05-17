@@ -8,24 +8,26 @@ ADVANCES_ROUTE_PATH = REPO_ROOT / "src" / "supply_bot" / "admin_api" / "project_
 
 
 class ProjectsAdvancesRoutesArchitectureTests(unittest.TestCase):
-    def test_read_create_advances_routes_call_application_use_cases(self) -> None:
+    def test_advances_routes_call_application_use_cases(self) -> None:
         text = ADVANCES_ROUTE_PATH.read_text(encoding="utf-8")
 
         self.assertIn("ListProjectAdvancesUseCase", text)
         self.assertIn("CreateProjectAdvanceUseCase", text)
-        self.assertIn("delete_project_advance_response", text)
-        self.assertGreaterEqual(text.count("resolve_application_result("), 2)
+        self.assertIn("DeleteProjectAdvanceUseCase", text)
+        self.assertGreaterEqual(text.count("resolve_application_result("), 3)
 
-    def test_read_create_advances_routes_no_longer_import_moved_business_helpers(self) -> None:
+    def test_advances_routes_no_longer_import_moved_business_helpers(self) -> None:
         text = ADVANCES_ROUTE_PATH.read_text(encoding="utf-8")
 
         forbidden_tokens = (
             "create_project_advance_response",
+            "delete_project_advance_response",
             "build_project_advance_create_values",
             "build_project_advance_payload",
             "ProjectValidationError",
             "raise_bad_request",
             "require_project",
+            "resolve_or_http_error",
         )
         violations = [token for token in forbidden_tokens if token in text]
 

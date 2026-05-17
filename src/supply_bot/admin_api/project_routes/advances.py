@@ -13,19 +13,19 @@ from fastapi import Depends, FastAPI, Request
 from supply_bot.admin_api.auth import AdminSession
 from supply_bot.admin_api.deps import require_admin_session
 from supply_bot.admin_api.error_mapping import resolve_application_result
-from supply_bot.admin_api.project_routes.shared import (
-    get_project_route_storage,
-    resolve_or_http_error,
-)
+from supply_bot.admin_api.project_routes.shared import get_project_route_storage
 from supply_bot.projects.application.create_project_advance import (
     CreateProjectAdvanceCommand,
     CreateProjectAdvanceUseCase,
+)
+from supply_bot.projects.application.delete_project_advance import (
+    DeleteProjectAdvanceCommand,
+    DeleteProjectAdvanceUseCase,
 )
 from supply_bot.projects.application.list_project_advances import (
     ListProjectAdvancesCommand,
     ListProjectAdvancesUseCase,
 )
-from supply_bot.projects.orchestration import delete_project_advance_response
 
 
 # Регистрация HTTP-маршрутов для project advances.
@@ -70,10 +70,8 @@ def register_project_advance_routes(
         _session: AdminSession = Depends(require_admin_session),
     ) -> dict[str, Any]:
         storage_obj = get_project_route_storage(request)
-        return await resolve_or_http_error(
-            delete_project_advance_response(
-                storage_obj,
-                project_id=project_id,
-                advance_id=advance_id,
-            )
+        command = DeleteProjectAdvanceCommand(
+            project_id=project_id,
+            advance_id=advance_id,
         )
+        return await resolve_application_result(DeleteProjectAdvanceUseCase(storage_obj).execute(command))

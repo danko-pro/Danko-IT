@@ -19,11 +19,12 @@ This package is the clean application layer for project scenarios.
 - List projects.
 - Get project detail.
 - Create project.
+- Update project.
 
 ## Transitional scope
 
-Project update/delete, advances, ledger, contracts, files, documents, and AI extraction remain in the
-existing project route/use-case modules for later phases.
+Project delete, advances, ledger, contracts, files, documents, and AI extraction remain in the existing
+project route/use-case modules for later phases.
 
 New project scenarios should start in this package. HTTP error mapping belongs to the
 `admin_api` route layer via `resolve_application_result` or compatibility wrappers

@@ -236,7 +236,7 @@ Payload builders пока остаются в `src/supply_bot/admin_api/calculat
 Основные домены и текущие архитектурные ожидания:
 
 - `estimates/calculator`: калькулятор смет. Baseline закрыт: routes вызывают `src/supply_bot/estimates/application/`, расчетные функции остаются в `src/supply_bot/estimates/domain/`, persistence остается в `storage_estimates`.
-- `projects`: project workspace, договоры, документы, учет, авансы, ledger. Целевая зона для будущего `projects/application` слоя.
+- `projects`: project workspace, договоры, документы, учет, авансы, ledger. `ARCH-CLEAN-4A` начат: базовые read-сценарии list/detail живут в `src/supply_bot/projects/application/`; write/accounting/documents/contracts остаются transitional.
 - `requests`: заявки из Telegram/API, черновики, runtime request state. `ARCH-CLEAN-3` закрыт: migrated request scenarios живут в `src/supply_bot/requests/application/`; `admin_api/use_cases/requests.py` остается compatibility wrapper для старых импортов и adapter wiring.
 - `materials`: каталог материалов и связанные admin API сценарии. `ARCH-CLEAN-2` закрыт: read-сценарии и create family/variant/sku/alias живут в `src/supply_bot/materials/application/`; `admin_api/use_cases/materials.py` остается только compatibility wrapper для старых импортов.
 - `dashboard`: агрегированные summary/read models для админки. Должен остаться read/application сценариями поверх storage, без бизнес-логики в route.
@@ -275,7 +275,7 @@ admin_api / Telegram / external adapter
 - `ARCH-CLEAN-1`: application errors + HTTP error mapper. Calculator часть закрыта этапами `ARCH-CLEAN-1A`...`ARCH-CLEAN-1G`; остальные домены нужно переводить по тому же pattern без импорта FastAPI в application слой.
 - `ARCH-CLEAN-2`: materials application layer. Закрыт этапами `ARCH-CLEAN-2A`...`ARCH-CLEAN-2D`: read use-cases и create family/variant/sku/alias находятся в `src/supply_bot/materials/application/`.
 - `ARCH-CLEAN-3`: requests application layer. Закрыт этапами `ARCH-CLEAN-3A`...`ARCH-CLEAN-3F`: read/status/delivery/delete/item scenarios находятся в `src/supply_bot/requests/application/`.
-- `ARCH-CLEAN-4`: projects application layer. Начать перенос project workspace/accounting/documents/contracts сценариев из `admin_api/project_routes/`.
+- `ARCH-CLEAN-4`: projects application layer. Начат этапом `ARCH-CLEAN-4A`: read/basic list/detail use-cases находятся в `src/supply_bot/projects/application/`; следующие шаги должны переносить write/accounting/documents/contracts малыми фазами.
 - `ARCH-CLEAN-5`: support/settings/dashboard split. Разделить mixed support/settings/dashboard endpoints на тонкие adapters и application/read сценарии.
 - `ARCH-CLEAN-6`: global boundary tests for all application layers. Расширить boundary-test подход с estimates application на остальные application packages.
 

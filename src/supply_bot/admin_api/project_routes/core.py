@@ -14,6 +14,7 @@ from fastapi import Depends, FastAPI, Request
 
 from supply_bot.admin_api.auth import AdminSession
 from supply_bot.admin_api.deps import require_admin_session
+from supply_bot.admin_api.error_mapping import resolve_application_result
 from supply_bot.admin_api.project_routes.shared import (
     extract_patch_payload,
     get_project_route_storage,
@@ -21,6 +22,8 @@ from supply_bot.admin_api.project_routes.shared import (
     resolve_or_not_found,
     resolve_or_server_error,
 )
+from supply_bot.projects.application.get_project_detail import GetProjectDetailCommand, GetProjectDetailUseCase
+from supply_bot.projects.application.list_projects import ListProjectsUseCase
 from supply_bot.projects.orchestration import (
     load_project_payload,
     require_estimate_project,
@@ -48,8 +51,7 @@ def register_project_core_routes(
         _session: AdminSession = Depends(require_admin_session),
     ) -> list[dict[str, Any]]:
         storage_obj = get_project_route_storage(request)
-        rows = await storage_obj.list_projects()
-        return [build_project_payload(row) for row in rows]
+        return await resolve_application_result(ListProjectsUseCase(storage_obj).execute())
 
     async def create_project(
         request: Request,
@@ -93,8 +95,8 @@ def register_project_core_routes(
         _session: AdminSession = Depends(require_admin_session),
     ) -> dict[str, Any]:
         storage_obj = get_project_route_storage(request)
-        project = await resolve_or_not_found(require_project(storage_obj, project_id))
-        return build_project_payload(project)
+        command = GetProjectDetailCommand(project_id=project_id)
+        return await resolve_application_result(GetProjectDetailUseCase(storage_obj).execute(command))
 
     async def update_project(
         request: Request,

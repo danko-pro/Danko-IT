@@ -14,7 +14,7 @@ Auth/session/security baseline перед runtime hardening зафиксиров
 
 `AUTH-HARDEN-0`...`AUTH-HARDEN-2` закрыли документацию auth/security модели, runtime diagnostics для cookie/CORS/session и in-memory login rate limiting без изменения session token format, cookie name или успешного login response shape.
 
-Текущий architecture checkpoint после calculator, materials, requests, auth hardening, projects core CRUD и project advances зафиксирован в `docs/ARCH_CHECKPOINT_3.md`. Stable commit: `62f8579 Extract project advance delete application use case`.
+Текущий architecture checkpoint после calculator, materials, requests, auth hardening, projects core CRUD, project advances и project ledger entries зафиксирован в `docs/ARCH_CHECKPOINT_4.md`. Stable commit: `7f187f5 Extract project ledger delete application use case`.
 
 ## Целевая схема слоев
 
@@ -236,7 +236,7 @@ Payload builders пока остаются в `src/supply_bot/admin_api/calculat
 Основные домены и текущие архитектурные ожидания:
 
 - `estimates/calculator`: калькулятор смет. Baseline закрыт: routes вызывают `src/supply_bot/estimates/application/`, расчетные функции остаются в `src/supply_bot/estimates/domain/`, persistence остается в `storage_estimates`.
-- `projects`: project workspace, договоры, документы, учет, авансы, ledger. `ARCH-CLEAN-4A`...`ARCH-CLEAN-4D` закрыли базовый CRUD application layer, а `ARCH-CLEAN-4F`...`ARCH-CLEAN-4G` закрыли project advances read/create/delete. Core CRUD и advances use-cases живут в `src/supply_bot/projects/application/`; ledger/documents/contracts/AI extraction остаются transitional.
+- `projects`: project workspace, договоры, документы, учет, авансы, ledger. `ARCH-CLEAN-4A`...`ARCH-CLEAN-4D` закрыли базовый CRUD application layer, `ARCH-CLEAN-4F`...`ARCH-CLEAN-4G` закрыли project advances read/create/delete, а `ARCH-CLEAN-4I`...`ARCH-CLEAN-4K` закрыли project ledger entries read/create/update/delete. Core CRUD, advances и ledger entry use-cases живут в `src/supply_bot/projects/application/`; ledger documents/contracts/files/AI extraction остаются transitional.
 - `requests`: заявки из Telegram/API, черновики, runtime request state. `ARCH-CLEAN-3` закрыт: migrated request scenarios живут в `src/supply_bot/requests/application/`; `admin_api/use_cases/requests.py` остается compatibility wrapper для старых импортов и adapter wiring.
 - `materials`: каталог материалов и связанные admin API сценарии. `ARCH-CLEAN-2` закрыт: read-сценарии и create family/variant/sku/alias живут в `src/supply_bot/materials/application/`; `admin_api/use_cases/materials.py` остается только compatibility wrapper для старых импортов.
 - `dashboard`: агрегированные summary/read models для админки. Должен остаться read/application сценариями поверх storage, без бизнес-логики в route.
@@ -266,7 +266,8 @@ admin_api / Telegram / external adapter
 - `src/supply_bot/admin_api/app_routes_support.py`: mixed support endpoints. Нужен split на support/settings/dashboard adapters и application сценарии.
 - `src/supply_bot/admin_api/project_routes/core.py`: thin HTTP adapter для базового projects CRUD; он вызывает `ListProjectsUseCase`, `GetProjectDetailUseCase`, `CreateProjectUseCase`, `UpdateProjectUseCase` и `DeleteProjectUseCase`.
 - `src/supply_bot/admin_api/project_routes/advances.py`: thin HTTP adapter для project advances; он вызывает `ListProjectAdvancesUseCase`, `CreateProjectAdvanceUseCase` и `DeleteProjectAdvanceUseCase`.
-- Остальные project route modules для ledger, contracts, files/documents и AI extraction остаются transitional.
+- `src/supply_bot/admin_api/project_routes/ledger_entries.py`: thin HTTP adapter для project ledger entries; он вызывает `ListProjectLedgerEntriesUseCase`, `CreateProjectLedgerEntryUseCase`, `UpdateProjectLedgerEntryUseCase` и `DeleteProjectLedgerEntryUseCase`.
+- Project route modules для ledger documents, contracts, files/documents и AI extraction остаются transitional.
 
 Эти зоны не считаются нарушением текущего calculator baseline. Они являются следующими целями `ARCH-CLEAN`.
 
@@ -277,11 +278,11 @@ admin_api / Telegram / external adapter
 - `ARCH-CLEAN-1`: application errors + HTTP error mapper. Calculator часть закрыта этапами `ARCH-CLEAN-1A`...`ARCH-CLEAN-1G`; остальные домены нужно переводить по тому же pattern без импорта FastAPI в application слой.
 - `ARCH-CLEAN-2`: materials application layer. Закрыт этапами `ARCH-CLEAN-2A`...`ARCH-CLEAN-2D`: read use-cases и create family/variant/sku/alias находятся в `src/supply_bot/materials/application/`.
 - `ARCH-CLEAN-3`: requests application layer. Закрыт этапами `ARCH-CLEAN-3A`...`ARCH-CLEAN-3F`: read/status/delivery/delete/item scenarios находятся в `src/supply_bot/requests/application/`.
-- `ARCH-CLEAN-4`: projects application layer. `ARCH-CLEAN-4A`...`ARCH-CLEAN-4G` закрыли projects core CRUD и project advances: core list/detail/create/update/delete и advances read/create/delete use-cases находятся в `src/supply_bot/projects/application/`. Следующие projects phases должны переносить ledger, contracts и documents/files малыми отдельными фазами.
+- `ARCH-CLEAN-4`: projects application layer. `ARCH-CLEAN-4A`...`ARCH-CLEAN-4K` закрыли projects core CRUD, project advances и project ledger entries: core list/detail/create/update/delete, advances read/create/delete и ledger entries read/create/update/delete use-cases находятся в `src/supply_bot/projects/application/`. Следующие projects phases должны переносить ledger documents, contracts и files/documents малыми отдельными фазами.
 - `ARCH-CLEAN-5`: support/settings/dashboard split. Разделить mixed support/settings/dashboard endpoints на тонкие adapters и application/read сценарии.
 - `ARCH-CLEAN-6`: global boundary tests for all application layers. Расширить boundary-test подход с estimates application на остальные application packages.
 
-Рекомендуемый следующий этап после `ARCH_CHECKPOINT_3`: `ARCH-CLEAN-4I` - project ledger read/create application use-cases.
+Рекомендуемый следующий этап после `ARCH_CHECKPOINT_4`: `ARCH-CLEAN-4M` - project ledger documents application use-cases.
 
 ## Практическое правило для будущих фаз
 

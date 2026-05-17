@@ -8,9 +8,13 @@
 
 `ARCH-CLEAN-0` является документационным этапом. Он фиксирует карту остальных доменов и roadmap дальнейшего project-wide hardening. Runtime-код, routes, frontend, API response shape, database schema, migrations и deploy/env на этом этапе не меняются.
 
-`ARCH-CLEAN-1A`...`ARCH-CLEAN-1F` перевели calculator application layer на общую иерархию `ApplicationError` без изменения API response shape. Calculator routes должны использовать HTTP mapper из `admin_api/error_mapping.py`, а не ручной `ValueError -> HTTPException` mapping.
+`ARCH-CLEAN-1A`...`ARCH-CLEAN-1G` перевели calculator application layer на общую иерархию `ApplicationError` без изменения API response shape. Calculator routes должны использовать HTTP mapper из `admin_api/error_mapping.py`, а не ручной `ValueError -> HTTPException` mapping.
 
 Auth/session/security baseline перед runtime hardening зафиксирован в `docs/AUTH_SECURITY.md`.
+
+`AUTH-HARDEN-0`...`AUTH-HARDEN-2` закрыли документацию auth/security модели, runtime diagnostics для cookie/CORS/session и in-memory login rate limiting без изменения session token format, cookie name или успешного login response shape.
+
+Текущий architecture checkpoint после calculator, materials, requests и auth hardening зафиксирован в `docs/ARCH_CHECKPOINT_1.md`. Stable commit: `c88ac54 Finalize requests application guardrails`.
 
 ## Целевая схема слоев
 
@@ -274,6 +278,8 @@ admin_api / Telegram / external adapter
 - `ARCH-CLEAN-4`: projects application layer. Начать перенос project workspace/accounting/documents/contracts сценариев из `admin_api/project_routes/`.
 - `ARCH-CLEAN-5`: support/settings/dashboard split. Разделить mixed support/settings/dashboard endpoints на тонкие adapters и application/read сценарии.
 - `ARCH-CLEAN-6`: global boundary tests for all application layers. Расширить boundary-test подход с estimates application на остальные application packages.
+
+Рекомендуемый следующий этап после `ARCH_CHECKPOINT_1`: `ARCH-CLEAN-4A` - projects read/basic use-cases.
 
 ## Практическое правило для будущих фаз
 

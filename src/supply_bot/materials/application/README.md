@@ -1,30 +1,30 @@
 # Materials application layer
 
-Этот пакет является чистым application layer для домена `materials`.
+This package is the clean application layer for the `materials` domain.
 
-## Правила слоя
+## Layer rules
 
-- Application layer не импортирует FastAPI.
-- Application layer не выбрасывает `HTTPException`.
-- Application layer не знает про `Request` или `Response`.
-- Use-case работает через переданный storage/protocol.
-- Use-case использует `supply_bot.application.errors` для пользовательских/business ошибок.
-- Read use-cases не изменяют данные.
-- API response shape сохраняется route layer.
+- Application layer must not import FastAPI.
+- Application layer must not raise `HTTPException`.
+- Application layer must not know `Request` or `Response`.
+- Use-cases work through passed storage/protocol objects.
+- Use-cases use `supply_bot.application.errors` for user-facing/business errors.
+- Read use-cases do not mutate data.
+- API response shape is preserved by the route layer.
 
-## Уже перенесено
+## Migrated use-cases
 
 - List material families.
 - Get material family detail.
 - Search materials.
+- Create material family.
+- Create material variant.
 
 ## Transitional scope
 
-Create/update сценарии пока остаются в `src/supply_bot/admin_api/use_cases/materials.py`:
+These write scenarios still stay in `src/supply_bot/admin_api/use_cases/materials.py`:
 
-- create material family;
-- create material variant;
 - create material sku;
 - create material alias.
 
-Их перенос будет отдельной фазой, чтобы не смешивать read-only cleanup с write-сценариями.
+They should move in a separate phase so SKU/alias validation is not mixed with family/variant migration.

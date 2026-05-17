@@ -11,13 +11,15 @@ from supply_bot.admin_api.use_cases.materials import (
     create_material_alias as create_material_alias_use_case,
 )
 from supply_bot.admin_api.use_cases.materials import (
-    create_material_family as create_material_family_use_case,
-)
-from supply_bot.admin_api.use_cases.materials import (
     create_material_sku as create_material_sku_use_case,
 )
-from supply_bot.admin_api.use_cases.materials import (
-    create_material_variant as create_material_variant_use_case,
+from supply_bot.materials.application.create_family import (
+    CreateMaterialFamilyCommand,
+    CreateMaterialFamilyUseCase,
+)
+from supply_bot.materials.application.create_variant import (
+    CreateMaterialVariantCommand,
+    CreateMaterialVariantUseCase,
 )
 from supply_bot.materials.application.get_family_detail import (
     GetMaterialFamilyDetailCommand,
@@ -59,14 +61,30 @@ def register_material_routes(
         request: Request,
         payload: family_create_payload_model,
     ) -> dict[str, Any]:
-        return await create_material_family_use_case(get_catalog_storage(request), payload)
+        storage_obj = get_catalog_storage(request)
+        command = CreateMaterialFamilyCommand(
+            canonical_name=payload.canonical_name,
+            default_unit=payload.default_unit,
+            dialog_fields=list(payload.dialog_fields),
+            category=payload.category,
+        )
+        return await resolve_application_result(
+            CreateMaterialFamilyUseCase(storage_obj).execute(command)
+        )
 
     @app.post("/api/materials/variants")
     async def create_material_variant(
         request: Request,
         payload: variant_create_payload_model,
     ) -> dict[str, Any]:
-        return await create_material_variant_use_case(get_catalog_storage(request), payload)
+        storage_obj = get_catalog_storage(request)
+        command = CreateMaterialVariantCommand(
+            family_id=payload.family_id,
+            display_name=payload.display_name,
+        )
+        return await resolve_application_result(
+            CreateMaterialVariantUseCase(storage_obj).execute(command)
+        )
 
     @app.post("/api/materials/skus")
     async def create_material_sku(

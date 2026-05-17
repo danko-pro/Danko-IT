@@ -4,17 +4,21 @@ from typing import Any
 
 from fastapi import HTTPException
 
-from supply_bot.admin_api.app_helpers import _family_overview
 from supply_bot.admin_api.app_routes_materials_support import (
-    build_material_family_values,
-    require_material_family,
-    require_material_variant,
     split_material_alias_values,
     validate_material_alias_payload,
     validate_material_sku_payload,
 )
 from supply_bot.admin_api.error_mapping import raise_application_http_error
 from supply_bot.application.errors import ApplicationError
+from supply_bot.materials.application.create_family import (
+    CreateMaterialFamilyCommand,
+    CreateMaterialFamilyUseCase,
+)
+from supply_bot.materials.application.create_variant import (
+    CreateMaterialVariantCommand,
+    CreateMaterialVariantUseCase,
+)
 from supply_bot.materials.application.get_family_detail import (
     GetMaterialFamilyDetailCommand,
     GetMaterialFamilyDetailUseCase,
@@ -39,20 +43,27 @@ async def get_material_family_detail(storage_obj, family_id: int) -> dict[str, A
 
 
 async def create_material_family(storage_obj, payload) -> dict[str, Any]:
-    family_id = await storage_obj.create_family(**build_material_family_values(payload))
-    family = await storage_obj.get_family(family_id)
-    if not family:
-        raise HTTPException(status_code=500, detail="Family was not created")
-    return await _family_overview(storage_obj, family)
+    try:
+        command = CreateMaterialFamilyCommand(
+            canonical_name=payload.canonical_name,
+            default_unit=payload.default_unit,
+            dialog_fields=list(payload.dialog_fields),
+            category=payload.category,
+        )
+        return await CreateMaterialFamilyUseCase(storage_obj).execute(command)
+    except ApplicationError as exc:
+        raise_application_http_error(exc)
 
 
 async def create_material_variant(storage_obj, payload) -> dict[str, Any]:
-    await require_material_family(storage_obj, payload.family_id)
-    display_name = payload.display_name.strip()
-    if not display_name:
-        raise HTTPException(status_code=400, detail="display_name is required")
-    variant_id = await storage_obj.create_variant(payload.family_id, display_name)
-    return await require_material_variant(storage_obj, variant_id)
+    try:
+        command = CreateMaterialVariantCommand(
+            family_id=payload.family_id,
+            display_name=payload.display_name,
+        )
+        return await CreateMaterialVariantUseCase(storage_obj).execute(command)
+    except ApplicationError as exc:
+        raise_application_http_error(exc)
 
 
 async def create_material_sku(storage_obj, payload) -> dict[str, Any]:

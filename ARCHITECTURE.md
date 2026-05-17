@@ -234,7 +234,7 @@ Payload builders пока остаются в `src/supply_bot/admin_api/calculat
 - `estimates/calculator`: калькулятор смет. Baseline закрыт: routes вызывают `src/supply_bot/estimates/application/`, расчетные функции остаются в `src/supply_bot/estimates/domain/`, persistence остается в `storage_estimates`.
 - `projects`: project workspace, договоры, документы, учет, авансы, ledger. Целевая зона для будущего `projects/application` слоя.
 - `requests`: заявки из Telegram/API, черновики, runtime request state. Сейчас часть сценариев остается в `admin_api/use_cases/requests.py`; целевая зона для отдельного application слоя без HTTP-зависимостей.
-- `materials`: каталог материалов и связанные admin API сценарии. `ARCH-CLEAN-2A` перенес read-сценарии в `src/supply_bot/materials/application/`; `ARCH-CLEAN-2B` перенес create family/create variant. SKU/alias create сценарии пока остаются в `admin_api/use_cases/materials.py`.
+- `materials`: каталог материалов и связанные admin API сценарии. `ARCH-CLEAN-2` закрыт: read-сценарии и create family/variant/sku/alias живут в `src/supply_bot/materials/application/`; `admin_api/use_cases/materials.py` остается только compatibility wrapper для старых импортов.
 - `dashboard`: агрегированные summary/read models для админки. Должен остаться read/application сценариями поверх storage, без бизнес-логики в route.
 - `notifications`: outbox и уведомления. Должны быть вынесены в application/service layer с infrastructure adapters для Telegram/future MAX/email.
 - `settings/support`: health/support/settings endpoints и вспомогательные операции. Сейчас часть mixed endpoints остается в `app_routes_support.py`; целевая зона для раздельных support/settings adapters.
@@ -257,7 +257,7 @@ admin_api / Telegram / external adapter
 
 Текущие зоны, которые еще не доведены до целевого состояния:
 
-- `src/supply_bot/admin_api/use_cases/materials.py`: переходный HTTP-зависимый use-case слой. Read-сценарии и create family/create variant уже делегируют в `src/supply_bot/materials/application/`; create SKU/create alias нужно вынести следующими фазами.
+- `src/supply_bot/admin_api/use_cases/materials.py`: compatibility wrapper для materials сценариев. Business validation перенесена в `src/supply_bot/materials/application/`; wrappers нужны только для старых импортов и HTTP mapping.
 - `src/supply_bot/admin_api/use_cases/requests.py`: переходный HTTP-зависимый use-case слой для request сценариев. Его нужно перевести на чистые commands/use-cases и HTTP error mapping снаружи.
 - `src/supply_bot/admin_api/app_routes_support.py`: mixed support endpoints. Нужен split на support/settings/dashboard adapters и application сценарии.
 - `src/supply_bot/admin_api/project_routes/`: уже лучше разложен по route modules, но project lifecycle, accounting, documents и contracts еще не полностью вынесены в project application layer.
@@ -269,7 +269,7 @@ admin_api / Telegram / external adapter
 Следующие безопасные этапы:
 
 - `ARCH-CLEAN-1`: application errors + HTTP error mapper. Calculator часть закрыта этапами `ARCH-CLEAN-1A`...`ARCH-CLEAN-1G`; остальные домены нужно переводить по тому же pattern без импорта FastAPI в application слой.
-- `ARCH-CLEAN-2`: materials application layer. `ARCH-CLEAN-2A` перенес read use-cases; `ARCH-CLEAN-2B` перенес create family/create variant; следующие шаги должны вынести create SKU/create alias из `admin_api/use_cases/materials.py`.
+- `ARCH-CLEAN-2`: materials application layer. Закрыт этапами `ARCH-CLEAN-2A`...`ARCH-CLEAN-2D`: read use-cases и create family/variant/sku/alias находятся в `src/supply_bot/materials/application/`.
 - `ARCH-CLEAN-3`: requests application layer. Вынести request/runtime сценарии из `admin_api/use_cases/requests.py` в чистый application слой.
 - `ARCH-CLEAN-4`: projects application layer. Начать перенос project workspace/accounting/documents/contracts сценариев из `admin_api/project_routes/`.
 - `ARCH-CLEAN-5`: support/settings/dashboard split. Разделить mixed support/settings/dashboard endpoints на тонкие adapters и application/read сценарии.

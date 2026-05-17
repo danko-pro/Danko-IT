@@ -26,4 +26,6 @@ This package is the clean application layer for the `materials` domain.
 
 `src/supply_bot/admin_api/use_cases/materials.py` still exists as a compatibility wrapper for legacy imports.
 
-New materials scenarios should start in this package and keep HTTP mapping in the route layer.
+New materials scenarios must start in this package. HTTP error mapping belongs to the `admin_api`
+route layer via `resolve_application_result` or compatibility wrappers that convert
+`ApplicationError` through `raise_application_http_error`.

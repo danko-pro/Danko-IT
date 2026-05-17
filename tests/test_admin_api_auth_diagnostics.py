@@ -63,6 +63,12 @@ def test_auth_diagnostics_endpoint_returns_safe_config_without_secrets(
         "allow_credentials": True,
         "origins": ["https://name-danko-site.onrender.com"],
     }
+    assert payload["login_rate_limit"] == {
+        "enabled": True,
+        "attempts": 5,
+        "window_seconds": 600,
+        "lockout_seconds": 900,
+    }
     assert payload["warnings"] == []
     assert admin_secret not in response_text
     assert password_hash not in response_text

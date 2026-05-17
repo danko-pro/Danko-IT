@@ -440,6 +440,84 @@ X-Auth-Cookie-Name: supply_admin_session
 
 Headers не содержат token, secret, hash или user data.
 
+## AUTH-HARDEN-2 login rate limit
+
+`AUTH-HARDEN-2` добавляет in-memory limiter для `POST /api/auth/login`.
+
+Цель:
+
+- ограничить перебор пароля;
+- сохранить обычный `401 {"detail":"Invalid credentials"}` до lockout;
+- вернуть безопасный `429` после превышения лимита;
+- не менять successful login response shape.
+
+Новые env variables:
+
+```text
+ADMIN_LOGIN_RATE_LIMIT_ATTEMPTS=5
+ADMIN_LOGIN_RATE_LIMIT_WINDOW_SECONDS=600
+ADMIN_LOGIN_RATE_LIMIT_LOCKOUT_SECONDS=900
+```
+
+Defaults:
+
+- attempts: `5`;
+- window: `600` seconds;
+- lockout: `900` seconds.
+
+Runtime clamp:
+
+- attempts минимум `1`;
+- window минимум `60` seconds;
+- lockout минимум `60` seconds.
+
+Rate limit keys:
+
+- client IP key;
+- normalized email key, если email передан;
+- `legacy-admin`, если login идет без email.
+
+Password, raw token, secrets и internal keys не возвращаются в API responses.
+
+При lockout backend возвращает:
+
+```json
+{"detail":"Too many failed login attempts. Try again later."}
+```
+
+Status code:
+
+```text
+429
+```
+
+Headers:
+
+```text
+Retry-After: <seconds>
+X-Auth-Reason: login-rate-limited
+```
+
+`/api/auth/diagnostics` дополнительно возвращает безопасный блок:
+
+```json
+{
+  "login_rate_limit": {
+    "enabled": true,
+    "attempts": 5,
+    "window_seconds": 600,
+    "lockout_seconds": 900
+  }
+}
+```
+
+Ограничения текущего подхода:
+
+- limiter хранится в памяти процесса;
+- state сбрасывается при restart/redeploy;
+- при нескольких backend instances limiter не общий;
+- server-side/distributed persistence остается будущим усилением.
+
 ## Troubleshooting
 
 ### Symptoms

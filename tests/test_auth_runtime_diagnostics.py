@@ -12,6 +12,9 @@ def _write_settings_file(
     admin_session_secret: str | None = "test-session-secret",
     cookie_secure: bool = False,
     cookie_samesite: str | None = None,
+    rate_limit_attempts: str | None = None,
+    rate_limit_window_seconds: str | None = None,
+    rate_limit_lockout_seconds: str | None = None,
 ) -> Path:
     lines = [
         "BOT_TOKEN=test-token",
@@ -25,6 +28,12 @@ def _write_settings_file(
         lines.append(f"ADMIN_SESSION_SECRET={admin_session_secret}")
     if cookie_samesite is not None:
         lines.append(f"ADMIN_SESSION_COOKIE_SAMESITE={cookie_samesite}")
+    if rate_limit_attempts is not None:
+        lines.append(f"ADMIN_LOGIN_RATE_LIMIT_ATTEMPTS={rate_limit_attempts}")
+    if rate_limit_window_seconds is not None:
+        lines.append(f"ADMIN_LOGIN_RATE_LIMIT_WINDOW_SECONDS={rate_limit_window_seconds}")
+    if rate_limit_lockout_seconds is not None:
+        lines.append(f"ADMIN_LOGIN_RATE_LIMIT_LOCKOUT_SECONDS={rate_limit_lockout_seconds}")
 
     config_path = root / ".env.test"
     config_path.write_text("\n".join(lines), encoding="utf-8")
@@ -37,6 +46,9 @@ def _load_test_settings(
     admin_session_secret: str | None = "test-session-secret",
     cookie_secure: bool = False,
     cookie_samesite: str | None = None,
+    rate_limit_attempts: str | None = None,
+    rate_limit_window_seconds: str | None = None,
+    rate_limit_lockout_seconds: str | None = None,
 ) -> Settings:
     return load_settings(
         _write_settings_file(
@@ -44,6 +56,9 @@ def _load_test_settings(
             admin_session_secret=admin_session_secret,
             cookie_secure=cookie_secure,
             cookie_samesite=cookie_samesite,
+            rate_limit_attempts=rate_limit_attempts,
+            rate_limit_window_seconds=rate_limit_window_seconds,
+            rate_limit_lockout_seconds=rate_limit_lockout_seconds,
         )
     )
 
@@ -105,3 +120,24 @@ def test_auth_runtime_warnings_include_missing_production_cors_origin(tmp_path: 
     )
 
     assert "Production admin frontend origin may be missing from ADMIN_API_CORS_ORIGINS." in warnings
+
+
+def test_auth_login_rate_limit_defaults_load_from_settings(tmp_path: Path) -> None:
+    settings = _load_test_settings(tmp_path)
+
+    assert settings.admin_login_rate_limit_attempts == 5
+    assert settings.admin_login_rate_limit_window_seconds == 600
+    assert settings.admin_login_rate_limit_lockout_seconds == 900
+
+
+def test_auth_login_rate_limit_overrides_and_minimum_clamp(tmp_path: Path) -> None:
+    settings = _load_test_settings(
+        tmp_path,
+        rate_limit_attempts="0",
+        rate_limit_window_seconds="10",
+        rate_limit_lockout_seconds="10",
+    )
+
+    assert settings.admin_login_rate_limit_attempts == 1
+    assert settings.admin_login_rate_limit_window_seconds == 60
+    assert settings.admin_login_rate_limit_lockout_seconds == 60

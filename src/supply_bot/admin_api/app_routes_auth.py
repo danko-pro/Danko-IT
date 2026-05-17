@@ -13,9 +13,12 @@ from supply_bot.admin_api.auth import (
     set_admin_session_cookie,
     verify_admin_password,
 )
+from supply_bot.admin_api.auth_rate_limit import LoginRateLimitDecision, LoginRateLimiter
 from supply_bot.admin_api.deps import get_optional_admin_session, get_settings, get_user_auth_repository
 from supply_bot.config import Settings, build_auth_runtime_warnings
 from supply_bot.storage_auth import normalize_app_user_email
+
+LOGIN_RATE_LIMIT_DETAIL = "Too many failed login attempts. Try again later."
 
 
 def _session_payload(settings: Settings, session: AdminSession | None) -> dict[str, Any]:
@@ -53,6 +56,33 @@ def _session_payload(settings: Settings, session: AdminSession | None) -> dict[s
     }
 
 
+def _get_login_rate_limiter(request: Request) -> LoginRateLimiter:
+    return request.app.state.auth_login_rate_limiter
+
+
+def _client_ip_key(request: Request) -> str:
+    forwarded_for = request.headers.get("x-forwarded-for", "").split(",", maxsplit=1)[0].strip()
+    client_host = forwarded_for or (request.client.host if request.client else "unknown")
+    return f"ip:{client_host}"
+
+
+def _login_rate_limit_keys(request: Request, *, email: str) -> tuple[str, ...]:
+    principal_key = f"email:{email}" if email else "legacy-admin"
+    return (_client_ip_key(request), principal_key)
+
+
+def _raise_login_rate_limited(decision: LoginRateLimitDecision) -> None:
+    retry_after = max(1, int(decision.retry_after_seconds or 1))
+    raise HTTPException(
+        status_code=429,
+        detail=LOGIN_RATE_LIMIT_DETAIL,
+        headers={
+            "Retry-After": str(retry_after),
+            "X-Auth-Reason": "login-rate-limited",
+        },
+    )
+
+
 def register_auth_routes(
     app: FastAPI,
     *,
@@ -76,6 +106,12 @@ def register_auth_routes(
                 "allow_credentials": True,
                 "origins": list(cors_origins),
             },
+            "login_rate_limit": {
+                "enabled": True,
+                "attempts": settings_obj.admin_login_rate_limit_attempts,
+                "window_seconds": settings_obj.admin_login_rate_limit_window_seconds,
+                "lockout_seconds": settings_obj.admin_login_rate_limit_lockout_seconds,
+            },
             "warnings": build_auth_runtime_warnings(settings_obj, cors_origins=cors_origins),
         }
 
@@ -95,6 +131,12 @@ def register_auth_routes(
             return _session_payload(settings_obj, get_optional_admin_session(request))
 
         email = normalize_app_user_email(getattr(payload, "email", "") or "")
+        rate_limiter = _get_login_rate_limiter(request)
+        rate_limit_keys = _login_rate_limit_keys(request, email=email)
+        rate_limit_decision = rate_limiter.check(rate_limit_keys)
+        if not rate_limit_decision.allowed:
+            _raise_login_rate_limited(rate_limit_decision)
+
         if email:
             user_repository = get_user_auth_repository(request)
             user = await user_repository.get_app_user_by_email(email)
@@ -103,6 +145,9 @@ def register_auth_routes(
                 or not int(user["is_active"])
                 or not verify_admin_password(payload.password, str(user["password_hash"]))
             ):
+                failure_decision = rate_limiter.record_failure(rate_limit_keys)
+                if not failure_decision.allowed:
+                    _raise_login_rate_limited(failure_decision)
                 raise HTTPException(status_code=401, detail="Invalid credentials")
 
             await user_repository.touch_app_user_login(int(user["id"]))
@@ -115,6 +160,7 @@ def register_auth_routes(
                 email=str(user["email"]),
                 display_name=str(user["display_name"] or ""),
             )
+            rate_limiter.record_success(rate_limit_keys)
             set_admin_session_cookie(
                 response,
                 token=token,
@@ -128,12 +174,16 @@ def register_auth_routes(
             payload.password,
             settings_obj.admin_password_hash,
         ):
+            failure_decision = rate_limiter.record_failure(rate_limit_keys)
+            if not failure_decision.allowed:
+                _raise_login_rate_limited(failure_decision)
             raise HTTPException(status_code=401, detail="Invalid credentials")
 
         token, session = create_admin_session_token(
             settings_obj.admin_session_secret or "",
             ttl_seconds=settings_obj.admin_session_ttl_seconds,
         )
+        rate_limiter.record_success(rate_limit_keys)
         set_admin_session_cookie(
             response,
             token=token,

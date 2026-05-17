@@ -14,6 +14,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy import insert, select, text
 
 from supply_bot.admin_api.auth import SESSION_COOKIE_NAME, read_admin_session_token
+from supply_bot.admin_api.auth_rate_limit import LoginRateLimiter
 from supply_bot.admin_api.route_registry import register_admin_routes
 from supply_bot.config import Settings, load_settings
 from supply_bot.database import DatabaseRuntime, create_database_runtime
@@ -112,6 +113,11 @@ def create_admin_app(settings: Settings | None = None) -> FastAPI:
             system_project_owner_id,
         ),
     )
+    app.state.auth_login_rate_limiter = LoginRateLimiter(
+        attempts=resolved_settings.admin_login_rate_limit_attempts,
+        window_seconds=resolved_settings.admin_login_rate_limit_window_seconds,
+        lockout_seconds=resolved_settings.admin_login_rate_limit_lockout_seconds,
+    )
     configure_admin_cors(app)
     configure_admin_auth(app)
     register_admin_routes(app)
@@ -127,7 +133,7 @@ def configure_admin_cors(app: FastAPI) -> None:
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
-        expose_headers=["X-Auth-Reason", "X-Auth-Cookie-Name"],
+        expose_headers=["Retry-After", "X-Auth-Reason", "X-Auth-Cookie-Name"],
     )
 
 

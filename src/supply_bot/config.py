@@ -62,6 +62,9 @@ class Settings:
     admin_session_ttl_seconds: int
     admin_session_cookie_secure: bool
     admin_session_cookie_samesite: str
+    admin_login_rate_limit_attempts: int
+    admin_login_rate_limit_window_seconds: int
+    admin_login_rate_limit_lockout_seconds: int
     project_document_max_upload_bytes: int
     project_documents_dir: Path
     # Максимальный размер Telegram-медиа, которое backend скачивает перед AI-обработкой.
@@ -166,6 +169,10 @@ def _normalize_admin_session_cookie_samesite(value: str | None) -> str:
     return normalized
 
 
+def _parse_minimum_int(value: str | None, *, default: int, minimum: int) -> int:
+    return max(minimum, int(value or default))
+
+
 def discover_config_path(base_dir: Path | None = None) -> Path:
     root = base_dir or Path.cwd()
     override = os.getenv("SUPPLY_BOT_CONFIG")
@@ -254,6 +261,21 @@ def load_settings(config_path: Path | None = None) -> Settings:
         admin_session_ttl_seconds=int(env.get("ADMIN_SESSION_TTL_SECONDS", "43200")),
         admin_session_cookie_secure=admin_session_cookie_secure,
         admin_session_cookie_samesite=admin_session_cookie_samesite,
+        admin_login_rate_limit_attempts=_parse_minimum_int(
+            env.get("ADMIN_LOGIN_RATE_LIMIT_ATTEMPTS"),
+            default=5,
+            minimum=1,
+        ),
+        admin_login_rate_limit_window_seconds=_parse_minimum_int(
+            env.get("ADMIN_LOGIN_RATE_LIMIT_WINDOW_SECONDS"),
+            default=600,
+            minimum=60,
+        ),
+        admin_login_rate_limit_lockout_seconds=_parse_minimum_int(
+            env.get("ADMIN_LOGIN_RATE_LIMIT_LOCKOUT_SECONDS"),
+            default=900,
+            minimum=60,
+        ),
         project_document_max_upload_bytes=int(env.get("PROJECT_DOCUMENT_MAX_UPLOAD_BYTES", "26214400")),
         project_documents_dir=_pick_path(
             base_dir,

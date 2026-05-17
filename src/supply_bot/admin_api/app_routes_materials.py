@@ -6,6 +6,7 @@ from typing import Any
 from fastapi import FastAPI, Request
 
 from supply_bot.admin_api.deps import get_catalog_storage
+from supply_bot.admin_api.error_mapping import resolve_application_result
 from supply_bot.admin_api.use_cases.materials import (
     create_material_alias as create_material_alias_use_case,
 )
@@ -18,12 +19,13 @@ from supply_bot.admin_api.use_cases.materials import (
 from supply_bot.admin_api.use_cases.materials import (
     create_material_variant as create_material_variant_use_case,
 )
-from supply_bot.admin_api.use_cases.materials import (
-    get_material_family_detail,
-    list_material_families,
+from supply_bot.materials.application.get_family_detail import (
+    GetMaterialFamilyDetailCommand,
+    GetMaterialFamilyDetailUseCase,
 )
-from supply_bot.admin_api.use_cases.materials import (
-    search_materials as search_materials_use_case,
+from supply_bot.materials.application.list_families import ListMaterialFamiliesUseCase
+from supply_bot.materials.application.search_materials import (
+    SearchMaterialsUseCase,
 )
 
 
@@ -39,11 +41,18 @@ def register_material_routes(
     # Каталог вынесен в отдельный repository, HTTP-слой только прокидывает команды в use-case.
     @app.get("/api/materials/families")
     async def material_families(request: Request, limit: int = 100) -> list[dict[str, Any]]:
-        return await list_material_families(get_catalog_storage(request), limit=limit)
+        storage_obj = get_catalog_storage(request)
+        return await resolve_application_result(
+            ListMaterialFamiliesUseCase(storage_obj).execute(limit=limit)
+        )
 
     @app.get("/api/materials/families/{family_id}")
     async def material_family_detail(request: Request, family_id: int) -> dict[str, Any]:
-        return await get_material_family_detail(get_catalog_storage(request), family_id)
+        storage_obj = get_catalog_storage(request)
+        command = GetMaterialFamilyDetailCommand(family_id=family_id)
+        return await resolve_application_result(
+            GetMaterialFamilyDetailUseCase(storage_obj).execute(command)
+        )
 
     @app.post("/api/materials/families")
     async def create_material_family(
@@ -75,4 +84,5 @@ def register_material_routes(
 
     @app.get("/api/materials/search")
     async def search_materials(request: Request, q: str) -> list[dict[str, Any]]:
-        return await search_materials_use_case(get_catalog_storage(request), q)
+        storage_obj = get_catalog_storage(request)
+        return await resolve_application_result(SearchMaterialsUseCase(storage_obj).execute(q))

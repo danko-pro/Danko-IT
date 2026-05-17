@@ -9,32 +9,33 @@ from supply_bot.admin_api.app_routes_materials_support import (
     build_material_family_values,
     require_material_family,
     require_material_variant,
-    search_material_catalog,
     split_material_alias_values,
     validate_material_alias_payload,
     validate_material_sku_payload,
 )
+from supply_bot.admin_api.error_mapping import raise_application_http_error
+from supply_bot.application.errors import ApplicationError
+from supply_bot.materials.application.get_family_detail import (
+    GetMaterialFamilyDetailCommand,
+    GetMaterialFamilyDetailUseCase,
+)
+from supply_bot.materials.application.list_families import ListMaterialFamiliesUseCase
+from supply_bot.materials.application.search_materials import SearchMaterialsUseCase
 
 
 async def list_material_families(storage_obj, *, limit: int = 100) -> list[dict[str, Any]]:
-    families = await storage_obj.list_families()
-    trimmed = families[: max(1, min(limit, 100))]
-    return [await _family_overview(storage_obj, family) for family in trimmed]
+    try:
+        return await ListMaterialFamiliesUseCase(storage_obj).execute(limit=limit)
+    except ApplicationError as exc:
+        raise_application_http_error(exc)
 
 
 async def get_material_family_detail(storage_obj, family_id: int) -> dict[str, Any]:
-    family = await storage_obj.get_family(family_id)
-    if not family:
-        raise HTTPException(status_code=404, detail="Family not found")
-    aliases = await storage_obj.list_aliases(family_id=family_id)
-    variants = await storage_obj.list_variants(family_id)
-    skus = await storage_obj.list_skus(family_id=family_id)
-    return {
-        "family": await _family_overview(storage_obj, family),
-        "aliases": aliases,
-        "variants": variants,
-        "skus": skus,
-    }
+    try:
+        command = GetMaterialFamilyDetailCommand(family_id=family_id)
+        return await GetMaterialFamilyDetailUseCase(storage_obj).execute(command)
+    except ApplicationError as exc:
+        raise_application_http_error(exc)
 
 
 async def create_material_family(storage_obj, payload) -> dict[str, Any]:
@@ -82,5 +83,7 @@ async def create_material_alias(storage_obj, payload) -> dict[str, Any]:
 
 
 async def search_materials(storage_obj, query: str) -> list[dict[str, Any]]:
-    targets = await search_material_catalog(storage_obj, query)
-    return [target.to_api_dict() for target in targets]
+    try:
+        return await SearchMaterialsUseCase(storage_obj).execute(query)
+    except ApplicationError as exc:
+        raise_application_http_error(exc)

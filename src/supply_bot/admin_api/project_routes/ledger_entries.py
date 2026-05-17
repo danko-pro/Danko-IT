@@ -22,9 +22,7 @@ from supply_bot.admin_api.error_mapping import resolve_application_result
 from supply_bot.admin_api.project_routes.shared import (
     extract_patch_payload,
     get_project_route_storage,
-    raise_bad_request,
     resolve_or_http_error,
-    resolve_or_not_found,
 )
 from supply_bot.projects.application.create_project_ledger_entry import (
     CreateProjectLedgerEntryCommand,
@@ -34,18 +32,11 @@ from supply_bot.projects.application.list_project_ledger_entries import (
     ListProjectLedgerEntriesCommand,
     ListProjectLedgerEntriesUseCase,
 )
-from supply_bot.projects.orchestration import (
-    delete_project_ledger_entry_response,
-    require_project,
-    require_project_ledger_entry,
-    update_project_ledger_entry_response,
+from supply_bot.projects.application.update_project_ledger_entry import (
+    UpdateProjectLedgerEntryCommand,
+    UpdateProjectLedgerEntryUseCase,
 )
-from supply_bot.projects.service import (
-    ProjectValidationError,
-    build_project_ledger_entry_payload,
-    build_project_ledger_update_values,
-    build_project_payload,
-)
+from supply_bot.projects.orchestration import delete_project_ledger_entry_response
 
 
 # Регистрация HTTP-маршрутов только для ledger entry.
@@ -91,34 +82,14 @@ def register_project_ledger_entry_routes(
         _session: AdminSession = Depends(require_admin_session),
     ) -> dict[str, Any]:
         storage_obj = get_project_route_storage(request)
-        project = await resolve_or_not_found(require_project(storage_obj, project_id))
-        entry = await resolve_or_not_found(
-            require_project_ledger_entry(storage_obj, project_id=project_id, entry_id=entry_id)
-        )
-
         payload_data = extract_patch_payload(payload)
-        if not payload_data:
-            return {
-                "entry": build_project_ledger_entry_payload(entry),
-                "project": build_project_payload(project),
-            }
-
-        try:
-            updates = build_project_ledger_update_values(
-                payload_data,
-                counterparty_details=payload.counterparty_details,
-            )
-        except ProjectValidationError as exc:
-            raise_bad_request(exc)
-
-        return await resolve_or_http_error(
-            update_project_ledger_entry_response(
-                storage_obj,
-                project_id=project_id,
-                entry_id=entry_id,
-                updates=updates,
-            )
+        command = UpdateProjectLedgerEntryCommand(
+            project_id=project_id,
+            entry_id=entry_id,
+            payload_data=payload_data,
+            counterparty_details=getattr(payload, "counterparty_details", None),
         )
+        return await resolve_application_result(UpdateProjectLedgerEntryUseCase(storage_obj).execute(command))
 
     update_project_ledger_entry.__annotations__["payload"] = project_ledger_entry_update_payload_model
     app.patch("/api/projects/{project_id}/ledger/{entry_id}")(update_project_ledger_entry)

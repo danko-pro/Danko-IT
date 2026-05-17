@@ -11,17 +11,25 @@ from supply_bot.admin_api.app_helpers import (
 from supply_bot.admin_api.app_routes_requests_support import (
     build_request_item_create_values,
     build_request_item_update_values,
-    clamp_route_limit,
     normalize_request_delivery,
     normalize_request_status,
 )
+from supply_bot.admin_api.error_mapping import raise_application_http_error
+from supply_bot.application.errors import ApplicationError
 from supply_bot.domain.request_lifecycle import RequestLifecycleError, can_delete_request_status
+from supply_bot.requests.application.get_request_detail import (
+    GetRequestDetailCommand,
+    GetRequestDetailUseCase,
+)
+from supply_bot.requests.application.list_recent_requests import ListRecentRequestsUseCase
 from supply_bot.services.notifications import TelegramNotificationOutboxService
 
 
 async def list_recent_requests(storage_obj, *, limit: int = 20) -> list[dict[str, Any]]:
-    summaries = await storage_obj.list_recent_request_summaries(limit=clamp_route_limit(limit))
-    return [summary.to_api_dict() for summary in summaries]
+    try:
+        return await ListRecentRequestsUseCase(storage_obj).execute(limit=limit)
+    except ApplicationError as exc:
+        raise_application_http_error(exc)
 
 
 async def expire_stale_requests(storage_obj, settings_obj, *, max_age_hours: int | None = None) -> dict[str, int]:
@@ -34,10 +42,11 @@ async def expire_stale_requests(storage_obj, settings_obj, *, max_age_hours: int
 
 
 async def get_request_detail(storage_obj, draft_id: int) -> dict[str, Any]:
-    draft = await storage_obj.get_draft(draft_id)
-    if not draft:
-        raise HTTPException(status_code=404, detail="Draft not found")
-    return await _request_detail_payload(storage_obj, draft)
+    try:
+        command = GetRequestDetailCommand(draft_id=draft_id)
+        return await GetRequestDetailUseCase(storage_obj).execute(command)
+    except ApplicationError as exc:
+        raise_application_http_error(exc)
 
 
 async def update_request_status(storage_obj, settings_obj, draft_id: int, status: str) -> dict[str, Any]:

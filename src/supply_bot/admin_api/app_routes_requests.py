@@ -6,6 +6,7 @@ from typing import Any
 from fastapi import FastAPI, Request
 
 from supply_bot.admin_api.deps import get_settings, get_storage
+from supply_bot.admin_api.error_mapping import resolve_application_result
 from supply_bot.admin_api.use_cases.requests import (
     create_request_item as create_request_item_use_case,
 )
@@ -19,10 +20,6 @@ from supply_bot.admin_api.use_cases.requests import (
     expire_stale_requests as expire_stale_requests_use_case,
 )
 from supply_bot.admin_api.use_cases.requests import (
-    get_request_detail,
-    list_recent_requests,
-)
-from supply_bot.admin_api.use_cases.requests import (
     update_request_delivery as update_request_delivery_use_case,
 )
 from supply_bot.admin_api.use_cases.requests import (
@@ -31,6 +28,11 @@ from supply_bot.admin_api.use_cases.requests import (
 from supply_bot.admin_api.use_cases.requests import (
     update_request_status as update_request_status_use_case,
 )
+from supply_bot.requests.application.get_request_detail import (
+    GetRequestDetailCommand,
+    GetRequestDetailUseCase,
+)
+from supply_bot.requests.application.list_recent_requests import ListRecentRequestsUseCase
 
 
 def register_request_routes(
@@ -45,7 +47,10 @@ def register_request_routes(
     # Бизнес-операции заявок живут в use-case слое, чтобы ими могли пользоваться другие входы.
     @app.get("/api/requests/recent")
     async def recent_requests(request: Request, limit: int = 20) -> list[dict[str, Any]]:
-        return await list_recent_requests(get_storage(request), limit=limit)
+        storage_obj = get_storage(request)
+        return await resolve_application_result(
+            ListRecentRequestsUseCase(storage_obj).execute(limit=limit)
+        )
 
     @app.post("/api/requests/expire-stale")
     async def expire_stale_requests(request: Request, max_age_hours: int | None = None) -> dict[str, int]:
@@ -57,7 +62,11 @@ def register_request_routes(
 
     @app.get("/api/requests/{draft_id}")
     async def request_detail(request: Request, draft_id: int) -> dict[str, Any]:
-        return await get_request_detail(get_storage(request), draft_id)
+        storage_obj = get_storage(request)
+        command = GetRequestDetailCommand(draft_id=draft_id)
+        return await resolve_application_result(
+            GetRequestDetailUseCase(storage_obj).execute(command)
+        )
 
     async def update_request_status(
         request: Request,

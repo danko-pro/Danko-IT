@@ -2,15 +2,16 @@ from __future__ import annotations
 
 from typing import Any
 
-from fastapi import HTTPException
-
 from supply_bot.admin_api.app_helpers import _admin_status_message
 from supply_bot.admin_api.error_mapping import raise_application_http_error
 from supply_bot.application.errors import ApplicationError
-from supply_bot.domain.request_lifecycle import can_delete_request_status
 from supply_bot.requests.application.create_request_item import (
     CreateRequestItemCommand,
     CreateRequestItemUseCase,
+)
+from supply_bot.requests.application.delete_request import (
+    DeleteRequestCommand,
+    DeleteRequestUseCase,
 )
 from supply_bot.requests.application.delete_request_item import (
     DeleteRequestItemCommand,
@@ -80,18 +81,11 @@ async def update_request_status(storage_obj, settings_obj, draft_id: int, status
 
 
 async def delete_request(storage_obj, draft_id: int) -> dict[str, Any]:
-    draft = await storage_obj.get_draft(draft_id)
-    if not draft:
-        raise HTTPException(status_code=404, detail="Draft not found")
-
-    if not can_delete_request_status(draft["status"]):
-        raise HTTPException(
-            status_code=400,
-            detail="Only drafts, awaiting confirmation, or cancelled requests can be deleted",
-        )
-
-    await storage_obj.delete_draft(draft_id)
-    return {"deleted": True, "draft_id": draft_id}
+    try:
+        command = DeleteRequestCommand(draft_id=draft_id)
+        return await DeleteRequestUseCase(storage_obj).execute(command)
+    except ApplicationError as exc:
+        raise_application_http_error(exc)
 
 
 async def update_request_delivery(storage_obj, draft_id: int, payload) -> dict[str, Any]:

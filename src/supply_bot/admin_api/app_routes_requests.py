@@ -8,12 +8,13 @@ from fastapi import FastAPI, Request
 from supply_bot.admin_api.app_helpers import _admin_status_message
 from supply_bot.admin_api.deps import get_settings, get_storage
 from supply_bot.admin_api.error_mapping import resolve_application_result
-from supply_bot.admin_api.use_cases.requests import (
-    delete_request as delete_request_use_case,
-)
 from supply_bot.requests.application.create_request_item import (
     CreateRequestItemCommand,
     CreateRequestItemUseCase,
+)
+from supply_bot.requests.application.delete_request import (
+    DeleteRequestCommand,
+    DeleteRequestUseCase,
 )
 from supply_bot.requests.application.delete_request_item import (
     DeleteRequestItemCommand,
@@ -103,7 +104,11 @@ def register_request_routes(
 
     @app.delete("/api/requests/{draft_id}")
     async def delete_request(request: Request, draft_id: int) -> dict[str, Any]:
-        return await delete_request_use_case(get_storage(request), draft_id)
+        storage_obj = get_storage(request)
+        command = DeleteRequestCommand(draft_id=draft_id)
+        return await resolve_application_result(
+            DeleteRequestUseCase(storage_obj).execute(command)
+        )
 
     async def update_request_delivery(
         request: Request,

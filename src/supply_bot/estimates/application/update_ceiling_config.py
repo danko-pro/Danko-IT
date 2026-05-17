@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Protocol
 
+from supply_bot.application.errors import NotFoundError, ValidationError
 from supply_bot.estimates.application.shared import clamp_factor, normalize_optional_text
 
 
@@ -27,11 +28,18 @@ class UpdateCeilingConfigUseCase:
     async def execute(self, command: UpdateCeilingConfigCommand) -> int:
         project = await self._storage.get_estimate_project(command.project_id)
         if not project:
-            raise ValueError("Calculator project not found")
+            raise NotFoundError("Calculator project not found")
         await self._storage.update_estimate_ceiling_config(
             command.project_id,
             default_package_code=normalize_optional_text(command.default_package_code),
-            price_factor=clamp_factor(command.price_factor),
+            price_factor=_clamp_factor(command.price_factor),
             note=normalize_optional_text(command.note),
         )
         return command.project_id
+
+
+def _clamp_factor(value: object) -> float:
+    try:
+        return clamp_factor(value)
+    except (TypeError, ValueError) as exc:
+        raise ValidationError(str(exc)) from exc

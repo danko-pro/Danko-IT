@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Protocol
 
+from supply_bot.application.errors import NotFoundError, ValidationError
 from supply_bot.estimates.application.shared import (
     clamp_factor,
     clamp_non_negative,
@@ -46,7 +47,7 @@ class CreateCeilingProjectItemCommand:
 @dataclass(frozen=True)
 class UpdateCeilingProjectItemCommand:
     item_id: int
-    project_id: int | None
+    project_id: object
     item: CeilingProjectItemValuesCommand
 
 
@@ -76,14 +77,14 @@ class CreateCeilingProjectItemUseCase:
     async def execute(self, command: CreateCeilingProjectItemCommand) -> int:
         project = await self._storage.get_estimate_project(command.project_id)
         if not project:
-            raise ValueError("Calculator project not found")
+            raise NotFoundError("Calculator project not found")
         await _validate_project_item_refs(self._storage, command.project_id, command.item)
         item_id = await self._storage.create_estimate_project_ceiling_item(
             project_id=command.project_id,
             **_project_item_values(command.item),
         )
         if not item_id:
-            raise ValueError("Calculator project not found")
+            raise NotFoundError("Calculator project not found")
         return command.project_id
 
 
@@ -93,17 +94,18 @@ class UpdateCeilingProjectItemUseCase:
 
     async def execute(self, command: UpdateCeilingProjectItemCommand) -> int:
         if command.project_id is None:
-            raise ValueError("Ceiling project_id is required")
-        project = await self._storage.get_estimate_project(command.project_id)
+            raise ValidationError("Ceiling project_id is required")
+        project_id = _payload_int(command.project_id, error_message="Ceiling project_id is required")
+        project = await self._storage.get_estimate_project(project_id)
         if not project:
-            raise ValueError("Calculator project not found")
-        await _validate_project_item_refs(self._storage, command.project_id, command.item)
+            raise NotFoundError("Calculator project not found")
+        await _validate_project_item_refs(self._storage, project_id, command.item)
         updated_project_id = await self._storage.update_estimate_project_ceiling_item(
             command.item_id,
             **_project_item_values(command.item),
         )
         if updated_project_id is None:
-            raise ValueError("Ceiling project item not found")
+            raise NotFoundError("Ceiling project item not found")
         return int(updated_project_id)
 
 
@@ -114,7 +116,7 @@ class DeleteCeilingProjectItemUseCase:
     async def execute(self, command: DeleteCeilingProjectItemCommand) -> int:
         project_id = await self._storage.delete_estimate_project_ceiling_item(command.item_id)
         if project_id is None:
-            raise ValueError("Ceiling project item not found")
+            raise NotFoundError("Ceiling project item not found")
         return int(project_id)
 
 
@@ -125,12 +127,16 @@ async def _validate_project_item_refs(
 ) -> None:
     if item.room_id is not None:
         room_ids = {int(room["id"]) for room in await storage.list_estimate_rooms(project_id)}
-        if int(item.room_id) not in room_ids:
-            raise ValueError("Unknown ceiling room selected")
+        if _payload_int(item.room_id, error_message="Unknown ceiling room selected") not in room_ids:
+            raise ValidationError("Unknown ceiling room selected")
     if item.source_catalog_item_id is not None:
-        catalog_item = await storage.get_estimate_ceiling_catalog_item(int(item.source_catalog_item_id))
+        catalog_item_id = _payload_int(
+            item.source_catalog_item_id,
+            error_message="Unknown ceiling catalog item selected",
+        )
+        catalog_item = await storage.get_estimate_ceiling_catalog_item(catalog_item_id)
         if not catalog_item:
-            raise ValueError("Unknown ceiling catalog item selected")
+            raise ValidationError("Unknown ceiling catalog item selected")
 
 
 def _project_item_values(item: CeilingProjectItemValuesCommand) -> dict[str, object]:
@@ -151,7 +157,7 @@ def _project_item_values(item: CeilingProjectItemValuesCommand) -> dict[str, obj
         "material_price_snapshot": _clamp_payload_non_negative(item.material_price_snapshot),
         "equipment_price_snapshot": _clamp_payload_non_negative(item.equipment_price_snapshot),
         "consumables_price_snapshot": _clamp_payload_non_negative(item.consumables_price_snapshot),
-        "price_factor_snapshot": clamp_factor(item.price_factor_snapshot),
+        "price_factor_snapshot": _clamp_payload_factor(item.price_factor_snapshot),
         "work_total": _clamp_payload_non_negative(item.work_total),
         "material_total": _clamp_payload_non_negative(item.material_total),
         "equipment_total": _clamp_payload_non_negative(item.equipment_total),
@@ -159,12 +165,15 @@ def _project_item_values(item: CeilingProjectItemValuesCommand) -> dict[str, obj
         "total": _clamp_payload_non_negative(item.total),
         "note_snapshot": _normalize_optional_payload_text(item.note_snapshot),
         "is_enabled": bool(item.is_enabled),
-        "sort_order": max(0, int(item.sort_order or 100)),
+        "sort_order": _payload_non_negative_int(item.sort_order, default=100),
     }
 
 
 def _normalize_required_payload_text(value: object, *, error_message: str) -> str:
-    return normalize_required_text(_normalize_optional_payload_text(value), error_message=error_message)
+    try:
+        return normalize_required_text(_normalize_optional_payload_text(value), error_message=error_message)
+    except ValueError as exc:
+        raise ValidationError(str(exc)) from exc
 
 
 def _normalize_optional_payload_text(value: object) -> str | None:
@@ -172,4 +181,28 @@ def _normalize_optional_payload_text(value: object) -> str | None:
 
 
 def _clamp_payload_non_negative(value: object) -> float:
-    return clamp_non_negative(float(value or 0.0))
+    try:
+        return clamp_non_negative(float(value or 0.0))
+    except (TypeError, ValueError) as exc:
+        raise ValidationError(str(exc)) from exc
+
+
+def _clamp_payload_factor(value: object) -> float:
+    try:
+        return clamp_factor(value)
+    except (TypeError, ValueError) as exc:
+        raise ValidationError(str(exc)) from exc
+
+
+def _payload_int(value: object, *, error_message: str | None = None) -> int:
+    try:
+        return int(value)
+    except (TypeError, ValueError) as exc:
+        raise ValidationError(error_message or str(exc)) from exc
+
+
+def _payload_non_negative_int(value: object, *, default: int = 0) -> int:
+    try:
+        return max(0, int(value or default))
+    except (TypeError, ValueError) as exc:
+        raise ValidationError(str(exc)) from exc

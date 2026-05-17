@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Protocol
 
+from supply_bot.application.errors import NotFoundError, ValidationError
 from supply_bot.estimates.application.shared import (
     clamp_factor,
     clamp_non_negative,
@@ -62,14 +63,14 @@ class CreateCeilingCatalogItemUseCase:
             material_price=_clamp_payload_non_negative(command.material_price),
             equipment_price=_clamp_payload_non_negative(command.equipment_price),
             consumables_price=_clamp_payload_non_negative(command.consumables_price),
-            price_factor=clamp_factor(command.price_factor),
+            price_factor=_clamp_payload_factor(command.price_factor),
             quantity_source=_normalize_optional_payload_text(command.quantity_source),
             quantity_formula=_normalize_optional_payload_text(command.quantity_formula),
             include_section=_normalize_optional_payload_text(command.include_section) or "ceilings",
             package_code=_normalize_optional_payload_text(command.package_code),
             note=_normalize_optional_payload_text(command.note),
             is_active=bool(command.is_active),
-            sort_order=max(0, int(command.sort_order or 100)),
+            sort_order=_payload_non_negative_int(command.sort_order, default=100),
         )
 
 
@@ -81,10 +82,10 @@ class UpdateCeilingCatalogItemUseCase:
         updates = _catalog_updates(command.payload)
         updated = await self._storage.update_estimate_ceiling_catalog_item(command.item_id, **updates)
         if not updated:
-            raise ValueError("Ceiling catalog item not found")
+            raise NotFoundError("Ceiling catalog item not found")
         item = await self._storage.get_estimate_ceiling_catalog_item(command.item_id)
         if not item:
-            raise ValueError("Ceiling catalog item not found")
+            raise NotFoundError("Ceiling catalog item not found")
         return item
 
 
@@ -114,19 +115,22 @@ def _catalog_updates(payload: dict[str, object]) -> dict[str, object]:
     for field in price_fields:
         if field in payload:
             updates[field] = (
-                clamp_factor(payload.get(field))
+                _clamp_payload_factor(payload.get(field))
                 if field == "price_factor"
                 else _clamp_payload_non_negative(payload.get(field))
             )
     if "is_active" in payload:
         updates["is_active"] = bool(payload.get("is_active"))
     if "sort_order" in payload:
-        updates["sort_order"] = max(0, int(payload.get("sort_order") or 0))
+        updates["sort_order"] = _payload_non_negative_int(payload.get("sort_order"), default=0)
     return updates
 
 
 def _normalize_required_payload_text(value: object, *, error_message: str) -> str:
-    return normalize_required_text(_normalize_optional_payload_text(value), error_message=error_message)
+    try:
+        return normalize_required_text(_normalize_optional_payload_text(value), error_message=error_message)
+    except ValueError as exc:
+        raise ValidationError(str(exc)) from exc
 
 
 def _normalize_optional_payload_text(value: object) -> str | None:
@@ -134,4 +138,21 @@ def _normalize_optional_payload_text(value: object) -> str | None:
 
 
 def _clamp_payload_non_negative(value: object) -> float:
-    return clamp_non_negative(float(value or 0.0))
+    try:
+        return clamp_non_negative(float(value or 0.0))
+    except (TypeError, ValueError) as exc:
+        raise ValidationError(str(exc)) from exc
+
+
+def _clamp_payload_factor(value: object) -> float:
+    try:
+        return clamp_factor(value)
+    except (TypeError, ValueError) as exc:
+        raise ValidationError(str(exc)) from exc
+
+
+def _payload_non_negative_int(value: object, *, default: int = 0) -> int:
+    try:
+        return max(0, int(value or default))
+    except (TypeError, ValueError) as exc:
+        raise ValidationError(str(exc)) from exc

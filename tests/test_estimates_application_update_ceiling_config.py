@@ -3,6 +3,7 @@ from __future__ import annotations
 import unittest
 from typing import Any
 
+from supply_bot.application.errors import NotFoundError
 from supply_bot.estimates.application.update_ceiling_config import (
     UpdateCeilingConfigCommand,
     UpdateCeilingConfigUseCase,
@@ -70,7 +71,7 @@ class UpdateCeilingConfigUseCaseTests(unittest.IsolatedAsyncioTestCase):
     async def test_missing_project_rejects_without_write(self) -> None:
         storage = FakeCeilingConfigStorage(project=None)
 
-        with self.assertRaisesRegex(ValueError, "Calculator project not found"):
+        with self.assertRaisesRegex(NotFoundError, "Calculator project not found"):
             await UpdateCeilingConfigUseCase(storage).execute(
                 UpdateCeilingConfigCommand(project_id=10, default_package_code=None, price_factor=1, note=None)
             )

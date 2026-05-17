@@ -3,6 +3,7 @@ from __future__ import annotations
 import unittest
 from typing import Any
 
+from supply_bot.application.errors import NotFoundError, ValidationError
 from supply_bot.estimates.application.replace_ceiling_rooms import (
     ReplaceCeilingRoomCommand,
     ReplaceCeilingRoomsCommand,
@@ -88,7 +89,7 @@ class ReplaceCeilingRoomsUseCaseTests(unittest.IsolatedAsyncioTestCase):
     async def test_missing_project_rejects_without_write(self) -> None:
         storage = FakeCeilingRoomsStorage(project=None)
 
-        with self.assertRaisesRegex(ValueError, "Calculator project not found"):
+        with self.assertRaisesRegex(NotFoundError, "Calculator project not found"):
             await ReplaceCeilingRoomsUseCase(storage).execute(
                 ReplaceCeilingRoomsCommand(project_id=10, rooms=[_room_command()])
             )
@@ -98,7 +99,7 @@ class ReplaceCeilingRoomsUseCaseTests(unittest.IsolatedAsyncioTestCase):
     async def test_unknown_room_rejects_without_write(self) -> None:
         storage = FakeCeilingRoomsStorage(project={"id": 10})
 
-        with self.assertRaisesRegex(ValueError, "Unknown ceiling room selected"):
+        with self.assertRaisesRegex(ValidationError, "Unknown ceiling room selected"):
             await ReplaceCeilingRoomsUseCase(storage).execute(
                 ReplaceCeilingRoomsCommand(project_id=10, rooms=[_room_command(room_id=999)])
             )
@@ -108,7 +109,7 @@ class ReplaceCeilingRoomsUseCaseTests(unittest.IsolatedAsyncioTestCase):
     async def test_unknown_catalog_rejects_without_write(self) -> None:
         storage = FakeCeilingRoomsStorage(project={"id": 10})
 
-        with self.assertRaisesRegex(ValueError, "Unknown ceiling catalog item selected"):
+        with self.assertRaisesRegex(ValidationError, "Unknown ceiling catalog item selected"):
             await ReplaceCeilingRoomsUseCase(storage).execute(
                 ReplaceCeilingRoomsCommand(project_id=10, rooms=[_room_command(default_catalog_item_id=999)])
             )

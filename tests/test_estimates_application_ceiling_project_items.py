@@ -3,6 +3,7 @@ from __future__ import annotations
 import unittest
 from typing import Any
 
+from supply_bot.application.errors import NotFoundError, ValidationError
 from supply_bot.estimates.application.ceiling_project_items import (
     CeilingProjectItemValuesCommand,
     CreateCeilingProjectItemCommand,
@@ -136,7 +137,7 @@ class CeilingProjectItemUseCaseTests(unittest.IsolatedAsyncioTestCase):
     async def test_create_rejects_missing_project(self) -> None:
         storage = FakeCeilingProjectItemStorage(project=None)
 
-        with self.assertRaisesRegex(ValueError, "Calculator project not found"):
+        with self.assertRaisesRegex(NotFoundError, "Calculator project not found"):
             await CreateCeilingProjectItemUseCase(storage).execute(
                 CreateCeilingProjectItemCommand(project_id=10, item=_item_values())
             )
@@ -146,7 +147,7 @@ class CeilingProjectItemUseCaseTests(unittest.IsolatedAsyncioTestCase):
     async def test_create_rejects_unknown_room(self) -> None:
         storage = FakeCeilingProjectItemStorage(project={"id": 10})
 
-        with self.assertRaisesRegex(ValueError, "Unknown ceiling room selected"):
+        with self.assertRaisesRegex(ValidationError, "Unknown ceiling room selected"):
             await CreateCeilingProjectItemUseCase(storage).execute(
                 CreateCeilingProjectItemCommand(project_id=10, item=_item_values(room_id=999))
             )
@@ -156,7 +157,7 @@ class CeilingProjectItemUseCaseTests(unittest.IsolatedAsyncioTestCase):
     async def test_create_rejects_unknown_catalog(self) -> None:
         storage = FakeCeilingProjectItemStorage(project={"id": 10})
 
-        with self.assertRaisesRegex(ValueError, "Unknown ceiling catalog item selected"):
+        with self.assertRaisesRegex(ValidationError, "Unknown ceiling catalog item selected"):
             await CreateCeilingProjectItemUseCase(storage).execute(
                 CreateCeilingProjectItemCommand(project_id=10, item=_item_values(source_catalog_item_id=999))
             )
@@ -171,7 +172,7 @@ class CeilingProjectItemUseCaseTests(unittest.IsolatedAsyncioTestCase):
         for field, message in cases:
             storage = FakeCeilingProjectItemStorage(project={"id": 10})
             with self.subTest(field=field):
-                with self.assertRaisesRegex(ValueError, message):
+                with self.assertRaisesRegex(ValidationError, message):
                     await CreateCeilingProjectItemUseCase(storage).execute(
                         CreateCeilingProjectItemCommand(project_id=10, item=_item_values(**{field: "   "}))
                     )
@@ -180,7 +181,7 @@ class CeilingProjectItemUseCaseTests(unittest.IsolatedAsyncioTestCase):
     async def test_update_rejects_missing_project_id(self) -> None:
         storage = FakeCeilingProjectItemStorage(project={"id": 10})
 
-        with self.assertRaisesRegex(ValueError, "Ceiling project_id is required"):
+        with self.assertRaisesRegex(ValidationError, "Ceiling project_id is required"):
             await UpdateCeilingProjectItemUseCase(storage).execute(
                 UpdateCeilingProjectItemCommand(item_id=55, project_id=None, item=_item_values())
             )
@@ -200,7 +201,7 @@ class CeilingProjectItemUseCaseTests(unittest.IsolatedAsyncioTestCase):
     async def test_update_rejects_missing_item(self) -> None:
         storage = FakeCeilingProjectItemStorage(project={"id": 10}, update_project_id=None)
 
-        with self.assertRaisesRegex(ValueError, "Ceiling project item not found"):
+        with self.assertRaisesRegex(NotFoundError, "Ceiling project item not found"):
             await UpdateCeilingProjectItemUseCase(storage).execute(
                 UpdateCeilingProjectItemCommand(item_id=55, project_id=10, item=_item_values())
             )
@@ -216,5 +217,5 @@ class CeilingProjectItemUseCaseTests(unittest.IsolatedAsyncioTestCase):
     async def test_delete_rejects_missing_item(self) -> None:
         storage = FakeCeilingProjectItemStorage(delete_project_id=None)
 
-        with self.assertRaisesRegex(ValueError, "Ceiling project item not found"):
+        with self.assertRaisesRegex(NotFoundError, "Ceiling project item not found"):
             await DeleteCeilingProjectItemUseCase(storage).execute(DeleteCeilingProjectItemCommand(item_id=55))

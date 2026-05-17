@@ -3,6 +3,7 @@ from __future__ import annotations
 import unittest
 from typing import Any
 
+from supply_bot.application.errors import NotFoundError, ValidationError
 from supply_bot.estimates.application.ceiling_catalog import (
     CreateCeilingCatalogItemCommand,
     CreateCeilingCatalogItemUseCase,
@@ -99,7 +100,7 @@ class CeilingCatalogUseCaseTests(unittest.IsolatedAsyncioTestCase):
         for field, message in cases:
             storage = FakeCeilingCatalogStorage()
             with self.subTest(field=field):
-                with self.assertRaisesRegex(ValueError, message):
+                with self.assertRaisesRegex(ValidationError, message):
                     await CreateCeilingCatalogItemUseCase(storage).execute(_create_command(**{field: "   "}))
                 self.assertEqual(storage.create_calls, [])
 
@@ -173,7 +174,7 @@ class CeilingCatalogUseCaseTests(unittest.IsolatedAsyncioTestCase):
     async def test_update_rejects_missing_item(self) -> None:
         storage = FakeCeilingCatalogStorage(update_result=False)
 
-        with self.assertRaisesRegex(ValueError, "Ceiling catalog item not found"):
+        with self.assertRaisesRegex(NotFoundError, "Ceiling catalog item not found"):
             await UpdateCeilingCatalogItemUseCase(storage).execute(
                 UpdateCeilingCatalogItemCommand(item_id=10, payload={"title": "Updated"})
             )

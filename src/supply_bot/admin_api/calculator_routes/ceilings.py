@@ -10,6 +10,7 @@ from supply_bot.admin_api.calculator_routes.shared import (
     load_created_catalog_item,
     require_estimate_project,
 )
+from supply_bot.admin_api.error_mapping import resolve_application_result
 from supply_bot.estimates.application.ceiling_catalog import (
     CreateCeilingCatalogItemCommand,
     CreateCeilingCatalogItemUseCase,
@@ -56,12 +57,8 @@ def register_calculator_ceiling_routes(app: FastAPI) -> None:
             price_factor=payload.get("price_factor"),
             note=payload.get("note"),
         )
-        try:
-            await UpdateCeilingConfigUseCase(storage_obj).execute(command)
-        except ValueError as exc:
-            status_code = 404 if str(exc) == "Calculator project not found" else 400
-            raise HTTPException(status_code=status_code, detail=str(exc)) from exc
-        return await _load_ceiling_payload_by_project_id(storage_obj, project_id)
+        updated_project_id = await resolve_application_result(UpdateCeilingConfigUseCase(storage_obj).execute(command))
+        return await _load_ceiling_payload_by_project_id(storage_obj, updated_project_id)
 
     @app.post("/api/calculator/ceilings/catalog-items")
     async def create_calculator_ceiling_catalog_item(
@@ -87,10 +84,7 @@ def register_calculator_ceiling_routes(app: FastAPI) -> None:
             is_active=payload.get("is_active", True),
             sort_order=payload.get("sort_order"),
         )
-        try:
-            item_id = await CreateCeilingCatalogItemUseCase(storage_obj).execute(command)
-        except ValueError as exc:
-            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        item_id = await resolve_application_result(CreateCeilingCatalogItemUseCase(storage_obj).execute(command))
         return await load_created_catalog_item(
             storage_obj.list_estimate_ceiling_catalog_items,
             created_id=item_id,
@@ -105,11 +99,7 @@ def register_calculator_ceiling_routes(app: FastAPI) -> None:
     ) -> dict[str, Any]:
         storage_obj = get_calculator_route_storage(request)
         command = UpdateCeilingCatalogItemCommand(item_id=item_id, payload=payload)
-        try:
-            return await UpdateCeilingCatalogItemUseCase(storage_obj).execute(command)
-        except ValueError as exc:
-            status_code = 404 if str(exc) == "Ceiling catalog item not found" else 400
-            raise HTTPException(status_code=status_code, detail=str(exc)) from exc
+        return await resolve_application_result(UpdateCeilingCatalogItemUseCase(storage_obj).execute(command))
 
     @put_or_post(app, "/api/calculator/projects/{project_id}/ceilings/config")
     async def put_calculator_ceiling_config(
@@ -130,7 +120,7 @@ def register_calculator_ceiling_routes(app: FastAPI) -> None:
             project_id=project_id,
             rooms=[
                 ReplaceCeilingRoomCommand(
-                    room_id=int(room_payload["room_id"]),
+                    room_id=room_payload.get("room_id"),
                     default_catalog_item_id=room_payload.get("default_catalog_item_id"),
                     is_enabled=room_payload.get("is_enabled", True),
                     ceiling_area_m2=room_payload.get("ceiling_area_m2"),
@@ -144,12 +134,8 @@ def register_calculator_ceiling_routes(app: FastAPI) -> None:
                 for room_payload in payload.get("rooms") or []
             ],
         )
-        try:
-            await ReplaceCeilingRoomsUseCase(storage_obj).execute(command)
-        except ValueError as exc:
-            status_code = 404 if str(exc) == "Calculator project not found" else 400
-            raise HTTPException(status_code=status_code, detail=str(exc)) from exc
-        return await _load_ceiling_payload_by_project_id(storage_obj, project_id)
+        updated_project_id = await resolve_application_result(ReplaceCeilingRoomsUseCase(storage_obj).execute(command))
+        return await _load_ceiling_payload_by_project_id(storage_obj, updated_project_id)
 
     @app.post("/api/calculator/projects/{project_id}/ceilings/items")
     async def create_calculator_project_ceiling_item(
@@ -162,12 +148,10 @@ def register_calculator_ceiling_routes(app: FastAPI) -> None:
             project_id=project_id,
             item=_ceiling_project_item_values_command(payload),
         )
-        try:
-            await CreateCeilingProjectItemUseCase(storage_obj).execute(command)
-        except ValueError as exc:
-            status_code = 404 if str(exc) == "Calculator project not found" else 400
-            raise HTTPException(status_code=status_code, detail=str(exc)) from exc
-        return await _load_ceiling_payload_by_project_id(storage_obj, project_id)
+        updated_project_id = await resolve_application_result(
+            CreateCeilingProjectItemUseCase(storage_obj).execute(command)
+        )
+        return await _load_ceiling_payload_by_project_id(storage_obj, updated_project_id)
 
     @app.patch("/api/calculator/ceilings/items/{item_id}")
     async def update_calculator_project_ceiling_item(
@@ -179,26 +163,22 @@ def register_calculator_ceiling_routes(app: FastAPI) -> None:
         project_id = payload.get("project_id")
         command = UpdateCeilingProjectItemCommand(
             item_id=item_id,
-            project_id=int(project_id) if project_id is not None else None,
+            project_id=project_id,
             item=_ceiling_project_item_values_command(payload),
         )
-        try:
-            updated_project_id = await UpdateCeilingProjectItemUseCase(storage_obj).execute(command)
-        except ValueError as exc:
-            status_code = 404 if str(exc) in {"Calculator project not found", "Ceiling project item not found"} else 400
-            raise HTTPException(status_code=status_code, detail=str(exc)) from exc
+        updated_project_id = await resolve_application_result(
+            UpdateCeilingProjectItemUseCase(storage_obj).execute(command)
+        )
         return await _load_ceiling_payload_by_project_id(storage_obj, updated_project_id)
 
     @app.delete("/api/calculator/ceilings/items/{item_id}")
     async def delete_calculator_project_ceiling_item(request: Request, item_id: int) -> dict[str, Any]:
         storage_obj = get_calculator_route_storage(request)
-        try:
-            project_id = await DeleteCeilingProjectItemUseCase(storage_obj).execute(
+        project_id = await resolve_application_result(
+            DeleteCeilingProjectItemUseCase(storage_obj).execute(
                 DeleteCeilingProjectItemCommand(item_id=item_id)
             )
-        except ValueError as exc:
-            status_code = 404 if str(exc) == "Ceiling project item not found" else 400
-            raise HTTPException(status_code=status_code, detail=str(exc)) from exc
+        )
         return await _load_ceiling_payload_by_project_id(storage_obj, project_id)
 
 

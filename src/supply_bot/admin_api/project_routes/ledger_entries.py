@@ -22,11 +22,14 @@ from supply_bot.admin_api.error_mapping import resolve_application_result
 from supply_bot.admin_api.project_routes.shared import (
     extract_patch_payload,
     get_project_route_storage,
-    resolve_or_http_error,
 )
 from supply_bot.projects.application.create_project_ledger_entry import (
     CreateProjectLedgerEntryCommand,
     CreateProjectLedgerEntryUseCase,
+)
+from supply_bot.projects.application.delete_project_ledger_entry import (
+    DeleteProjectLedgerEntryCommand,
+    DeleteProjectLedgerEntryUseCase,
 )
 from supply_bot.projects.application.list_project_ledger_entries import (
     ListProjectLedgerEntriesCommand,
@@ -36,7 +39,6 @@ from supply_bot.projects.application.update_project_ledger_entry import (
     UpdateProjectLedgerEntryCommand,
     UpdateProjectLedgerEntryUseCase,
 )
-from supply_bot.projects.orchestration import delete_project_ledger_entry_response
 
 
 # Регистрация HTTP-маршрутов только для ledger entry.
@@ -102,10 +104,5 @@ def register_project_ledger_entry_routes(
         _session: AdminSession = Depends(require_admin_session),
     ) -> dict[str, Any]:
         storage_obj = get_project_route_storage(request)
-        return await resolve_or_http_error(
-            delete_project_ledger_entry_response(
-                storage_obj,
-                project_id=project_id,
-                entry_id=entry_id,
-            )
-        )
+        command = DeleteProjectLedgerEntryCommand(project_id=project_id, entry_id=entry_id)
+        return await resolve_application_result(DeleteProjectLedgerEntryUseCase(storage_obj).execute(command))

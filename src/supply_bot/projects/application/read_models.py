@@ -84,3 +84,15 @@ def build_project_ledger_entry_response_payload(
         ),
         "project": build_project_read_payload(project),
     }
+
+
+def build_project_ledger_entry_delete_response_payload(
+    *,
+    entry_id: int,
+    project: Mapping[str, Any],
+) -> dict[str, Any]:
+    return {
+        "deleted": True,
+        "entry_id": entry_id,
+        "project": build_project_read_payload(project),
+    }

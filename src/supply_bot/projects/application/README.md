@@ -27,10 +27,11 @@ This package is the clean application layer for project scenarios.
 - List project ledger entries.
 - Create project ledger entry.
 - Update project ledger entry.
+- Delete project ledger entry.
 
 ## Transitional scope
 
-Ledger delete, ledger documents, contracts, files, documents, and AI extraction remain in the existing
+Ledger documents, contracts, files, documents, and AI extraction remain in the existing
 project route/use-case modules for later phases.
 
 New project scenarios should start in this package. HTTP error mapping belongs to the

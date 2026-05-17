@@ -4,17 +4,18 @@ from typing import Any
 
 from fastapi import HTTPException
 
-from supply_bot.admin_api.app_helpers import (
-    _admin_status_message,
-    _request_detail_payload,
-)
-from supply_bot.admin_api.app_routes_requests_support import (
-    build_request_item_create_values,
-    build_request_item_update_values,
-)
+from supply_bot.admin_api.app_helpers import _admin_status_message
 from supply_bot.admin_api.error_mapping import raise_application_http_error
 from supply_bot.application.errors import ApplicationError
 from supply_bot.domain.request_lifecycle import can_delete_request_status
+from supply_bot.requests.application.create_request_item import (
+    CreateRequestItemCommand,
+    CreateRequestItemUseCase,
+)
+from supply_bot.requests.application.delete_request_item import (
+    DeleteRequestItemCommand,
+    DeleteRequestItemUseCase,
+)
 from supply_bot.requests.application.expire_stale_requests import (
     ExpireStaleRequestsCommand,
     ExpireStaleRequestsUseCase,
@@ -27,6 +28,10 @@ from supply_bot.requests.application.list_recent_requests import ListRecentReque
 from supply_bot.requests.application.update_request_delivery import (
     UpdateRequestDeliveryCommand,
     UpdateRequestDeliveryUseCase,
+)
+from supply_bot.requests.application.update_request_item import (
+    UpdateRequestItemCommand,
+    UpdateRequestItemUseCase,
 )
 from supply_bot.requests.application.update_request_status import (
     UpdateRequestStatusCommand,
@@ -102,40 +107,43 @@ async def update_request_delivery(storage_obj, draft_id: int, payload) -> dict[s
 
 
 async def create_request_item(storage_obj, draft_id: int, payload) -> dict[str, Any]:
-    draft = await storage_obj.get_draft(draft_id)
-    if not draft:
-        raise HTTPException(status_code=404, detail="Draft not found")
-
-    await storage_obj.create_request_item(draft_id=draft_id, **build_request_item_create_values(payload))
-    await storage_obj.touch_draft(draft_id)
-    fresh = await storage_obj.get_draft(draft_id)
-    if not fresh:
-        raise HTTPException(status_code=500, detail="Draft item creation failed")
-    return await _request_detail_payload(storage_obj, fresh)
+    try:
+        command = CreateRequestItemCommand(
+            draft_id=draft_id,
+            title=payload.title,
+            quantity=payload.quantity,
+            unit=payload.unit,
+            thickness_mm=payload.thickness_mm,
+            length_mm=payload.length_mm,
+            width_mm=payload.width_mm,
+            note=payload.note,
+        )
+        return await CreateRequestItemUseCase(storage_obj).execute(command)
+    except ApplicationError as exc:
+        raise_application_http_error(exc)
 
 
 async def update_request_item(storage_obj, item_id: int, payload) -> dict[str, Any]:
-    item = await storage_obj.get_request_item(item_id)
-    if not item:
-        raise HTTPException(status_code=404, detail="Request item not found")
-
-    await storage_obj.update_request_item(item_id, **build_request_item_update_values(payload))
-    await storage_obj.touch_draft(int(item["draft_id"]))
-    draft = await storage_obj.get_draft(int(item["draft_id"]))
-    if not draft:
-        raise HTTPException(status_code=500, detail="Draft item update failed")
-    return await _request_detail_payload(storage_obj, draft)
+    try:
+        command = UpdateRequestItemCommand(
+            item_id=item_id,
+            title=payload.title,
+            quantity=payload.quantity,
+            unit=payload.unit,
+            thickness_mm=payload.thickness_mm,
+            length_mm=payload.length_mm,
+            width_mm=payload.width_mm,
+            note=payload.note,
+            detach_catalog=payload.detach_catalog,
+        )
+        return await UpdateRequestItemUseCase(storage_obj).execute(command)
+    except ApplicationError as exc:
+        raise_application_http_error(exc)
 
 
 async def delete_request_item(storage_obj, item_id: int) -> dict[str, Any]:
-    item = await storage_obj.get_request_item(item_id)
-    if not item:
-        raise HTTPException(status_code=404, detail="Request item not found")
-
-    draft_id = int(item["draft_id"])
-    await storage_obj.delete_request_item(item_id)
-    await storage_obj.touch_draft(draft_id)
-    draft = await storage_obj.get_draft(draft_id)
-    if not draft:
-        raise HTTPException(status_code=500, detail="Draft item deletion failed")
-    return await _request_detail_payload(storage_obj, draft)
+    try:
+        command = DeleteRequestItemCommand(item_id=item_id)
+        return await DeleteRequestItemUseCase(storage_obj).execute(command)
+    except ApplicationError as exc:
+        raise_application_http_error(exc)

@@ -9,16 +9,15 @@ from supply_bot.admin_api.app_helpers import _admin_status_message
 from supply_bot.admin_api.deps import get_settings, get_storage
 from supply_bot.admin_api.error_mapping import resolve_application_result
 from supply_bot.admin_api.use_cases.requests import (
-    create_request_item as create_request_item_use_case,
-)
-from supply_bot.admin_api.use_cases.requests import (
     delete_request as delete_request_use_case,
 )
-from supply_bot.admin_api.use_cases.requests import (
-    delete_request_item as delete_request_item_use_case,
+from supply_bot.requests.application.create_request_item import (
+    CreateRequestItemCommand,
+    CreateRequestItemUseCase,
 )
-from supply_bot.admin_api.use_cases.requests import (
-    update_request_item as update_request_item_use_case,
+from supply_bot.requests.application.delete_request_item import (
+    DeleteRequestItemCommand,
+    DeleteRequestItemUseCase,
 )
 from supply_bot.requests.application.expire_stale_requests import (
     ExpireStaleRequestsCommand,
@@ -32,6 +31,10 @@ from supply_bot.requests.application.list_recent_requests import ListRecentReque
 from supply_bot.requests.application.update_request_delivery import (
     UpdateRequestDeliveryCommand,
     UpdateRequestDeliveryUseCase,
+)
+from supply_bot.requests.application.update_request_item import (
+    UpdateRequestItemCommand,
+    UpdateRequestItemUseCase,
 )
 from supply_bot.requests.application.update_request_status import (
     UpdateRequestStatusCommand,
@@ -125,7 +128,20 @@ def register_request_routes(
         draft_id: int,
         payload,
     ) -> dict[str, Any]:
-        return await create_request_item_use_case(get_storage(request), draft_id, payload)
+        storage_obj = get_storage(request)
+        command = CreateRequestItemCommand(
+            draft_id=draft_id,
+            title=payload.title,
+            quantity=payload.quantity,
+            unit=payload.unit,
+            thickness_mm=payload.thickness_mm,
+            length_mm=payload.length_mm,
+            width_mm=payload.width_mm,
+            note=payload.note,
+        )
+        return await resolve_application_result(
+            CreateRequestItemUseCase(storage_obj).execute(command)
+        )
 
     create_request_item.__annotations__["payload"] = request_item_payload_model
     app.post("/api/requests/{draft_id}/items")(create_request_item)
@@ -135,11 +151,29 @@ def register_request_routes(
         item_id: int,
         payload,
     ) -> dict[str, Any]:
-        return await update_request_item_use_case(get_storage(request), item_id, payload)
+        storage_obj = get_storage(request)
+        command = UpdateRequestItemCommand(
+            item_id=item_id,
+            title=payload.title,
+            quantity=payload.quantity,
+            unit=payload.unit,
+            thickness_mm=payload.thickness_mm,
+            length_mm=payload.length_mm,
+            width_mm=payload.width_mm,
+            note=payload.note,
+            detach_catalog=payload.detach_catalog,
+        )
+        return await resolve_application_result(
+            UpdateRequestItemUseCase(storage_obj).execute(command)
+        )
 
     update_request_item.__annotations__["payload"] = request_item_payload_model
     app.patch("/api/requests/items/{item_id}")(update_request_item)
 
     @app.delete("/api/requests/items/{item_id}")
     async def delete_request_item(request: Request, item_id: int) -> dict[str, Any]:
-        return await delete_request_item_use_case(get_storage(request), item_id)
+        storage_obj = get_storage(request)
+        command = DeleteRequestItemCommand(item_id=item_id)
+        return await resolve_application_result(
+            DeleteRequestItemUseCase(storage_obj).execute(command)
+        )

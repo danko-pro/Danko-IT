@@ -18,13 +18,12 @@ from supply_bot.admin_api.error_mapping import resolve_application_result
 from supply_bot.admin_api.project_routes.shared import (
     extract_patch_payload,
     get_project_route_storage,
-    resolve_or_not_found,
 )
 from supply_bot.projects.application.create_project import CreateProjectCommand, CreateProjectUseCase
+from supply_bot.projects.application.delete_project import DeleteProjectCommand, DeleteProjectUseCase
 from supply_bot.projects.application.get_project_detail import GetProjectDetailCommand, GetProjectDetailUseCase
 from supply_bot.projects.application.list_projects import ListProjectsUseCase
 from supply_bot.projects.application.update_project import UpdateProjectCommand, UpdateProjectUseCase
-from supply_bot.projects.orchestration import require_project
 
 
 # Регистрация базовых CRUD-маршрутов проекта.
@@ -85,6 +84,5 @@ def register_project_core_routes(
         _session: AdminSession = Depends(require_admin_session),
     ) -> dict[str, Any]:
         storage_obj = get_project_route_storage(request)
-        await resolve_or_not_found(require_project(storage_obj, project_id))
-        await storage_obj.delete_project(project_id)
-        return {"deleted": True, "project_id": project_id}
+        command = DeleteProjectCommand(project_id=project_id)
+        return await resolve_application_result(DeleteProjectUseCase(storage_obj).execute(command))

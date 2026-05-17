@@ -7,15 +7,17 @@ from fastapi import FastAPI, Request
 
 from supply_bot.admin_api.deps import get_catalog_storage
 from supply_bot.admin_api.error_mapping import resolve_application_result
-from supply_bot.admin_api.use_cases.materials import (
-    create_material_alias as create_material_alias_use_case,
-)
-from supply_bot.admin_api.use_cases.materials import (
-    create_material_sku as create_material_sku_use_case,
+from supply_bot.materials.application.create_alias import (
+    CreateMaterialAliasCommand,
+    CreateMaterialAliasUseCase,
 )
 from supply_bot.materials.application.create_family import (
     CreateMaterialFamilyCommand,
     CreateMaterialFamilyUseCase,
+)
+from supply_bot.materials.application.create_sku import (
+    CreateMaterialSkuCommand,
+    CreateMaterialSkuUseCase,
 )
 from supply_bot.materials.application.create_variant import (
     CreateMaterialVariantCommand,
@@ -91,14 +93,39 @@ def register_material_routes(
         request: Request,
         payload: sku_create_payload_model,
     ) -> dict[str, Any]:
-        return await create_material_sku_use_case(get_catalog_storage(request), payload)
+        storage_obj = get_catalog_storage(request)
+        command = CreateMaterialSkuCommand(
+            family_id=payload.family_id,
+            variant_id=payload.variant_id,
+            title=payload.title,
+            article=payload.article,
+            brand=payload.brand,
+            unit=payload.unit,
+            thickness_mm=payload.thickness_mm,
+            length_mm=payload.length_mm,
+            width_mm=payload.width_mm,
+            source_description=payload.source_description,
+        )
+        return await resolve_application_result(
+            CreateMaterialSkuUseCase(storage_obj).execute(command)
+        )
 
     @app.post("/api/materials/aliases")
     async def create_material_alias(
         request: Request,
         payload: alias_create_payload_model,
     ) -> dict[str, Any]:
-        return await create_material_alias_use_case(get_catalog_storage(request), payload)
+        storage_obj = get_catalog_storage(request)
+        command = CreateMaterialAliasCommand(
+            alias=payload.alias,
+            family_id=payload.family_id,
+            variant_id=payload.variant_id,
+            sku_id=payload.sku_id,
+            priority=payload.priority,
+        )
+        return await resolve_application_result(
+            CreateMaterialAliasUseCase(storage_obj).execute(command)
+        )
 
     @app.get("/api/materials/search")
     async def search_materials(request: Request, q: str) -> list[dict[str, Any]]:

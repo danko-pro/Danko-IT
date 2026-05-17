@@ -19,12 +19,11 @@ This package is the clean application layer for the `materials` domain.
 - Search materials.
 - Create material family.
 - Create material variant.
+- Create material SKU.
+- Create material alias.
 
 ## Transitional scope
 
-These write scenarios still stay in `src/supply_bot/admin_api/use_cases/materials.py`:
+`src/supply_bot/admin_api/use_cases/materials.py` still exists as a compatibility wrapper for legacy imports.
 
-- create material sku;
-- create material alias.
-
-They should move in a separate phase so SKU/alias validation is not mixed with family/variant migration.
+New materials scenarios should start in this package and keep HTTP mapping in the route layer.

@@ -2,18 +2,19 @@ from __future__ import annotations
 
 from typing import Any
 
-from fastapi import HTTPException
-
-from supply_bot.admin_api.app_routes_materials_support import (
-    split_material_alias_values,
-    validate_material_alias_payload,
-    validate_material_sku_payload,
-)
 from supply_bot.admin_api.error_mapping import raise_application_http_error
 from supply_bot.application.errors import ApplicationError
+from supply_bot.materials.application.create_alias import (
+    CreateMaterialAliasCommand,
+    CreateMaterialAliasUseCase,
+)
 from supply_bot.materials.application.create_family import (
     CreateMaterialFamilyCommand,
     CreateMaterialFamilyUseCase,
+)
+from supply_bot.materials.application.create_sku import (
+    CreateMaterialSkuCommand,
+    CreateMaterialSkuUseCase,
 )
 from supply_bot.materials.application.create_variant import (
     CreateMaterialVariantCommand,
@@ -67,30 +68,36 @@ async def create_material_variant(storage_obj, payload) -> dict[str, Any]:
 
 
 async def create_material_sku(storage_obj, payload) -> dict[str, Any]:
-    sku_id = await storage_obj.create_sku(**await validate_material_sku_payload(storage_obj, payload))
-    sku = await storage_obj.get_sku(sku_id)
-    if not sku:
-        raise HTTPException(status_code=500, detail="SKU was not created")
-    return sku
+    try:
+        command = CreateMaterialSkuCommand(
+            family_id=payload.family_id,
+            variant_id=payload.variant_id,
+            title=payload.title,
+            article=payload.article,
+            brand=payload.brand,
+            unit=payload.unit,
+            thickness_mm=payload.thickness_mm,
+            length_mm=payload.length_mm,
+            width_mm=payload.width_mm,
+            source_description=payload.source_description,
+        )
+        return await CreateMaterialSkuUseCase(storage_obj).execute(command)
+    except ApplicationError as exc:
+        raise_application_http_error(exc)
 
 
 async def create_material_alias(storage_obj, payload) -> dict[str, Any]:
-    alias = await validate_material_alias_payload(storage_obj, payload)
-
-    await storage_obj.create_alias(
-        alias,
-        family_id=payload.family_id,
-        variant_id=payload.variant_id,
-        sku_id=payload.sku_id,
-        priority=payload.priority,
-    )
-
-    return {
-        "created_count": len(split_material_alias_values(alias)),
-        "family_id": payload.family_id,
-        "variant_id": payload.variant_id,
-        "sku_id": payload.sku_id,
-    }
+    try:
+        command = CreateMaterialAliasCommand(
+            alias=payload.alias,
+            family_id=payload.family_id,
+            variant_id=payload.variant_id,
+            sku_id=payload.sku_id,
+            priority=payload.priority,
+        )
+        return await CreateMaterialAliasUseCase(storage_obj).execute(command)
+    except ApplicationError as exc:
+        raise_application_http_error(exc)
 
 
 async def search_materials(storage_obj, query: str) -> list[dict[str, Any]]:

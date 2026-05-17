@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+from supply_bot.application.errors import ValidationError
+
 
 def normalize_required_text(value: str | None, *, error_message: str) -> str:
     normalized = (value or "").strip()
     if not normalized:
-        raise ValueError(error_message)
+        raise ValidationError(error_message)
     return normalized
 
 
@@ -41,10 +43,10 @@ def optional_non_negative(value: object) -> float | None:
 
 def require_positive_number(value: float | int | None, *, error_message: str) -> float:
     if value is None:
-        raise ValueError(error_message)
+        raise ValidationError(error_message)
     normalized = float(value)
     if normalized <= 0:
-        raise ValueError(error_message)
+        raise ValidationError(error_message)
     return normalized
 
 

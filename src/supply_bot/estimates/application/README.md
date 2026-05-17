@@ -14,12 +14,16 @@
 - Use-case не должен сам читать env.
 - Use-case не должен напрямую вызывать `load_settings()`.
 - Use-case не должен напрямую создавать SQLAlchemy engine/session.
+- Для пользовательских и business ошибок use-case должен использовать `supply_bot.application.errors`, а не raw `ValueError`.
+- `ValueError` / `TypeError` можно ловить только как технические ошибки конвертации и сразу перекидывать в `ValidationError`.
 - Route должен принять HTTP payload, вызвать use-case и вернуть response.
+- Route должен преобразовывать application errors через `supply_bot.admin_api.error_mapping.resolve_application_result`.
 
 Слой защищен boundary-test:
 
 ```text
 tests/test_estimates_application_architecture_boundaries.py
+tests/test_calculator_routes_error_mapping_boundaries.py
 ```
 
 ## Уже вынесенные calculator сценарии
@@ -61,6 +65,7 @@ route
 - route отвечает только за HTTP-адаптацию;
 - command переносит HTTP payload в application слой;
 - use-case управляет сценарием и работает через переданный storage/protocol;
+- use-case выбрасывает `ValidationError`, `NotFoundError`, `ConflictError`, `OperationFailedError` или `ExternalServiceError` для пользовательских/business ошибок;
 - payload builder собирает API response.
 
 Payload builders пока остаются в `src/supply_bot/admin_api/calculator_payloads/`, чтобы не менять response shape.

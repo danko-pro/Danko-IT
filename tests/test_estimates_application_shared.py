@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import unittest
 
+from supply_bot.application.errors import ValidationError
 from supply_bot.estimates.application.shared import (
     clamp_factor,
     clamp_minimum,
@@ -20,10 +21,10 @@ class EstimatesApplicationSharedTests(unittest.TestCase):
         self.assertEqual(normalize_required_text("  Test  ", error_message="Required"), "Test")
 
     def test_normalize_required_text_rejects_empty_values(self) -> None:
-        with self.assertRaisesRegex(ValueError, "Required"):
+        with self.assertRaisesRegex(ValidationError, "Required"):
             normalize_required_text("   ", error_message="Required")
 
-        with self.assertRaisesRegex(ValueError, "Required"):
+        with self.assertRaisesRegex(ValidationError, "Required"):
             normalize_required_text(None, error_message="Required")
 
     def test_normalize_optional_text_returns_trimmed_value_or_none(self) -> None:
@@ -59,13 +60,13 @@ class EstimatesApplicationSharedTests(unittest.TestCase):
     def test_require_positive_number(self) -> None:
         self.assertEqual(require_positive_number(3, error_message="Positive required"), 3.0)
 
-        with self.assertRaisesRegex(ValueError, "Positive required"):
+        with self.assertRaisesRegex(ValidationError, "Positive required"):
             require_positive_number(None, error_message="Positive required")
 
-        with self.assertRaisesRegex(ValueError, "Positive required"):
+        with self.assertRaisesRegex(ValidationError, "Positive required"):
             require_positive_number(0, error_message="Positive required")
 
-        with self.assertRaisesRegex(ValueError, "Positive required"):
+        with self.assertRaisesRegex(ValidationError, "Positive required"):
             require_positive_number(-1, error_message="Positive required")
 
     def test_normalize_room_name_or_fallback(self) -> None:

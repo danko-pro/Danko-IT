@@ -33,3 +33,12 @@ class RequestsApplicationArchitectureBoundaryTests(unittest.TestCase):
                     violations.append(f"{path.relative_to(APPLICATION_ROOT)} contains {token!r}")
 
         self.assertEqual(violations, [])
+
+    def test_requests_application_python_files_do_not_raise_raw_value_error(self) -> None:
+        violations: list[str] = []
+        for path in sorted(APPLICATION_ROOT.rglob("*.py")):
+            text = path.read_text(encoding="utf-8")
+            if "raise ValueError(" in text:
+                violations.append(f"{path.relative_to(APPLICATION_ROOT)} raises raw ValueError")
+
+        self.assertEqual(violations, [])

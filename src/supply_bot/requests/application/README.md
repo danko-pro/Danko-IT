@@ -31,3 +31,7 @@ This package is the clean application layer for request scenarios.
 Remaining notification-heavy scenarios still stay in
 `src/supply_bot/admin_api/use_cases/requests.py`.
 They should move in separate phases so each mutation path stays small and behavior-preserving.
+
+New request scenarios must start in this package. HTTP error mapping belongs to the
+`admin_api` route layer via `resolve_application_result` or compatibility wrappers
+that convert `ApplicationError` through `raise_application_http_error`.

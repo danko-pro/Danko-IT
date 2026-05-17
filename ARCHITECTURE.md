@@ -10,6 +10,8 @@
 
 `ARCH-CLEAN-1A`...`ARCH-CLEAN-1F` перевели calculator application layer на общую иерархию `ApplicationError` без изменения API response shape. Calculator routes должны использовать HTTP mapper из `admin_api/error_mapping.py`, а не ручной `ValueError -> HTTPException` mapping.
 
+Auth/session/security baseline перед runtime hardening зафиксирован в `docs/AUTH_SECURITY.md`.
+
 ## Целевая схема слоев
 
 ```text

@@ -162,6 +162,8 @@ UI должен только отображать backend read-model. Он не 
 
 `DASH-DASHBOARD-ROOT-0`: документационный checkpoint, runtime не меняем.
 
+`DASH-DASHBOARD-ROOT-1A`: выполнить audit текущего frontend/backend data path перед runtime внедрением. Зафиксировано, что **Все объекты** должен быть fixed synthetic tab, `listProjects()` должен остаться легким, aggregate finance summary должен строиться backend read-model в `src/supply_bot/projects/application/dashboard_root_read_model.py`, а будущий endpoint лучше вынести в `GET /api/dashboard/root-summary`. Checkpoint: `docs/DASHBOARD_ROOT_CHECKPOINT_1A.md`, audit: `docs/DASHBOARD_ROOT_UI_AUDIT.md`.
+
 `DASH-DASHBOARD-ROOT-1`: создать backend application read-model для общей сводки.
 
 `DASH-DASHBOARD-ROOT-2`: добавить backend endpoint/read path для общей сводки без UI.

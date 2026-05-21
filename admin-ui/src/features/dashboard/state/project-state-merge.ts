@@ -1,5 +1,5 @@
 import { applyLedgerEntriesToProject } from "../model/project-accounting-logic";
-import { mapAdvanceRecord, mapContractRecord } from "../model/project-api-mappers";
+import { mapAdvanceRecord, mapContractRecord, mapFinanceSummaryRecord } from "../model/project-api-mappers";
 import type {
   DashboardProjectAdvanceApiRecord,
   DashboardProjectApiRecord,
@@ -22,6 +22,9 @@ export function mergeProjectRecord(
   options: MergeProjectRecordOptions,
 ): DashboardProjectCardData {
   const seed = resolveProjectRecordSeed(existingProject, options);
+  const financeSummary = projectRecord.finance_summary
+    ? mapFinanceSummaryRecord(projectRecord.finance_summary)
+    : seed.financeSummary;
 
   return {
     ...seed,
@@ -52,6 +55,7 @@ export function mergeProjectRecord(
     workPerM2: projectRecord.work_per_m2,
     materialsPerM2: projectRecord.materials_per_m2,
     plannedMarginPercent: projectRecord.planned_margin_percent,
+    financeSummary,
     nextDeliveryLabel: normalizeDashboardText(projectRecord.next_delivery_label),
   };
 }

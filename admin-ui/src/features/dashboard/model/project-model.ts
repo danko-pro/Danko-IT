@@ -84,6 +84,34 @@ export type ProjectCardContract = {
   milestones: ProjectCardContractMilestone[];
 };
 
+export type ProjectFinanceSummary = {
+  receivedTotal: number;
+  paidExpenseTotal: number;
+  plannedExpenseTotal: number;
+  committedUnpaidTotal: number;
+  cashBalance: number;
+  availableAfterPlan: number;
+  availableAfterObligations: number;
+  taxReserveTotal: number;
+  netAvailable: number;
+  workPerM2: number;
+  materialsPerM2: number;
+};
+
+export type DashboardProjectFinanceSummaryApiRecord = {
+  received_total: number;
+  paid_expense_total: number;
+  planned_expense_total: number;
+  committed_unpaid_total: number;
+  cash_balance: number;
+  available_after_plan: number;
+  available_after_obligations: number;
+  tax_reserve_total: number;
+  net_available: number;
+  work_per_m2: number;
+  materials_per_m2: number;
+};
+
 export type DashboardProjectContractMilestoneApiRecord = {
   id: number;
   contract_id: number;
@@ -155,6 +183,7 @@ export type DashboardProjectCardData = {
   advances: ProjectCardAdvanceItem[];
   ledgerEntries: ProjectCardLedgerEntry[];
   contract: ProjectCardContract;
+  financeSummary?: ProjectFinanceSummary;
 };
 
 export type DashboardProjectApiRecord = {
@@ -187,6 +216,7 @@ export type DashboardProjectApiRecord = {
   work_per_m2: number;
   materials_per_m2: number;
   planned_margin_percent: number;
+  finance_summary?: DashboardProjectFinanceSummaryApiRecord;
   next_delivery_label: string;
   created_at: string;
   updated_at: string;

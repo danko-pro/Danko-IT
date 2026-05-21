@@ -26,6 +26,7 @@ import { mergePatchedLedgerEntryState } from "./project-ledger-state-helpers";
 export type { LedgerDocumentKind } from "./project-ledger-sync-helpers";
 
 type UseDashboardProjectLedgerSyncParams = {
+  loadProjectDetail: (projectId: string) => Promise<void>;
   loadProjectLedger: (projectId: string) => Promise<void>;
   loadProjects: () => Promise<void>;
   setError: React.Dispatch<React.SetStateAction<string | null>>;
@@ -81,6 +82,7 @@ export function useDashboardProjectLedgerSync(params: UseDashboardProjectLedgerS
         mergePatchedLedgerEntryState(current, projectId, entryId, result),
       );
       params.setError(null);
+      await params.loadProjectDetail(projectId);
     } catch (syncError) {
       params.setError(getLedgerSyncErrorMessage(syncError, "Не удалось сохранить строку учета"));
       await params.loadProjects();

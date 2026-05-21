@@ -53,6 +53,10 @@ export async function listProjects() {
   return fetchJson<DashboardProjectApiRecord[]>("/api/projects");
 }
 
+export async function getProjectDetail(projectId: string) {
+  return fetchJson<DashboardProjectApiRecord>(`/api/projects/${projectId}`);
+}
+
 export async function createProject(payload: ProjectCreatePayload | Record<string, unknown>) {
   return fetchJson<DashboardProjectApiRecord>("/api/projects", {
     method: "POST",

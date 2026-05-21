@@ -4,6 +4,7 @@
  */
 import type { Dispatch, SetStateAction } from "react";
 import {
+  getProjectDetail,
   getProjectContract,
   listProjectAdvances,
   listProjectLedger,
@@ -19,6 +20,7 @@ import {
   mergeProjectAdvances,
   mergeProjectContract,
   mergeProjectLedger,
+  mergeProjectSummary,
 } from "./project-state-merge";
 
 type SetProjects = Dispatch<SetStateAction<DashboardProjectCardData[]>>;
@@ -74,6 +76,19 @@ export async function loadDashboardProjectAdvances(
     params.setError(null);
   } catch (loadError) {
     params.setError(loadError instanceof Error ? loadError.message : "Не удалось загрузить авансы объекта");
+  }
+}
+
+export async function loadDashboardProjectDetail(
+  projectId: string,
+  params: ProjectLoaderBaseParams,
+) {
+  try {
+    const projectRecord = await getProjectDetail(projectId);
+    params.setProjects((current) => mergeProjectSummary(current, projectId, projectRecord));
+    params.setError(null);
+  } catch (loadError) {
+    params.setError(loadError instanceof Error ? loadError.message : "Не удалось загрузить карточку объекта");
   }
 }
 

@@ -1,12 +1,14 @@
 import type {
   DashboardProjectAdvanceApiRecord,
   DashboardProjectContractApiRecord,
+  DashboardProjectFinanceSummaryApiRecord,
   DashboardProjectLedgerApiRecord,
   DashboardProjectLedgerDocumentApiRecord,
   ProjectCardAdvanceItem,
   ProjectCardContract,
   ProjectCardLedgerDocument,
   ProjectCardLedgerEntry,
+  ProjectFinanceSummary,
 } from "./project-model";
 import { normalizeDashboardText } from "./project-text-normalization";
 
@@ -69,6 +71,22 @@ export function mapContractRecord(record: DashboardProjectContractApiRecord): Pr
       note: milestone.note ? normalizeDashboardText(milestone.note) : undefined,
       status: milestone.status,
     })),
+  };
+}
+
+export function mapFinanceSummaryRecord(record: DashboardProjectFinanceSummaryApiRecord): ProjectFinanceSummary {
+  return {
+    receivedTotal: record.received_total,
+    paidExpenseTotal: record.paid_expense_total,
+    plannedExpenseTotal: record.planned_expense_total,
+    committedUnpaidTotal: record.committed_unpaid_total,
+    cashBalance: record.cash_balance,
+    availableAfterPlan: record.available_after_plan,
+    availableAfterObligations: record.available_after_obligations,
+    taxReserveTotal: record.tax_reserve_total,
+    netAvailable: record.net_available,
+    workPerM2: record.work_per_m2,
+    materialsPerM2: record.materials_per_m2,
   };
 }
 

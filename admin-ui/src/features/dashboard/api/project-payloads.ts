@@ -60,7 +60,6 @@ export function buildProjectPassportPatchPayload(
     | "comment"
     | "areaM2"
     | "ceilingHeightM"
-    | "plannedMarginPercent"
   >,
 ) {
   return {
@@ -79,7 +78,6 @@ export function buildProjectPassportPatchPayload(
     comment: patch.comment,
     area_m2: patch.areaM2,
     ceiling_height_m: patch.ceilingHeightM,
-    planned_margin_percent: patch.plannedMarginPercent,
   };
 }
 

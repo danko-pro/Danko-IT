@@ -36,16 +36,6 @@ export function DashboardPassportMetricsSection(props: PassportSectionProps) {
           className="dashboard-passport-input-metrics-small"
           setValue={(nextValue) => setDraft((current) => ({ ...current, ceilingHeightM: nextValue }))}
         />
-
-        <div className="dashboard-passport-field-full">
-          <DashboardPassportMetricField
-            label="Плановая маржа"
-            value={draft.plannedMarginPercent}
-            suffix="%"
-            className="dashboard-passport-input-metrics-small"
-            setValue={(nextValue) => setDraft((current) => ({ ...current, plannedMarginPercent: nextValue }))}
-          />
-        </div>
       </div>
     </section>
   );

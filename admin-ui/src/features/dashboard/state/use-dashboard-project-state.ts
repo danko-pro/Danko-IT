@@ -25,7 +25,6 @@ import {
   renameDashboardProject,
   updateDashboardProjectFinanceSettings,
   updateDashboardProjectPassport,
-  updateDashboardProjectPlannedMargin,
   type ProjectPassportPatch,
 } from "./project-record-actions";
 import { createProjectStateLoaders } from "./project-state-loaders";
@@ -225,19 +224,6 @@ export function useDashboardProjectState() {
     });
   }
 
-  async function updatePlannedMarginPercent(plannedMarginPercent: number) {
-    if (!activeProject) {
-      return;
-    }
-
-    await updateDashboardProjectPlannedMargin({
-      projectId: activeProject.id,
-      plannedMarginPercent,
-      setProjects,
-      setError,
-    });
-  }
-
   async function updateFinanceSettings(settings: ProjectFinanceSettings) {
     if (!activeProject) {
       return;
@@ -266,7 +252,6 @@ export function useDashboardProjectState() {
       renameProject,
       deleteProject,
       updateProjectPassport,
-      updatePlannedMarginPercent,
       updateFinanceSettings,
       addAdvance,
       deleteAdvance,

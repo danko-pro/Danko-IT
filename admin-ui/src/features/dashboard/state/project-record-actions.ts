@@ -35,7 +35,6 @@ export type ProjectPassportPatch = Pick<
   | "comment"
   | "areaM2"
   | "ceilingHeightM"
-  | "plannedMarginPercent"
 >;
 
 export async function createDashboardProject(params: {
@@ -88,26 +87,6 @@ export async function updateDashboardProjectPassport(params: {
     params.setError(null);
   } catch (updateError) {
     params.setError(updateError instanceof Error ? updateError.message : "Не удалось сохранить паспорт объекта");
-    throw updateError;
-  }
-}
-
-export async function updateDashboardProjectPlannedMargin(params: {
-  projectId: string;
-  plannedMarginPercent: number;
-  setProjects: SetProjects;
-  setError: SetError;
-}) {
-  try {
-    const updatedRecord = await updateProject(params.projectId, {
-      planned_margin_percent: params.plannedMarginPercent,
-    });
-    params.setProjects((current) => mergeProjectSummary(current, params.projectId, updatedRecord));
-    params.setError(null);
-  } catch (updateError) {
-    params.setError(
-      updateError instanceof Error ? updateError.message : "Не удалось сохранить плановую маржу объекта",
-    );
     throw updateError;
   }
 }

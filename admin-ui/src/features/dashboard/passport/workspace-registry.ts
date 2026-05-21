@@ -110,7 +110,6 @@ export const dashboardPassportWorkspaceRegistry = defineWorkspaceRegistry({
         metricField("dashboard.passport.metrics.area", "Apartment area", "dashboard.project.passportDraft.areaM2", true),
         metricField("dashboard.passport.metrics.rooms", "Room count", "dashboard.project.passportDraft.roomCount", true),
         metricField("dashboard.passport.metrics.ceiling", "Ceiling height", "dashboard.project.passportDraft.ceilingHeightM", true),
-        metricField("dashboard.passport.metrics.margin", "Planned margin", "dashboard.project.passportDraft.plannedMarginPercent", true),
       ],
       relationships: [{ type: "writes", targetId: ACTIONS_ID }],
       source: { feature: "dashboard/scenes", file: "dashboard-passport-metrics-section.tsx" },

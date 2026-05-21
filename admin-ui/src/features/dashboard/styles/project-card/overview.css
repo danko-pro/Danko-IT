@@ -1,27 +1,91 @@
 .dashboard-project-overview {
-  --dashboard-project-metric-gap: 0.66rem;
-  --dashboard-project-metric-width: 10.95rem;
-  --dashboard-project-side-width: 9.5rem;
+  --dashboard-project-metric-width: 9.7rem;
+  --dashboard-project-side-width: 10.2rem;
 
   margin-top: 1rem;
   display: grid;
   justify-content: start;
-  gap: 0.56rem;
-  width: fit-content;
+  gap: 0.72rem;
+  width: 100%;
   max-width: 100%;
+}
+
+.dashboard-project-finance-groups {
+  display: grid;
+  grid-template-columns: minmax(18rem, 0.95fr) minmax(24rem, 1.35fr);
+  gap: 0.72rem;
+  align-items: stretch;
+  width: min(100%, 61rem);
+}
+
+.dashboard-project-finance-group {
+  position: relative;
+  display: grid;
+  align-content: start;
+  gap: 0.62rem;
+  min-width: 0;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.018)),
+    rgba(8, 12, 18, 0.42);
+  padding: 0.72rem;
+}
+
+.dashboard-project-finance-group::before {
+  content: "";
+  position: absolute;
+  inset: 0.55rem;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.035);
+  pointer-events: none;
+}
+
+.dashboard-project-finance-group-cash::before {
+  border-color: rgba(7, 248, 198, 0.09);
+}
+
+.dashboard-project-finance-group-plan::before {
+  border-color: rgba(251, 191, 36, 0.08);
+}
+
+.dashboard-project-finance-group-total {
+  border-color: rgba(52, 211, 153, 0.14);
+  background:
+    linear-gradient(180deg, rgba(52, 211, 153, 0.075), rgba(255, 255, 255, 0.018)),
+    rgba(8, 12, 18, 0.48);
+}
+
+.dashboard-project-finance-group-reference {
+  background: rgba(8, 12, 18, 0.24);
+}
+
+.dashboard-project-finance-group-title {
+  position: relative;
+  z-index: 1;
+  font-size: 0.67rem;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: #8ca4b7;
 }
 
 .dashboard-project-metrics {
   position: relative;
   display: grid;
-  grid-template-columns: repeat(5, minmax(var(--dashboard-project-metric-width), var(--dashboard-project-metric-width)));
+  grid-template-columns: repeat(auto-fit, minmax(var(--dashboard-project-metric-width), 1fr));
   justify-content: start;
-  gap: var(--dashboard-project-metric-gap);
+  gap: 0.56rem;
   max-width: 100%;
+}
+
+.dashboard-project-finance-group-plan .dashboard-project-metrics {
+  --dashboard-project-metric-width: 9.2rem;
 }
 
 .dashboard-project-metric {
   position: relative;
+  z-index: 1;
   overflow: hidden;
   border-radius: 20px;
   border: 1px solid rgba(255, 255, 255, 0.06);
@@ -79,12 +143,45 @@
   color: #d7e4ed;
 }
 
+.dashboard-project-finance-group-plan .dashboard-project-metric:nth-child(4) {
+  border-color: rgba(52, 211, 153, 0.17);
+  background: linear-gradient(180deg, rgba(22, 32, 40, 0.96), rgba(11, 18, 24, 0.99));
+}
+
+.dashboard-project-finance-group-plan .dashboard-project-metric:nth-child(4) .dashboard-project-metric-value {
+  font-size: 1.12rem;
+}
+
+.dashboard-project-finance-group-total .dashboard-project-metric:first-child {
+  min-height: 4.2rem;
+  opacity: 0.82;
+}
+
+.dashboard-project-finance-group-total .dashboard-project-metric:nth-child(2) {
+  min-height: 5.86rem;
+  border-color: rgba(52, 211, 153, 0.22);
+  background:
+    linear-gradient(180deg, rgba(52, 211, 153, 0.12), rgba(9, 18, 22, 0.99)),
+    rgba(12, 22, 26, 0.92);
+}
+
+.dashboard-project-finance-group-total .dashboard-project-metric:nth-child(2)::before {
+  background: rgba(52, 211, 153, 0.8);
+}
+
+.dashboard-project-finance-group-total .dashboard-project-metric:nth-child(2) .dashboard-project-metric-value {
+  margin-top: 0.64rem;
+  font-size: 1.34rem;
+  font-weight: 720;
+}
+
 .dashboard-project-side-metrics {
+  position: relative;
+  z-index: 1;
   display: grid;
-  grid-template-columns: repeat(3, minmax(var(--dashboard-project-side-width), var(--dashboard-project-side-width)));
+  grid-template-columns: repeat(2, minmax(var(--dashboard-project-side-width), 1fr));
   justify-content: start;
   gap: 0.5rem;
-  padding-left: 0.28rem;
   max-width: 100%;
 }
 
@@ -110,4 +207,26 @@
   font-size: 0.8rem;
   font-weight: 580;
   color: #d3e3ed;
+}
+
+@media (max-width: 1100px) {
+  .dashboard-project-finance-groups {
+    grid-template-columns: 1fr;
+    width: 100%;
+  }
+}
+
+@media (max-width: 680px) {
+  .dashboard-project-finance-group {
+    padding: 0.62rem;
+  }
+
+  .dashboard-project-metrics,
+  .dashboard-project-side-metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-project-finance-group-total .dashboard-project-metric:nth-child(2) .dashboard-project-metric-value {
+    font-size: 1.18rem;
+  }
 }

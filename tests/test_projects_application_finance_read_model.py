@@ -79,6 +79,17 @@ class ProjectFinanceReadModelTests(unittest.TestCase):
         self.assertEqual(payload["tax_reserve_total"], 0.0)
         self.assertEqual(payload["net_available"], payload["available_after_obligations"])
 
+    def test_planned_margin_percent_does_not_affect_tax_rate(self) -> None:
+        payload = build_project_finance_summary_payload(
+            project=_project_row(received_total=100000, planned_margin_percent=30),
+            ledger_entries=[],
+        )
+
+        self.assertEqual(payload["tax_rate_percent"], 0.0)
+        self.assertEqual(payload["tax_base"], 100000.0)
+        self.assertEqual(payload["tax_reserve_total"], 0.0)
+        self.assertEqual(payload["net_available"], 100000.0)
+
     def test_serialization_shape_contains_only_expected_keys(self) -> None:
         payload = build_project_finance_summary_payload(
             project=_project_row(received_total=100000),

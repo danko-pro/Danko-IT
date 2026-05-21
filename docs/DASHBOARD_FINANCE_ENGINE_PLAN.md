@@ -179,7 +179,7 @@ received_total - paid_expense_total - planned_expense_total - committed_unpaid_t
 
 `DASH-FINANCE-3`: добавить read-model расчет новых полей без UI и без миграции, если возможно. Backend read-model `finance_summary` добавляется для project detail path без изменения старых project fields.
 
-`DASH-FINANCE-4`: добавить налоговый блок:
+`DASH-FINANCE-4`: добавить налоговый блок. Отдельный tax read-model layer фиксирует, что `tax_rate_percent` не смешивается с `planned_margin_percent`:
 
 - `tax_rate_percent`;
 - `tax_base`;

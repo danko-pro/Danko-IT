@@ -31,6 +31,8 @@ class ProjectCreatePayload(BaseModel):
     work_per_m2: float = 0
     materials_per_m2: float = 0
     planned_margin_percent: float = 0
+    tax_rate_percent: float | None = 0
+    tax_base_mode: str | None = "received_total"
     next_delivery_label: str | None = None
 
 
@@ -62,6 +64,8 @@ class ProjectUpdatePayload(BaseModel):
     work_per_m2: float | None = None
     materials_per_m2: float | None = None
     planned_margin_percent: float | None = None
+    tax_rate_percent: float | None = None
+    tax_base_mode: str | None = None
     next_delivery_label: str | None = None
 
 

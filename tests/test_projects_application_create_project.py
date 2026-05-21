@@ -39,6 +39,8 @@ class ProjectCreatePayload:
     work_per_m2: float | int | None = 0
     materials_per_m2: float | int | None = 0
     planned_margin_percent: float | int | None = 0
+    tax_rate_percent: float | int | None = 0
+    tax_base_mode: str | None = "received_total"
     next_delivery_label: str | None = ""
 
 
@@ -93,6 +95,8 @@ class CreateProjectUseCaseTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(storage.count_called)
         self.assertEqual(storage.created_values["code"], expected_code)
         self.assertEqual(storage.created_values["name"], "Project A")
+        self.assertEqual(storage.created_values["tax_rate_percent"], 0.0)
+        self.assertEqual(storage.created_values["tax_base_mode"], "received_total")
         self.assertEqual(storage.loaded_project_id, 15)
         self.assertEqual(result["id"], 15)
         self.assertEqual(result["code"], expected_code)
@@ -180,6 +184,8 @@ def _expected_project_payload_keys() -> dict[str, object]:
         "work_per_m2": None,
         "materials_per_m2": None,
         "planned_margin_percent": None,
+        "tax_rate_percent": None,
+        "tax_base_mode": None,
         "next_delivery_label": None,
         "created_at": None,
         "updated_at": None,

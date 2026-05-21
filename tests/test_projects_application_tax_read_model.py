@@ -16,10 +16,17 @@ TAX_READ_MODEL_PATH = REPO_ROOT / "src" / "supply_bot" / "projects" / "applicati
 
 class ProjectTaxReadModelTests(unittest.TestCase):
     def test_default_tax_config_uses_zero_rate_and_received_total_base(self) -> None:
-        config = build_project_tax_runtime_config(_project_row())
+        config = build_project_tax_runtime_config(
+            _project_row(tax_rate_percent=None, tax_base_mode=None)
+        )
 
         self.assertEqual(config.tax_rate_percent, 0.0)
         self.assertEqual(config.tax_base_mode, TAX_BASE_MODE_RECEIVED_TOTAL)
+
+    def test_tax_rate_percent_is_read_from_project(self) -> None:
+        config = build_project_tax_runtime_config(_project_row(tax_rate_percent=6))
+
+        self.assertEqual(config.tax_rate_percent, 6.0)
 
     def test_resolves_tax_base_from_received_total(self) -> None:
         tax_base = resolve_project_tax_base(
@@ -30,9 +37,26 @@ class ProjectTaxReadModelTests(unittest.TestCase):
         self.assertEqual(tax_base, 100000.0)
 
     def test_planned_margin_percent_is_ignored_for_tax_rate(self) -> None:
-        config = build_project_tax_runtime_config(_project_row(planned_margin_percent=30))
+        config = build_project_tax_runtime_config(
+            _project_row(planned_margin_percent=30, tax_rate_percent=6)
+        )
+
+        self.assertEqual(config.tax_rate_percent, 6.0)
+
+    def test_negative_tax_rate_percent_resolves_to_zero(self) -> None:
+        config = build_project_tax_runtime_config(_project_row(tax_rate_percent=-6))
 
         self.assertEqual(config.tax_rate_percent, 0.0)
+
+    def test_invalid_tax_rate_percent_resolves_to_zero(self) -> None:
+        config = build_project_tax_runtime_config(_project_row(tax_rate_percent="abc"))
+
+        self.assertEqual(config.tax_rate_percent, 0.0)
+
+    def test_unknown_tax_base_mode_falls_back_to_received_total(self) -> None:
+        config = build_project_tax_runtime_config(_project_row(tax_base_mode="manual"))
+
+        self.assertEqual(config.tax_base_mode, TAX_BASE_MODE_RECEIVED_TOTAL)
 
     def test_invalid_or_missing_received_total_resolves_to_zero(self) -> None:
         self.assertEqual(

@@ -38,6 +38,8 @@ def project_payload(code: str, name: str) -> dict[str, object]:
         "work_per_m2": 0.0,
         "materials_per_m2": 0.0,
         "planned_margin_percent": 0.0,
+        "tax_rate_percent": 0.0,
+        "tax_base_mode": "received_total",
         "next_delivery_label": "",
     }
 
@@ -74,6 +76,8 @@ class SqlAlchemyProjectRepositoryTest(unittest.IsolatedAsyncioTestCase):
         owner_2_projects = await owner_2.list_projects()
         self.assertEqual([project["id"] for project in owner_1_projects], [project_1_id])
         self.assertEqual([project["id"] for project in owner_2_projects], [project_2_id])
+        self.assertEqual(owner_1_projects[0]["tax_rate_percent"], 0.0)
+        self.assertEqual(owner_1_projects[0]["tax_base_mode"], "received_total")
 
     async def test_update_and_delete_project_respect_owner(self) -> None:
         owner_1 = self.repository.for_owner(1)
@@ -83,6 +87,16 @@ class SqlAlchemyProjectRepositoryTest(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(await owner_2.update_project(project_id, name="Чужое имя"))
         self.assertTrue(await owner_1.update_project(project_id, name="Новое имя"))
         self.assertEqual((await owner_1.get_project(project_id))["name"], "Новое имя")
+        self.assertTrue(
+            await owner_1.update_project(
+                project_id,
+                tax_rate_percent=6.0,
+                tax_base_mode="received_total",
+            )
+        )
+        updated = await owner_1.get_project(project_id)
+        self.assertEqual(updated["tax_rate_percent"], 6.0)
+        self.assertEqual(updated["tax_base_mode"], "received_total")
         self.assertFalse(await owner_2.delete_project(project_id))
         self.assertTrue(await owner_1.delete_project(project_id))
         self.assertIsNone(await owner_1.get_project(project_id))

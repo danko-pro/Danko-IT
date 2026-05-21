@@ -282,6 +282,7 @@ admin_api / Telegram / external adapter
 - `ARCH-CLEAN-5`: support/settings/dashboard split. Разделить mixed support/settings/dashboard endpoints на тонкие adapters и application/read сценарии.
 - `ARCH-CLEAN-6`: global boundary tests for all application layers. Расширить boundary-test подход с estimates application на остальные application packages.
 - `DASH-DASHBOARD-ROOT`: dashboard должен иметь fixed global tab **Все объекты**. Global tab агрегирует `finance_summary` по всем объектам, не дублирует финансовые формулы и использует `src/supply_bot/projects/domain/finance.py` как source of truth. Следующий этап - `DASH-DASHBOARD-ROOT-1`: создать backend application read-model для общей сводки.
+- `DASH-OBJECT-CARD`: карточка объекта отображает `finance_summary`; вкладка **Финансы** хранит настройки финансовой модели; **Таблица учета** является источником расходов и обязательств; общая вкладка **Все объекты** агрегирует показатели всех объектов. UI не должен быть источником финансовых расчетов. Следующий этап - `DASH-OBJECT-CARD-1`: подключить `finance_summary` к UI карточки объекта.
 
 Рекомендуемый следующий этап после `ARCH_CHECKPOINT_4`: `ARCH-CLEAN-4M` - project ledger documents application use-cases.
 

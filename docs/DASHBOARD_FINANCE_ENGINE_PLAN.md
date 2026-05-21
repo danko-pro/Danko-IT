@@ -173,7 +173,7 @@ received_total - paid_expense_total - planned_expense_total - committed_unpaid_t
 
 `DASH-FINANCE-0`: документационный checkpoint, runtime не меняем.
 
-`DASH-FINANCE-1`: создать чистый finance engine в `projects/domain/finance.py` и покрыть unit-тестами.
+`DASH-FINANCE-1`: создать чистый finance engine в `projects/domain/finance.py` и покрыть unit-тестами. Реализовано в `src/supply_bot/projects/domain/finance.py`, checkpoint: `docs/DASH_FINANCE_CHECKPOINT_1.md`.
 
 `DASH-FINANCE-2`: подключить `storage_projects/summary.py` к finance engine без изменения API shape.
 

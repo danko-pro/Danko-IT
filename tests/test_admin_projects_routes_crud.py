@@ -105,7 +105,12 @@ class AdminProjectsCrudRouteTests(AdminProjectsRouteCase):
 
                 detail_response = client.get(f"/api/projects/{project_id}")
                 self.assertEqual(detail_response.status_code, 200)
-                self.assertEqual(detail_response.json()["id"], project_id)
+                detail_payload = detail_response.json()
+                self.assertEqual(detail_payload["id"], project_id)
+                self.assertEqual(detail_payload["remaining_total"], 700000.0)
+                self.assertIn("finance_summary", detail_payload)
+                self.assertEqual(detail_payload["finance_summary"]["tax_rate_percent"], 0.0)
+                self.assertEqual(detail_payload["finance_summary"]["tax_base"], detail_payload["received_total"])
 
                 delete_response = client.delete(f"/api/projects/{project_id}")
                 self.assertEqual(delete_response.status_code, 200)

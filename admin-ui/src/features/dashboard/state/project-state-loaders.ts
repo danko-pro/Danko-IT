@@ -4,6 +4,7 @@ import type { DashboardProjectCardData } from "../model/project-model";
 import {
   loadDashboardProjectAdvances,
   loadDashboardProjectContract,
+  loadDashboardProjectDetail,
   loadDashboardProjectLedger,
   loadDashboardProjects,
 } from "./project-loaders";
@@ -32,6 +33,13 @@ export function createProjectStateLoaders(props: ProjectStateLoadersOptions) {
     });
   }
 
+  async function loadProjectDetail(projectId: string) {
+    await loadDashboardProjectDetail(projectId, {
+      setError: props.setError,
+      setProjects: props.setProjects,
+    });
+  }
+
   async function loadProjectLedger(projectId: string) {
     await loadDashboardProjectLedger(projectId, {
       setError: props.setError,
@@ -49,6 +57,7 @@ export function createProjectStateLoaders(props: ProjectStateLoadersOptions) {
   return {
     loadProjects,
     loadProjectAdvances,
+    loadProjectDetail,
     loadProjectLedger,
     loadProjectContract,
   };

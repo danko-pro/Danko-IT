@@ -35,7 +35,7 @@ export function useDashboardProjectState() {
   const project = selectedProjectId ? projects.find((candidate) => candidate.id === selectedProjectId) ?? null : null;
   const activeProject = project ?? projects[0] ?? null;
 
-  const { loadProjects, loadProjectAdvances, loadProjectLedger, loadProjectContract } = createProjectStateLoaders({
+  const { loadProjects, loadProjectAdvances, loadProjectDetail, loadProjectLedger, loadProjectContract } = createProjectStateLoaders({
     setLoading,
     setError,
     setProjects,
@@ -52,6 +52,7 @@ export function useDashboardProjectState() {
     }
 
     void Promise.all([
+      loadProjectDetail(selectedProjectId),
       loadProjectAdvances(selectedProjectId),
       loadProjectLedger(selectedProjectId),
       loadProjectContract(selectedProjectId),
@@ -69,6 +70,7 @@ export function useDashboardProjectState() {
     scheduleLedgerDocumentSync,
     scheduleLedgerEntrySync,
   } = useDashboardProjectLedgerSync({
+    loadProjectDetail,
     loadProjectLedger,
     loadProjects,
     setError,
@@ -85,33 +87,46 @@ export function useDashboardProjectState() {
   });
 
   async function addAdvance(payload: AdvancePayload) {
+    const projectId = activeProject?.id ?? null;
     await createDashboardProjectAdvance({
       activeProject,
       payload,
       setProjects,
       setError,
     });
+    if (projectId) {
+      await loadProjectDetail(projectId);
+    }
   }
 
   async function deleteAdvance(advanceId: string) {
+    const projectId = activeProject?.id ?? null;
     await deleteDashboardProjectAdvance({
       activeProject,
       advanceId,
       setProjects,
       setError,
     });
+    if (projectId) {
+      await loadProjectDetail(projectId);
+    }
   }
 
   async function addLedgerEntry() {
+    const projectId = activeProject?.id ?? null;
     await createDashboardProjectLedgerEntry({
       activeProject,
       updateSelectedProjectLedger,
       setProjects,
       setError,
     });
+    if (projectId) {
+      await loadProjectDetail(projectId);
+    }
   }
 
   async function deleteLedgerEntry(entryId: string) {
+    const projectId = activeProject?.id ?? null;
     await deleteDashboardProjectLedgerEntry({
       activeProject,
       entryId,
@@ -121,6 +136,9 @@ export function useDashboardProjectState() {
       setProjects,
       setError,
     });
+    if (projectId) {
+      await loadProjectDetail(projectId);
+    }
   }
 
   function updateLedgerEntry(entryId: string, patch: Partial<ProjectCardLedgerEntry>) {

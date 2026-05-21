@@ -192,13 +192,17 @@ docs/DASH_OBJECT_CARD_CHECKPOINT_1A.md
 
 Перед этим выполнен audit `DASH-FINANCE-5A`: `docs/DASH_FINANCE_SETTINGS_UI_AUDIT.md`. Он подтверждает, что настройки `tax_rate_percent`, `tax_base_mode` и `planned_margin_percent` должны подключаться только во вкладке **Финансы**, а **Карточка объекта** продолжает показывать готовый backend `finance_summary`.
 
+После runtime UI этапа выполнен smoke-checkpoint `DASH-FINANCE-5B`: `docs/DASH_FINANCE_CHECKPOINT_5B.md`. Он подтверждает, что **Паспорт объекта** больше не содержит поле **Плановая маржа**, settings controls не добавлены в **Карточку объекта**, а итоговые финансовые показатели по-прежнему приходят из backend `finance_summary`.
+
 ## Этапы
 
 `DASH-OBJECT-CARD-0`: документационный checkpoint, runtime не меняем.
 
 `DASH-OBJECT-CARD-1`: подключить `finance_summary` к UI карточки объекта.
 
-`DASH-FINANCE-5`: добавить UI настроек финансов объекта.
+`DASH-FINANCE-5`: добавить UI настроек финансов объекта во вкладке **Финансы**.
+
+`DASH-FINANCE-5B`: smoke-checkpoint после подключения finance settings UI.
 
 `DASH-DASHBOARD-ROOT-1`: создать backend read-model для общей вкладки **Все объекты**.
 

@@ -190,7 +190,9 @@ received_total - paid_expense_total - planned_expense_total - committed_unpaid_t
 
 `DASH-FINANCE-5A`: выполнить audit вкладки **Финансы** перед runtime UI implementation. Зафиксировано, что settings UI должен жить во вкладке **Финансы**, `planned_margin_percent` остается маржей, `tax_rate_percent` остается налоговой ставкой, а после изменения settings frontend должен обновлять active project detail и получать новый backend `finance_summary`. Checkpoint: `docs/DASH_FINANCE_CHECKPOINT_5A.md`, audit: `docs/DASH_FINANCE_SETTINGS_UI_AUDIT.md`.
 
-`DASH-FINANCE-5`: только после стабилизации движка идти в UI.
+`DASH-FINANCE-5`: подключить UI настроек во вкладке **Финансы**. `ProjectCardFinanceSettingsPanel` редактирует `planned_margin_percent`, `tax_rate_percent` и `tax_base_mode`, сохраняет их через `PATCH /api/projects/{project_id}` и затем обновляет active project detail, чтобы получить новый backend `finance_summary`. Финансовые формулы во frontend не добавляются.
+
+`DASH-FINANCE-5B`: выполнить smoke-checkpoint после runtime UI изменения. Подтверждено, что settings UI живет во вкладке **Финансы**, **Паспорт объекта** больше не содержит **Плановую маржу**, `ProjectCardOverview` не содержит settings controls, а `finance_summary` обновляется через backend detail refresh. Checkpoint: `docs/DASH_FINANCE_CHECKPOINT_5B.md`.
 
 ## Ограничения
 

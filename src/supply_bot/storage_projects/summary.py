@@ -1,27 +1,24 @@
-"""Служебный summary-sync для project accounting.
-
-Модуль отвечает только за пересчёт агрегированных project totals на основе ledger.
-"""
+"""Project accounting summary-sync adapter."""
 
 from __future__ import annotations
 
 from datetime import date
 from typing import Any
 
+from supply_bot.projects.domain.finance import (
+    ProjectLedgerFinanceInput,
+    calculate_project_finance_summary,
+)
 
-def _ledger_committed_amount(*, status: str, plan_amount: float, actual_amount: float) -> float:
-    if status == "planned":
-        return plan_amount
-    return actual_amount if actual_amount > 0 else plan_amount
 
-
-def _ledger_paid_amount(*, status: str, plan_amount: float, actual_amount: float) -> float:
-    if status not in {"paid", "completed"}:
+def _legacy_amount(value: Any) -> float:
+    try:
+        return float(value or 0)
+    except (TypeError, ValueError):
         return 0.0
-    return actual_amount if actual_amount > 0 else plan_amount
 
 
-def _ledger_plan_balance_amount(*, status: str, plan_amount: float, actual_amount: float) -> float:
+def _legacy_ledger_plan_balance_amount(*, status: str, plan_amount: float, actual_amount: float) -> float:
     if status == "planned":
         return plan_amount
     if plan_amount <= 0:
@@ -32,7 +29,6 @@ def _ledger_plan_balance_amount(*, status: str, plan_amount: float, actual_amoun
 
 
 class ProjectSummaryStorageMixin:
-    # Пересчёт summary-полей проекта после мутаций ledger.
     async def _sync_project_summary_from_ledger(self, db: Any, *, project_id: int) -> None:
         cursor = await db.execute(
             """
@@ -53,48 +49,38 @@ class ProjectSummaryStorageMixin:
         if project_row is None:
             return
 
-        area_m2 = float(project_row["area_m2"] or 0)
-        received_total = float(project_row["received_total"] or 0)
+        area_m2 = _legacy_amount(project_row["area_m2"])
+        received_total = _legacy_amount(project_row["received_total"])
+        entries = [
+            ProjectLedgerFinanceInput(
+                status=str(row["status"] or "planned"),
+                category=str(row["category"] or ""),
+                plan_amount=row["plan_amount"],
+                actual_amount=row["actual_amount"],
+            )
+            for row in rows
+        ]
+        summary = calculate_project_finance_summary(
+            entries=entries,
+            received_total=received_total,
+            area_m2=area_m2,
+        )
 
-        planned_total = 0.0
-        actual_total = 0.0
-        deferred_total = 0.0
-        work_amount = 0.0
-        materials_amount = 0.0
+        # planned_total is legacy API field and currently means remaining plan balance,
+        # not total planned expenses. New planned_expense_total exists in finance engine
+        # but is not exposed through API yet.
+        legacy_planned_total = 0.0
         next_control_date: date | None = None
 
         for row in rows:
             status = str(row["status"] or "planned")
-            plan_amount = float(row["plan_amount"] or 0)
-            actual_amount = float(row["actual_amount"] or 0)
-            committed_amount = _ledger_committed_amount(
+            legacy_planned_total += _legacy_ledger_plan_balance_amount(
                 status=status,
-                plan_amount=plan_amount,
-                actual_amount=actual_amount,
+                plan_amount=_legacy_amount(row["plan_amount"]),
+                actual_amount=_legacy_amount(row["actual_amount"]),
             )
-            planned_balance_amount = _ledger_plan_balance_amount(
-                status=status,
-                plan_amount=plan_amount,
-                actual_amount=actual_amount,
-            )
-            paid_amount = _ledger_paid_amount(
-                status=status,
-                plan_amount=plan_amount,
-                actual_amount=actual_amount,
-            )
-            category = str(row["category"] or "")
+
             control_date_raw = str(row["control_date"] or "")
-
-            planned_total += planned_balance_amount
-            actual_total += paid_amount
-            if status == "waiting-payment":
-                deferred_total += committed_amount
-
-            if category == "Работы":
-                work_amount += committed_amount
-            if category == "Материалы":
-                materials_amount += committed_amount
-
             if control_date_raw:
                 try:
                     parsed_date = date.fromisoformat(control_date_raw)
@@ -119,12 +105,12 @@ class ProjectSummaryStorageMixin:
             WHERE id = ?
             """,
             (
-                planned_total,
-                actual_total,
-                received_total - actual_total,
-                deferred_total,
-                work_amount / area_m2 if area_m2 > 0 else 0,
-                materials_amount / area_m2 if area_m2 > 0 else 0,
+                legacy_planned_total,
+                summary.paid_expense_total,
+                summary.cash_balance,
+                summary.committed_unpaid_total,
+                summary.work_per_m2,
+                summary.materials_per_m2,
                 next_delivery_label,
                 project_id,
             ),

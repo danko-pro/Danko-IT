@@ -165,6 +165,15 @@ docs/DASHBOARD_ROOT_OVERVIEW_PLAN.md
 
 ## Целевой Frontend Direction
 
+Перед runtime UI implementation выполнен этап `DASH-OBJECT-CARD-1A`. Он зафиксировал карту текущего dashboard UI, подтвердил, что `overview` является вкладкой **Карточка объекта**, и выбрал безопасный integration path: грузить backend `finance_summary` через detail endpoint активного объекта `GET /api/projects/{project_id}`.
+
+Audit checkpoint:
+
+```text
+docs/DASH_OBJECT_CARD_UI_AUDIT.md
+docs/DASH_OBJECT_CARD_CHECKPOINT_1A.md
+```
+
 Будущий UI-этап `DASH-OBJECT-CARD-1` должен:
 
 - подключить `finance_summary` к dashboard state;

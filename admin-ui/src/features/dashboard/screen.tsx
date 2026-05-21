@@ -97,6 +97,7 @@ export function DashboardScreen() {
               onExtractContract={actions.extractContract}
               onUpdateContract={actions.updateContract}
               onDeleteContract={actions.deleteContract}
+              onUpdateFinanceSettings={actions.updateFinanceSettings}
               contractSyncState={contractSyncState}
             />
           </div>

@@ -9,6 +9,7 @@ import type {
   ProjectCardLedgerDocument,
   ProjectCardLedgerEntry,
   ProjectFinanceSummary,
+  ProjectTaxBaseMode,
 } from "./project-model";
 import { normalizeDashboardText } from "./project-text-normalization";
 
@@ -88,6 +89,10 @@ export function mapFinanceSummaryRecord(record: DashboardProjectFinanceSummaryAp
     workPerM2: record.work_per_m2,
     materialsPerM2: record.materials_per_m2,
   };
+}
+
+export function mapTaxBaseMode(value: string | null | undefined): ProjectTaxBaseMode {
+  return value === "received_total" ? "received_total" : "received_total";
 }
 
 function cloneLedgerDocument(document: ProjectCardLedgerDocument | null): ProjectCardLedgerDocument | null {

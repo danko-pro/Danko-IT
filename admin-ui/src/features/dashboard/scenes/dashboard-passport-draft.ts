@@ -23,7 +23,6 @@ export function createPassportDraft(project: DashboardProjectCardData): Passport
     comment: project.comment,
     areaM2: project.areaM2,
     ceilingHeightM: project.ceilingHeightM,
-    plannedMarginPercent: project.plannedMarginPercent,
   };
 }
 
@@ -43,7 +42,6 @@ export function samePassportDraft(left: PassportDraft, right: PassportDraft) {
     left.responsiblePerson === right.responsiblePerson &&
     left.comment === right.comment &&
     left.areaM2 === right.areaM2 &&
-    left.ceilingHeightM === right.ceilingHeightM &&
-    left.plannedMarginPercent === right.plannedMarginPercent
+    left.ceilingHeightM === right.ceilingHeightM
   );
 }

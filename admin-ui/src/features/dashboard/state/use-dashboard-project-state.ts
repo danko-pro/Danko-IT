@@ -1,6 +1,11 @@
 // Главный hook dashboard projects: state, загрузка срезов и orchestration между sync hook'ами и UI-экшенами.
 import { useEffect, useState } from "react";
-import type { DashboardProjectCardData, ProjectCardLedgerDocument, ProjectCardLedgerEntry } from "../model/project-model";
+import type {
+  DashboardProjectCardData,
+  ProjectCardLedgerDocument,
+  ProjectCardLedgerEntry,
+  ProjectFinanceSettings,
+} from "../model/project-model";
 import {
   type AdvancePayload,
   createDashboardProjectAdvance,
@@ -18,8 +23,8 @@ import {
   createDashboardProject,
   deleteDashboardProject,
   renameDashboardProject,
+  updateDashboardProjectFinanceSettings,
   updateDashboardProjectPassport,
-  updateDashboardProjectPlannedMargin,
   type ProjectPassportPatch,
 } from "./project-record-actions";
 import { createProjectStateLoaders } from "./project-state-loaders";
@@ -219,14 +224,15 @@ export function useDashboardProjectState() {
     });
   }
 
-  async function updatePlannedMarginPercent(plannedMarginPercent: number) {
+  async function updateFinanceSettings(settings: ProjectFinanceSettings) {
     if (!activeProject) {
       return;
     }
 
-    await updateDashboardProjectPlannedMargin({
+    await updateDashboardProjectFinanceSettings({
       projectId: activeProject.id,
-      plannedMarginPercent,
+      settings,
+      loadProjectDetail,
       setProjects,
       setError,
     });
@@ -246,7 +252,7 @@ export function useDashboardProjectState() {
       renameProject,
       deleteProject,
       updateProjectPassport,
-      updatePlannedMarginPercent,
+      updateFinanceSettings,
       addAdvance,
       deleteAdvance,
       completeContractMilestone,

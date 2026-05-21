@@ -1,4 +1,4 @@
-import type { DashboardProjectCardData, ProjectCardContract } from "../model/project-model";
+import type { DashboardProjectCardData, ProjectCardContract, ProjectFinanceSettings } from "../model/project-model";
 import type { ContractSyncState } from "./project-card-contract-types";
 
 export type ProjectCardProps = {
@@ -10,6 +10,7 @@ export type ProjectCardProps = {
   onExtractContract: () => void;
   onUpdateContract: (contract: ProjectCardContract) => void | Promise<void>;
   onDeleteContract: () => void | Promise<void>;
+  onUpdateFinanceSettings: (settings: ProjectFinanceSettings) => void | Promise<void>;
   contractSyncState: ContractSyncState;
   onOpenAccounting: () => void;
 };

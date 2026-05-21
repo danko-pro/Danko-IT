@@ -1,5 +1,6 @@
 import type {
   DashboardProjectCardData,
+  ProjectFinanceSettings,
   ProjectCardContract,
   ProjectCardLedgerCounterparty,
   ProjectCardLedgerEntry,
@@ -35,6 +36,8 @@ export function buildProjectCreatePayload(project: DashboardProjectCardData) {
     work_per_m2: project.workPerM2,
     materials_per_m2: project.materialsPerM2,
     planned_margin_percent: project.plannedMarginPercent,
+    tax_rate_percent: project.taxRatePercent,
+    tax_base_mode: project.taxBaseMode,
     next_delivery_label: project.nextDeliveryLabel,
   };
 }
@@ -57,7 +60,6 @@ export function buildProjectPassportPatchPayload(
     | "comment"
     | "areaM2"
     | "ceilingHeightM"
-    | "plannedMarginPercent"
   >,
 ) {
   return {
@@ -76,7 +78,14 @@ export function buildProjectPassportPatchPayload(
     comment: patch.comment,
     area_m2: patch.areaM2,
     ceiling_height_m: patch.ceilingHeightM,
-    planned_margin_percent: patch.plannedMarginPercent,
+  };
+}
+
+export function buildProjectFinanceSettingsPatchPayload(settings: ProjectFinanceSettings) {
+  return {
+    planned_margin_percent: settings.plannedMarginPercent,
+    tax_rate_percent: settings.taxRatePercent,
+    tax_base_mode: settings.taxBaseMode,
   };
 }
 

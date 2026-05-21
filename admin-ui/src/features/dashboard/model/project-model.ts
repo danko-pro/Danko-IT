@@ -98,6 +98,14 @@ export type ProjectFinanceSummary = {
   materialsPerM2: number;
 };
 
+export type ProjectTaxBaseMode = "received_total";
+
+export type ProjectFinanceSettings = {
+  plannedMarginPercent: number;
+  taxRatePercent: number;
+  taxBaseMode: ProjectTaxBaseMode;
+};
+
 export type DashboardProjectFinanceSummaryApiRecord = {
   received_total: number;
   paid_expense_total: number;
@@ -178,6 +186,8 @@ export type DashboardProjectCardData = {
   workPerM2: number;
   materialsPerM2: number;
   plannedMarginPercent: number;
+  taxRatePercent: number;
+  taxBaseMode: ProjectTaxBaseMode;
   nextDeliveryLabel: string;
   expenses: ProjectCardExpenseItem[];
   advances: ProjectCardAdvanceItem[];
@@ -216,6 +226,8 @@ export type DashboardProjectApiRecord = {
   work_per_m2: number;
   materials_per_m2: number;
   planned_margin_percent: number;
+  tax_rate_percent?: number | null;
+  tax_base_mode?: string | null;
   finance_summary?: DashboardProjectFinanceSummaryApiRecord;
   next_delivery_label: string;
   created_at: string;

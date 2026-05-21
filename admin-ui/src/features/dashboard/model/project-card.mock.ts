@@ -78,6 +78,8 @@ const firstProjectCardMockRaw: DashboardProjectCardData = {
   workPerM2: 10770.55,
   materialsPerM2: 8859.14,
   plannedMarginPercent: 30,
+  taxRatePercent: 0,
+  taxBaseMode: "received_total",
   nextDeliveryLabel: "10.05 сб",
   expenses: [
     { label: "Работы", amount: 560668.72, tone: "cyan" },
@@ -230,6 +232,8 @@ export function createDashboardProjectDraft(sequence: number): DashboardProjectC
     workPerM2: 0,
     materialsPerM2: 0,
     plannedMarginPercent: 0,
+    taxRatePercent: 0,
+    taxBaseMode: "received_total",
     nextDeliveryLabel: "—",
     expenses: [],
     advances: [],

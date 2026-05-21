@@ -1,5 +1,5 @@
 import { applyLedgerEntriesToProject } from "../model/project-accounting-logic";
-import { mapAdvanceRecord, mapContractRecord, mapFinanceSummaryRecord } from "../model/project-api-mappers";
+import { mapAdvanceRecord, mapContractRecord, mapFinanceSummaryRecord, mapTaxBaseMode } from "../model/project-api-mappers";
 import type {
   DashboardProjectAdvanceApiRecord,
   DashboardProjectApiRecord,
@@ -13,6 +13,10 @@ import {
   type MergeProjectRecordOptions,
 } from "./project-state-merge-helpers";
 import { normalizeDashboardText } from "../model/project-text-normalization";
+
+function normalizeNumber(value: number | null | undefined) {
+  return typeof value === "number" && Number.isFinite(value) ? value : 0;
+}
 
 // Слияние server-records в UI state вынесено отдельно, чтобы hook оставался
 // orchestrator-слоем, а правила пересборки проекта жили в чистых helper'ах.
@@ -55,6 +59,8 @@ export function mergeProjectRecord(
     workPerM2: projectRecord.work_per_m2,
     materialsPerM2: projectRecord.materials_per_m2,
     plannedMarginPercent: projectRecord.planned_margin_percent,
+    taxRatePercent: normalizeNumber(projectRecord.tax_rate_percent),
+    taxBaseMode: mapTaxBaseMode(projectRecord.tax_base_mode),
     financeSummary,
     nextDeliveryLabel: normalizeDashboardText(projectRecord.next_delivery_label),
   };

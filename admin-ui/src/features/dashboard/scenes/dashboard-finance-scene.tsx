@@ -1,6 +1,7 @@
 import { ProjectCardAdvancesPanel } from "../card/project-card-advances-panel";
 import { ProjectCardContractPanel } from "../card/project-card-contract-panel";
 import { ProjectCardExpensesPanel } from "../card/project-card-expenses-panel";
+import { ProjectCardFinanceSettingsPanel } from "../card/project-card-finance-settings-panel";
 import type { ProjectCardProps } from "../card/project-card-types";
 import { DashboardSceneChrome } from "../dashboard-scene-chrome";
 import type { DashboardSceneView } from "../dashboard-scene-types";
@@ -22,6 +23,13 @@ export function DashboardFinanceScene(
         <ProjectCardExpensesPanel project={project} />
 
         <div className="dashboard-project-column">
+          <ProjectCardFinanceSettingsPanel
+            plannedMarginPercent={project.plannedMarginPercent}
+            taxRatePercent={project.taxRatePercent}
+            taxBaseMode={project.taxBaseMode}
+            onUpdateFinanceSettings={props.onUpdateFinanceSettings}
+          />
+
           <ProjectCardAdvancesPanel
             advances={project.advances}
             onAddAdvance={props.onAddAdvance}

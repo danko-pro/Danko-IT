@@ -3,9 +3,9 @@
  * coordinator-hook не смешивал загрузку, React state и прямые project mutations.
  */
 import type { Dispatch, SetStateAction } from "react";
-import { buildProjectPassportPatchPayload } from "../api/project-payloads";
+import { buildProjectFinanceSettingsPatchPayload, buildProjectPassportPatchPayload } from "../api/project-payloads";
 import { createProject, deleteProjectRequest, updateProject } from "../api/project-client";
-import type { DashboardProjectCardData } from "../model/project-model";
+import type { DashboardProjectCardData, ProjectFinanceSettings } from "../model/project-model";
 import {
   appendCreatedProject,
   removeProjectFromState,
@@ -16,6 +16,7 @@ import { mergeProjectSummary } from "./project-state-merge";
 type SetProjects = Dispatch<SetStateAction<DashboardProjectCardData[]>>;
 type SetSelectedProjectId = Dispatch<SetStateAction<string | null>>;
 type SetError = Dispatch<SetStateAction<string | null>>;
+type LoadProjectDetail = (projectId: string) => Promise<void>;
 
 export type ProjectPassportPatch = Pick<
   DashboardProjectCardData,
@@ -106,6 +107,29 @@ export async function updateDashboardProjectPlannedMargin(params: {
   } catch (updateError) {
     params.setError(
       updateError instanceof Error ? updateError.message : "Не удалось сохранить плановую маржу объекта",
+    );
+    throw updateError;
+  }
+}
+
+export async function updateDashboardProjectFinanceSettings(params: {
+  projectId: string;
+  settings: ProjectFinanceSettings;
+  loadProjectDetail: LoadProjectDetail;
+  setProjects: SetProjects;
+  setError: SetError;
+}) {
+  try {
+    const updatedRecord = await updateProject(
+      params.projectId,
+      buildProjectFinanceSettingsPatchPayload(params.settings),
+    );
+    params.setProjects((current) => mergeProjectSummary(current, params.projectId, updatedRecord));
+    params.setError(null);
+    await params.loadProjectDetail(params.projectId);
+  } catch (updateError) {
+    params.setError(
+      updateError instanceof Error ? updateError.message : "Не удалось сохранить финансовые настройки объекта",
     );
     throw updateError;
   }

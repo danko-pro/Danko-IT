@@ -190,6 +190,8 @@ docs/DASH_OBJECT_CARD_CHECKPOINT_1A.md
 - показать `planned_margin_percent` как маржу;
 - сохранить разделение налога и маржи.
 
+Перед этим выполнен audit `DASH-FINANCE-5A`: `docs/DASH_FINANCE_SETTINGS_UI_AUDIT.md`. Он подтверждает, что настройки `tax_rate_percent`, `tax_base_mode` и `planned_margin_percent` должны подключаться только во вкладке **Финансы**, а **Карточка объекта** продолжает показывать готовый backend `finance_summary`.
+
 ## Этапы
 
 `DASH-OBJECT-CARD-0`: документационный checkpoint, runtime не меняем.

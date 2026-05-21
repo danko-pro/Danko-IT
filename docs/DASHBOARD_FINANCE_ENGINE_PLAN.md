@@ -188,6 +188,8 @@ received_total - paid_expense_total - planned_expense_total - committed_unpaid_t
 
 `DASH-FINANCE-4B`: добавить persisted tax settings в `projects`: `tax_rate_percent` и `tax_base_mode`. `finance_summary` использует сохраненную налоговую ставку, а `planned_margin_percent` остается отдельной плановой маржой.
 
+`DASH-FINANCE-5A`: выполнить audit вкладки **Финансы** перед runtime UI implementation. Зафиксировано, что settings UI должен жить во вкладке **Финансы**, `planned_margin_percent` остается маржей, `tax_rate_percent` остается налоговой ставкой, а после изменения settings frontend должен обновлять active project detail и получать новый backend `finance_summary`. Checkpoint: `docs/DASH_FINANCE_CHECKPOINT_5A.md`, audit: `docs/DASH_FINANCE_SETTINGS_UI_AUDIT.md`.
+
 `DASH-FINANCE-5`: только после стабилизации движка идти в UI.
 
 ## Ограничения

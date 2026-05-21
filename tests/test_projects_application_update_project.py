@@ -60,6 +60,32 @@ class UpdateProjectUseCaseTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result["address"], "New address")
         self.assertEqual(set(result), set(_expected_project_payload_keys()))
 
+    async def test_updates_tax_settings_without_using_planned_margin(self) -> None:
+        storage = FakeProjectUpdateStorage(
+            current_project=_project_row(id=10, planned_margin_percent=30),
+            updated_project=_project_row(
+                id=10,
+                planned_margin_percent=30,
+                tax_rate_percent=6,
+                tax_base_mode="received_total",
+            ),
+        )
+
+        result = await UpdateProjectUseCase(storage).execute(
+            UpdateProjectCommand(
+                project_id=10,
+                payload_data={"tax_rate_percent": 6, "tax_base_mode": "received_total"},
+            )
+        )
+
+        self.assertEqual(
+            storage.updates,
+            {"tax_rate_percent": 6.0, "tax_base_mode": "received_total"},
+        )
+        self.assertEqual(result["tax_rate_percent"], 6.0)
+        self.assertEqual(result["tax_base_mode"], "received_total")
+        self.assertEqual(result["planned_margin_percent"], 30.0)
+
     async def test_empty_patch_returns_current_project_without_update(self) -> None:
         storage = FakeProjectUpdateStorage(current_project=_project_row(id=10, name="Current"))
 
@@ -155,6 +181,8 @@ def _expected_project_payload_keys() -> dict[str, object]:
         "work_per_m2": None,
         "materials_per_m2": None,
         "planned_margin_percent": None,
+        "tax_rate_percent": None,
+        "tax_base_mode": None,
         "next_delivery_label": None,
         "created_at": None,
         "updated_at": None,

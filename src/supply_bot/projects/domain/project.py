@@ -12,6 +12,8 @@ from typing import Any, Mapping
 
 from supply_bot.projects.domain.common import (
     ALLOWED_PROJECT_ADVANCE_STATUSES,
+    ALLOWED_PROJECT_TAX_BASE_MODES,
+    DEFAULT_PROJECT_TAX_BASE_MODE,
     DEFAULT_PROJECT_ESTIMATE_SOURCE,
     ProjectValidationError,
     normalize_project_date,
@@ -30,6 +32,13 @@ def normalize_project_advance_status(value: str | None) -> str:
     if normalized in ALLOWED_PROJECT_ADVANCE_STATUSES:
         return normalized
     return "paid"
+
+
+def normalize_project_tax_base_mode(value: str | None) -> str:
+    normalized = (value or "").strip().lower()
+    if normalized in ALLOWED_PROJECT_TAX_BASE_MODES:
+        return normalized
+    return DEFAULT_PROJECT_TAX_BASE_MODE
 
 
 def build_project_create_values(
@@ -66,6 +75,12 @@ def build_project_create_values(
         "work_per_m2": validate_project_metric(payload.work_per_m2, field="Work per m2") or 0.0,
         "materials_per_m2": validate_project_metric(payload.materials_per_m2, field="Materials per m2") or 0.0,
         "planned_margin_percent": float(payload.planned_margin_percent or 0),
+        "tax_rate_percent": validate_project_metric(
+            getattr(payload, "tax_rate_percent", None) or 0,
+            field="Tax rate",
+        )
+        or 0.0,
+        "tax_base_mode": normalize_project_tax_base_mode(getattr(payload, "tax_base_mode", None)),
         "next_delivery_label": normalize_project_text(payload.next_delivery_label),
     }
 
@@ -138,6 +153,10 @@ def build_project_update_values(payload_data: Mapping[str, Any]) -> dict[str, An
         )
     if "planned_margin_percent" in payload_data:
         updates["planned_margin_percent"] = float(payload_data["planned_margin_percent"] or 0)
+    if "tax_rate_percent" in payload_data:
+        updates["tax_rate_percent"] = validate_project_metric(payload_data["tax_rate_percent"] or 0, field="Tax rate")
+    if "tax_base_mode" in payload_data:
+        updates["tax_base_mode"] = normalize_project_tax_base_mode(payload_data["tax_base_mode"])
     if "next_delivery_label" in payload_data:
         updates["next_delivery_label"] = normalize_project_text(payload_data["next_delivery_label"])
     return updates
@@ -178,6 +197,10 @@ def build_project_payload(project: Mapping[str, Any]) -> dict[str, Any]:
         "work_per_m2": float(project["work_per_m2"] or 0),
         "materials_per_m2": float(project["materials_per_m2"] or 0),
         "planned_margin_percent": float(project["planned_margin_percent"] or 0),
+        "tax_rate_percent": float(project.get("tax_rate_percent") or 0),
+        "tax_base_mode": normalize_project_tax_base_mode(
+            str(project.get("tax_base_mode") or DEFAULT_PROJECT_TAX_BASE_MODE)
+        ),
         "next_delivery_label": str(project["next_delivery_label"] or ""),
         "created_at": str(project["created_at"]),
         "updated_at": str(project["updated_at"]),

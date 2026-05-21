@@ -40,6 +40,8 @@ SELECT
     p.work_per_m2,
     p.materials_per_m2,
     p.planned_margin_percent,
+    p.tax_rate_percent,
+    p.tax_base_mode,
     p.next_delivery_label,
     p.created_at,
     p.updated_at
@@ -98,6 +100,8 @@ class ProjectRecordsStorageMixin:
         materials_per_m2: float,
         planned_margin_percent: float,
         next_delivery_label: str,
+        tax_rate_percent: float = 0.0,
+        tax_base_mode: str = "received_total",
     ) -> int:
         async with self.connection() as db:
             cursor = await db.execute(
@@ -130,9 +134,11 @@ class ProjectRecordsStorageMixin:
                     work_per_m2,
                     materials_per_m2,
                     planned_margin_percent,
+                    tax_rate_percent,
+                    tax_base_mode,
                     next_delivery_label
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     code,
@@ -162,6 +168,8 @@ class ProjectRecordsStorageMixin:
                     work_per_m2,
                     materials_per_m2,
                     planned_margin_percent,
+                    tax_rate_percent,
+                    tax_base_mode,
                     next_delivery_label,
                 ),
             )

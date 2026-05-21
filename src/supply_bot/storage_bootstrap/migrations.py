@@ -90,6 +90,8 @@ async def apply_storage_migrations(connection_factory: ConnectionFactory) -> Non
             ("responsible_person", "TEXT NOT NULL DEFAULT ''"),
             ("comment", "TEXT NOT NULL DEFAULT ''"),
             ("ceiling_height_m", "REAL NOT NULL DEFAULT 0"),
+            ("tax_rate_percent", "REAL NOT NULL DEFAULT 0"),
+            ("tax_base_mode", "TEXT NOT NULL DEFAULT 'received_total'"),
         ):
             await _ensure_column(
                 db,

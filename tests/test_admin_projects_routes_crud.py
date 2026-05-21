@@ -54,6 +54,8 @@ class AdminProjectsCrudRouteTests(AdminProjectsRouteCase):
                         "remaining_total": 908094.16,
                         "planned_total": 163000,
                         "actual_total": 1538609.84,
+                        "tax_rate_percent": 6,
+                        "tax_base_mode": "received_total",
                     },
                 )
                 self.assertEqual(create_response.status_code, 200)
@@ -67,6 +69,9 @@ class AdminProjectsCrudRouteTests(AdminProjectsRouteCase):
                 self.assertEqual(project["code"], "ИБ / 22")
                 self.assertEqual(project["stage_tone"], "active")
                 self.assertEqual(project["estimate_source"], "Калькулятор + ручной учет")
+
+                self.assertEqual(project["tax_rate_percent"], 6.0)
+                self.assertEqual(project["tax_base_mode"], "received_total")
 
                 list_response = client.get("/api/projects")
                 self.assertEqual(list_response.status_code, 200)
@@ -87,6 +92,8 @@ class AdminProjectsCrudRouteTests(AdminProjectsRouteCase):
                         "stage_label": "Черновик",
                         "stage_tone": "warn",
                         "remaining_total": 700000,
+                        "tax_rate_percent": 7,
+                        "tax_base_mode": "received_total",
                         "next_delivery_label": "20.04",
                     },
                 )
@@ -101,6 +108,8 @@ class AdminProjectsCrudRouteTests(AdminProjectsRouteCase):
                 self.assertEqual(updated["name"], "Объект ИБ, этап 2")
                 self.assertEqual(updated["stage_tone"], "warn")
                 self.assertEqual(updated["remaining_total"], 700000.0)
+                self.assertEqual(updated["tax_rate_percent"], 7.0)
+                self.assertEqual(updated["tax_base_mode"], "received_total")
                 self.assertEqual(updated["next_delivery_label"], "20.04")
 
                 detail_response = client.get(f"/api/projects/{project_id}")
@@ -108,9 +117,12 @@ class AdminProjectsCrudRouteTests(AdminProjectsRouteCase):
                 detail_payload = detail_response.json()
                 self.assertEqual(detail_payload["id"], project_id)
                 self.assertEqual(detail_payload["remaining_total"], 700000.0)
+                self.assertEqual(detail_payload["tax_rate_percent"], 7.0)
+                self.assertEqual(detail_payload["tax_base_mode"], "received_total")
                 self.assertIn("finance_summary", detail_payload)
-                self.assertEqual(detail_payload["finance_summary"]["tax_rate_percent"], 0.0)
+                self.assertEqual(detail_payload["finance_summary"]["tax_rate_percent"], 7.0)
                 self.assertEqual(detail_payload["finance_summary"]["tax_base"], detail_payload["received_total"])
+                self.assertAlmostEqual(detail_payload["finance_summary"]["tax_reserve_total"], 171269.28)
 
                 delete_response = client.delete(f"/api/projects/{project_id}")
                 self.assertEqual(delete_response.status_code, 200)

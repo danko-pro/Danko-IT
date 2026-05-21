@@ -49,6 +49,8 @@ _PROJECT_SELECT_COLUMNS = (
     projects.c.work_per_m2,
     projects.c.materials_per_m2,
     projects.c.planned_margin_percent,
+    projects.c.tax_rate_percent,
+    projects.c.tax_base_mode,
     projects.c.next_delivery_label,
     projects.c.created_at,
     projects.c.updated_at,

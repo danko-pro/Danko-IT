@@ -37,6 +37,8 @@ projects = Table(
     Column("work_per_m2", Float, nullable=False, server_default=text("0")),
     Column("materials_per_m2", Float, nullable=False, server_default=text("0")),
     Column("planned_margin_percent", Float, nullable=False, server_default=text("0")),
+    Column("tax_rate_percent", Float, nullable=False, server_default=text("0")),
+    Column("tax_base_mode", Text, nullable=False, server_default=text("'received_total'")),
     Column("next_delivery_label", Text, nullable=False, server_default=text("''")),
     Column("created_at", Text, nullable=False, server_default=text("CURRENT_TIMESTAMP")),
     Column("updated_at", Text, nullable=False, server_default=text("CURRENT_TIMESTAMP")),

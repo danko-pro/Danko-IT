@@ -3,7 +3,12 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Mapping
 
-TAX_BASE_MODE_RECEIVED_TOTAL = "received_total"
+from supply_bot.projects.domain.common import (
+    ALLOWED_PROJECT_TAX_BASE_MODES,
+    DEFAULT_PROJECT_TAX_BASE_MODE,
+)
+
+TAX_BASE_MODE_RECEIVED_TOTAL = DEFAULT_PROJECT_TAX_BASE_MODE
 
 
 @dataclass(frozen=True)
@@ -25,11 +30,13 @@ def _safe_amount(value: Any) -> float:
 
 
 def build_project_tax_runtime_config(project: Mapping[str, Any]) -> ProjectTaxRuntimeConfig:
-    # DASH-FINANCE-4 keeps tax runtime separate from planned margin.
-    # The real persisted tax rate requires a later schema/config step.
+    # planned_margin_percent is a margin field, not a tax setting.
+    tax_base_mode = str(project.get("tax_base_mode") or DEFAULT_PROJECT_TAX_BASE_MODE).strip().lower()
+    if tax_base_mode not in ALLOWED_PROJECT_TAX_BASE_MODES:
+        tax_base_mode = DEFAULT_PROJECT_TAX_BASE_MODE
     return ProjectTaxRuntimeConfig(
-        tax_rate_percent=0.0,
-        tax_base_mode=TAX_BASE_MODE_RECEIVED_TOTAL,
+        tax_rate_percent=_safe_amount(project.get("tax_rate_percent")),
+        tax_base_mode=tax_base_mode,
     )
 
 

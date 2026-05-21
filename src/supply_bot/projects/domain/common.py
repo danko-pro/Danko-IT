@@ -21,6 +21,8 @@ ALLOWED_PROJECT_LEDGER_STATUSES = {"planned", "invoice", "waiting-payment", "pai
 ALLOWED_PROJECT_CONTRACT_EXTRACTION_STATUSES = {"review", "verified"}
 ALLOWED_PROJECT_CONTRACT_MILESTONE_KINDS = {"invoice", "payment", "deadline"}
 ALLOWED_PROJECT_CONTRACT_MILESTONE_STATUSES = {"upcoming", "due", "completed"}
+DEFAULT_PROJECT_TAX_BASE_MODE = "received_total"
+ALLOWED_PROJECT_TAX_BASE_MODES = {DEFAULT_PROJECT_TAX_BASE_MODE}
 
 
 # Базовая ошибка валидации для доменного слоя проектов.

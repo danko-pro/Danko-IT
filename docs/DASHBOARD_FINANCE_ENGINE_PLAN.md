@@ -186,6 +186,8 @@ received_total - paid_expense_total - planned_expense_total - committed_unpaid_t
 - `tax_reserve_total`;
 - `net_available`.
 
+`DASH-FINANCE-4B`: добавить persisted tax settings в `projects`: `tax_rate_percent` и `tax_base_mode`. `finance_summary` использует сохраненную налоговую ставку, а `planned_margin_percent` остается отдельной плановой маржой.
+
 `DASH-FINANCE-5`: только после стабилизации движка идти в UI.
 
 ## Ограничения

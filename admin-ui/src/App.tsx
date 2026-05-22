@@ -1,114 +1,22 @@
-import type { ScreenKey } from "./shared/types";
-import { AdminAuthScreen } from "./features/auth/screen";
-import { useAdminAppController } from "./shell/controller";
-import { navigation, screenTitles, type NavigationScreenKey } from "./shell/navigation";
-import { AppScreenRouter, preloadAppScreen } from "./shell/screen-router";
-import { AppShellFooter } from "./shell/footer";
-import { AppShellHeader } from "./shell/header";
-import { AppShellSidebar } from "./shell/sidebar";
+import { Suspense, lazy } from "react";
+import { PublicLanding } from "./features/public/PublicLanding";
 
-function isNavigationScreen(screen: ScreenKey): screen is NavigationScreenKey {
-  return navigation.some((item) => item.key === screen);
+const AdminApp = lazy(() => import("./AdminApp"));
+
+function isPublicRoot(pathname: string) {
+  return pathname === "/";
 }
 
 export default function App() {
-  const controller = useAdminAppController();
-  const requiresLogin = controller.authSession?.auth_enabled && !controller.authSession.authenticated;
-  const showAuthGate = !controller.authLoading && (!controller.authSession || requiresLogin);
+  const pathname = window.location.pathname;
 
-  const { screen, summary, successMessage, setSuccessMessage, loadOverview, loadCalculatorProjects } = controller;
-  const isEditorScreen = screen === "editor";
-
-  const currentNavigationItem =
-    isNavigationScreen(screen) ? navigation.find((item) => item.key === screen) ?? navigation[0] : null;
-  const currentScreenTitle = currentNavigationItem ? screenTitles[currentNavigationItem.key] : "";
-
-  function handleScreenSelect(nextScreen: NavigationScreenKey) {
-    if (nextScreen === screen) {
-      return;
-    }
-
-    void preloadAppScreen(nextScreen);
-    controller.setScreen(nextScreen);
-    setSuccessMessage(null);
-
-    if (nextScreen === "calculator") {
-      if (!controller.calculatorProjects.length && !controller.calculatorLoading) {
-        void loadCalculatorProjects();
-      }
-      return;
-    }
-
-    if (nextScreen === "dashboard" && !controller.loading) {
-      void loadOverview();
-    }
+  if (isPublicRoot(pathname)) {
+    return <PublicLanding />;
   }
 
   return (
-    <div className="relative min-h-screen overflow-hidden px-3 py-3 text-slate-100 md:px-4 lg:px-5">
-      <div className="pointer-events-none absolute inset-0 opacity-90">
-        <div className="absolute left-[-12%] top-[-10%] h-[28rem] w-[28rem] rounded-full bg-cyan-400/8 blur-[140px]" />
-        <div className="absolute bottom-[-14%] right-[-10%] h-[24rem] w-[24rem] rounded-full bg-teal-300/7 blur-[120px]" />
-        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-200/20 to-transparent" />
-      </div>
-
-      <div className="relative z-10 mx-auto flex min-h-[calc(100vh-1.5rem)] max-w-[1680px] flex-col gap-4">
-        {controller.authLoading ? (
-          <div className="glass-panel flex min-h-[calc(100vh-8rem)] items-center justify-center">
-            <div className="space-y-2 text-center">
-              <div className="eyebrow">Сессия доступа</div>
-              <div className="text-lg font-semibold text-slate-100">Проверка доступа...</div>
-            </div>
-          </div>
-        ) : showAuthGate ? (
-          <AdminAuthScreen
-            loading={controller.authPending}
-            error={controller.authError}
-            onLogin={controller.handleLogin}
-            onRegister={controller.handleRegister}
-          />
-        ) : (
-          <div className="grid flex-1 grid-cols-1 gap-4 lg:grid-cols-[272px_minmax(0,1fr)]">
-            <AppShellSidebar
-              screen={screen}
-              calculatorProjects={controller.calculatorProjects}
-              selectedCalculatorProjectId={controller.selectedCalculatorProjectId}
-              calculatorLoading={controller.calculatorLoading}
-              onScreenSelect={handleScreenSelect}
-              onSelectCalculatorProject={controller.setSelectedCalculatorProjectId}
-              onClearSuccessMessage={() => setSuccessMessage(null)}
-              onQuickCreateCalculatorProject={() => void controller.handleQuickCreateCalculatorProject()}
-            />
-
-            <main className="app-shell-main">
-              <div className="app-shell-screen-stage" data-screen={screen}>
-                {!isEditorScreen && currentNavigationItem ? (
-                  <div className="app-shell-screen-head">
-                    <AppShellHeader
-                      screen={screen}
-                      eyebrow={currentNavigationItem.label}
-                      title={currentScreenTitle}
-                      unknownTermsCount={summary?.new_unknown_terms_count}
-                      successMessage={successMessage}
-                    />
-                  </div>
-                ) : null}
-
-                <div className={isEditorScreen ? "app-shell-screen-body app-shell-screen-body-editor" : "app-shell-screen-body"}>
-                  <AppScreenRouter controller={controller} />
-                </div>
-              </div>
-            </main>
-          </div>
-        )}
-
-        <AppShellFooter
-          loading={controller.loading}
-          authSession={controller.authSession}
-          authPending={controller.authPending}
-          onLogout={controller.handleLogout}
-        />
-      </div>
-    </div>
+    <Suspense fallback={<div className="public-admin-loading" aria-hidden="true" />}>
+      <AdminApp />
+    </Suspense>
   );
 }

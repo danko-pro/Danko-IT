@@ -7,18 +7,12 @@ export function AdminAuthScreen(props: {
   onLogin: (email: string, password: string) => Promise<void>;
   onRegister: (displayName: string, email: string, password: string) => Promise<void>;
 }) {
-  const [mode, setMode] = useState<"login" | "register">("login");
-  const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (mode === "register") {
-      await props.onRegister(displayName, email, password);
-    } else {
-      await props.onLogin(email, password);
-    }
+    await props.onLogin(email, password);
     setPassword("");
   }
 
@@ -28,51 +22,11 @@ export function AdminAuthScreen(props: {
     <div className="flex min-h-[calc(100vh-1.5rem)] items-center justify-center">
       <div className="glass-panel w-full max-w-[460px] px-6 py-6">
         <div className="space-y-2">
-          <div className="eyebrow">Доступ Danko</div>
-          <h1 className="text-[2rem] font-semibold tracking-[-0.04em] text-slate-50">
-            {mode === "register" ? "Регистрация" : "Вход в Danko IT"}
-          </h1>
-          <p className="text-sm leading-6 text-slate-400">
-            После входа каждый пользователь получает свое отдельное рабочее пространство.
-          </p>
-        </div>
-
-        <div className="mt-5 grid grid-cols-2 gap-2 rounded-[18px] border border-white/10 bg-white/[0.03] p-1">
-          <button
-            type="button"
-            className={`rounded-[14px] px-3 py-2 text-sm font-semibold ${
-              mode === "login" ? "bg-cyan-300 text-slate-950" : "text-slate-300"
-            }`}
-            onClick={() => setMode("login")}
-          >
-            Вход
-          </button>
-          <button
-            type="button"
-            className={`rounded-[14px] px-3 py-2 text-sm font-semibold ${
-              mode === "register" ? "bg-cyan-300 text-slate-950" : "text-slate-300"
-            }`}
-            onClick={() => setMode("register")}
-          >
-            Регистрация
-          </button>
+          <div className="eyebrow">Вход для команды</div>
+          <h1 className="text-[2rem] font-semibold tracking-[-0.04em] text-slate-50">Вход в Danko IT</h1>
         </div>
 
         <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
-          {mode === "register" ? (
-            <label className="block">
-              <div className="field-label">Имя</div>
-              <input
-                type="text"
-                className="text-input"
-                value={displayName}
-                onChange={(event) => setDisplayName(event.target.value)}
-                autoComplete="name"
-                placeholder="Как к вам обращаться"
-              />
-            </label>
-          ) : null}
-
           <label className="block">
             <div className="field-label">Электронная почта</div>
             <input
@@ -92,7 +46,7 @@ export function AdminAuthScreen(props: {
               className="text-input"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
-              autoComplete={mode === "register" ? "new-password" : "current-password"}
+              autoComplete="current-password"
               placeholder="Введите пароль"
             />
           </label>
@@ -106,7 +60,7 @@ export function AdminAuthScreen(props: {
           <div className="flex items-center justify-between gap-3 pt-1">
             <div className="text-xs uppercase tracking-[0.18em] text-slate-500">Защищённая сессия</div>
             <Button type="submit" className="min-w-[10.5rem]" disabled={!canSubmit}>
-              {props.loading ? "Обработка..." : mode === "register" ? "Создать" : "Войти"}
+              {props.loading ? "Обработка..." : "Войти"}
             </Button>
           </div>
         </form>

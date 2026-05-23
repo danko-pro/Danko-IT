@@ -1386,7 +1386,7 @@
 
 .public-process {
   --public-process-ease: cubic-bezier(0.22, 1, 0.36, 1);
-  --public-process-motion: 360ms;
+  --public-process-motion: 460ms;
 
   scroll-margin-top: 104px;
   padding: 0.2rem 0 7rem;
@@ -1548,19 +1548,7 @@
   font-weight: 880;
   letter-spacing: 0;
   box-shadow: 0 12px 26px rgba(30, 81, 74, 0.08);
-  transition:
-    background-color var(--public-process-motion) var(--public-process-ease),
-    border-color var(--public-process-motion) var(--public-process-ease),
-    box-shadow var(--public-process-motion) var(--public-process-ease),
-    color var(--public-process-motion) var(--public-process-ease);
-}
-
-.public-process-step:hover .public-process-step-number,
-.public-process-step:focus-visible .public-process-step-number {
-  border-color: rgba(30, 81, 74, 0.3);
-  background: var(--public-green-deep);
-  color: #ffffff;
-  box-shadow: 0 14px 30px rgba(30, 81, 74, 0.18);
+  transition: none;
 }
 
 .public-process-step-active .public-process-step-number {
@@ -1568,6 +1556,11 @@
   background: var(--public-green-soft);
   color: var(--public-green-deep);
   box-shadow: 0 12px 28px rgba(30, 81, 74, 0.14);
+  transition:
+    background-color var(--public-process-motion) var(--public-process-ease),
+    border-color var(--public-process-motion) var(--public-process-ease),
+    box-shadow var(--public-process-motion) var(--public-process-ease),
+    color var(--public-process-motion) var(--public-process-ease);
 }
 
 .public-process-step-active:hover .public-process-step-number,

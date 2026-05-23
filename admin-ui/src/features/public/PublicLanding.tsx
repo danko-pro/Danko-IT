@@ -180,6 +180,8 @@ const publicProcessCards = [
   },
 ];
 
+const PROCESS_STEP_SWITCH_DELAY_MS = 260;
+
 const publicProcessSteps = [
   {
     title: "Заявка и вводные",
@@ -281,30 +283,53 @@ export function PublicLanding() {
     }
 
     let animationFrameId: number | null = null;
+    let processSwitchTimerId: number | null = null;
+    let queuedProcessIndex = activeProcessIndexRef.current;
     lastProcessScrollYRef.current = window.scrollY;
+
+    const commitQueuedProcessIndex = () => {
+      processSwitchTimerId = null;
+
+      const currentIndex = activeProcessIndexRef.current;
+      if (queuedProcessIndex === currentIndex) {
+        return;
+      }
+
+      const nextIndex = queuedProcessIndex > currentIndex ? currentIndex + 1 : currentIndex - 1;
+      activeProcessIndexRef.current = nextIndex;
+      setActiveProcessIndex(nextIndex);
+
+      if (nextIndex !== queuedProcessIndex) {
+        processSwitchTimerId = window.setTimeout(commitQueuedProcessIndex, PROCESS_STEP_SWITCH_DELAY_MS);
+      }
+    };
 
     const applyGuardedProcessIndex = (targetIndex: number) => {
       const currentIndex = activeProcessIndexRef.current;
+      const safeTargetIndex = Math.max(0, Math.min(publicProcessSteps.length - 1, targetIndex));
       const currentScrollY = window.scrollY;
       const scrollDelta = currentScrollY - lastProcessScrollYRef.current;
       lastProcessScrollYRef.current = currentScrollY;
 
-      if (targetIndex === currentIndex) {
+      if (safeTargetIndex === currentIndex) {
+        queuedProcessIndex = currentIndex;
         return false;
       }
 
       const direction =
-        scrollDelta > 1 ? 1 : scrollDelta < -1 ? -1 : targetIndex > currentIndex ? 1 : -1;
+        scrollDelta > 1 ? 1 : scrollDelta < -1 ? -1 : safeTargetIndex > currentIndex ? 1 : -1;
 
-      if ((targetIndex > currentIndex && direction < 0) || (targetIndex < currentIndex && direction > 0)) {
+      if ((safeTargetIndex > currentIndex && direction < 0) || (safeTargetIndex < currentIndex && direction > 0)) {
         return false;
       }
 
-      const nextIndex = targetIndex > currentIndex ? currentIndex + 1 : currentIndex - 1;
-      activeProcessIndexRef.current = nextIndex;
-      setActiveProcessIndex(nextIndex);
+      queuedProcessIndex = safeTargetIndex;
 
-      return nextIndex !== targetIndex;
+      if (processSwitchTimerId === null) {
+        processSwitchTimerId = window.setTimeout(commitQueuedProcessIndex, PROCESS_STEP_SWITCH_DELAY_MS);
+      }
+
+      return false;
     };
 
     const updateActiveProcessStep = () => {
@@ -386,6 +411,10 @@ export function PublicLanding() {
 
       if (animationFrameId !== null) {
         window.cancelAnimationFrame(animationFrameId);
+      }
+
+      if (processSwitchTimerId !== null) {
+        window.clearTimeout(processSwitchTimerId);
       }
     };
   }, []);

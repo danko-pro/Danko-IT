@@ -21,6 +21,39 @@ const publicObjectSteps = [
   { label: "Потолки", status: "следующий этап", state: "next" },
 ];
 
+const publicServiceItems = [
+  {
+    title: "Дизайн-решение",
+    description:
+      "Помогаем собрать понятную концепцию ремонта: планировка, материалы, цвета, сценарии освещения и общая логика пространства.",
+  },
+  {
+    title: "Отделочные работы",
+    description:
+      "Выполняем черновую и чистовую отделку квартир и апартаментов под ключ, с контролем этапов и качества.",
+  },
+  {
+    title: "Комплектация",
+    description:
+      "Подбираем, закупаем и доставляем материалы на объект. Снимаем с клиента хаос поставок и постоянных дозакупок.",
+  },
+  {
+    title: "Мебель и техника",
+    description:
+      "Комплектуем объект кухней, шкафами, техникой и базовыми позициями, если ремонт должен быть готов к проживанию или сдаче.",
+  },
+  {
+    title: "Ведение объекта",
+    description:
+      "Организуем работы, график, мастеров, поставки и контроль исполнения. Клиент видит процесс, а не тушит пожары.",
+  },
+  {
+    title: "Детальный расчёт",
+    description:
+      "Формируем структуру стоимости по работам, материалам и комплектации. В дальнейшем расчёт можно будет попробовать прямо на сайте.",
+  },
+];
+
 export function PublicLanding() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
@@ -128,6 +161,26 @@ export function PublicLanding() {
               ))}
             </ol>
           </aside>
+        </section>
+
+        <section className="public-services" id="services" aria-labelledby="public-services-title">
+          <div className="public-section-heading">
+            <p className="public-section-kicker">Услуги</p>
+            <h2 id="public-services-title">Что берём на себя</h2>
+            <p>
+              Закрываем ремонт как единый процесс: от идеи и расчёта до отделки, комплектации и
+              сдачи объекта.
+            </p>
+          </div>
+
+          <div className="public-services-grid">
+            {publicServiceItems.map((service) => (
+              <article className="public-service-card" key={service.title}>
+                <h3>{service.title}</h3>
+                <p>{service.description}</p>
+              </article>
+            ))}
+          </div>
         </section>
       </main>
     </div>

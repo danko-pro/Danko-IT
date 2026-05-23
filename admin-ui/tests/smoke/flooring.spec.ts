@@ -135,7 +135,7 @@ test("opens calculator flooring stage with seeded zoned estimate", async ({ page
   });
 
   await page.addInitScript(() => window.sessionStorage.clear());
-  await page.goto("/");
+  await page.goto("/app");
   await expect(page.locator('[data-screen="dashboard"]')).toBeVisible();
   await page.getByTestId("nav-calculator").click();
   await expect(page.locator('[data-screen="calculator"]')).toBeVisible();

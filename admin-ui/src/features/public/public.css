@@ -468,24 +468,41 @@
   line-height: 1.62;
 }
 
-.public-services-grid {
+.public-services-explorer {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.9rem;
+  grid-template-columns: minmax(280px, 0.78fr) minmax(0, 1.22fr);
+  align-items: start;
+  gap: 1rem;
   margin-top: 2rem;
 }
 
-.public-service-card {
-  position: relative;
+.public-services-tabs {
   display: grid;
-  align-content: start;
-  gap: 0.8rem;
-  min-width: 0;
-  min-height: 214px;
-  padding: 1.25rem;
+  gap: 0.55rem;
+}
+
+.public-service-tab,
+.public-service-accordion-button {
+  width: 100%;
   border: 1px solid rgba(30, 81, 74, 0.13);
-  border-radius: 22px;
-  background: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.68);
+  color: #172d28;
+  cursor: pointer;
+  text-align: left;
+  transition:
+    border-color var(--public-motion-smooth) var(--ui-motion-ease-soft),
+    background-color var(--public-motion-smooth) var(--ui-motion-ease-soft),
+    color var(--public-motion-smooth) var(--ui-motion-ease-soft),
+    transform var(--public-motion-smooth) var(--ui-motion-ease-soft);
+}
+
+.public-service-tab {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.85rem;
+  min-width: 0;
+  padding: 0.95rem;
+  border-radius: 20px;
 }
 
 .public-service-number {
@@ -498,27 +515,150 @@
   line-height: 1;
 }
 
-.public-service-card h3 {
-  margin: 0;
-  color: #172d28;
-  font-size: 1.05rem;
+.public-service-tab-copy {
+  display: grid;
+  gap: 0.28rem;
+  min-width: 0;
+}
+
+.public-service-tab-title {
+  font-size: 0.96rem;
   font-weight: 820;
-  letter-spacing: 0;
   line-height: 1.18;
 }
 
-.public-service-card p {
+.public-service-tab-description {
+  color: #64736f;
+  font-size: 0.82rem;
+  font-weight: 550;
+  line-height: 1.36;
+}
+
+.public-service-tab:hover,
+.public-service-accordion-button:hover {
+  border-color: rgba(30, 81, 74, 0.26);
+  background: rgba(255, 255, 255, 0.9);
+  transform: translateY(-1px);
+}
+
+.public-service-tab:focus-visible,
+.public-service-accordion-button:focus-visible {
+  outline: 3px solid rgba(30, 81, 74, 0.25);
+  outline-offset: 3px;
+}
+
+.public-service-tab-active,
+.public-service-tab-active:hover,
+.public-service-accordion-button-active,
+.public-service-accordion-button-active:hover {
+  border-color: var(--public-green);
+  background: var(--public-green);
+  color: #ffffff;
+}
+
+.public-service-tab-active .public-service-number,
+.public-service-tab-active .public-service-tab-description,
+.public-service-accordion-button-active .public-service-number {
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.public-service-detail {
+  min-width: 0;
+  min-height: 100%;
+  padding: 1.35rem;
+  border: 1px solid rgba(30, 81, 74, 0.14);
+  border-radius: 26px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(246, 250, 248, 0.9)),
+    #ffffff;
+}
+
+.public-service-detail-header {
+  display: grid;
+  gap: 0.72rem;
+  max-width: 620px;
+}
+
+.public-service-detail h3 {
+  margin: 0;
+  color: #172d28;
+  font-size: 1.55rem;
+  font-weight: 850;
+  letter-spacing: 0;
+  line-height: 1.08;
+}
+
+.public-service-detail p {
   margin: 0;
   color: #51635f;
-  font-size: 0.92rem;
+  font-size: 0.98rem;
   font-weight: 500;
   line-height: 1.56;
 }
 
-@media (max-width: 1080px) {
-  .public-services-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
+.public-service-detail-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 0.82fr);
+  gap: 0.85rem;
+  margin-top: 1.25rem;
+}
+
+.public-service-detail-body > div {
+  min-width: 0;
+  padding: 1rem;
+  border: 1px solid rgba(30, 81, 74, 0.1);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.public-service-detail h4,
+.public-service-accordion-panel h4 {
+  margin: 0;
+  color: var(--public-green-deep);
+  font-size: 0.78rem;
+  font-weight: 850;
+  letter-spacing: 0;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.public-service-detail ul,
+.public-service-accordion-panel ul {
+  display: grid;
+  gap: 0.55rem;
+  margin: 0.8rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.public-service-detail li,
+.public-service-accordion-panel li {
+  position: relative;
+  padding-left: 1rem;
+  color: #40544f;
+  font-size: 0.92rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.public-service-detail li::before,
+.public-service-accordion-panel li::before {
+  position: absolute;
+  top: 0.55em;
+  left: 0;
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--public-green);
+  content: "";
+}
+
+.public-service-result p {
+  margin-top: 0.8rem;
+}
+
+.public-services-accordion {
+  display: none;
 }
 
 @media (max-width: 860px) {
@@ -654,12 +794,55 @@
     padding: 0.4rem 0 5rem;
   }
 
-  .public-services-grid {
-    gap: 0.78rem;
+  .public-services-explorer {
+    display: none;
   }
 
-  .public-service-card {
-    min-height: 0;
+  .public-services-accordion {
+    display: grid;
+    gap: 0.7rem;
+    margin-top: 1.6rem;
+  }
+
+  .public-service-accordion-item {
+    min-width: 0;
+  }
+
+  .public-service-accordion-button {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: 0.75rem;
+    min-height: 54px;
+    padding: 0.9rem 1rem;
+    border-radius: 18px;
+    font-size: 0.98rem;
+    font-weight: 820;
+    line-height: 1.18;
+  }
+
+  .public-service-accordion-panel {
+    margin-top: 0.5rem;
+    padding: 1rem;
+    border: 1px solid rgba(30, 81, 74, 0.12);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.76);
+  }
+
+  .public-service-accordion-panel p {
+    margin: 0;
+    color: #51635f;
+    font-size: 0.92rem;
+    font-weight: 500;
+    line-height: 1.52;
+  }
+
+  .public-service-accordion-panel h4 {
+    margin-top: 1rem;
+  }
+
+  .public-service-accordion-panel h4:first-of-type {
+    margin-top: 1.05rem;
   }
 }
 
@@ -782,17 +965,20 @@
     line-height: 1.55;
   }
 
-  .public-services-grid {
-    grid-template-columns: minmax(0, 1fr);
+  .public-services-accordion {
     margin-top: 1.35rem;
   }
 
-  .public-service-card {
-    padding: 1rem;
-    border-radius: 18px;
+  .public-service-accordion-button {
+    padding: 0.82rem 0.9rem;
   }
 
-  .public-service-card p {
-    font-size: 0.9rem;
+  .public-service-accordion-panel {
+    padding: 0.9rem;
+  }
+
+  .public-service-accordion-panel p,
+  .public-service-accordion-panel li {
+    font-size: 0.88rem;
   }
 }

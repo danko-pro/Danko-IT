@@ -24,39 +24,47 @@ const publicObjectSteps = [
 const publicServiceItems = [
   {
     title: "Дизайн-решение",
-    description:
-      "Помогаем собрать понятную концепцию ремонта: планировка, материалы, цвета, сценарии освещения и общая логика пространства.",
+    description: "Собираем понятную концепцию ремонта до начала работ.",
+    includes: ["планировка и сценарии помещений", "материалы, цвета и покрытия", "логика света и оснащения"],
+    result: "понятное направление ремонта без хаотичных решений.",
   },
   {
     title: "Детальный расчёт",
-    description:
-      "Формируем понятную структуру стоимости по работам, материалам и комплектации, чтобы клиент видел, из чего складывается бюджет.",
+    description: "Формируем структуру стоимости по работам, материалам и комплектации.",
+    includes: ["состав работ", "материалы и расходники", "комплектация объекта"],
+    result: "клиент видит, из чего складывается бюджет.",
   },
   {
     title: "Отделочные работы",
-    description:
-      "Выполняем черновую и чистовую отделку квартир и апартаментов под ключ, с контролем этапов и качества.",
+    description: "Выполняем черновую и чистовую отделку квартир и апартаментов под ключ.",
+    includes: ["подготовка оснований", "чистовая отделка", "контроль этапов и качества"],
+    result: "объект движется по понятному плану работ.",
   },
   {
     title: "Комплектация",
-    description:
-      "Подбираем, закупаем и доставляем материалы на объект. Снимаем с клиента хаос поставок и постоянных дозакупок.",
+    description: "Подбираем, закупаем и доставляем материалы на объект.",
+    includes: ["подбор материалов", "закупка и поставки", "контроль дозакупок"],
+    result: "меньше срывов из-за отсутствующих материалов.",
   },
   {
     title: "Мебель и техника",
-    description:
-      "Комплектуем объект кухней, шкафами, техникой и базовыми позициями, если ремонт должен быть готов к проживанию или сдаче.",
+    description: "Комплектуем объект базовыми позициями для проживания, сдачи или продажи.",
+    includes: ["кухни и шкафы", "техника", "базовое оснащение"],
+    result: "ремонт можно довести до готового состояния.",
   },
   {
     title: "Ведение объекта",
-    description:
-      "Организуем работы, график, мастеров, поставки и контроль исполнения. Клиент видит процесс, а не тушит пожары.",
+    description: "Организуем работы, график, мастеров, поставки и контроль исполнения.",
+    includes: ["график работ", "координация мастеров", "контроль этапов"],
+    result: "клиент видит процесс, а не тушит пожары.",
   },
 ];
 
 export function PublicLanding() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isHeaderHidden, setIsHeaderHidden] = useState(false);
+  const [activeServiceIndex, setActiveServiceIndex] = useState(0);
+  const activeService = publicServiceItems[activeServiceIndex];
 
   useEffect(() => {
     if (isMenuOpen) {
@@ -212,14 +220,102 @@ export function PublicLanding() {
             </p>
           </div>
 
-          <div className="public-services-grid">
-            {publicServiceItems.map((service, index) => (
-              <article className="public-service-card" key={service.title}>
-                <span className="public-service-number">{String(index + 1).padStart(2, "0")}</span>
-                <h3>{service.title}</h3>
-                <p>{service.description}</p>
-              </article>
-            ))}
+          <div className="public-services-explorer">
+            <div className="public-services-tabs" role="tablist" aria-label="Услуги Danko">
+              {publicServiceItems.map((service, index) => {
+                const serviceNumber = String(index + 1).padStart(2, "0");
+                const isActive = activeServiceIndex === index;
+
+                return (
+                  <button
+                    className={`public-service-tab${isActive ? " public-service-tab-active" : ""}`}
+                    type="button"
+                    role="tab"
+                    aria-selected={isActive}
+                    aria-controls="public-service-panel"
+                    id={`public-service-tab-${index}`}
+                    key={service.title}
+                    onClick={() => setActiveServiceIndex(index)}
+                  >
+                    <span className="public-service-number">{serviceNumber}</span>
+                    <span className="public-service-tab-copy">
+                      <span className="public-service-tab-title">{service.title}</span>
+                      <span className="public-service-tab-description">{service.description}</span>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            <article
+              className="public-service-detail"
+              role="tabpanel"
+              id="public-service-panel"
+              aria-labelledby={`public-service-tab-${activeServiceIndex}`}
+            >
+              <div className="public-service-detail-header">
+                <span className="public-service-number">{String(activeServiceIndex + 1).padStart(2, "0")}</span>
+                <h3>{activeService.title}</h3>
+                <p>{activeService.description}</p>
+              </div>
+
+              <div className="public-service-detail-body">
+                <div>
+                  <h4>Что входит</h4>
+                  <ul>
+                    {activeService.includes.map((item) => (
+                      <li key={item}>{item}</li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="public-service-result">
+                  <h4>Результат</h4>
+                  <p>{activeService.result}</p>
+                </div>
+              </div>
+            </article>
+          </div>
+
+          <div className="public-services-accordion">
+            {publicServiceItems.map((service, index) => {
+              const serviceNumber = String(index + 1).padStart(2, "0");
+              const isActive = activeServiceIndex === index;
+
+              return (
+                <div className="public-service-accordion-item" key={service.title}>
+                  <button
+                    className={`public-service-accordion-button${
+                      isActive ? " public-service-accordion-button-active" : ""
+                    }`}
+                    type="button"
+                    aria-expanded={isActive}
+                    aria-controls={`public-service-accordion-panel-${index}`}
+                    onClick={() => setActiveServiceIndex(index)}
+                  >
+                    <span className="public-service-number">{serviceNumber}</span>
+                    <span>{service.title}</span>
+                  </button>
+
+                  <div
+                    className="public-service-accordion-panel"
+                    id={`public-service-accordion-panel-${index}`}
+                    hidden={!isActive}
+                  >
+                    <p>{service.description}</p>
+                    <h4>Что входит</h4>
+                    <ul>
+                      {service.includes.map((item) => (
+                        <li key={item}>{item}</li>
+                      ))}
+                    </ul>
+                    <div className="public-service-result">
+                      <h4>Результат</h4>
+                      <p>{service.result}</p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </section>
       </main>

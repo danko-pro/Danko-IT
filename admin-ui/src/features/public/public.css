@@ -1571,6 +1571,21 @@
   box-shadow: 0 14px 30px rgba(30, 81, 74, 0.18);
 }
 
+@media (hover: hover) and (pointer: fine) {
+  .public-process-step:hover .public-process-step-number,
+  .public-process-step:focus-visible .public-process-step-number {
+    border-color: rgba(30, 81, 74, 0.3);
+    background: var(--public-green-deep);
+    color: #ffffff;
+    box-shadow: 0 14px 30px rgba(30, 81, 74, 0.18);
+    transition:
+      background-color var(--public-process-motion) var(--public-process-ease),
+      border-color var(--public-process-motion) var(--public-process-ease),
+      box-shadow var(--public-process-motion) var(--public-process-ease),
+      color var(--public-process-motion) var(--public-process-ease);
+  }
+}
+
 .public-process-step-content {
   min-width: 0;
 }

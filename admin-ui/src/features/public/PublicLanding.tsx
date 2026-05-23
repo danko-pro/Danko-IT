@@ -52,12 +52,12 @@ export function PublicLanding() {
             </a>
           ))}
           <a className="public-action public-action-mobile" href="#contacts" onClick={closeMenu}>
-            Рассчитать ремонт
+            Рассчитать стоимость
           </a>
         </nav>
 
         <a className="public-action public-action-desktop" href="#contacts">
-          Рассчитать ремонт
+          Рассчитать стоимость
         </a>
 
         <button

@@ -13,10 +13,26 @@
   color: var(--public-ink);
 }
 
-.public-header {
-  position: sticky;
+.public-header-shell {
+  position: fixed;
   top: 0;
-  z-index: 20;
+  right: 0;
+  left: 0;
+  z-index: 40;
+  width: 100vw;
+  background: rgba(247, 250, 248, 0.92);
+  border-bottom: 1px solid var(--public-border);
+  backdrop-filter: blur(18px);
+  transform: translateY(0);
+  transition: transform var(--ui-motion-normal) var(--ui-motion-ease-soft);
+}
+
+.public-header-shell-hidden {
+  transform: translateY(-100%);
+}
+
+.public-header {
+  position: relative;
   display: grid;
   grid-template-columns: minmax(220px, auto) minmax(0, 1fr) auto;
   align-items: center;
@@ -25,9 +41,6 @@
   min-height: 78px;
   margin: 0 auto;
   padding: 0.85rem 0;
-  background: rgba(247, 250, 248, 0.92);
-  border-bottom: 1px solid var(--public-border);
-  backdrop-filter: blur(18px);
 }
 
 .public-brand {
@@ -152,6 +165,7 @@
 .public-main {
   width: min(100% - 2.5rem, 1220px);
   margin: 0 auto;
+  padding-top: 78px;
 }
 
 .public-hero {
@@ -417,7 +431,7 @@
 }
 
 .public-services {
-  scroll-margin-top: 96px;
+  scroll-margin-top: 104px;
   padding: 1.35rem 0 6.5rem;
 }
 
@@ -438,7 +452,7 @@
 .public-section-heading h2 {
   margin: 0;
   color: #10231f;
-  font-size: clamp(2.05rem, 2.45rem, 2.75rem);
+  font-size: clamp(2.05rem, 4vw, 2.75rem);
   font-weight: 850;
   letter-spacing: 0;
   line-height: 1.05;
@@ -461,12 +475,26 @@
 }
 
 .public-service-card {
+  position: relative;
+  display: grid;
+  align-content: start;
+  gap: 0.8rem;
   min-width: 0;
   min-height: 214px;
   padding: 1.25rem;
   border: 1px solid rgba(30, 81, 74, 0.13);
   border-radius: 22px;
   background: rgba(255, 255, 255, 0.7);
+}
+
+.public-service-number {
+  display: inline-flex;
+  width: fit-content;
+  color: rgba(30, 81, 74, 0.56);
+  font-size: 0.76rem;
+  font-weight: 850;
+  letter-spacing: 0;
+  line-height: 1;
 }
 
 .public-service-card h3 {
@@ -479,7 +507,7 @@
 }
 
 .public-service-card p {
-  margin: 0.8rem 0 0;
+  margin: 0;
   color: #51635f;
   font-size: 0.92rem;
   font-weight: 500;
@@ -560,6 +588,7 @@
 
   .public-main {
     width: min(100% - 1.25rem, 1180px);
+    padding-top: 72px;
   }
 
   .public-hero {
@@ -588,7 +617,7 @@
   }
 
   .public-services {
-    scroll-margin-top: 88px;
+    scroll-margin-top: 96px;
     padding: 0.4rem 0 5rem;
   }
 
@@ -712,7 +741,7 @@
   }
 
   .public-section-heading h2 {
-    font-size: clamp(1.8rem, 1.95rem, 2.1rem);
+    font-size: clamp(1.8rem, 8vw, 2.1rem);
   }
 
   .public-section-heading p {

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 const publicNavItems = [
   { label: "Услуги", href: "#services" },
@@ -28,6 +28,11 @@ const publicServiceItems = [
       "Помогаем собрать понятную концепцию ремонта: планировка, материалы, цвета, сценарии освещения и общая логика пространства.",
   },
   {
+    title: "Детальный расчёт",
+    description:
+      "Формируем понятную структуру стоимости по работам, материалам и комплектации, чтобы клиент видел, из чего складывается бюджет.",
+  },
+  {
     title: "Отделочные работы",
     description:
       "Выполняем черновую и чистовую отделку квартир и апартаментов под ключ, с контролем этапов и качества.",
@@ -47,63 +52,97 @@ const publicServiceItems = [
     description:
       "Организуем работы, график, мастеров, поставки и контроль исполнения. Клиент видит процесс, а не тушит пожары.",
   },
-  {
-    title: "Детальный расчёт",
-    description:
-      "Формируем структуру стоимости по работам, материалам и комплектации. В дальнейшем расчёт можно будет попробовать прямо на сайте.",
-  },
 ];
 
 export function PublicLanding() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isHeaderHidden, setIsHeaderHidden] = useState(false);
+
+  useEffect(() => {
+    if (isMenuOpen) {
+      setIsHeaderHidden(false);
+      return;
+    }
+
+    let lastScrollY = window.scrollY;
+    let ticking = false;
+
+    const updateHeaderVisibility = () => {
+      const currentScrollY = window.scrollY;
+
+      if (currentScrollY <= 80) {
+        setIsHeaderHidden(false);
+      } else if (currentScrollY > lastScrollY + 6) {
+        setIsHeaderHidden(true);
+      } else if (currentScrollY < lastScrollY - 6) {
+        setIsHeaderHidden(false);
+      }
+
+      lastScrollY = currentScrollY;
+      ticking = false;
+    };
+
+    const handleScroll = () => {
+      if (ticking) {
+        return;
+      }
+      ticking = true;
+      window.requestAnimationFrame(updateHeaderVisibility);
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [isMenuOpen]);
 
   const closeMenu = () => setIsMenuOpen(false);
 
   return (
     <div className="public-landing">
-      <header className="public-header">
-        <a className="public-brand" href="/" aria-label="Danko - главная">
-          <img
-            className="public-brand-mark"
-            src="/brand/danko-logo-mark.png"
-            alt=""
-            aria-hidden="true"
-          />
-          <span className="public-brand-copy">
-            <span className="public-brand-name">Danko</span>
-            <span className="public-brand-subtitle">дизайн / отделка / комплектация</span>
-          </span>
-        </a>
+      <header className={`public-header-shell${isHeaderHidden ? " public-header-shell-hidden" : ""}`}>
+        <div className="public-header">
+          <a className="public-brand" href="/" aria-label="Danko - главная">
+            <img
+              className="public-brand-mark"
+              src="/brand/danko-logo-mark.png"
+              alt=""
+              aria-hidden="true"
+            />
+            <span className="public-brand-copy">
+              <span className="public-brand-name">Danko</span>
+              <span className="public-brand-subtitle">дизайн / отделка / комплектация</span>
+            </span>
+          </a>
 
-        <nav
-          className={`public-nav${isMenuOpen ? " public-nav-open" : ""}`}
-          aria-label="Навигация публичного сайта"
-        >
-          {publicNavItems.map((item) => (
-            <a key={item.href} href={item.href} onClick={closeMenu}>
-              {item.label}
+          <nav
+            className={`public-nav${isMenuOpen ? " public-nav-open" : ""}`}
+            aria-label="Навигация публичного сайта"
+          >
+            {publicNavItems.map((item) => (
+              <a key={item.href} href={item.href} onClick={closeMenu}>
+                {item.label}
+              </a>
+            ))}
+            <a className="public-action public-action-mobile" href="#contacts" onClick={closeMenu}>
+              Рассчитать стоимость
             </a>
-          ))}
-          <a className="public-action public-action-mobile" href="#contacts" onClick={closeMenu}>
+          </nav>
+
+          <a className="public-action public-action-desktop" href="#contacts">
             Рассчитать стоимость
           </a>
-        </nav>
 
-        <a className="public-action public-action-desktop" href="#contacts">
-          Рассчитать стоимость
-        </a>
-
-        <button
-          className="public-menu-button"
-          type="button"
-          aria-label={isMenuOpen ? "Закрыть меню" : "Открыть меню"}
-          aria-expanded={isMenuOpen}
-          onClick={() => setIsMenuOpen((current) => !current)}
-        >
-          <span aria-hidden="true" />
-          <span aria-hidden="true" />
-          <span aria-hidden="true" />
-        </button>
+          <button
+            className="public-menu-button"
+            type="button"
+            aria-label={isMenuOpen ? "Закрыть меню" : "Открыть меню"}
+            aria-expanded={isMenuOpen}
+            onClick={() => setIsMenuOpen((current) => !current)}
+          >
+            <span aria-hidden="true" />
+            <span aria-hidden="true" />
+            <span aria-hidden="true" />
+          </button>
+        </div>
       </header>
 
       <main className="public-main">
@@ -174,8 +213,9 @@ export function PublicLanding() {
           </div>
 
           <div className="public-services-grid">
-            {publicServiceItems.map((service) => (
+            {publicServiceItems.map((service, index) => (
               <article className="public-service-card" key={service.title}>
+                <span className="public-service-number">{String(index + 1).padStart(2, "0")}</span>
                 <h3>{service.title}</h3>
                 <p>{service.description}</p>
               </article>

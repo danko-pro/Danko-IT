@@ -573,6 +573,13 @@
     #ffffff;
 }
 
+.public-service-detail-content {
+  display: grid;
+  gap: 0;
+  min-height: 100%;
+  animation: public-service-detail-in 220ms var(--ui-motion-ease-soft);
+}
+
 .public-service-detail-header {
   display: grid;
   gap: 0.72rem;
@@ -655,6 +662,134 @@
 
 .public-service-result p {
   margin-top: 0.8rem;
+}
+
+.public-service-visual {
+  position: relative;
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+  margin-top: 1rem;
+  padding: 1rem;
+  overflow: hidden;
+  border: 1px solid rgba(30, 81, 74, 0.11);
+  border-radius: 22px;
+  background:
+    linear-gradient(135deg, rgba(30, 81, 74, 0.08), rgba(255, 255, 255, 0.82)),
+    repeating-linear-gradient(
+      90deg,
+      rgba(30, 81, 74, 0.055) 0,
+      rgba(30, 81, 74, 0.055) 1px,
+      transparent 1px,
+      transparent 34px
+    ),
+    #f8fbfa;
+}
+
+.public-service-visual::before {
+  position: absolute;
+  top: 1.15rem;
+  right: 1rem;
+  width: 70px;
+  height: 70px;
+  border: 1px solid rgba(30, 81, 74, 0.12);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(30, 81, 74, 0.1) 0 2px, transparent 3px);
+  opacity: 0.48;
+  content: "";
+}
+
+.public-service-visual-heading {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 0.32rem;
+  min-width: 0;
+}
+
+.public-service-visual-heading span {
+  color: rgba(30, 81, 74, 0.68);
+  font-size: 0.72rem;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.public-service-visual-heading strong {
+  color: #172d28;
+  font-size: 1.02rem;
+  font-weight: 850;
+  letter-spacing: 0;
+  line-height: 1.18;
+}
+
+.public-service-visual-list {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.7rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.public-service-visual-list::before {
+  position: absolute;
+  top: 1.05rem;
+  right: calc(16.66% + 0.35rem);
+  left: calc(16.66% + 0.35rem);
+  height: 1px;
+  background: rgba(30, 81, 74, 0.2);
+  content: "";
+}
+
+.public-service-detail .public-service-visual-item,
+.public-service-accordion-panel .public-service-visual-item {
+  position: relative;
+  display: grid;
+  justify-items: start;
+  gap: 0.5rem;
+  min-width: 0;
+  padding: 0;
+  color: #334943;
+  font-size: 0.84rem;
+  font-weight: 760;
+  line-height: 1.25;
+}
+
+.public-service-detail .public-service-visual-item::before,
+.public-service-accordion-panel .public-service-visual-item::before {
+  display: none;
+}
+
+.public-service-visual-dot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.1rem;
+  height: 2.1rem;
+  border: 1px solid rgba(30, 81, 74, 0.22);
+  border-radius: 999px;
+  background: #ffffff;
+  color: var(--public-green-deep);
+  font-size: 0.68rem;
+  font-weight: 850;
+  letter-spacing: 0;
+  box-shadow: 0 10px 22px rgba(30, 81, 74, 0.08);
+}
+
+@keyframes public-service-detail-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .public-services-accordion {
@@ -821,12 +956,54 @@
     line-height: 1.18;
   }
 
+  .public-service-accordion-button-active {
+    border-bottom-color: rgba(30, 81, 74, 0);
+    border-radius: 18px 18px 0 0;
+    transform: none;
+  }
+
   .public-service-accordion-panel {
-    margin-top: 0.5rem;
-    padding: 1rem;
-    border: 1px solid rgba(30, 81, 74, 0.12);
-    border-radius: 18px;
+    position: relative;
+    display: grid;
+    grid-template-rows: 0fr;
+    margin-top: -1px;
+    overflow: hidden;
+    border: 1px solid transparent;
+    border-top: 0;
+    border-radius: 0 0 18px 18px;
+    opacity: 0;
+    transform: translateY(-4px);
+    transition:
+      grid-template-rows var(--public-motion-smooth) var(--ui-motion-ease-soft),
+      border-color var(--public-motion-smooth) var(--ui-motion-ease-soft),
+      background-color var(--public-motion-smooth) var(--ui-motion-ease-soft),
+      opacity var(--public-motion-smooth) var(--ui-motion-ease-soft),
+      transform var(--public-motion-smooth) var(--ui-motion-ease-soft);
+  }
+
+  .public-service-accordion-panel-open {
+    grid-template-rows: 1fr;
+    border-color: var(--public-green);
     background: rgba(255, 255, 255, 0.76);
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .public-service-accordion-panel-open::before {
+    position: absolute;
+    top: 1rem;
+    bottom: 1rem;
+    left: 0;
+    width: 3px;
+    border-radius: 0 999px 999px 0;
+    background: var(--public-green);
+    content: "";
+  }
+
+  .public-service-accordion-panel-inner {
+    min-height: 0;
+    overflow: hidden;
+    padding: 1rem;
   }
 
   .public-service-accordion-panel p {
@@ -843,6 +1020,33 @@
 
   .public-service-accordion-panel h4:first-of-type {
     margin-top: 1.05rem;
+  }
+
+  .public-service-visual {
+    gap: 0.8rem;
+    margin-top: 1rem;
+    padding: 0.9rem;
+    border-radius: 18px;
+  }
+
+  .public-service-visual::before {
+    width: 54px;
+    height: 54px;
+    opacity: 0.32;
+  }
+
+  .public-service-visual-list {
+    gap: 0.5rem;
+  }
+
+  .public-service-detail .public-service-visual-item,
+  .public-service-accordion-panel .public-service-visual-item {
+    font-size: 0.8rem;
+  }
+
+  .public-service-visual-dot {
+    width: 1.9rem;
+    height: 1.9rem;
   }
 }
 
@@ -973,12 +1177,41 @@
     padding: 0.82rem 0.9rem;
   }
 
-  .public-service-accordion-panel {
+  .public-service-accordion-panel-inner {
     padding: 0.9rem;
   }
 
   .public-service-accordion-panel p,
   .public-service-accordion-panel li {
     font-size: 0.88rem;
+  }
+
+  .public-service-visual-list {
+    grid-template-columns: 1fr;
+  }
+
+  .public-service-visual-list::before {
+    top: 1rem;
+    bottom: 1rem;
+    left: 0.95rem;
+    width: 1px;
+    height: auto;
+  }
+
+  .public-service-detail .public-service-visual-item,
+  .public-service-accordion-panel .public-service-visual-item {
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .public-service-tab,
+  .public-service-accordion-button,
+  .public-service-detail-content,
+  .public-service-accordion-panel {
+    transition: none;
+    animation: none;
+    transform: none;
   }
 }

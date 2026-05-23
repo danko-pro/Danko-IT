@@ -27,36 +27,48 @@ const publicServiceItems = [
     description: "Собираем понятную концепцию ремонта до начала работ.",
     includes: ["планировка и сценарии помещений", "материалы, цвета и покрытия", "логика света и оснащения"],
     result: "понятное направление ремонта без хаотичных решений.",
+    visualTitle: "Логика пространства",
+    visualItems: ["планировка", "материалы", "сценарии света"],
   },
   {
     title: "Детальный расчёт",
     description: "Формируем структуру стоимости по работам, материалам и комплектации.",
     includes: ["состав работ", "материалы и расходники", "комплектация объекта"],
     result: "клиент видит, из чего складывается бюджет.",
+    visualTitle: "Структура бюджета",
+    visualItems: ["работы", "материалы", "комплектация"],
   },
   {
     title: "Отделочные работы",
     description: "Выполняем черновую и чистовую отделку квартир и апартаментов под ключ.",
     includes: ["подготовка оснований", "чистовая отделка", "контроль этапов и качества"],
     result: "объект движется по понятному плану работ.",
+    visualTitle: "Ход работ",
+    visualItems: ["подготовка", "чистовая отделка", "контроль"],
   },
   {
     title: "Комплектация",
     description: "Подбираем, закупаем и доставляем материалы на объект.",
     includes: ["подбор материалов", "закупка и поставки", "контроль дозакупок"],
     result: "меньше срывов из-за отсутствующих материалов.",
+    visualTitle: "Поставка на объект",
+    visualItems: ["подбор", "закупка", "доставка"],
   },
   {
     title: "Мебель и техника",
     description: "Комплектуем объект базовыми позициями для проживания, сдачи или продажи.",
     includes: ["кухни и шкафы", "техника", "базовое оснащение"],
     result: "ремонт можно довести до готового состояния.",
+    visualTitle: "Готовность объекта",
+    visualItems: ["кухня", "шкафы", "техника"],
   },
   {
     title: "Ведение объекта",
     description: "Организуем работы, график, мастеров, поставки и контроль исполнения.",
     includes: ["график работ", "координация мастеров", "контроль этапов"],
     result: "клиент видит процесс, а не тушит пожары.",
+    visualTitle: "Управление процессом",
+    visualItems: ["график", "мастера", "контроль"],
   },
 ];
 
@@ -235,6 +247,8 @@ export function PublicLanding() {
                     aria-controls="public-service-panel"
                     id={`public-service-tab-${index}`}
                     key={service.title}
+                    onMouseEnter={() => setActiveServiceIndex(index)}
+                    onFocus={() => setActiveServiceIndex(index)}
                     onClick={() => setActiveServiceIndex(index)}
                   >
                     <span className="public-service-number">{serviceNumber}</span>
@@ -253,24 +267,41 @@ export function PublicLanding() {
               id="public-service-panel"
               aria-labelledby={`public-service-tab-${activeServiceIndex}`}
             >
-              <div className="public-service-detail-header">
-                <span className="public-service-number">{String(activeServiceIndex + 1).padStart(2, "0")}</span>
-                <h3>{activeService.title}</h3>
-                <p>{activeService.description}</p>
-              </div>
-
-              <div className="public-service-detail-body">
-                <div>
-                  <h4>Что входит</h4>
-                  <ul>
-                    {activeService.includes.map((item) => (
-                      <li key={item}>{item}</li>
-                    ))}
-                  </ul>
+              <div className="public-service-detail-content" key={activeService.title}>
+                <div className="public-service-detail-header">
+                  <span className="public-service-number">{String(activeServiceIndex + 1).padStart(2, "0")}</span>
+                  <h3>{activeService.title}</h3>
+                  <p>{activeService.description}</p>
                 </div>
-                <div className="public-service-result">
-                  <h4>Результат</h4>
-                  <p>{activeService.result}</p>
+
+                <div className="public-service-detail-body">
+                  <div>
+                    <h4>Что входит</h4>
+                    <ul>
+                      {activeService.includes.map((item) => (
+                        <li key={item}>{item}</li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div className="public-service-result">
+                    <h4>Результат</h4>
+                    <p>{activeService.result}</p>
+                  </div>
+                </div>
+
+                <div className="public-service-visual" aria-label={`Схема этапа: ${activeService.visualTitle}`}>
+                  <div className="public-service-visual-heading">
+                    <span>Схема этапа</span>
+                    <strong>{activeService.visualTitle}</strong>
+                  </div>
+                  <ol className="public-service-visual-list">
+                    {activeService.visualItems.map((item, index) => (
+                      <li className="public-service-visual-item" key={item}>
+                        <span className="public-service-visual-dot">{String(index + 1).padStart(2, "0")}</span>
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ol>
                 </div>
               </div>
             </article>
@@ -297,20 +328,41 @@ export function PublicLanding() {
                   </button>
 
                   <div
-                    className="public-service-accordion-panel"
+                    className={`public-service-accordion-panel${
+                      isActive ? " public-service-accordion-panel-open" : ""
+                    }`}
                     id={`public-service-accordion-panel-${index}`}
-                    hidden={!isActive}
+                    aria-hidden={!isActive}
                   >
-                    <p>{service.description}</p>
-                    <h4>Что входит</h4>
-                    <ul>
-                      {service.includes.map((item) => (
-                        <li key={item}>{item}</li>
-                      ))}
-                    </ul>
-                    <div className="public-service-result">
-                      <h4>Результат</h4>
-                      <p>{service.result}</p>
+                    <div className="public-service-accordion-panel-inner">
+                      <p>{service.description}</p>
+                      <h4>Что входит</h4>
+                      <ul>
+                        {service.includes.map((item) => (
+                          <li key={item}>{item}</li>
+                        ))}
+                      </ul>
+                      <div className="public-service-result">
+                        <h4>Результат</h4>
+                        <p>{service.result}</p>
+                      </div>
+
+                      <div className="public-service-visual" aria-label={`Схема этапа: ${service.visualTitle}`}>
+                        <div className="public-service-visual-heading">
+                          <span>Схема этапа</span>
+                          <strong>{service.visualTitle}</strong>
+                        </div>
+                        <ol className="public-service-visual-list">
+                          {service.visualItems.map((item, itemIndex) => (
+                            <li className="public-service-visual-item" key={item}>
+                              <span className="public-service-visual-dot">
+                                {String(itemIndex + 1).padStart(2, "0")}
+                              </span>
+                              <span>{item}</span>
+                            </li>
+                          ))}
+                        </ol>
+                      </div>
                     </div>
                   </div>
                 </div>

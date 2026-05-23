@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const publicNavItems = [
   { label: "Услуги", href: "#services" },
@@ -169,11 +169,67 @@ const publicProjectItems = [
   },
 ];
 
+const publicProcessCards = [
+  {
+    title: "Типовой ориентир",
+    text: "Типовой срок ремонта под ключ может составлять около 45 рабочих дней, но зависит от площади, состояния объекта, состава работ, выбранных материалов и комплектации.",
+  },
+  {
+    title: "Детальная смета",
+    text: "Работы, материалы, мебель, техника, логистика и дополнительные позиции собираются в понятную структуру. AI-обработка помогает быстрее разложить данные по категориям и проверить состав расчёта.",
+  },
+];
+
+const PROCESS_STEP_SWITCH_DELAY_MS = 260;
+
+const publicProcessSteps = [
+  {
+    title: "Заявка и вводные",
+    description:
+      "Уточняем объект, площадь, состояние, цель ремонта и желаемый формат: под себя, под сдачу, продажу или инвесторский пакет.",
+    meta: "1 день",
+  },
+  {
+    title: "Детальная смета и AI-обработка",
+    description:
+      "Собираем смету по работам, материалам, мебели, технике и логистике. Используем AI-обработку данных, чтобы быстрее структурировать позиции, проверить состав и показать клиенту понятный бюджет до старта.",
+    meta: "от 1 до 3 дней",
+  },
+  {
+    title: "Состав и комплектация",
+    description:
+      "Формируем наполнение объекта: отделка, материалы, техника, мебель, двери и дополнительные позиции. Сразу видим, что входит в бюджет и где могут появиться изменения.",
+    meta: "по задаче объекта",
+  },
+  {
+    title: "График и запуск",
+    description:
+      "Разбиваем ремонт на этапы, планируем поставки, мастеров и контрольные точки. Объект запускается не хаотично, а по понятной последовательности.",
+    meta: "до старта работ",
+  },
+  {
+    title: "Работы на объекте",
+    description:
+      "Ведём черновые и чистовые этапы, контролируем качество, сроки и наличие материалов. Работы, материалы и комплектация связаны в один процесс.",
+    meta: "по графику",
+  },
+  {
+    title: "Сдача результата",
+    description:
+      "Проверяем готовность, фиксируем замечания, закрываем финальные позиции и передаём объект в понятном состоянии.",
+    meta: "финальный этап",
+  },
+];
+
 export function PublicLanding() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isHeaderHidden, setIsHeaderHidden] = useState(false);
   const [activeServiceIndex, setActiveServiceIndex] = useState(0);
   const [activePackageIndex, setActivePackageIndex] = useState(0);
+  const [activeProcessIndex, setActiveProcessIndex] = useState(-1);
+  const processStepRefs = useRef<Array<HTMLLIElement | null>>([]);
+  const activeProcessIndexRef = useRef(-1);
+  const lastProcessScrollYRef = useRef(0);
   const activeService = publicServiceItems[activeServiceIndex];
 
   useEffect(() => {
@@ -211,6 +267,150 @@ export function PublicLanding() {
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, [isMenuOpen]);
+
+  useEffect(() => {
+    if (
+      typeof window === "undefined" ||
+      typeof window.matchMedia !== "function" ||
+      !("IntersectionObserver" in window)
+    ) {
+      return;
+    }
+
+    const mediaQuery = window.matchMedia("(max-width: 860px)");
+    if (!mediaQuery.matches) {
+      return;
+    }
+
+    let animationFrameId: number | null = null;
+    let processSwitchTimerId: number | null = null;
+    let queuedProcessIndex = activeProcessIndexRef.current;
+    lastProcessScrollYRef.current = window.scrollY;
+
+    const commitQueuedProcessIndex = () => {
+      processSwitchTimerId = null;
+
+      const currentIndex = activeProcessIndexRef.current;
+      if (queuedProcessIndex === currentIndex) {
+        return;
+      }
+
+      const nextIndex = queuedProcessIndex > currentIndex ? currentIndex + 1 : currentIndex - 1;
+      activeProcessIndexRef.current = nextIndex;
+      setActiveProcessIndex(nextIndex);
+
+      if (nextIndex !== queuedProcessIndex) {
+        processSwitchTimerId = window.setTimeout(commitQueuedProcessIndex, PROCESS_STEP_SWITCH_DELAY_MS);
+      }
+    };
+
+    const applyGuardedProcessIndex = (targetIndex: number) => {
+      const currentIndex = activeProcessIndexRef.current;
+      const safeTargetIndex = Math.max(0, Math.min(publicProcessSteps.length - 1, targetIndex));
+      const currentScrollY = window.scrollY;
+      const scrollDelta = currentScrollY - lastProcessScrollYRef.current;
+      lastProcessScrollYRef.current = currentScrollY;
+
+      if (safeTargetIndex === currentIndex) {
+        queuedProcessIndex = currentIndex;
+        return false;
+      }
+
+      const direction =
+        scrollDelta > 1 ? 1 : scrollDelta < -1 ? -1 : safeTargetIndex > currentIndex ? 1 : -1;
+
+      if ((safeTargetIndex > currentIndex && direction < 0) || (safeTargetIndex < currentIndex && direction > 0)) {
+        return false;
+      }
+
+      queuedProcessIndex = safeTargetIndex;
+
+      if (processSwitchTimerId === null) {
+        processSwitchTimerId = window.setTimeout(commitQueuedProcessIndex, PROCESS_STEP_SWITCH_DELAY_MS);
+      }
+
+      return false;
+    };
+
+    const updateActiveProcessStep = () => {
+      animationFrameId = null;
+
+      let targetIndex = activeProcessIndexRef.current;
+      let hasActivatedStep = false;
+      const activationLine = window.innerHeight * 0.55;
+      const scrollBottom = window.scrollY + window.innerHeight;
+      const pageBottom = document.documentElement.scrollHeight;
+
+      if (pageBottom - scrollBottom <= 4) {
+        if (applyGuardedProcessIndex(publicProcessSteps.length - 1)) {
+          requestProcessUpdate();
+        }
+
+        return;
+      }
+
+      processStepRefs.current.forEach((step, index) => {
+        if (!step) {
+          return;
+        }
+
+        const rect = step.getBoundingClientRect();
+        const isVisible = rect.bottom >= 0 && rect.top <= window.innerHeight;
+
+        if (!isVisible) {
+          return;
+        }
+
+        if (rect.top <= activationLine) {
+          targetIndex = index;
+          hasActivatedStep = true;
+        }
+      });
+
+      if (hasActivatedStep && applyGuardedProcessIndex(targetIndex)) {
+        requestProcessUpdate();
+      }
+    };
+
+    const requestProcessUpdate = () => {
+      if (animationFrameId !== null) {
+        return;
+      }
+
+      animationFrameId = window.requestAnimationFrame(updateActiveProcessStep);
+    };
+
+    const observer = new IntersectionObserver(
+      () => requestProcessUpdate(),
+      {
+        root: null,
+        rootMargin: "-25% 0px -20% 0px",
+        threshold: [0, 0.2, 0.5, 0.8],
+      },
+    );
+
+    processStepRefs.current.forEach((step) => {
+      if (step) {
+        observer.observe(step);
+      }
+    });
+
+    requestProcessUpdate();
+    window.addEventListener("scroll", requestProcessUpdate, { passive: true });
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("scroll", requestProcessUpdate);
+
+      if (animationFrameId !== null) {
+        window.cancelAnimationFrame(animationFrameId);
+      }
+
+      if (processSwitchTimerId !== null) {
+        window.clearTimeout(processSwitchTimerId);
+      }
+    };
+  }, []);
 
   const closeMenu = () => setIsMenuOpen(false);
 
@@ -564,6 +764,57 @@ export function PublicLanding() {
                 </article>
               ))}
             </div>
+          </div>
+        </section>
+
+        <section className="public-process" id="process" aria-labelledby="public-process-title">
+          <div className="public-process-layout">
+            <div className="public-process-aside">
+              <div className="public-process-head public-section-heading">
+                <p className="public-section-kicker">Как работаем</p>
+                <h2 id="public-process-title">Ведём ремонт как понятный процесс</h2>
+                <p>
+                  От первой заявки до сдачи объекта: фиксируем вводные, формируем детальную смету,
+                  собираем комплектацию, ведём график и контролируем этапы работ.
+                </p>
+              </div>
+
+              <div className="public-process-cards" aria-label="Ориентиры процесса">
+                {publicProcessCards.map((card) => (
+                  <article className="public-process-card" key={card.title} tabIndex={0}>
+                    <h3 className="public-process-card-title">{card.title}</h3>
+                    <p>{card.text}</p>
+                  </article>
+                ))}
+              </div>
+            </div>
+
+            <ol className="public-process-timeline" aria-label="Этапы работы">
+              {publicProcessSteps.map((step, index) => (
+                <li
+                  className={`public-process-step${
+                    activeProcessIndex === index ? " public-process-step-active" : ""
+                  }`}
+                  key={step.title}
+                  ref={(element) => {
+                    processStepRefs.current[index] = element;
+                  }}
+                  data-process-index={index}
+                  tabIndex={0}
+                >
+                  <span className="public-process-step-number" aria-hidden="true">
+                    {String(index + 1).padStart(2, "0")}
+                  </span>
+                  <div className="public-process-step-content">
+                    <div className="public-process-step-head">
+                      <h3>{step.title}</h3>
+                      <span className="public-process-step-meta">{step.meta}</span>
+                    </div>
+                    <p>{step.description}</p>
+                  </div>
+                </li>
+              ))}
+            </ol>
           </div>
         </section>
       </main>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 const publicNavItems = [
   { label: "Услуги", href: "#services" },
@@ -21,56 +21,148 @@ const publicObjectSteps = [
   { label: "Потолки", status: "следующий этап", state: "next" },
 ];
 
+const publicServiceItems = [
+  {
+    title: "Дизайн-решение",
+    description: "Собираем понятную концепцию ремонта до начала работ.",
+    includes: ["планировка и сценарии помещений", "материалы, цвета и покрытия", "логика света и оснащения"],
+    result: "понятное направление ремонта без хаотичных решений.",
+    visualTitle: "Логика пространства",
+    visualItems: ["планировка", "материалы", "сценарии света"],
+  },
+  {
+    title: "Детальный расчёт",
+    description: "Формируем структуру стоимости по работам, материалам и комплектации.",
+    includes: ["состав работ", "материалы и расходники", "комплектация объекта"],
+    result: "клиент видит, из чего складывается бюджет.",
+    visualTitle: "Структура бюджета",
+    visualItems: ["работы", "материалы", "комплектация"],
+  },
+  {
+    title: "Отделочные работы",
+    description: "Выполняем черновую и чистовую отделку квартир и апартаментов под ключ.",
+    includes: ["подготовка оснований", "чистовая отделка", "контроль этапов и качества"],
+    result: "объект движется по понятному плану работ.",
+    visualTitle: "Ход работ",
+    visualItems: ["подготовка", "чистовая отделка", "контроль"],
+  },
+  {
+    title: "Комплектация",
+    description: "Подбираем, закупаем и доставляем материалы на объект.",
+    includes: ["подбор материалов", "закупка и поставки", "контроль дозакупок"],
+    result: "меньше срывов из-за отсутствующих материалов.",
+    visualTitle: "Поставка на объект",
+    visualItems: ["подбор", "закупка", "доставка"],
+  },
+  {
+    title: "Мебель и техника",
+    description: "Комплектуем объект базовыми позициями для проживания, сдачи или продажи.",
+    includes: ["кухни и шкафы", "техника", "базовое оснащение"],
+    result: "ремонт можно довести до готового состояния.",
+    visualTitle: "Готовность объекта",
+    visualItems: ["кухня", "шкафы", "техника"],
+  },
+  {
+    title: "Ведение объекта",
+    description: "Организуем работы, график, мастеров, поставки и контроль исполнения.",
+    includes: ["график работ", "координация мастеров", "контроль этапов"],
+    result: "клиент видит процесс, а не тушит пожары.",
+    visualTitle: "Управление процессом",
+    visualItems: ["график", "мастера", "контроль"],
+  },
+];
+
 export function PublicLanding() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isHeaderHidden, setIsHeaderHidden] = useState(false);
+  const [activeServiceIndex, setActiveServiceIndex] = useState(0);
+  const activeService = publicServiceItems[activeServiceIndex];
+
+  useEffect(() => {
+    if (isMenuOpen) {
+      setIsHeaderHidden(false);
+      return;
+    }
+
+    let lastScrollY = window.scrollY;
+    let ticking = false;
+
+    const updateHeaderVisibility = () => {
+      const currentScrollY = window.scrollY;
+
+      if (currentScrollY <= 80) {
+        setIsHeaderHidden(false);
+      } else if (currentScrollY > lastScrollY + 6) {
+        setIsHeaderHidden(true);
+      } else if (currentScrollY < lastScrollY - 6) {
+        setIsHeaderHidden(false);
+      }
+
+      lastScrollY = currentScrollY;
+      ticking = false;
+    };
+
+    const handleScroll = () => {
+      if (ticking) {
+        return;
+      }
+      ticking = true;
+      window.requestAnimationFrame(updateHeaderVisibility);
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [isMenuOpen]);
 
   const closeMenu = () => setIsMenuOpen(false);
 
   return (
     <div className="public-landing">
-      <header className="public-header">
-        <a className="public-brand" href="/" aria-label="Danko - главная">
-          <img
-            className="public-brand-mark"
-            src="/brand/danko-logo-mark.png"
-            alt=""
-            aria-hidden="true"
-          />
-          <span className="public-brand-copy">
-            <span className="public-brand-name">Danko</span>
-            <span className="public-brand-subtitle">дизайн / отделка / комплектация</span>
-          </span>
-        </a>
+      <header className={`public-header-shell${isHeaderHidden ? " public-header-shell-hidden" : ""}`}>
+        <div className="public-header">
+          <a className="public-brand" href="/" aria-label="Danko - главная">
+            <img
+              className="public-brand-mark"
+              src="/brand/danko-logo-mark.png"
+              alt=""
+              aria-hidden="true"
+            />
+            <span className="public-brand-copy">
+              <span className="public-brand-name">Danko</span>
+              <span className="public-brand-subtitle">дизайн / отделка / комплектация</span>
+            </span>
+          </a>
 
-        <nav
-          className={`public-nav${isMenuOpen ? " public-nav-open" : ""}`}
-          aria-label="Навигация публичного сайта"
-        >
-          {publicNavItems.map((item) => (
-            <a key={item.href} href={item.href} onClick={closeMenu}>
-              {item.label}
+          <nav
+            className={`public-nav${isMenuOpen ? " public-nav-open" : ""}`}
+            aria-label="Навигация публичного сайта"
+          >
+            {publicNavItems.map((item) => (
+              <a key={item.href} href={item.href} onClick={closeMenu}>
+                {item.label}
+              </a>
+            ))}
+            <a className="public-action public-action-mobile" href="#contacts" onClick={closeMenu}>
+              Рассчитать стоимость
             </a>
-          ))}
-          <a className="public-action public-action-mobile" href="#contacts" onClick={closeMenu}>
+          </nav>
+
+          <a className="public-action public-action-desktop" href="#contacts">
             Рассчитать стоимость
           </a>
-        </nav>
 
-        <a className="public-action public-action-desktop" href="#contacts">
-          Рассчитать стоимость
-        </a>
-
-        <button
-          className="public-menu-button"
-          type="button"
-          aria-label={isMenuOpen ? "Закрыть меню" : "Открыть меню"}
-          aria-expanded={isMenuOpen}
-          onClick={() => setIsMenuOpen((current) => !current)}
-        >
-          <span aria-hidden="true" />
-          <span aria-hidden="true" />
-          <span aria-hidden="true" />
-        </button>
+          <button
+            className="public-menu-button"
+            type="button"
+            aria-label={isMenuOpen ? "Закрыть меню" : "Открыть меню"}
+            aria-expanded={isMenuOpen}
+            onClick={() => setIsMenuOpen((current) => !current)}
+          >
+            <span aria-hidden="true" />
+            <span aria-hidden="true" />
+            <span aria-hidden="true" />
+          </button>
+        </div>
       </header>
 
       <main className="public-main">
@@ -128,6 +220,155 @@ export function PublicLanding() {
               ))}
             </ol>
           </aside>
+        </section>
+
+        <section className="public-services" id="services" aria-labelledby="public-services-title">
+          <div className="public-section-heading">
+            <p className="public-section-kicker">Услуги</p>
+            <h2 id="public-services-title">Что берём на себя</h2>
+            <p>
+              Закрываем ремонт как единый процесс: от идеи и расчёта до отделки, комплектации и
+              сдачи объекта.
+            </p>
+          </div>
+
+          <div className="public-services-explorer">
+            <div className="public-services-tabs" role="tablist" aria-label="Услуги Danko">
+              {publicServiceItems.map((service, index) => {
+                const serviceNumber = String(index + 1).padStart(2, "0");
+                const isActive = activeServiceIndex === index;
+
+                return (
+                  <button
+                    className={`public-service-tab${isActive ? " public-service-tab-active" : ""}`}
+                    type="button"
+                    role="tab"
+                    aria-selected={isActive}
+                    aria-controls="public-service-panel"
+                    id={`public-service-tab-${index}`}
+                    key={service.title}
+                    onMouseEnter={() => setActiveServiceIndex(index)}
+                    onFocus={() => setActiveServiceIndex(index)}
+                    onClick={() => setActiveServiceIndex(index)}
+                  >
+                    <span className="public-service-number">{serviceNumber}</span>
+                    <span className="public-service-tab-copy">
+                      <span className="public-service-tab-title">{service.title}</span>
+                      <span className="public-service-tab-description">{service.description}</span>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            <article
+              className="public-service-detail"
+              role="tabpanel"
+              id="public-service-panel"
+              aria-labelledby={`public-service-tab-${activeServiceIndex}`}
+            >
+              <div className="public-service-detail-content" key={activeService.title}>
+                <div className="public-service-detail-header">
+                  <span className="public-service-number">{String(activeServiceIndex + 1).padStart(2, "0")}</span>
+                  <h3>{activeService.title}</h3>
+                  <p>{activeService.description}</p>
+                </div>
+
+                <div className="public-service-detail-body">
+                  <div>
+                    <h4>Что входит</h4>
+                    <ul>
+                      {activeService.includes.map((item) => (
+                        <li key={item}>{item}</li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div className="public-service-result">
+                    <h4>Результат</h4>
+                    <p>{activeService.result}</p>
+                  </div>
+                </div>
+
+                <div className="public-service-visual" aria-label={`Схема этапа: ${activeService.visualTitle}`}>
+                  <div className="public-service-visual-heading">
+                    <span>Схема этапа</span>
+                    <strong>{activeService.visualTitle}</strong>
+                  </div>
+                  <ol className="public-service-visual-list">
+                    {activeService.visualItems.map((item, index) => (
+                      <li className="public-service-visual-item" key={item}>
+                        <span className="public-service-visual-dot">{String(index + 1).padStart(2, "0")}</span>
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              </div>
+            </article>
+          </div>
+
+          <div className="public-services-accordion">
+            {publicServiceItems.map((service, index) => {
+              const serviceNumber = String(index + 1).padStart(2, "0");
+              const isActive = activeServiceIndex === index;
+
+              return (
+                <div className="public-service-accordion-item" key={service.title}>
+                  <button
+                    className={`public-service-accordion-button${
+                      isActive ? " public-service-accordion-button-active" : ""
+                    }`}
+                    type="button"
+                    aria-expanded={isActive}
+                    aria-controls={`public-service-accordion-panel-${index}`}
+                    onClick={() => setActiveServiceIndex(index)}
+                  >
+                    <span className="public-service-number">{serviceNumber}</span>
+                    <span>{service.title}</span>
+                  </button>
+
+                  <div
+                    className={`public-service-accordion-panel${
+                      isActive ? " public-service-accordion-panel-open" : ""
+                    }`}
+                    id={`public-service-accordion-panel-${index}`}
+                    aria-hidden={!isActive}
+                  >
+                    <div className="public-service-accordion-panel-inner">
+                      <p>{service.description}</p>
+                      <h4>Что входит</h4>
+                      <ul>
+                        {service.includes.map((item) => (
+                          <li key={item}>{item}</li>
+                        ))}
+                      </ul>
+                      <div className="public-service-result">
+                        <h4>Результат</h4>
+                        <p>{service.result}</p>
+                      </div>
+
+                      <div className="public-service-visual" aria-label={`Схема этапа: ${service.visualTitle}`}>
+                        <div className="public-service-visual-heading">
+                          <span>Схема этапа</span>
+                          <strong>{service.visualTitle}</strong>
+                        </div>
+                        <ol className="public-service-visual-list">
+                          {service.visualItems.map((item, itemIndex) => (
+                            <li className="public-service-visual-item" key={item}>
+                              <span className="public-service-visual-dot">
+                                {String(itemIndex + 1).padStart(2, "0")}
+                              </span>
+                              <span>{item}</span>
+                            </li>
+                          ))}
+                        </ol>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </section>
       </main>
     </div>

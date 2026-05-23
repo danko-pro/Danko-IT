@@ -226,9 +226,9 @@ export function PublicLanding() {
   const [isHeaderHidden, setIsHeaderHidden] = useState(false);
   const [activeServiceIndex, setActiveServiceIndex] = useState(0);
   const [activePackageIndex, setActivePackageIndex] = useState(0);
-  const [activeProcessIndex, setActiveProcessIndex] = useState(0);
+  const [activeProcessIndex, setActiveProcessIndex] = useState(-1);
   const processStepRefs = useRef<Array<HTMLLIElement | null>>([]);
-  const activeProcessIndexRef = useRef(0);
+  const activeProcessIndexRef = useRef(-1);
   const lastProcessScrollYRef = useRef(0);
   const activeService = publicServiceItems[activeServiceIndex];
 
@@ -336,7 +336,6 @@ export function PublicLanding() {
       animationFrameId = null;
 
       let targetIndex = activeProcessIndexRef.current;
-      let fallbackIndex: number | null = null;
       let hasActivatedStep = false;
       const activationLine = window.innerHeight * 0.55;
       const scrollBottom = window.scrollY + window.innerHeight;
@@ -362,19 +361,13 @@ export function PublicLanding() {
           return;
         }
 
-        fallbackIndex = index;
-
         if (rect.top <= activationLine) {
           targetIndex = index;
           hasActivatedStep = true;
         }
       });
 
-      if (!hasActivatedStep && fallbackIndex !== null) {
-        targetIndex = fallbackIndex;
-      }
-
-      if (applyGuardedProcessIndex(targetIndex)) {
+      if (hasActivatedStep && applyGuardedProcessIndex(targetIndex)) {
         requestProcessUpdate();
       }
     };

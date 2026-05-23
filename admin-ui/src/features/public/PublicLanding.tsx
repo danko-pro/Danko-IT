@@ -80,6 +80,10 @@ const publicRepairPackages = [
     exactPrice: "40 228 ₽/м²",
     totalExample: "от 2,57 млн ₽ за 63,9 м²",
     description: "Базовый формат для квартиры под сдачу, продажу или аккуратный запуск объекта.",
+    isFeatured: true,
+    badge: "Актуальный выбор",
+    metric: "10+ расчётов в год",
+    note: "Часто подходит для квартир под сдачу, продажу и быстрого запуска объекта.",
     items: [
       "Работы + материалы — 24 537 ₽/м²",
       "Мебель — 9 587 ₽/м²",
@@ -169,6 +173,7 @@ export function PublicLanding() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isHeaderHidden, setIsHeaderHidden] = useState(false);
   const [activeServiceIndex, setActiveServiceIndex] = useState(0);
+  const [activePackageIndex, setActivePackageIndex] = useState(0);
   const activeService = publicServiceItems[activeServiceIndex];
 
   useEffect(() => {
@@ -478,33 +483,55 @@ export function PublicLanding() {
           </div>
 
           <div className="public-package-grid" aria-label="Пакеты ремонта">
-            {publicRepairPackages.map((repairPackage) => (
-              <article className="public-package-card" key={repairPackage.name}>
-                <div className="public-package-card-header">
-                  <div>
-                    <p className="public-package-name">{repairPackage.name}</p>
-                    <h3>{repairPackage.subtitle}</h3>
+            {publicRepairPackages.map((repairPackage, index) => {
+              const isActive = activePackageIndex === index;
+
+              return (
+                <article
+                  className={`public-package-card${isActive ? " public-package-card-active" : ""}${
+                    repairPackage.isFeatured ? " public-package-card-featured" : ""
+                  }`}
+                  key={repairPackage.name}
+                  tabIndex={0}
+                  onMouseEnter={() => setActivePackageIndex(index)}
+                  onFocus={() => setActivePackageIndex(index)}
+                  onClick={() => setActivePackageIndex(index)}
+                >
+                  <div className="public-package-card-header">
+                    <div>
+                      <p className="public-package-name">{repairPackage.name}</p>
+                      <h3>{repairPackage.subtitle}</h3>
+                    </div>
+                    <span className="public-package-mark" aria-hidden="true">
+                      {repairPackage.name.replace("Пакет ", "")}
+                    </span>
                   </div>
-                  <span className="public-package-mark" aria-hidden="true">
-                    {repairPackage.name.replace("Пакет ", "")}
-                  </span>
-                </div>
 
-                <p className="public-package-description">{repairPackage.description}</p>
+                  <p className="public-package-description">{repairPackage.description}</p>
 
-                <div className="public-package-price-block">
-                  <strong>{repairPackage.price}</strong>
-                  <span>расчётный ориентир: {repairPackage.exactPrice}</span>
-                  <em>{repairPackage.totalExample}</em>
-                </div>
+                  <div className="public-package-price-block">
+                    <strong>{repairPackage.price}</strong>
+                    <span>расчётный ориентир: {repairPackage.exactPrice}</span>
+                    <em>{repairPackage.totalExample}</em>
+                  </div>
 
-                <ul className="public-package-items">
-                  {repairPackage.items.map((item) => (
-                    <li key={item}>{item}</li>
-                  ))}
-                </ul>
-              </article>
-            ))}
+                  {(repairPackage.badge || repairPackage.metric) && (
+                    <div className="public-package-highlights" aria-label="Особенности пакета">
+                      {repairPackage.badge && <span>{repairPackage.badge}</span>}
+                      {repairPackage.metric && <strong>{repairPackage.metric}</strong>}
+                    </div>
+                  )}
+
+                  {repairPackage.note && <p className="public-package-feature-note">{repairPackage.note}</p>}
+
+                  <ul className="public-package-items">
+                    {repairPackage.items.map((item) => (
+                      <li key={item}>{item}</li>
+                    ))}
+                  </ul>
+                </article>
+              );
+            })}
           </div>
 
           <p className="public-package-note">

@@ -7,6 +7,20 @@ const publicNavItems = [
   { label: "Контакты", href: "#contacts" },
 ];
 
+const publicHeroFacts = [
+  "17+ лет опыта",
+  "45 рабочих дней типовой срок",
+  "Калининград и область",
+  "Дизайн / отделка / комплектация",
+];
+
+const publicObjectSteps = [
+  { label: "Черновые работы", status: "завершено", state: "done" },
+  { label: "Электрика", status: "завершено", state: "done" },
+  { label: "Плитка", status: "в работе", state: "active" },
+  { label: "Потолки", status: "следующий этап", state: "next" },
+];
+
 export function PublicLanding() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
@@ -58,6 +72,64 @@ export function PublicLanding() {
           <span aria-hidden="true" />
         </button>
       </header>
+
+      <main className="public-main">
+        <section className="public-hero" aria-labelledby="public-hero-title">
+          <div className="public-hero-content">
+            <p className="public-hero-kicker">Danko · дизайн / отделка / комплектация</p>
+            <h1 id="public-hero-title">
+              Ремонт квартир и апартаментов под ключ в Калининграде и области
+            </h1>
+            <p className="public-hero-description">
+              Берём объект от идеи и расчёта до комплектации, отделки и сдачи готового ремонта.
+              Работаем с квартирами, апартаментами и инвесторскими объектами.
+            </p>
+
+            <div className="public-hero-actions" aria-label="Основные действия">
+              <a className="public-action public-hero-primary" href="#contacts">
+                Рассчитать ремонт
+              </a>
+              <a className="public-hero-secondary" href="#projects">
+                Посмотреть объекты
+              </a>
+            </div>
+
+            <ul className="public-hero-facts" aria-label="Факты о работе Danko">
+              {publicHeroFacts.map((fact) => (
+                <li className="public-hero-fact" key={fact}>
+                  <span>{fact}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <aside className="public-object-card" aria-label="Пример объекта в работе">
+            <div className="public-object-card-header">
+              <div>
+                <p className="public-object-eyebrow">Объект в работе</p>
+                <h2>АГ / 82</h2>
+              </div>
+              <span className="public-object-status">в работе</span>
+            </div>
+
+            <div className="public-object-summary">
+              <span>Апартаменты</span>
+              <span>Этап: чистовая отделка</span>
+              <span>Статус: в работе</span>
+            </div>
+
+            <ol className="public-object-steps" aria-label="Этапы объекта">
+              {publicObjectSteps.map((step) => (
+                <li className={`public-object-step public-object-step-${step.state}`} key={step.label}>
+                  <span className="public-object-step-dot" aria-hidden="true" />
+                  <span className="public-object-step-label">{step.label}</span>
+                  <span className="public-object-step-status">{step.status}</span>
+                </li>
+              ))}
+            </ol>
+          </aside>
+        </section>
+      </main>
     </div>
   );
 }

@@ -1,259 +1,21 @@
-import { type ChangeEvent, type FormEvent, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
-const publicNavItems = [
-  { label: "Услуги", href: "#services" },
-  { label: "Объекты", href: "#projects" },
-  { label: "Как работаем", href: "#process" },
-  { label: "Контакты", href: "#contacts" },
-];
-
-const publicHeroFacts = [
-  "17+ лет в ремонтах",
-  "Детальный расчёт ремонта",
-  "Материалы и комплектация",
-  "Калининград и область",
-];
-
-const publicObjectSteps = [
-  { label: "Черновые работы", status: "завершено", state: "done" },
-  { label: "Электрика", status: "завершено", state: "done" },
-  { label: "Плитка", status: "в работе", state: "active" },
-  { label: "Потолки", status: "следующий этап", state: "next" },
-];
-
-const publicServiceItems = [
-  {
-    title: "Дизайн-решение",
-    description: "Собираем понятную концепцию ремонта до начала работ.",
-    includes: ["планировка и сценарии помещений", "материалы, цвета и покрытия", "логика света и оснащения"],
-    result: "понятное направление ремонта без хаотичных решений.",
-    visualTitle: "Логика пространства",
-    visualItems: ["планировка", "материалы", "сценарии света"],
-  },
-  {
-    title: "Детальный расчёт",
-    description: "Формируем структуру стоимости по работам, материалам и комплектации.",
-    includes: ["состав работ", "материалы и расходники", "комплектация объекта"],
-    result: "клиент видит, из чего складывается бюджет.",
-    visualTitle: "Структура бюджета",
-    visualItems: ["работы", "материалы", "комплектация"],
-  },
-  {
-    title: "Отделочные работы",
-    description: "Выполняем черновую и чистовую отделку квартир и апартаментов под ключ.",
-    includes: ["подготовка оснований", "чистовая отделка", "контроль этапов и качества"],
-    result: "объект движется по понятному плану работ.",
-    visualTitle: "Ход работ",
-    visualItems: ["подготовка", "чистовая отделка", "контроль"],
-  },
-  {
-    title: "Комплектация",
-    description: "Подбираем, закупаем и доставляем материалы на объект.",
-    includes: ["подбор материалов", "закупка и поставки", "контроль дозакупок"],
-    result: "меньше срывов из-за отсутствующих материалов.",
-    visualTitle: "Поставка на объект",
-    visualItems: ["подбор", "закупка", "доставка"],
-  },
-  {
-    title: "Мебель и техника",
-    description: "Комплектуем объект базовыми позициями для проживания, сдачи или продажи.",
-    includes: ["кухни и шкафы", "техника", "базовое оснащение"],
-    result: "ремонт можно довести до готового состояния.",
-    visualTitle: "Готовность объекта",
-    visualItems: ["кухня", "шкафы", "техника"],
-  },
-  {
-    title: "Ведение объекта",
-    description: "Организуем работы, график, мастеров, поставки и контроль исполнения.",
-    includes: ["график работ", "координация мастеров", "контроль этапов"],
-    result: "клиент видит процесс, а не тушит пожары.",
-    visualTitle: "Управление процессом",
-    visualItems: ["график", "мастера", "контроль"],
-  },
-];
-
-const publicRepairPackages = [
-  {
-    name: "Пакет C",
-    subtitle: "Практичный ремонт",
-    price: "от 40 000 ₽/м²",
-    exactPrice: "40 228 ₽/м²",
-    totalExample: "от 2,57 млн ₽ за 63,9 м²",
-    description: "Базовый формат для квартиры под сдачу, продажу или аккуратный запуск объекта.",
-    isFeatured: true,
-    badge: "Актуальный выбор",
-    metric: "10+ расчётов в год",
-    note: "Часто подходит для квартир под сдачу, продажу и быстрого запуска объекта.",
-    items: [
-      "Работы + материалы — 24 537 ₽/м²",
-      "Мебель — 9 587 ₽/м²",
-      "Техника — 2 854 ₽/м²",
-      "Логистика и техрасходы — 2 750 ₽/м²",
-      "Уборка — 500 ₽/м²",
-    ],
-  },
-  {
-    name: "Пакет B",
-    subtitle: "Сбалансированный под ключ",
-    price: "от 52 000 ₽/м²",
-    exactPrice: "52 280 ₽/м²",
-    totalExample: "от 3,34 млн ₽ за 63,9 м²",
-    description: "Средний формат ремонта под ключ с более плотной комплектацией.",
-    items: [
-      "Работы + материалы — 35 759 ₽/м²",
-      "Мебель — 9 274 ₽/м²",
-      "Техника — 3 997 ₽/м²",
-      "Логистика и техрасходы — 2 750 ₽/м²",
-      "Уборка — 500 ₽/м²",
-    ],
-  },
-  {
-    name: "Пакет A",
-    subtitle: "Расширенный под ключ",
-    price: "от 75 000 ₽/м²",
-    exactPrice: "75 416 ₽/м²",
-    totalExample: "от 4,82 млн ₽ за 63,9 м²",
-    description: "Расширенный формат с более высокой долей отделки, мебели и комплектации.",
-    items: [
-      "Работы + материалы — 50 011 ₽/м²",
-      "Мебель — 17 850 ₽/м²",
-      "Техника — 4 306 ₽/м²",
-      "Логистика и техрасходы — 2 750 ₽/м²",
-      "Уборка — 500 ₽/м²",
-    ],
-  },
-];
-
-const publicProjectItems = [
-  {
-    name: "RE",
-    area: "126,0 м²",
-    package: "A",
-    type: "крупный ремонтный проект",
-    focus: ["работы", "материалы", "мебель", "техника"],
-  },
-  {
-    name: "K8",
-    area: "45,0 м²",
-    package: "B",
-    type: "квартира",
-    focus: ["работы", "материалы", "мебель", "техника"],
-  },
-  {
-    name: "TK",
-    area: "69,0 м²",
-    package: "B",
-    type: "квартира",
-    focus: ["работы", "материалы", "комплектация"],
-  },
-  {
-    name: "ИБ / 22",
-    area: "52,0 м²",
-    package: "C",
-    type: "квартира",
-    focus: ["работы", "материалы", "мебель", "техника", "двери"],
-  },
-  {
-    name: "АГ / 82",
-    area: "41,5 м²",
-    package: "C",
-    type: "апартаменты",
-    focus: ["отделка", "комплектация", "мебель", "техника"],
-  },
-  {
-    name: "ИБ / 42",
-    area: "47,1 м²",
-    package: "C",
-    type: "квартира",
-    focus: ["электрика", "отделка", "комплектация"],
-  },
-];
-
-const publicProcessCards = [
-  {
-    title: "Типовой ориентир",
-    text: "Типовой срок ремонта под ключ может составлять около 45 рабочих дней, но зависит от площади, состояния объекта, состава работ, выбранных материалов и комплектации.",
-  },
-  {
-    title: "Детальная смета",
-    text: "Работы, материалы, мебель, техника, логистика и дополнительные позиции собираются в понятную структуру. AI-обработка помогает быстрее разложить данные по категориям и проверить состав расчёта.",
-  },
-];
-
-const PROCESS_STEP_SWITCH_DELAY_MS = 260;
-
-const publicProcessSteps = [
-  {
-    title: "Заявка и вводные",
-    description:
-      "Уточняем объект, площадь, состояние, цель ремонта и желаемый формат: под себя, под сдачу, продажу или инвесторский пакет.",
-    meta: "1 день",
-  },
-  {
-    title: "Детальная смета и AI-обработка",
-    description:
-      "Собираем смету по работам, материалам, мебели, технике и логистике. Используем AI-обработку данных, чтобы быстрее структурировать позиции, проверить состав и показать клиенту понятный бюджет до старта.",
-    meta: "от 1 до 3 дней",
-  },
-  {
-    title: "Состав и комплектация",
-    description:
-      "Формируем наполнение объекта: отделка, материалы, техника, мебель, двери и дополнительные позиции. Сразу видим, что входит в бюджет и где могут появиться изменения.",
-    meta: "по задаче объекта",
-  },
-  {
-    title: "График и запуск",
-    description:
-      "Разбиваем ремонт на этапы, планируем поставки, мастеров и контрольные точки. Объект запускается не хаотично, а по понятной последовательности.",
-    meta: "до старта работ",
-  },
-  {
-    title: "Работы на объекте",
-    description:
-      "Ведём черновые и чистовые этапы, контролируем качество, сроки и наличие материалов. Работы, материалы и комплектация связаны в один процесс.",
-    meta: "по графику",
-  },
-  {
-    title: "Сдача результата",
-    description:
-      "Проверяем готовность, фиксируем замечания, закрываем финальные позиции и передаём объект в понятном состоянии.",
-    meta: "финальный этап",
-  },
-];
-
-const initialLeadForm = {
-  name: "",
-  phone: "",
-  objectType: "",
-  area: "",
-  packageType: "",
-  contactMethod: "telegram",
-  comment: "",
-};
-
-const objectTypeOptions = ["Квартира", "Апартаменты", "Инвесторский объект", "Серийная отделка", "Другое"];
-
-const packageTypeOptions = [
-  "Пакет C — практичный ремонт",
-  "Пакет B — сбалансированный под ключ",
-  "Пакет A — расширенный под ключ",
-  "Нужен индивидуальный расчёт",
-  "Пока не знаю",
-];
-
-const contactMethodOptions = [
-  { value: "telegram", label: "Telegram" },
-  { value: "whatsapp", label: "WhatsApp" },
-  { value: "call", label: "Звонок" },
-  { value: "any", label: "Любой способ" },
-];
-
-const contactsListItems = [
-  "площадь и тип объекта",
-  "желаемый пакет ремонта",
-  "комментарии по срокам",
-  "фото/планировку позже добавим",
-];
+import {
+  PROCESS_STEP_SWITCH_DELAY_MS,
+  contactMethodOptions,
+  contactsListItems,
+  objectTypeOptions,
+  packageTypeOptions,
+  publicHeroFacts,
+  publicNavItems,
+  publicObjectSteps,
+  publicProcessCards,
+  publicProcessSteps,
+  publicProjectItems,
+  publicRepairPackages,
+  publicServiceItems,
+} from "./public-content";
+import { useLeadFormDraft } from "./hooks/useLeadFormDraft";
 
 export function PublicLanding() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -261,12 +23,11 @@ export function PublicLanding() {
   const [activeServiceIndex, setActiveServiceIndex] = useState(0);
   const [activePackageIndex, setActivePackageIndex] = useState(0);
   const [activeProcessIndex, setActiveProcessIndex] = useState(-1);
-  const [leadForm, setLeadForm] = useState(initialLeadForm);
-  const [leadFormStatus, setLeadFormStatus] = useState("");
   const processStepRefs = useRef<Array<HTMLLIElement | null>>([]);
   const activeProcessIndexRef = useRef(-1);
   const lastProcessScrollYRef = useRef(0);
   const activeService = publicServiceItems[activeServiceIndex];
+  const { leadForm, leadFormStatus, handleLeadFormChange, handleLeadFormSubmit } = useLeadFormDraft();
 
   useEffect(() => {
     if (isMenuOpen) {
@@ -449,26 +210,6 @@ export function PublicLanding() {
   }, []);
 
   const closeMenu = () => setIsMenuOpen(false);
-
-  const handleLeadFormChange = (
-    event: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>,
-  ) => {
-    const { name, value } = event.target;
-
-    setLeadForm((currentForm) => ({
-      ...currentForm,
-      [name]: value,
-    }));
-
-    if (leadFormStatus) {
-      setLeadFormStatus("");
-    }
-  };
-
-  const handleLeadFormSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setLeadFormStatus("Заявка подготовлена. На следующем этапе подключим отправку в Telegram-бот.");
-  };
 
   return (
     <div className="public-landing">

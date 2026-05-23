@@ -900,11 +900,14 @@
   padding: 2px;
   background: conic-gradient(
     from var(--public-package-ring-angle),
-    rgba(30, 81, 74, 0.16),
-    rgba(30, 81, 74, 0.78),
+    rgba(30, 81, 74, 0.18),
+    rgba(30, 81, 74, 0.82),
+    rgba(76, 151, 133, 0.72),
     rgba(233, 242, 239, 0.96),
-    rgba(30, 81, 74, 0.78),
-    rgba(30, 81, 74, 0.16)
+    rgba(196, 163, 91, 0.68),
+    rgba(70, 117, 141, 0.62),
+    rgba(30, 81, 74, 0.82),
+    rgba(30, 81, 74, 0.18)
   );
   -webkit-mask:
     linear-gradient(#000 0 0) content-box,
@@ -961,6 +964,11 @@
   border-color: rgba(30, 81, 74, 0.26);
 }
 
+.public-package-card-featured::after {
+  opacity: 1;
+  animation: public-package-ring-spin 6s linear infinite;
+}
+
 .public-package-card-featured::before {
   background: linear-gradient(
     90deg,
@@ -978,11 +986,6 @@
   box-shadow:
     0 24px 58px rgba(19, 35, 31, 0.1),
     0 0 0 1px rgba(30, 81, 74, 0.08);
-}
-
-.public-package-card-active.public-package-card-featured::after {
-  opacity: 1;
-  animation: public-package-ring-spin 6s linear infinite;
 }
 
 .public-package-card-header {
@@ -1920,6 +1923,7 @@
   .public-package-card,
   .public-package-card::before,
   .public-package-card::after,
+  .public-package-card-featured::after,
   .public-package-card-active.public-package-card-featured::after,
   .public-package-card-active.public-package-card-featured,
   .public-package-mark,

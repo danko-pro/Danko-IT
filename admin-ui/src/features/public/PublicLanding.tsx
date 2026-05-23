@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { type ChangeEvent, type FormEvent, useEffect, useRef, useState } from "react";
 
 const publicNavItems = [
   { label: "Услуги", href: "#services" },
@@ -221,12 +221,48 @@ const publicProcessSteps = [
   },
 ];
 
+const initialLeadForm = {
+  name: "",
+  phone: "",
+  objectType: "",
+  area: "",
+  packageType: "",
+  contactMethod: "telegram",
+  comment: "",
+};
+
+const objectTypeOptions = ["Квартира", "Апартаменты", "Инвесторский объект", "Серийная отделка", "Другое"];
+
+const packageTypeOptions = [
+  "Пакет C — практичный ремонт",
+  "Пакет B — сбалансированный под ключ",
+  "Пакет A — расширенный под ключ",
+  "Нужен индивидуальный расчёт",
+  "Пока не знаю",
+];
+
+const contactMethodOptions = [
+  { value: "telegram", label: "Telegram" },
+  { value: "whatsapp", label: "WhatsApp" },
+  { value: "call", label: "Звонок" },
+  { value: "any", label: "Любой способ" },
+];
+
+const contactsListItems = [
+  "площадь и тип объекта",
+  "желаемый пакет ремонта",
+  "комментарии по срокам",
+  "фото/планировку позже добавим",
+];
+
 export function PublicLanding() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isHeaderHidden, setIsHeaderHidden] = useState(false);
   const [activeServiceIndex, setActiveServiceIndex] = useState(0);
   const [activePackageIndex, setActivePackageIndex] = useState(0);
   const [activeProcessIndex, setActiveProcessIndex] = useState(-1);
+  const [leadForm, setLeadForm] = useState(initialLeadForm);
+  const [leadFormStatus, setLeadFormStatus] = useState("");
   const processStepRefs = useRef<Array<HTMLLIElement | null>>([]);
   const activeProcessIndexRef = useRef(-1);
   const lastProcessScrollYRef = useRef(0);
@@ -413,6 +449,26 @@ export function PublicLanding() {
   }, []);
 
   const closeMenu = () => setIsMenuOpen(false);
+
+  const handleLeadFormChange = (
+    event: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>,
+  ) => {
+    const { name, value } = event.target;
+
+    setLeadForm((currentForm) => ({
+      ...currentForm,
+      [name]: value,
+    }));
+
+    if (leadFormStatus) {
+      setLeadFormStatus("");
+    }
+  };
+
+  const handleLeadFormSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setLeadFormStatus("Заявка подготовлена. На следующем этапе подключим отправку в Telegram-бот.");
+  };
 
   return (
     <div className="public-landing">
@@ -815,6 +871,170 @@ export function PublicLanding() {
                 </li>
               ))}
             </ol>
+          </div>
+        </section>
+
+        <section className="public-contacts" id="contacts" aria-labelledby="public-contacts-title">
+          <div className="public-section-heading public-contacts-head">
+            <p className="public-section-kicker">Контакты</p>
+            <h2 id="public-contacts-title">Оставьте вводные по объекту</h2>
+            <p>
+              Заполните короткую форму: тип объекта, площадь, формат ремонта и комментарий. На
+              следующем этапе мы подключим отправку заявки в Telegram-бота, чтобы менеджер сразу
+              получал структурированные данные.
+            </p>
+          </div>
+
+          <div className="public-contacts-layout">
+            <div className="public-contacts-panel">
+              <form className="public-lead-form" onSubmit={handleLeadFormSubmit}>
+                <div className="public-form-grid">
+                  <label className="public-form-field" htmlFor="public-lead-name">
+                    <span className="public-form-label">Имя</span>
+                    <input
+                      className="public-form-input"
+                      id="public-lead-name"
+                      name="name"
+                      type="text"
+                      value={leadForm.name}
+                      onChange={handleLeadFormChange}
+                      placeholder="Как к вам обращаться"
+                    />
+                  </label>
+
+                  <label className="public-form-field" htmlFor="public-lead-phone">
+                    <span className="public-form-label">Телефон или Telegram</span>
+                    <input
+                      className="public-form-input"
+                      id="public-lead-phone"
+                      name="phone"
+                      type="text"
+                      value={leadForm.phone}
+                      onChange={handleLeadFormChange}
+                      placeholder="+7 / @username"
+                    />
+                  </label>
+
+                  <label className="public-form-field" htmlFor="public-lead-object-type">
+                    <span className="public-form-label">Тип объекта</span>
+                    <select
+                      className="public-form-select"
+                      id="public-lead-object-type"
+                      name="objectType"
+                      value={leadForm.objectType}
+                      onChange={handleLeadFormChange}
+                    >
+                      <option value="">Выберите тип объекта</option>
+                      {objectTypeOptions.map((option) => (
+                        <option value={option} key={option}>
+                          {option}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label className="public-form-field" htmlFor="public-lead-area">
+                    <span className="public-form-label">Площадь</span>
+                    <input
+                      className="public-form-input"
+                      id="public-lead-area"
+                      name="area"
+                      type="text"
+                      value={leadForm.area}
+                      onChange={handleLeadFormChange}
+                      placeholder="Например, 52 м²"
+                    />
+                  </label>
+
+                  <label className="public-form-field" htmlFor="public-lead-package-type">
+                    <span className="public-form-label">Интересующий формат</span>
+                    <select
+                      className="public-form-select"
+                      id="public-lead-package-type"
+                      name="packageType"
+                      value={leadForm.packageType}
+                      onChange={handleLeadFormChange}
+                    >
+                      <option value="">Выберите формат</option>
+                      {packageTypeOptions.map((option) => (
+                        <option value={option} key={option}>
+                          {option}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label className="public-form-field" htmlFor="public-lead-contact-method">
+                    <span className="public-form-label">Удобный способ связи</span>
+                    <select
+                      className="public-form-select"
+                      id="public-lead-contact-method"
+                      name="contactMethod"
+                      value={leadForm.contactMethod}
+                      onChange={handleLeadFormChange}
+                    >
+                      {contactMethodOptions.map((option) => (
+                        <option value={option.value} key={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label className="public-form-field public-form-field-wide" htmlFor="public-lead-comment">
+                    <span className="public-form-label">Комментарий</span>
+                    <textarea
+                      className="public-form-textarea"
+                      id="public-lead-comment"
+                      name="comment"
+                      value={leadForm.comment}
+                      onChange={handleLeadFormChange}
+                      placeholder="Кратко опишите объект, задачу, сроки или что уже известно"
+                      rows={5}
+                    />
+                  </label>
+                </div>
+
+                <div className="public-form-footer">
+                  <button className="public-form-submit" type="submit">
+                    Подготовить заявку
+                  </button>
+                  {leadFormStatus && (
+                    <p className="public-form-status" role="status">
+                      {leadFormStatus}
+                    </p>
+                  )}
+                </div>
+              </form>
+            </div>
+
+            <aside className="public-contacts-side" aria-label="Будущая QR-визитка">
+              <div className="public-contacts-qr-card">
+                <div>
+                  <h3>QR-визитка</h3>
+                  <p>
+                    Здесь будет QR-код на персональную визитку Danko BuildTech: контакты, сайт,
+                    быстрый переход в мессенджер и информация по ремонту.
+                  </p>
+                </div>
+
+                <div className="public-contacts-qr-placeholder" aria-label="Место под будущий QR-код визитки">
+                  <strong>QR</strong>
+                  <span>место под визитку</span>
+                </div>
+
+                <span className="public-contacts-qr-note">Визитка появится позже</span>
+
+                <div className="public-contacts-list">
+                  <h4>Что можно отправить:</h4>
+                  <ul>
+                    {contactsListItems.map((item) => (
+                      <li key={item}>{item}</li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </aside>
           </div>
         </section>
       </main>

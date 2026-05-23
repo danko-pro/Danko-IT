@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const publicNavItems = [
   { label: "Услуги", href: "#services" },
@@ -224,6 +224,8 @@ export function PublicLanding() {
   const [isHeaderHidden, setIsHeaderHidden] = useState(false);
   const [activeServiceIndex, setActiveServiceIndex] = useState(0);
   const [activePackageIndex, setActivePackageIndex] = useState(0);
+  const [activeProcessIndex, setActiveProcessIndex] = useState(0);
+  const processStepRefs = useRef<Array<HTMLLIElement | null>>([]);
   const activeService = publicServiceItems[activeServiceIndex];
 
   useEffect(() => {
@@ -261,6 +263,100 @@ export function PublicLanding() {
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, [isMenuOpen]);
+
+  useEffect(() => {
+    if (
+      typeof window === "undefined" ||
+      typeof window.matchMedia !== "function" ||
+      !("IntersectionObserver" in window)
+    ) {
+      return;
+    }
+
+    const mediaQuery = window.matchMedia("(max-width: 860px)");
+    if (!mediaQuery.matches) {
+      return;
+    }
+
+    let animationFrameId: number | null = null;
+
+    const updateActiveProcessStep = () => {
+      animationFrameId = null;
+
+      let nextIndex = 0;
+      let fallbackIndex: number | null = null;
+      let hasActivatedStep = false;
+      const activationLine = window.innerHeight * 0.55;
+      const scrollBottom = window.scrollY + window.innerHeight;
+      const pageBottom = document.documentElement.scrollHeight;
+
+      if (pageBottom - scrollBottom <= 4) {
+        setActiveProcessIndex(publicProcessSteps.length - 1);
+        return;
+      }
+
+      processStepRefs.current.forEach((step, index) => {
+        if (!step) {
+          return;
+        }
+
+        const rect = step.getBoundingClientRect();
+        const isVisible = rect.bottom >= 0 && rect.top <= window.innerHeight;
+
+        if (!isVisible) {
+          return;
+        }
+
+        fallbackIndex = index;
+
+        if (rect.top <= activationLine) {
+          nextIndex = index;
+          hasActivatedStep = true;
+        }
+      });
+
+      if (!hasActivatedStep && fallbackIndex !== null) {
+        nextIndex = fallbackIndex;
+      }
+
+      setActiveProcessIndex(nextIndex);
+    };
+
+    const requestProcessUpdate = () => {
+      if (animationFrameId !== null) {
+        return;
+      }
+
+      animationFrameId = window.requestAnimationFrame(updateActiveProcessStep);
+    };
+
+    const observer = new IntersectionObserver(
+      () => requestProcessUpdate(),
+      {
+        root: null,
+        rootMargin: "-25% 0px -20% 0px",
+        threshold: [0, 0.2, 0.5, 0.8],
+      },
+    );
+
+    processStepRefs.current.forEach((step) => {
+      if (step) {
+        observer.observe(step);
+      }
+    });
+
+    requestProcessUpdate();
+    window.addEventListener("scroll", requestProcessUpdate, { passive: true });
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("scroll", requestProcessUpdate);
+
+      if (animationFrameId !== null) {
+        window.cancelAnimationFrame(animationFrameId);
+      }
+    };
+  }, []);
 
   const closeMenu = () => setIsMenuOpen(false);
 
@@ -641,7 +737,17 @@ export function PublicLanding() {
 
             <ol className="public-process-timeline" aria-label="Этапы работы">
               {publicProcessSteps.map((step, index) => (
-                <li className="public-process-step" key={step.title} tabIndex={0}>
+                <li
+                  className={`public-process-step${
+                    activeProcessIndex === index ? " public-process-step-active" : ""
+                  }`}
+                  key={step.title}
+                  ref={(element) => {
+                    processStepRefs.current[index] = element;
+                  }}
+                  data-process-index={index}
+                  tabIndex={0}
+                >
                   <span className="public-process-step-number" aria-hidden="true">
                     {String(index + 1).padStart(2, "0")}
                   </span>

@@ -72,6 +72,99 @@ const publicServiceItems = [
   },
 ];
 
+const publicRepairPackages = [
+  {
+    name: "Пакет C",
+    subtitle: "Практичный ремонт",
+    price: "от 40 000 ₽/м²",
+    exactPrice: "40 228 ₽/м²",
+    totalExample: "от 2,57 млн ₽ за 63,9 м²",
+    description: "Базовый формат для квартиры под сдачу, продажу или аккуратный запуск объекта.",
+    items: [
+      "Работы + материалы — 24 537 ₽/м²",
+      "Мебель — 9 587 ₽/м²",
+      "Техника — 2 854 ₽/м²",
+      "Логистика и техрасходы — 2 750 ₽/м²",
+      "Уборка — 500 ₽/м²",
+    ],
+  },
+  {
+    name: "Пакет B",
+    subtitle: "Сбалансированный под ключ",
+    price: "от 52 000 ₽/м²",
+    exactPrice: "52 280 ₽/м²",
+    totalExample: "от 3,34 млн ₽ за 63,9 м²",
+    description: "Средний формат ремонта под ключ с более плотной комплектацией.",
+    items: [
+      "Работы + материалы — 35 759 ₽/м²",
+      "Мебель — 9 274 ₽/м²",
+      "Техника — 3 997 ₽/м²",
+      "Логистика и техрасходы — 2 750 ₽/м²",
+      "Уборка — 500 ₽/м²",
+    ],
+  },
+  {
+    name: "Пакет A",
+    subtitle: "Расширенный под ключ",
+    price: "от 75 000 ₽/м²",
+    exactPrice: "75 416 ₽/м²",
+    totalExample: "от 4,82 млн ₽ за 63,9 м²",
+    description: "Расширенный формат с более высокой долей отделки, мебели и комплектации.",
+    items: [
+      "Работы + материалы — 50 011 ₽/м²",
+      "Мебель — 17 850 ₽/м²",
+      "Техника — 4 306 ₽/м²",
+      "Логистика и техрасходы — 2 750 ₽/м²",
+      "Уборка — 500 ₽/м²",
+    ],
+  },
+];
+
+const publicProjectItems = [
+  {
+    name: "RE",
+    area: "126,0 м²",
+    package: "A",
+    type: "крупный ремонтный проект",
+    focus: ["работы", "материалы", "мебель", "техника"],
+  },
+  {
+    name: "K8",
+    area: "45,0 м²",
+    package: "B",
+    type: "квартира",
+    focus: ["работы", "материалы", "мебель", "техника"],
+  },
+  {
+    name: "TK",
+    area: "69,0 м²",
+    package: "B",
+    type: "квартира",
+    focus: ["работы", "материалы", "комплектация"],
+  },
+  {
+    name: "ИБ / 22",
+    area: "52,0 м²",
+    package: "C",
+    type: "квартира",
+    focus: ["работы", "материалы", "мебель", "техника", "двери"],
+  },
+  {
+    name: "АГ / 82",
+    area: "41,5 м²",
+    package: "C",
+    type: "апартаменты",
+    focus: ["отделка", "комплектация", "мебель", "техника"],
+  },
+  {
+    name: "ИБ / 42",
+    area: "47,1 м²",
+    package: "C",
+    type: "квартира",
+    focus: ["электрика", "отделка", "комплектация"],
+  },
+];
+
 export function PublicLanding() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isHeaderHidden, setIsHeaderHidden] = useState(false);
@@ -368,6 +461,82 @@ export function PublicLanding() {
                 </div>
               );
             })}
+          </div>
+        </section>
+
+        <section className="public-projects" id="projects" aria-labelledby="public-projects-title">
+          <div className="public-projects-head">
+            <div className="public-section-heading">
+              <p className="public-section-kicker">Форматы и стоимость</p>
+              <h2 id="public-projects-title">Типы ремонта и ориентиры за м²</h2>
+              <p>
+                Считаем ремонт по составу работ, материалов, мебели, техники и логистики. Клиент
+                заранее видит формат, наполнение и порядок бюджета.
+              </p>
+            </div>
+            <span className="public-projects-badge">A / B / C пакеты</span>
+          </div>
+
+          <div className="public-package-grid" aria-label="Пакеты ремонта">
+            {publicRepairPackages.map((repairPackage) => (
+              <article className="public-package-card" key={repairPackage.name}>
+                <div className="public-package-card-header">
+                  <div>
+                    <p className="public-package-name">{repairPackage.name}</p>
+                    <h3>{repairPackage.subtitle}</h3>
+                  </div>
+                  <span className="public-package-mark" aria-hidden="true">
+                    {repairPackage.name.replace("Пакет ", "")}
+                  </span>
+                </div>
+
+                <p className="public-package-description">{repairPackage.description}</p>
+
+                <div className="public-package-price-block">
+                  <strong>{repairPackage.price}</strong>
+                  <span>расчётный ориентир: {repairPackage.exactPrice}</span>
+                  <em>{repairPackage.totalExample}</em>
+                </div>
+
+                <ul className="public-package-items">
+                  {repairPackage.items.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </article>
+            ))}
+          </div>
+
+          <p className="public-package-note">
+            Ориентиры приведены для предварительной оценки. Точный расчёт зависит от площади,
+            состояния объекта, состава работ, выбранных материалов, мебели и техники.
+          </p>
+
+          <div className="public-projects-sample">
+            <div className="public-projects-subhead">
+              <p className="public-section-kicker">Объекты</p>
+              <h3>Объекты в расчёте</h3>
+            </div>
+
+            <div className="public-project-card-grid" aria-label="Объекты в расчёте">
+              {publicProjectItems.map((project) => (
+                <article className="public-project-card" key={project.name}>
+                  <div className="public-project-card-topline">
+                    <span className="public-project-name">{project.name}</span>
+                    <span className="public-project-package">Пакет {project.package}</span>
+                  </div>
+                  <div className="public-project-meta">
+                    <span>{project.area}</span>
+                    <span>{project.type}</span>
+                  </div>
+                  <div className="public-project-tags" aria-label="Состав работ">
+                    {project.focus.map((item) => (
+                      <span key={item}>{item}</span>
+                    ))}
+                  </div>
+                </article>
+              ))}
+            </div>
           </div>
         </section>
       </main>

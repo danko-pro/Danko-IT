@@ -226,6 +226,8 @@ export function PublicLanding() {
   const [activePackageIndex, setActivePackageIndex] = useState(0);
   const [activeProcessIndex, setActiveProcessIndex] = useState(0);
   const processStepRefs = useRef<Array<HTMLLIElement | null>>([]);
+  const activeProcessIndexRef = useRef(0);
+  const lastProcessScrollYRef = useRef(0);
   const activeService = publicServiceItems[activeServiceIndex];
 
   useEffect(() => {
@@ -279,11 +281,36 @@ export function PublicLanding() {
     }
 
     let animationFrameId: number | null = null;
+    lastProcessScrollYRef.current = window.scrollY;
+
+    const applyGuardedProcessIndex = (targetIndex: number) => {
+      const currentIndex = activeProcessIndexRef.current;
+      const currentScrollY = window.scrollY;
+      const scrollDelta = currentScrollY - lastProcessScrollYRef.current;
+      lastProcessScrollYRef.current = currentScrollY;
+
+      if (targetIndex === currentIndex) {
+        return false;
+      }
+
+      const direction =
+        scrollDelta > 1 ? 1 : scrollDelta < -1 ? -1 : targetIndex > currentIndex ? 1 : -1;
+
+      if ((targetIndex > currentIndex && direction < 0) || (targetIndex < currentIndex && direction > 0)) {
+        return false;
+      }
+
+      const nextIndex = targetIndex > currentIndex ? currentIndex + 1 : currentIndex - 1;
+      activeProcessIndexRef.current = nextIndex;
+      setActiveProcessIndex(nextIndex);
+
+      return nextIndex !== targetIndex;
+    };
 
     const updateActiveProcessStep = () => {
       animationFrameId = null;
 
-      let nextIndex = 0;
+      let targetIndex = activeProcessIndexRef.current;
       let fallbackIndex: number | null = null;
       let hasActivatedStep = false;
       const activationLine = window.innerHeight * 0.55;
@@ -291,7 +318,10 @@ export function PublicLanding() {
       const pageBottom = document.documentElement.scrollHeight;
 
       if (pageBottom - scrollBottom <= 4) {
-        setActiveProcessIndex(publicProcessSteps.length - 1);
+        if (applyGuardedProcessIndex(publicProcessSteps.length - 1)) {
+          requestProcessUpdate();
+        }
+
         return;
       }
 
@@ -310,16 +340,18 @@ export function PublicLanding() {
         fallbackIndex = index;
 
         if (rect.top <= activationLine) {
-          nextIndex = index;
+          targetIndex = index;
           hasActivatedStep = true;
         }
       });
 
       if (!hasActivatedStep && fallbackIndex !== null) {
-        nextIndex = fallbackIndex;
+        targetIndex = fallbackIndex;
       }
 
-      setActiveProcessIndex(nextIndex);
+      if (applyGuardedProcessIndex(targetIndex)) {
+        requestProcessUpdate();
+      }
     };
 
     const requestProcessUpdate = () => {

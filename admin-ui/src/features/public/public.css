@@ -236,28 +236,36 @@
 }
 
 .public-hero-facts {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.62rem;
-  max-width: 560px;
-  margin: 1.55rem 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.58rem 1.25rem;
+  max-width: 650px;
+  margin: 1.45rem 0 0;
   padding: 0;
   list-style: none;
 }
 
 .public-hero-fact {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.42rem;
   min-width: 0;
-  padding: 0.82rem 0.9rem;
-  border: 1px solid var(--public-border);
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.72);
+}
+
+.public-hero-fact::before {
+  flex: 0 0 auto;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--public-green);
+  content: "";
 }
 
 .public-hero-fact span {
-  color: #1f3934;
-  font-size: 0.92rem;
+  color: #40544f;
+  font-size: 0.9rem;
   font-weight: 750;
-  line-height: 1.25;
+  line-height: 1.3;
 }
 
 .public-object-card {
@@ -554,22 +562,23 @@
   }
 
   .public-hero-facts {
+    display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.5rem;
+    gap: 0.56rem 0.8rem;
     margin-top: 1.2rem;
   }
 
   .public-hero-fact {
-    padding: 0.68rem 0.72rem;
-    border-radius: 15px;
+    align-items: flex-start;
+    gap: 0.38rem;
+  }
+
+  .public-hero-fact::before {
+    margin-top: 0.34rem;
   }
 
   .public-hero-fact span {
     font-size: 0.78rem;
-  }
-
-  .public-hero-fact:nth-child(n + 3) {
-    display: none;
   }
 
   .public-object-card {

@@ -8,10 +8,10 @@ const publicNavItems = [
 ];
 
 const publicHeroFacts = [
-  "17+ лет опыта",
-  "45 рабочих дней",
+  "17+ лет в ремонтах",
+  "Детальный расчёт ремонта",
+  "Материалы и комплектация",
   "Калининград и область",
-  "Дизайн / отделка / комплектация",
 ];
 
 const publicObjectSteps = [
@@ -87,7 +87,7 @@ export function PublicLanding() {
 
             <div className="public-hero-actions" aria-label="Основные действия">
               <a className="public-action public-hero-primary" href="#contacts">
-                Рассчитать ремонт
+                Рассчитать стоимость
               </a>
               <a className="public-hero-secondary" href="#projects">
                 Посмотреть объекты

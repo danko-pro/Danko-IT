@@ -897,17 +897,20 @@
   inset: -1px;
   z-index: 0;
   border-radius: inherit;
-  padding: 2px;
+  padding: 3px;
   background: conic-gradient(
     from var(--public-package-ring-angle),
-    rgba(30, 81, 74, 0.18),
-    rgba(30, 81, 74, 0.82),
-    rgba(76, 151, 133, 0.72),
-    rgba(233, 242, 239, 0.96),
-    rgba(196, 163, 91, 0.68),
-    rgba(70, 117, 141, 0.62),
-    rgba(30, 81, 74, 0.82),
-    rgba(30, 81, 74, 0.18)
+    rgba(30, 81, 74, 0.2),
+    rgba(37, 99, 235, 0.78),
+    rgba(124, 58, 237, 0.74),
+    rgba(79, 70, 229, 0.7),
+    rgba(20, 184, 166, 0.76),
+    rgba(34, 197, 94, 0.72),
+    rgba(233, 242, 239, 0.98),
+    rgba(196, 163, 91, 0.72),
+    rgba(14, 116, 144, 0.72),
+    rgba(30, 81, 74, 0.84),
+    rgba(30, 81, 74, 0.2)
   );
   -webkit-mask:
     linear-gradient(#000 0 0) content-box,

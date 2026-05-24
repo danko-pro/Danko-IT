@@ -31,11 +31,15 @@ export function useLeadFormDraft() {
   const handleLeadFormChange = (
     event: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>,
   ) => {
-    const { name, value } = event.target;
+    const target = event.target;
+    const { name } = target;
 
     setLeadForm((currentForm) => ({
       ...currentForm,
-      [name]: value,
+      [name]:
+        name === "personalDataConsent" && target instanceof HTMLInputElement
+          ? target.checked
+          : target.value,
     }));
 
     if (leadFormStatus) {

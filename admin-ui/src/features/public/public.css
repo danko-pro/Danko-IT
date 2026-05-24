@@ -1685,6 +1685,35 @@
   grid-column: 1 / -1;
 }
 
+.public-form-consent {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: flex-start;
+  gap: 0.68rem;
+  padding: 0.78rem 0.88rem;
+  border: 1px solid rgba(30, 81, 74, 0.14);
+  border-radius: 18px;
+  background: rgba(233, 242, 239, 0.46);
+  color: rgba(23, 45, 40, 0.86);
+  cursor: pointer;
+  font-size: 0.86rem;
+  font-weight: 650;
+  line-height: 1.38;
+}
+
+.public-form-consent input {
+  width: 18px;
+  height: 18px;
+  margin: 0.08rem 0 0;
+  accent-color: var(--public-green);
+  cursor: pointer;
+}
+
+.public-form-consent input:focus-visible {
+  outline: 3px solid rgba(30, 81, 74, 0.24);
+  outline-offset: 3px;
+}
+
 .public-form-label {
   color: var(--public-green-deep);
   font-size: 0.78rem;

@@ -6,6 +6,7 @@ export type PublicLeadForm = {
   packageType: string;
   contactMethod: string;
   comment: string;
+  personalDataConsent: boolean;
 };
 
 export type PublicContactMethodOption = {

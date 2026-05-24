@@ -1772,6 +1772,14 @@
   outline-offset: 3px;
 }
 
+.public-form-submit:disabled {
+  border-color: rgba(30, 81, 74, 0.24);
+  background: rgba(30, 81, 74, 0.62);
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+
 .public-form-status {
   max-width: 460px;
   margin: 0;
@@ -1948,7 +1956,7 @@
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .public-form-submit:hover {
+  .public-form-submit:hover:not(:disabled) {
     border-color: var(--public-green-deep);
     background: var(--public-green-deep);
     box-shadow: 0 14px 34px rgba(30, 81, 74, 0.18);

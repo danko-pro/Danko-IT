@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from sqlalchemy import Column, Float, ForeignKey, Index, Integer, Table, Text, text
+from sqlalchemy import BigInteger, Column, Float, ForeignKey, Index, Integer, Table, Text, text
 
 import supply_bot.storage_auth.tables  # noqa: F401
 import supply_bot.storage_catalog.tables  # noqa: F401
@@ -11,8 +11,8 @@ request_drafts = Table(
     metadata,
     Column("id", Integer, primary_key=True, autoincrement=True),
     Column("owner_user_id", Integer, ForeignKey("app_users.id", ondelete="CASCADE"), nullable=True),
-    Column("chat_id", Integer, nullable=False),
-    Column("master_id", Integer, nullable=False),
+    Column("chat_id", BigInteger, nullable=False),
+    Column("master_id", BigInteger, nullable=False),
     Column("master_name", Text, nullable=False),
     Column("status", Text, nullable=False, server_default=text("'collecting'")),
     Column("waiting_for", Text, nullable=True),
@@ -32,7 +32,7 @@ request_draft_participants = Table(
     metadata,
     Column("owner_user_id", Integer, ForeignKey("app_users.id", ondelete="CASCADE"), nullable=True),
     Column("draft_id", Integer, ForeignKey("request_drafts.id", ondelete="CASCADE"), primary_key=True),
-    Column("user_id", Integer, primary_key=True),
+    Column("user_id", BigInteger, primary_key=True),
     Column("user_name", Text, nullable=True),
     Column("role", Text, nullable=False, server_default=text("'participant'")),
     Column("created_at", Text, nullable=False, server_default=text("CURRENT_TIMESTAMP")),
@@ -68,7 +68,7 @@ group_profiles = Table(
     metadata,
     Column("id", Integer, primary_key=True, autoincrement=True),
     Column("owner_user_id", Integer, ForeignKey("app_users.id", ondelete="CASCADE"), nullable=True),
-    Column("chat_id", Integer, nullable=False),
+    Column("chat_id", BigInteger, nullable=False),
     Column("title", Text, nullable=True),
     Column("raw_description", Text, nullable=True),
     Column("object_name", Text, nullable=True),
@@ -88,8 +88,8 @@ group_message_history = Table(
     metadata,
     Column("id", Integer, primary_key=True, autoincrement=True),
     Column("owner_user_id", Integer, ForeignKey("app_users.id", ondelete="CASCADE"), nullable=True),
-    Column("chat_id", Integer, nullable=False),
-    Column("user_id", Integer, nullable=False),
+    Column("chat_id", BigInteger, nullable=False),
+    Column("user_id", BigInteger, nullable=False),
     Column("user_name", Text, nullable=True),
     Column("message_id", Integer, nullable=True),
     Column("text", Text, nullable=False),

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from sqlalchemy import Column, ForeignKey, Index, Integer, Table, Text, text
+from sqlalchemy import BigInteger, Column, ForeignKey, Index, Integer, Table, Text, text
 
 import supply_bot.storage_auth.tables  # noqa: F401
 from supply_bot.database.metadata import metadata
@@ -10,7 +10,7 @@ telegram_notification_outbox = Table(
     metadata,
     Column("id", Integer, primary_key=True, autoincrement=True),
     Column("owner_user_id", Integer, ForeignKey("app_users.id", ondelete="CASCADE"), nullable=True),
-    Column("chat_id", Integer, nullable=False),
+    Column("chat_id", BigInteger, nullable=False),
     Column("text", Text, nullable=False),
     Column("status", Text, nullable=False, server_default=text("'pending'")),
     Column("attempts", Integer, nullable=False, server_default=text("0")),

@@ -27,7 +27,7 @@ class SqlAlchemyRequestProfilesRepository(OwnerScopedSqlAlchemyRepository):
                         group_profiles.c.delivery_fallback,
                         group_profiles.c.updated_at,
                     )
-                    .where(self._owner_clause(group_profiles))
+                    .where(self._read_owner_clause(group_profiles))
                     .order_by(group_profiles.c.updated_at.desc())
                     .limit(safe_limit)
                 )
@@ -54,7 +54,7 @@ class SqlAlchemyRequestProfilesRepository(OwnerScopedSqlAlchemyRepository):
                         group_profiles.c.updated_at,
                         group_profiles.c.owner_user_id,
                     )
-                    .where(self._owner_clause(group_profiles), group_profiles.c.chat_id == chat_id)
+                    .where(self._read_owner_clause(group_profiles), group_profiles.c.chat_id == chat_id)
                     .limit(1)
                 )
             ).mappings().first()

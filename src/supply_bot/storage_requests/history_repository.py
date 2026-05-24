@@ -36,7 +36,7 @@ class SqlAlchemyRequestHistoryRepository(OwnerScopedSqlAlchemyRepository):
             recent_ids = (
                 await session.execute(
                     select(group_message_history.c.id)
-                    .where(self._owner_clause(group_message_history), group_message_history.c.chat_id == chat_id)
+                    .where(self._read_owner_clause(group_message_history), group_message_history.c.chat_id == chat_id)
                     .order_by(group_message_history.c.id.desc())
                     .limit(60)
                 )
@@ -59,7 +59,7 @@ class SqlAlchemyRequestHistoryRepository(OwnerScopedSqlAlchemyRepository):
         limit: int = 10,
         user_id: int | None = None,
     ) -> list[dict[str, Any]]:
-        clauses = [self._owner_clause(group_message_history), group_message_history.c.chat_id == chat_id]
+        clauses = [self._read_owner_clause(group_message_history), group_message_history.c.chat_id == chat_id]
         if user_id is not None:
             clauses.append(group_message_history.c.user_id == user_id)
         async with self._session_factory() as session:

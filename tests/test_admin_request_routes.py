@@ -359,6 +359,41 @@ def test_registered_users_have_isolated_request_routes_and_notifications() -> No
             }
         )
 
+    async def create_global_bot_request(repository) -> int:
+        await repository.upsert_group_profile(
+            {
+                "chat_id": 9001,
+                "title": "Bot group",
+                "raw_description": None,
+                "object_name": "Shared bot object",
+                "address": "Shared address",
+                "flat": None,
+                "floor": None,
+                "elevator": None,
+                "delivery_rules": None,
+                "delivery_start": None,
+                "delivery_end": None,
+                "delivery_fallback": None,
+            }
+        )
+        draft_id = await repository.create_draft(
+            chat_id=9001,
+            master_id=8002,
+            master_name="Bot master",
+        )
+        await repository.create_request_item(
+            draft_id=draft_id,
+            family_id=None,
+            variant_id=None,
+            sku_id=None,
+            raw_name="Bot material",
+            normalized_name="bot material",
+            quantity=3,
+            unit="pcs",
+        )
+        await repository.set_draft_status(draft_id, status="confirmed")
+        return draft_id
+
     async def list_notifications(repository):
         return await repository.list_telegram_notifications(limit=10)
 
@@ -374,6 +409,11 @@ def test_registered_users_have_isolated_request_routes_and_notifications() -> No
             )
 
             with TestClient(create_admin_app(settings)) as client:
+                global_draft_id = client.portal.call(
+                    create_global_bot_request,
+                    client.app.state.request_repository.for_owner(None),
+                )
+
                 user_one_response = client.post(
                     "/api/auth/register",
                     json={
@@ -393,9 +433,18 @@ def test_registered_users_have_isolated_request_routes_and_notifications() -> No
                 user_one_recent = client.get("/api/requests/recent")
                 assert user_one_recent.status_code == 200
                 assert any(row["id"] == draft_id for row in user_one_recent.json())
+                assert any(
+                    row["id"] == global_draft_id and row["status"] == "confirmed"
+                    for row in user_one_recent.json()
+                )
+                user_one_global_detail = client.get(f"/api/requests/{global_draft_id}")
+                assert user_one_global_detail.status_code == 200
+                assert user_one_global_detail.json()["draft"]["master_name"] == "Bot master"
+                assert user_one_global_detail.json()["group_profile"]["object_name"] == "Shared bot object"
+                assert user_one_global_detail.json()["items"][0]["raw_name"] == "Bot material"
                 user_one_groups = client.get("/api/groups")
                 assert user_one_groups.status_code == 200
-                assert [row["chat_id"] for row in user_one_groups.json()] == [1001]
+                assert {row["chat_id"] for row in user_one_groups.json()} == {1001, 9001}
 
                 user_two_response = client.post(
                     "/api/auth/register",
@@ -412,9 +461,10 @@ def test_registered_users_have_isolated_request_routes_and_notifications() -> No
                 user_two_recent = client.get("/api/requests/recent")
                 assert user_two_recent.status_code == 200
                 assert all(row["id"] != draft_id for row in user_two_recent.json())
+                assert any(row["id"] == global_draft_id for row in user_two_recent.json())
                 user_two_groups = client.get("/api/groups")
                 assert user_two_groups.status_code == 200
-                assert user_two_groups.json() == []
+                assert [row["chat_id"] for row in user_two_groups.json()] == [9001]
 
                 client.cookies.set(SESSION_COOKIE_NAME, user_one_cookie)
                 status_response = client.patch(f"/api/requests/{draft_id}/status", json={"status": "confirmed"})

@@ -27,7 +27,7 @@ class SqlAlchemyRequestRepository(OwnerScopedSqlAlchemyRepository):
                 await session.execute(
                     self._draft_select()
                     .where(
-                        self._owner_clause(request_drafts),
+                        self._read_owner_clause(request_drafts),
                         request_drafts.c.chat_id == chat_id,
                         request_drafts.c.master_id == master_id,
                         request_drafts.c.status.in_(ACTIVE_REQUEST_STATUSES),
@@ -44,7 +44,7 @@ class SqlAlchemyRequestRepository(OwnerScopedSqlAlchemyRepository):
                 await session.execute(
                     self._draft_select()
                     .where(
-                        self._owner_clause(request_drafts),
+                        self._read_owner_clause(request_drafts),
                         request_drafts.c.chat_id == chat_id,
                         request_drafts.c.status.in_(ACTIVE_REQUEST_STATUSES),
                     )
@@ -107,7 +107,7 @@ class SqlAlchemyRequestRepository(OwnerScopedSqlAlchemyRepository):
             row = (
                 await session.execute(
                     self._draft_select()
-                    .where(self._owner_clause(request_drafts), request_drafts.c.id == draft_id)
+                    .where(self._read_owner_clause(request_drafts), request_drafts.c.id == draft_id)
                     .limit(1)
                 )
             ).mappings().first()
@@ -120,9 +120,9 @@ class SqlAlchemyRequestRepository(OwnerScopedSqlAlchemyRepository):
         )
         profile_join = and_(
             group_profiles.c.chat_id == request_drafts.c.chat_id,
-            self._owner_clause(group_profiles),
+            self._read_owner_clause(group_profiles),
         )
-        item_join = and_(request_items.c.draft_id == request_drafts.c.id, self._owner_clause(request_items))
+        item_join = and_(request_items.c.draft_id == request_drafts.c.id, self._read_owner_clause(request_items))
         stmt = (
             select(
                 request_drafts.c.id,
@@ -140,7 +140,7 @@ class SqlAlchemyRequestRepository(OwnerScopedSqlAlchemyRepository):
                 func.count(request_items.c.id).label("items_count"),
             )
             .select_from(request_drafts.outerjoin(group_profiles, profile_join).outerjoin(request_items, item_join))
-            .where(self._owner_clause(request_drafts))
+            .where(self._read_owner_clause(request_drafts))
             .group_by(
                 request_drafts.c.id,
                 request_drafts.c.chat_id,
@@ -192,7 +192,7 @@ class SqlAlchemyRequestRepository(OwnerScopedSqlAlchemyRepository):
                 await session.execute(
                     select(request_draft_participants.c.draft_id)
                     .where(
-                        self._owner_clause(request_draft_participants),
+                        self._read_owner_clause(request_draft_participants),
                         request_draft_participants.c.draft_id == draft_id,
                         request_draft_participants.c.user_id == user_id,
                     )
@@ -389,7 +389,7 @@ class SqlAlchemyRequestRepository(OwnerScopedSqlAlchemyRepository):
             row = (
                 await session.execute(
                     self._request_item_select()
-                    .where(self._owner_clause(request_items), request_items.c.id == item_id)
+                    .where(self._read_owner_clause(request_items), request_items.c.id == item_id)
                     .limit(1)
                 )
             ).mappings().first()
@@ -400,7 +400,7 @@ class SqlAlchemyRequestRepository(OwnerScopedSqlAlchemyRepository):
             rows = (
                 await session.execute(
                     self._request_item_select()
-                    .where(self._owner_clause(request_items), request_items.c.draft_id == draft_id)
+                    .where(self._read_owner_clause(request_items), request_items.c.draft_id == draft_id)
                     .order_by(request_items.c.id)
                 )
             ).mappings().all()
@@ -434,7 +434,7 @@ class SqlAlchemyRequestRepository(OwnerScopedSqlAlchemyRepository):
         async with self._session_factory() as session:
             await session.execute(
                 update(request_items)
-                .where(self._owner_clause(request_items), request_items.c.id == item_id)
+                .where(self._read_owner_clause(request_items), request_items.c.id == item_id)
                 .values(**values)
             )
             await session.commit()
@@ -442,7 +442,7 @@ class SqlAlchemyRequestRepository(OwnerScopedSqlAlchemyRepository):
     async def delete_request_item(self, item_id: int) -> None:
         async with self._session_factory() as session:
             await session.execute(
-                delete(request_items).where(self._owner_clause(request_items), request_items.c.id == item_id)
+                delete(request_items).where(self._read_owner_clause(request_items), request_items.c.id == item_id)
             )
             await session.commit()
 
@@ -505,7 +505,7 @@ class SqlAlchemyRequestRepository(OwnerScopedSqlAlchemyRepository):
         async with self._session_factory() as session:
             await session.execute(
                 update(request_drafts)
-                .where(self._owner_clause(request_drafts), request_drafts.c.id == draft_id)
+                .where(self._read_owner_clause(request_drafts), request_drafts.c.id == draft_id)
                 .values(**values)
             )
             await session.commit()

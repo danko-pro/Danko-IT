@@ -759,7 +759,13 @@ export function PublicLanding() {
                     onChange={handleLeadFormChange}
                     required
                   />
-                  <span>Я согласен на обработку персональных данных для обработки заявки и обратной связи.</span>
+                  <span>
+                    Я согласен на{" "}
+                    <a className="public-form-consent-link" href="/privacy">
+                      обработку персональных данных
+                    </a>{" "}
+                    для обработки заявки и обратной связи.
+                  </span>
                 </label>
 
                 <div className="public-form-footer">

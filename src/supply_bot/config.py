@@ -27,6 +27,8 @@ class Settings:
     timezone: str
     admin_ids: tuple[int, ...]
     team_group_chat_id: int | None
+    telegram_public_bot_token: str | None
+    telegram_leads_chat_id: int | None
     quiet_hours_start: time
     quiet_hours_end: time
     default_delivery_start: time
@@ -225,6 +227,8 @@ def load_settings(config_path: Path | None = None) -> Settings:
         timezone=env.get("TIMEZONE", "Europe/Berlin"),
         admin_ids=parse_csv_ints(env.get("ADMIN_IDS")),
         team_group_chat_id=int(env["TEAM_GROUP_CHAT_ID"]) if env.get("TEAM_GROUP_CHAT_ID") else None,
+        telegram_public_bot_token=_optional_secret(env.get("TELEGRAM_PUBLIC_BOT_TOKEN")),
+        telegram_leads_chat_id=int(env["TELEGRAM_LEADS_CHAT_ID"]) if env.get("TELEGRAM_LEADS_CHAT_ID") else None,
         quiet_hours_start=parse_time_value(env.get("QUIET_HOURS_START"), default=time(22, 0)),
         quiet_hours_end=parse_time_value(env.get("QUIET_HOURS_END"), default=time(8, 0)),
         default_delivery_start=parse_time_value(env.get("DEFAULT_DELIVERY_START"), default=time(8, 0)),

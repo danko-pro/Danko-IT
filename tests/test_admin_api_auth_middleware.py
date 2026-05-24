@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -8,8 +9,25 @@ from fastapi.testclient import TestClient
 
 from supply_bot.admin_api.app import create_admin_app
 from supply_bot.admin_api.auth import hash_admin_password
+from supply_bot.admin_api.public_lead_notifications import (
+    PublicLeadTelegramNotifier,
+    build_public_lead_message,
+)
 from supply_bot.admin_api.public_rate_limit import PublicLeadRateLimiter
+from supply_bot.admin_api.schemas.public import PublicLeadPayload
 from supply_bot.config import load_settings
+
+
+class _FakePublicLeadNotifier:
+    def __init__(self, *, should_fail: bool = False) -> None:
+        self.should_fail = should_fail
+        self.payloads = []
+
+    async def notify(self, payload) -> bool:
+        if self.should_fail:
+            raise RuntimeError("Telegram unavailable")
+        self.payloads.append(payload)
+        return True
 
 
 def _create_auth_settings_file(
@@ -66,6 +84,77 @@ def test_admin_api_middleware_requires_session_for_private_routes() -> None:
 
 
 class PublicLeadRouteTests(unittest.TestCase):
+    def test_public_lead_notifier_sends_chat_id_and_message_text(self) -> None:
+        sent_messages = []
+
+        async def fake_send(token: str, chat_id: int, text: str, timeout_seconds: float) -> None:
+            sent_messages.append(
+                {
+                    "token": token,
+                    "chat_id": chat_id,
+                    "text": text,
+                    "timeout_seconds": timeout_seconds,
+                }
+            )
+
+        payload = PublicLeadPayload(
+            name="Test Client",
+            phone="@test",
+            objectType="Apartment",
+            area="50",
+            packageType="Package C",
+            contactMethod="telegram",
+            comment="Public endpoint notification test",
+            personalDataConsent=True,
+            website="hidden-value",
+        )
+        notifier = PublicLeadTelegramNotifier(
+            token="public-token",
+            chat_id=-1003737352125,
+            send_func=fake_send,
+        )
+
+        self.assertTrue(asyncio.run(notifier.notify(payload)))
+        self.assertEqual(len(sent_messages), 1)
+        self.assertEqual(sent_messages[0]["token"], "public-token")
+        self.assertEqual(sent_messages[0]["chat_id"], -1003737352125)
+        self.assertIn("Имя: Test Client", sent_messages[0]["text"])
+        self.assertIn("Формат: Package C", sent_messages[0]["text"])
+        self.assertNotIn("hidden-value", sent_messages[0]["text"])
+
+    def test_public_leads_endpoint_calls_configured_notifier(self) -> None:
+        with TemporaryDirectory() as tmp_dir:
+            root = Path(tmp_dir)
+            settings = load_settings(_create_auth_settings_file(root))
+            notifier = _FakePublicLeadNotifier()
+
+            with TestClient(create_admin_app(settings)) as client:
+                client.app.state.public_lead_notifier = notifier
+                response = client.post(
+                    "/api/public/leads",
+                    json={
+                        "name": "Test Client",
+                        "phone": "@test",
+                        "objectType": "Apartment",
+                        "area": "50",
+                        "packageType": "Package C",
+                        "contactMethod": "telegram",
+                        "comment": "Public endpoint notification test",
+                        "personalDataConsent": True,
+                        "website": "",
+                    },
+                )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {"ok": True})
+        self.assertEqual(len(notifier.payloads), 1)
+        message = build_public_lead_message(notifier.payloads[0])
+        self.assertIn("Новая заявка Danko BuildTech", message)
+        self.assertIn("Имя: Test Client", message)
+        self.assertIn("Контакт: @test", message)
+        self.assertIn("Согласие на обработку данных: получено", message)
+        self.assertNotIn("website", message.lower())
+
     def test_public_leads_endpoint_is_public_and_private_routes_remain_protected(self) -> None:
         with TemporaryDirectory() as tmp_dir:
             root = Path(tmp_dir)
@@ -92,6 +181,26 @@ class PublicLeadRouteTests(unittest.TestCase):
         self.assertEqual(response.json(), {"ok": True})
         self.assertEqual(private_response.status_code, 401)
         self.assertEqual(private_response.json()["detail"], "Admin authentication required")
+
+    def test_public_leads_endpoint_ignores_notification_failures(self) -> None:
+        with TemporaryDirectory() as tmp_dir:
+            root = Path(tmp_dir)
+            settings = load_settings(_create_auth_settings_file(root))
+
+            with TestClient(create_admin_app(settings)) as client:
+                client.app.state.public_lead_notifier = _FakePublicLeadNotifier(should_fail=True)
+                response = client.post(
+                    "/api/public/leads",
+                    json={
+                        "name": "Test",
+                        "phone": "@test",
+                        "personalDataConsent": True,
+                        "website": "",
+                    },
+                )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {"ok": True})
 
     def test_public_leads_endpoint_validates_required_and_limited_fields_without_session(self) -> None:
         with TemporaryDirectory() as tmp_dir:

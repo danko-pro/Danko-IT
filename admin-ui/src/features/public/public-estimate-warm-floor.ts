@@ -23,6 +23,10 @@ export type WarmFloorCalculationResult = {
   circuitCount: number;
   needsManifold: boolean;
   needsPump: boolean;
+  usesTowelRailConnection: boolean;
+  chaseLengthMeters: number;
+  thermostatCount: number;
+  electricBreakerCount: number;
   worksTotal: number;
   materialsTotal: number;
   equipmentTotal: number;
@@ -48,6 +52,11 @@ export const warmFloorRates = {
   thermostatMaterial: 4500,
   thermostatSocketMaterials: 350,
   thermostatElectricianLabor: 1500,
+  towelRailConnectionLabor: 6000,
+  towelRailConnectionMaterials: 3000,
+  chaseLaborPerMeter: 1200,
+  electricBreakerMaterial: 850,
+  electricBreakerLabor: 1500,
 } as const;
 
 function safeNumber(value: number) {
@@ -103,6 +112,10 @@ function createResult(mode: WarmFloorMode, rooms: WarmFloorRoomInput[], items: E
   const needsManifold = mode === "water" && (circuitCount >= 2 || roomCount > 1);
   const needsPump =
     mode === "water" && (roomCount >= warmFloorRates.pumpRoomThreshold || circuitCount >= warmFloorRates.pumpCircuitThreshold);
+  const usesTowelRailConnection = mode === "water" && selectedArea > 0 && roomCount === 1 && !needsManifold && !needsPump;
+  const chaseLengthMeters = selectedArea > 0 ? Math.max(3, roomCount * 3) : 0;
+  const thermostatCount = mode === "electric" && selectedArea > 0 ? 1 : 0;
+  const electricBreakerCount = mode === "electric" && selectedArea > 0 ? 1 : 0;
   const section = createEstimateSection("warm_floor", "Тёплый пол", items, "Водяной или электрический тёплый пол по выбранным помещениям.");
 
   return {
@@ -113,6 +126,10 @@ function createResult(mode: WarmFloorMode, rooms: WarmFloorRoomInput[], items: E
     circuitCount,
     needsManifold,
     needsPump,
+    usesTowelRailConnection,
+    chaseLengthMeters,
+    thermostatCount,
+    electricBreakerCount,
     worksTotal: section.totals.works,
     materialsTotal: section.totals.materials,
     equipmentTotal: section.totals.equipment,
@@ -131,6 +148,7 @@ export function calculateWarmFloor(mode: WarmFloorMode, rooms: WarmFloorRoomInpu
   }
 
   const items: EstimateLineItem[] = [];
+  const chaseLengthMeters = Math.max(3, selectedRooms.length * 3);
 
   if (mode === "water") {
     const pipeMeters = selectedArea * warmFloorRates.pipeMetersPerM2;
@@ -141,6 +159,7 @@ export function calculateWarmFloor(mode: WarmFloorMode, rooms: WarmFloorRoomInpu
     );
     const needsManifold = circuitCount >= 2 || roomCount > 1;
     const needsPump = roomCount >= warmFloorRates.pumpRoomThreshold || circuitCount >= warmFloorRates.pumpCircuitThreshold;
+    const usesTowelRailConnection = roomCount === 1 && !needsManifold && !needsPump;
 
     items.push(
       createLineItem(
@@ -159,7 +178,36 @@ export function calculateWarmFloor(mode: WarmFloorMode, rooms: WarmFloorRoomInpu
         "м",
         warmFloorRates.pipePricePerMeter,
       ),
+      createLineItem(
+        "warm-floor-chase-labor",
+        "Устройство штробы под подключение тёплого пола",
+        "works",
+        chaseLengthMeters,
+        "м.п.",
+        warmFloorRates.chaseLaborPerMeter,
+      ),
     );
+
+    if (usesTowelRailConnection) {
+      items.push(
+        createLineItem(
+          "warm-floor-towel-rail-connection-labor",
+          "Подключение водяного тёплого пола от контура полотенцесушителя",
+          "works",
+          1,
+          "компл.",
+          warmFloorRates.towelRailConnectionLabor,
+        ),
+        createLineItem(
+          "warm-floor-towel-rail-connection-material",
+          "Материалы подключения водяного тёплого пола от полотенцесушителя",
+          "materials",
+          1,
+          "компл.",
+          warmFloorRates.towelRailConnectionMaterials,
+        ),
+      );
+    }
 
     if (needsManifold) {
       items.push(
@@ -234,6 +282,30 @@ export function calculateWarmFloor(mode: WarmFloorMode, rooms: WarmFloorRoomInpu
       thermostatCount,
       "компл.",
       warmFloorRates.thermostatSocketMaterials,
+    ),
+    createLineItem(
+      "warm-floor-electric-breaker-labor",
+      "Установка автомата тёплого пола в щит",
+      "works",
+      1,
+      "шт",
+      warmFloorRates.electricBreakerLabor,
+    ),
+    createLineItem(
+      "warm-floor-electric-breaker-material",
+      "Автоматический выключатель для тёплого пола",
+      "materials",
+      1,
+      "шт",
+      warmFloorRates.electricBreakerMaterial,
+    ),
+    createLineItem(
+      "warm-floor-electric-chase-labor",
+      "Устройство штробы под подключение тёплого пола",
+      "works",
+      chaseLengthMeters,
+      "м.п.",
+      warmFloorRates.chaseLaborPerMeter,
     ),
   );
 

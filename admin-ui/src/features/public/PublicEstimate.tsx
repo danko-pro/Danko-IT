@@ -56,7 +56,7 @@ function normalizeRoom(room: EstimateRoomDraft): EstimateRoomInput {
   };
 }
 
-function formatMeasurement(value: number, unit: "м" | "м²") {
+function formatMeasurement(value: number, unit: "м" | "м²" | "м.п.") {
   return `${new Intl.NumberFormat("ru-RU", {
     maximumFractionDigits: 1,
     minimumFractionDigits: 0,
@@ -140,15 +140,22 @@ export function PublicEstimate() {
     { label: "₽/м²", value: `${formatMoney(estimateResult.totals.pricePerSquareMeter)}/м²` },
   ];
   const warmFloorModeLabel = warmFloorMode === "water" ? "Водяной" : "Электрический";
+  const warmFloorConnectionLabel = warmFloorResult.usesTowelRailConnection
+    ? "от полотенцесушителя"
+    : warmFloorResult.needsPump
+      ? "гребенка + насос"
+      : warmFloorResult.needsManifold
+        ? "гребенка"
+        : "нет";
   const warmFloorSummaryItems =
     warmFloorMode === "water"
       ? [
           { label: "Площадь", value: formatMeasurement(warmFloorResult.selectedArea, "м²") },
           { label: "Тип", value: warmFloorModeLabel },
+          { label: "Штроба", value: formatMeasurement(warmFloorResult.chaseLengthMeters, "м.п.") },
           { label: "Труба", value: formatMeasurement(warmFloorResult.pipeMeters, "м") },
           { label: "Контуры", value: `${warmFloorResult.circuitCount} шт.` },
-          { label: "Гребенка", value: warmFloorResult.needsManifold ? "да" : "нет" },
-          { label: "Насос", value: warmFloorResult.needsPump ? "да" : "нет" },
+          { label: "Подключение", value: warmFloorConnectionLabel },
           { label: "Работы", value: formatMoney(warmFloorResult.worksTotal) },
           { label: "Материалы", value: formatMoney(warmFloorResult.materialsTotal) },
           { label: "Итого", value: formatMoney(warmFloorResult.total), isStrong: true },
@@ -156,7 +163,9 @@ export function PublicEstimate() {
       : [
           { label: "Площадь", value: formatMeasurement(warmFloorResult.selectedArea, "м²") },
           { label: "Тип", value: warmFloorModeLabel },
-          { label: "Терморегулятор", value: warmFloorResult.selectedArea > 0 ? "1 шт." : "0 шт." },
+          { label: "Штроба", value: formatMeasurement(warmFloorResult.chaseLengthMeters, "м.п.") },
+          { label: "Терморегулятор", value: `${warmFloorResult.thermostatCount} шт.` },
+          { label: "Автомат в щит", value: `${warmFloorResult.electricBreakerCount} шт.` },
           { label: "Работы", value: formatMoney(warmFloorResult.worksTotal) },
           { label: "Материалы", value: formatMoney(warmFloorResult.materialsTotal) },
           { label: "Итого", value: formatMoney(warmFloorResult.total), isStrong: true },

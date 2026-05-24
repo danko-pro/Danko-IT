@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from fastapi import FastAPI, HTTPException, Request
 
+from supply_bot.admin_api.public_lead_notifications import PublicLeadTelegramNotifier
+
 
 def _resolve_public_lead_client_ip(request: Request) -> str:
     forwarded_for = request.headers.get("x-forwarded-for", "")
@@ -11,6 +13,17 @@ def _resolve_public_lead_client_ip(request: Request) -> str:
     if request.client and request.client.host:
         return request.client.host
     return "unknown"
+
+
+def _resolve_public_lead_notifier(request: Request):
+    notifier = getattr(request.app.state, "public_lead_notifier", None)
+    if notifier is not None:
+        return notifier
+
+    settings = request.app.state.settings
+    notifier = PublicLeadTelegramNotifier.from_settings(settings)
+    request.app.state.public_lead_notifier = notifier
+    return notifier
 
 
 def register_public_routes(
@@ -34,6 +47,11 @@ def register_public_routes(
                     detail="Too many requests",
                     headers=headers,
                 )
+
+        try:
+            await _resolve_public_lead_notifier(request).notify(payload)
+        except Exception:
+            pass
 
         return {"ok": True}
 

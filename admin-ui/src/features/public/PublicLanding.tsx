@@ -238,12 +238,12 @@ export function PublicLanding() {
                 {item.label}
               </a>
             ))}
-            <a className="public-action public-action-mobile" href="#contacts" onClick={closeMenu}>
+            <a className="public-action public-action-mobile" href="/estimate" onClick={closeMenu}>
               Рассчитать стоимость
             </a>
           </nav>
 
-          <a className="public-action public-action-desktop" href="#contacts">
+          <a className="public-action public-action-desktop" href="/estimate">
             Рассчитать стоимость
           </a>
 
@@ -274,7 +274,7 @@ export function PublicLanding() {
             </p>
 
             <div className="public-hero-actions" aria-label="Основные действия">
-              <a className="public-action public-hero-primary" href="#contacts">
+              <a className="public-action public-hero-primary" href="/estimate">
                 Рассчитать стоимость
               </a>
               <a className="public-hero-secondary" href="#projects">

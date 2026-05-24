@@ -2012,7 +2012,8 @@
   padding: 0 1.25rem 4rem;
 }
 
-.public-privacy-header {
+.public-privacy-header,
+.public-estimate-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -2021,6 +2022,145 @@
   min-height: 78px;
   margin: 0 auto;
   padding: 0.9rem 0;
+}
+
+.public-estimate-page {
+  padding: 0 1.25rem 4rem;
+}
+
+.public-estimate {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(320px, 0.72fr);
+  align-items: stretch;
+  gap: clamp(1rem, 3vw, 1.6rem);
+  width: min(100%, 1120px);
+  margin: 2.5rem auto 0;
+}
+
+.public-estimate-card {
+  min-width: 0;
+  padding: clamp(1rem, 2.6vw, 1.5rem);
+  border: 1px solid rgba(30, 81, 74, 0.14);
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 18px 42px rgba(19, 35, 31, 0.06);
+}
+
+.public-estimate-card-main {
+  display: grid;
+  align-content: start;
+  gap: 1rem;
+}
+
+.public-estimate h1 {
+  max-width: 760px;
+  margin: 0;
+  color: var(--public-ink);
+  font-size: clamp(2.3rem, 5vw, 4.2rem);
+  font-weight: 870;
+  letter-spacing: 0;
+  line-height: 1.02;
+}
+
+.public-estimate-subtitle,
+.public-estimate-description {
+  max-width: 720px;
+  margin: 0;
+  color: var(--public-muted);
+  font-weight: 560;
+  line-height: 1.62;
+}
+
+.public-estimate-subtitle {
+  font-size: 1.06rem;
+}
+
+.public-estimate-description {
+  font-size: 0.98rem;
+}
+
+.public-estimate-status {
+  width: fit-content;
+  margin-top: 0.3rem;
+  padding: 0.62rem 0.86rem;
+  border: 1px solid rgba(30, 81, 74, 0.16);
+  border-radius: 999px;
+  background: rgba(233, 242, 239, 0.82);
+  color: var(--public-green-deep);
+  font-size: 0.88rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.public-estimate-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.72rem;
+  margin-top: 0.45rem;
+}
+
+.public-estimate-preview-head {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.public-estimate-preview-head span {
+  color: var(--public-green);
+  font-size: 0.78rem;
+  font-weight: 840;
+  letter-spacing: 0;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.public-estimate-preview-head h2 {
+  margin: 0;
+  color: var(--public-ink);
+  font-size: clamp(1.35rem, 2.4vw, 1.75rem);
+  font-weight: 850;
+  line-height: 1.12;
+}
+
+.public-estimate-steps {
+  display: grid;
+  gap: 0.58rem;
+  margin: 1.15rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.public-estimate-steps li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.72rem;
+  min-width: 0;
+  padding: 0.72rem 0.8rem;
+  border: 1px solid rgba(30, 81, 74, 0.1);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.public-estimate-steps span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.35rem;
+  height: 2.35rem;
+  border: 1px solid rgba(30, 81, 74, 0.18);
+  border-radius: 14px;
+  background: var(--public-green-soft);
+  color: var(--public-green-deep);
+  font-size: 0.74rem;
+  font-weight: 850;
+}
+
+.public-estimate-steps strong {
+  min-width: 0;
+  color: #213b35;
+  font-size: 0.95rem;
+  font-weight: 760;
+  line-height: 1.25;
 }
 
 .public-privacy-back {
@@ -2172,11 +2312,13 @@
 }
 
 @media (max-width: 640px) {
-  .public-privacy-page {
+  .public-privacy-page,
+  .public-estimate-page {
     padding: 0 1rem 3rem;
   }
 
-  .public-privacy-header {
+  .public-privacy-header,
+  .public-estimate-header {
     align-items: flex-start;
     flex-direction: column;
     gap: 0.85rem;
@@ -2190,6 +2332,50 @@
 
   .public-privacy-back {
     width: 100%;
+  }
+
+  .public-estimate {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.85rem;
+    margin-top: 1.5rem;
+  }
+
+  .public-estimate-card {
+    border-radius: 20px;
+  }
+
+  .public-estimate h1 {
+    font-size: clamp(2rem, 11vw, 2.75rem);
+  }
+
+  .public-estimate-subtitle,
+  .public-estimate-description {
+    font-size: 0.92rem;
+  }
+
+  .public-estimate-status {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .public-estimate-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .public-estimate-actions .public-action,
+  .public-estimate-actions .public-hero-secondary {
+    width: 100%;
+  }
+
+  .public-estimate-steps li {
+    padding: 0.66rem;
+    border-radius: 16px;
+  }
+
+  .public-estimate-steps strong {
+    font-size: 0.9rem;
   }
 
   .public-privacy {

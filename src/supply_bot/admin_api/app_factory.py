@@ -197,7 +197,7 @@ async def _configure_user_tenant_runtime(request: Request, settings: Settings, s
                 user_storage = DomainDelegatingStorage(
                     user_legacy_storage,
                     catalog_storage=request.app.state.catalog_repository.for_owner(user_id),
-                    request_storage=request.app.state.request_repository.for_owner(user_id),
+                    request_storage=request.app.state.request_repository.for_owner_with_global_reads(user_id),
                     notification_storage=request.app.state.notification_repository.for_owner(user_id),
                     project_storage=request.app.state.project_repository.for_owner(user_id),
                     estimate_storage=request.app.state.estimate_repository.for_owner(user_id),

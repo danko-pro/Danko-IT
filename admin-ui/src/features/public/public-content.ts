@@ -230,6 +230,7 @@ export const initialLeadForm: PublicLeadForm = {
   contactMethod: "telegram",
   comment: "",
   personalDataConsent: false,
+  website: "",
 };
 
 export const objectTypeOptions = ["Квартира", "Апартаменты", "Инвесторский объект", "Серийная отделка", "Другое"];

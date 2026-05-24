@@ -15,6 +15,7 @@ from sqlalchemy import insert, select, text
 
 from supply_bot.admin_api.auth import SESSION_COOKIE_NAME, read_admin_session_token
 from supply_bot.admin_api.auth_rate_limit import LoginRateLimiter
+from supply_bot.admin_api.public_rate_limit import PublicLeadRateLimiter
 from supply_bot.admin_api.route_registry import register_admin_routes
 from supply_bot.config import Settings, load_settings
 from supply_bot.database import DatabaseRuntime, create_database_runtime
@@ -119,6 +120,7 @@ def create_admin_app(settings: Settings | None = None) -> FastAPI:
         window_seconds=resolved_settings.admin_login_rate_limit_window_seconds,
         lockout_seconds=resolved_settings.admin_login_rate_limit_lockout_seconds,
     )
+    app.state.public_lead_rate_limiter = PublicLeadRateLimiter(max_requests=5, window_seconds=600)
     configure_admin_cors(app)
     configure_admin_auth(app)
     register_admin_routes(app)

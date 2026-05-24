@@ -8,6 +8,7 @@ from fastapi.testclient import TestClient
 
 from supply_bot.admin_api.app import create_admin_app
 from supply_bot.admin_api.auth import hash_admin_password
+from supply_bot.admin_api.public_rate_limit import PublicLeadRateLimiter
 from supply_bot.config import load_settings
 
 
@@ -82,6 +83,7 @@ class PublicLeadRouteTests(unittest.TestCase):
                         "contactMethod": "telegram",
                         "comment": "Public endpoint smoke test",
                         "personalDataConsent": True,
+                        "website": "",
                     },
                 )
                 private_response = client.get("/api/requests/recent")
@@ -99,7 +101,7 @@ class PublicLeadRouteTests(unittest.TestCase):
             with TestClient(create_admin_app(settings)) as client:
                 minimal_response = client.post(
                     "/api/public/leads",
-                    json={"name": "Test", "phone": "@test", "personalDataConsent": True},
+                    json={"name": "Test", "phone": "@test", "personalDataConsent": True, "website": ""},
                 )
                 missing_name_response = client.post(
                     "/api/public/leads",
@@ -112,6 +114,15 @@ class PublicLeadRouteTests(unittest.TestCase):
                 declined_consent_response = client.post(
                     "/api/public/leads",
                     json={"name": "Test", "phone": "@test", "personalDataConsent": False},
+                )
+                honeypot_response = client.post(
+                    "/api/public/leads",
+                    json={
+                        "name": "Test",
+                        "phone": "@test",
+                        "personalDataConsent": True,
+                        "website": "https://spam.example",
+                    },
                 )
                 long_area_response = client.post(
                     "/api/public/leads",
@@ -128,7 +139,48 @@ class PublicLeadRouteTests(unittest.TestCase):
         self.assertEqual(missing_name_response.status_code, 422)
         self.assertEqual(missing_consent_response.status_code, 422)
         self.assertEqual(declined_consent_response.status_code, 422)
+        self.assertEqual(honeypot_response.status_code, 422)
         self.assertEqual(long_area_response.status_code, 422)
+
+    def test_public_leads_endpoint_rate_limits_by_client_ip(self) -> None:
+        with TemporaryDirectory() as tmp_dir:
+            root = Path(tmp_dir)
+            settings = load_settings(_create_auth_settings_file(root))
+
+            with TestClient(create_admin_app(settings)) as client:
+                responses = [
+                    client.post(
+                        "/api/public/leads",
+                        headers={"X-Forwarded-For": "203.0.113.10"},
+                        json={
+                            "name": "Test",
+                            "phone": "@test",
+                            "personalDataConsent": True,
+                            "website": "",
+                        },
+                    )
+                    for _ in range(6)
+                ]
+
+        for response in responses[:5]:
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.json(), {"ok": True})
+        self.assertEqual(responses[5].status_code, 429)
+        self.assertIn("retry-after", responses[5].headers)
+
+    def test_public_lead_rate_limiter_prunes_old_requests(self) -> None:
+        current_time = 1000.0
+        limiter = PublicLeadRateLimiter(max_requests=2, window_seconds=60, time_func=lambda: current_time)
+
+        self.assertTrue(limiter.check("203.0.113.20").allowed)
+        self.assertTrue(limiter.check("203.0.113.20").allowed)
+
+        blocked_decision = limiter.check("203.0.113.20")
+        self.assertFalse(blocked_decision.allowed)
+        self.assertEqual(blocked_decision.retry_after_seconds, 60)
+
+        current_time = 1061.0
+        self.assertTrue(limiter.check("203.0.113.20").allowed)
 
 
 def test_admin_api_middleware_accepts_valid_session_for_private_routes() -> None:

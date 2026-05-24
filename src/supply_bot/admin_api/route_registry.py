@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from supply_bot.admin_api.app_routes_auth import register_auth_routes
 from supply_bot.admin_api.app_routes_materials import register_material_routes
 from supply_bot.admin_api.app_routes_projects import register_project_routes
+from supply_bot.admin_api.app_routes_public import register_public_routes
 from supply_bot.admin_api.app_routes_requests import register_request_routes
 from supply_bot.admin_api.app_routes_support import register_support_routes
 from supply_bot.admin_api.calculator_routes import register_calculator_routes
@@ -38,6 +39,7 @@ from supply_bot.admin_api.schemas import (
     ProjectLedgerEntryCreatePayload,
     ProjectLedgerEntryUpdatePayload,
     ProjectUpdatePayload,
+    PublicLeadPayload,
     RequestActionResult,
     RequestDeliveryPayload,
     RequestItemPayload,
@@ -49,6 +51,10 @@ from supply_bot.admin_api.schemas import (
 
 
 def register_admin_routes(app: FastAPI) -> None:
+    register_public_routes(
+        app,
+        public_lead_payload_model=PublicLeadPayload,
+    )
     register_auth_routes(
         app,
         admin_login_payload_model=AdminLoginPayload,

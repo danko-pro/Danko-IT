@@ -45,6 +45,7 @@ from supply_bot.admin_api.schemas.projects import (
     ProjectLedgerEntryUpdatePayload,
     ProjectUpdatePayload,
 )
+from supply_bot.admin_api.schemas.public import PublicLeadPayload
 from supply_bot.admin_api.schemas.requests import (
     RequestActionResult,
     RequestDeliveryPayload,
@@ -90,6 +91,7 @@ __all__ = [
     "ProjectLedgerEntryCreatePayload",
     "ProjectLedgerEntryUpdatePayload",
     "ProjectUpdatePayload",
+    "PublicLeadPayload",
     "RequestActionResult",
     "RequestDeliveryPayload",
     "RequestItemPayload",

@@ -38,6 +38,7 @@ PUBLIC_ADMIN_API_PATHS = (
     "/api/auth/login",
     "/api/auth/register",
     "/api/auth/logout",
+    "/api/public/leads",
 )
 
 SYSTEM_PROJECT_OWNER_EMAIL_DOMAIN = "system.local"

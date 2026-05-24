@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
@@ -61,6 +62,51 @@ def test_admin_api_middleware_requires_session_for_private_routes() -> None:
             reset_response = client.post("/api/requests/expire-stale")
             assert reset_response.status_code == 401
             assert reset_response.json()["detail"] == "Admin authentication required"
+
+
+class PublicLeadRouteTests(unittest.TestCase):
+    def test_public_leads_endpoint_is_public_and_private_routes_remain_protected(self) -> None:
+        with TemporaryDirectory() as tmp_dir:
+            root = Path(tmp_dir)
+            settings = load_settings(_create_auth_settings_file(root))
+
+            with TestClient(create_admin_app(settings)) as client:
+                response = client.post(
+                    "/api/public/leads",
+                    json={
+                        "name": "Test",
+                        "phone": "@test",
+                        "objectType": "Apartment",
+                        "area": "50",
+                        "packageType": "Package C",
+                        "contactMethod": "telegram",
+                        "comment": "Public endpoint smoke test",
+                    },
+                )
+                private_response = client.get("/api/requests/recent")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {"ok": True})
+        self.assertEqual(private_response.status_code, 401)
+        self.assertEqual(private_response.json()["detail"], "Admin authentication required")
+
+    def test_public_leads_endpoint_validates_required_and_limited_fields_without_session(self) -> None:
+        with TemporaryDirectory() as tmp_dir:
+            root = Path(tmp_dir)
+            settings = load_settings(_create_auth_settings_file(root))
+
+            with TestClient(create_admin_app(settings)) as client:
+                minimal_response = client.post("/api/public/leads", json={"name": "Test", "phone": "@test"})
+                missing_name_response = client.post("/api/public/leads", json={"phone": "@test"})
+                long_area_response = client.post(
+                    "/api/public/leads",
+                    json={"name": "Test", "phone": "@test", "area": "1" * 41},
+                )
+
+        self.assertEqual(minimal_response.status_code, 200)
+        self.assertEqual(minimal_response.json(), {"ok": True})
+        self.assertEqual(missing_name_response.status_code, 422)
+        self.assertEqual(long_area_response.status_code, 422)
 
 
 def test_admin_api_middleware_accepts_valid_session_for_private_routes() -> None:

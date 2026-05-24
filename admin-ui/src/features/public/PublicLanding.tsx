@@ -737,8 +737,24 @@ export function PublicLanding() {
                   </label>
                 </div>
 
+                <label className="public-form-consent" htmlFor="public-lead-personal-data-consent">
+                  <input
+                    id="public-lead-personal-data-consent"
+                    name="personalDataConsent"
+                    type="checkbox"
+                    checked={leadForm.personalDataConsent}
+                    onChange={handleLeadFormChange}
+                    required
+                  />
+                  <span>Я согласен на обработку персональных данных для обработки заявки и обратной связи.</span>
+                </label>
+
                 <div className="public-form-footer">
-                  <button className="public-form-submit" type="submit" disabled={isLeadFormSubmitting}>
+                  <button
+                    className="public-form-submit"
+                    type="submit"
+                    disabled={isLeadFormSubmitting || !leadForm.personalDataConsent}
+                  >
                     {isLeadFormSubmitting ? "Отправляем..." : "Отправить заявку"}
                   </button>
                   {leadFormStatus && (

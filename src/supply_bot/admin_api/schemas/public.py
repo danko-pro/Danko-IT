@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Literal
+
 from pydantic import BaseModel, Field
 
 
@@ -11,3 +13,4 @@ class PublicLeadPayload(BaseModel):
     packageType: str = Field(default="", max_length=160)
     contactMethod: str = Field(default="", max_length=40)
     comment: str = Field(default="", max_length=2000)
+    personalDataConsent: Literal[True]

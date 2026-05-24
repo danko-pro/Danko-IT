@@ -81,6 +81,7 @@ class PublicLeadRouteTests(unittest.TestCase):
                         "packageType": "Package C",
                         "contactMethod": "telegram",
                         "comment": "Public endpoint smoke test",
+                        "personalDataConsent": True,
                     },
                 )
                 private_response = client.get("/api/requests/recent")
@@ -96,16 +97,37 @@ class PublicLeadRouteTests(unittest.TestCase):
             settings = load_settings(_create_auth_settings_file(root))
 
             with TestClient(create_admin_app(settings)) as client:
-                minimal_response = client.post("/api/public/leads", json={"name": "Test", "phone": "@test"})
-                missing_name_response = client.post("/api/public/leads", json={"phone": "@test"})
+                minimal_response = client.post(
+                    "/api/public/leads",
+                    json={"name": "Test", "phone": "@test", "personalDataConsent": True},
+                )
+                missing_name_response = client.post(
+                    "/api/public/leads",
+                    json={"phone": "@test", "personalDataConsent": True},
+                )
+                missing_consent_response = client.post(
+                    "/api/public/leads",
+                    json={"name": "Test", "phone": "@test"},
+                )
+                declined_consent_response = client.post(
+                    "/api/public/leads",
+                    json={"name": "Test", "phone": "@test", "personalDataConsent": False},
+                )
                 long_area_response = client.post(
                     "/api/public/leads",
-                    json={"name": "Test", "phone": "@test", "area": "1" * 41},
+                    json={
+                        "name": "Test",
+                        "phone": "@test",
+                        "area": "1" * 41,
+                        "personalDataConsent": True,
+                    },
                 )
 
         self.assertEqual(minimal_response.status_code, 200)
         self.assertEqual(minimal_response.json(), {"ok": True})
         self.assertEqual(missing_name_response.status_code, 422)
+        self.assertEqual(missing_consent_response.status_code, 422)
+        self.assertEqual(declined_consent_response.status_code, 422)
         self.assertEqual(long_area_response.status_code, 422)
 
 

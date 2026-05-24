@@ -178,83 +178,89 @@ export function PublicEstimate() {
 
                 return (
                   <article className="public-estimate-room-row" key={room.id}>
-                    <div className="public-estimate-room-index" aria-hidden="true">
-                      {String(index + 1).padStart(2, "0")}
-                    </div>
+                    <div className="public-estimate-room-top">
+                      <div className="public-estimate-room-index" aria-hidden="true">
+                        {String(index + 1).padStart(2, "0")}
+                      </div>
 
-                    <label className="public-estimate-field public-estimate-room-name">
-                      <span className="public-estimate-mobile-label">Помещение</span>
-                      <input
-                        aria-label="Помещение"
-                        className="public-estimate-input"
-                        value={roomDraft.name}
-                        onChange={(event) => updateRoom(room.id, { name: event.target.value })}
-                      />
-                    </label>
+                      <label className="public-estimate-field public-estimate-room-name">
+                        <span className="public-estimate-mobile-label">Помещение</span>
+                        <input
+                          aria-label="Помещение"
+                          className="public-estimate-input"
+                          value={roomDraft.name}
+                          onChange={(event) => updateRoom(room.id, { name: event.target.value })}
+                        />
+                      </label>
 
-                    <label className="public-estimate-field">
-                      <span className="public-estimate-mobile-label">Тип</span>
-                      <select
-                        aria-label="Тип помещения"
-                        className="public-estimate-select"
-                        value={roomDraft.type}
-                        onChange={(event) => updateRoom(room.id, { type: event.target.value as EstimateRoomType })}
+                      <button
+                        aria-label="Удалить помещение"
+                        className="public-estimate-row-remove"
+                        type="button"
+                        disabled={rooms.length <= 1}
+                        onClick={() => removeRoom(room.id)}
                       >
-                        {roomTypeOptions.map((option) => (
-                          <option key={option.value} value={option.value}>
-                            {option.label}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-
-                    <label className="public-estimate-field">
-                      <span className="public-estimate-mobile-label">Площадь</span>
-                      <input
-                        aria-label="Площадь помещения"
-                        className="public-estimate-input"
-                        inputMode="decimal"
-                        value={roomDraft.area}
-                        onChange={(event) => updateRoom(room.id, { area: event.target.value })}
-                      />
-                    </label>
-
-                    <label className="public-estimate-field">
-                      <span className="public-estimate-mobile-label">Двери</span>
-                      <input
-                        aria-label="Количество дверей"
-                        className="public-estimate-input"
-                        inputMode="numeric"
-                        value={roomDraft.doorCount}
-                        onChange={(event) => updateRoom(room.id, { doorCount: event.target.value })}
-                      />
-                    </label>
-
-                    <label className="public-estimate-field">
-                      <span className="public-estimate-mobile-label">Окна</span>
-                      <input
-                        aria-label="Количество окон"
-                        className="public-estimate-input"
-                        inputMode="numeric"
-                        value={roomDraft.windowCount}
-                        onChange={(event) => updateRoom(room.id, { windowCount: event.target.value })}
-                      />
-                    </label>
-
-                    <div className="public-estimate-room-result">
-                      <span className="public-estimate-mobile-label">Стены к отделке</span>
-                      <strong>{formatMeasurement(room.finishWallArea, "м²")}</strong>
+                        ×
+                      </button>
                     </div>
 
-                    <button
-                      aria-label="Удалить помещение"
-                      className="public-estimate-row-remove"
-                      type="button"
-                      disabled={rooms.length <= 1}
-                      onClick={() => removeRoom(room.id)}
-                    >
-                      ×
-                    </button>
+                    <div className="public-estimate-room-main">
+                      <label className="public-estimate-field public-estimate-room-type">
+                        <span className="public-estimate-mobile-label">Тип</span>
+                        <select
+                          aria-label="Тип помещения"
+                          className="public-estimate-select"
+                          value={roomDraft.type}
+                          onChange={(event) => updateRoom(room.id, { type: event.target.value as EstimateRoomType })}
+                        >
+                          {roomTypeOptions.map((option) => (
+                            <option key={option.value} value={option.value}>
+                              {option.label}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+
+                      <div className="public-estimate-room-metrics">
+                        <label className="public-estimate-field public-estimate-room-area">
+                          <span className="public-estimate-mobile-label">Площадь</span>
+                          <input
+                            aria-label="Площадь помещения"
+                            className="public-estimate-input"
+                            inputMode="decimal"
+                            value={roomDraft.area}
+                            onChange={(event) => updateRoom(room.id, { area: event.target.value })}
+                          />
+                        </label>
+
+                        <label className="public-estimate-field public-estimate-room-doors">
+                          <span className="public-estimate-mobile-label">Двери</span>
+                          <input
+                            aria-label="Количество дверей"
+                            className="public-estimate-input"
+                            inputMode="numeric"
+                            value={roomDraft.doorCount}
+                            onChange={(event) => updateRoom(room.id, { doorCount: event.target.value })}
+                          />
+                        </label>
+
+                        <label className="public-estimate-field public-estimate-room-windows">
+                          <span className="public-estimate-mobile-label">Окна</span>
+                          <input
+                            aria-label="Количество окон"
+                            className="public-estimate-input"
+                            inputMode="numeric"
+                            value={roomDraft.windowCount}
+                            onChange={(event) => updateRoom(room.id, { windowCount: event.target.value })}
+                          />
+                        </label>
+                      </div>
+
+                      <div className="public-estimate-room-result">
+                        <span className="public-estimate-mobile-label">Стены к отделке</span>
+                        <strong>{formatMeasurement(room.finishWallArea, "м²")}</strong>
+                      </div>
+                    </div>
                   </article>
                 );
               })}

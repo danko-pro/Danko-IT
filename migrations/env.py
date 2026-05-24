@@ -19,6 +19,7 @@ import supply_bot.storage_catalog.tables  # noqa: E402,F401
 import supply_bot.storage_estimates.tables  # noqa: E402,F401
 import supply_bot.storage_notifications.tables  # noqa: E402,F401
 import supply_bot.storage_projects.tables  # noqa: E402,F401
+import supply_bot.storage_public_leads.tables  # noqa: E402,F401
 import supply_bot.storage_requests.tables  # noqa: E402,F401
 from supply_bot.config import load_settings  # noqa: E402
 from supply_bot.database import build_database_url, metadata  # noqa: E402
@@ -74,6 +75,7 @@ SQLITE_RELAXED_TABLES = {
     "project_ledger_documents",
     "project_ledger_entries",
     "projects",
+    "public_leads",
     "request_draft_participants",
     "request_drafts",
     "request_items",
@@ -105,6 +107,7 @@ SQLITE_MATERIAL_TABLES = {
     "project_ledger_documents",
     "project_ledger_entries",
     "projects",
+    "public_leads",
     "request_draft_participants",
     "request_drafts",
     "request_items",

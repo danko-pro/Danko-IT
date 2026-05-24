@@ -16,6 +16,11 @@ from supply_bot.admin_api.public_lead_notifications import (
 from supply_bot.admin_api.public_rate_limit import PublicLeadRateLimiter
 from supply_bot.admin_api.schemas.public import PublicLeadPayload
 from supply_bot.config import load_settings
+from supply_bot.domain.public_leads import (
+    PUBLIC_LEAD_STATUS_NEW,
+    PUBLIC_LEAD_TELEGRAM_FAILED,
+    PUBLIC_LEAD_TELEGRAM_SENT,
+)
 
 
 class _FakePublicLeadNotifier:
@@ -155,6 +160,46 @@ class PublicLeadRouteTests(unittest.TestCase):
         self.assertIn("Согласие на обработку данных: получено", message)
         self.assertNotIn("website", message.lower())
 
+    def test_public_leads_endpoint_persists_valid_payload(self) -> None:
+        with TemporaryDirectory() as tmp_dir:
+            root = Path(tmp_dir)
+            settings = load_settings(_create_auth_settings_file(root))
+            notifier = _FakePublicLeadNotifier()
+
+            with TestClient(create_admin_app(settings)) as client:
+                client.app.state.public_lead_notifier = notifier
+                response = client.post(
+                    "/api/public/leads",
+                    json={
+                        "name": "Persisted Client",
+                        "phone": "@persisted",
+                        "objectType": "Apartment",
+                        "area": "52",
+                        "packageType": "Package C",
+                        "contactMethod": "telegram",
+                        "comment": "Persist public lead test",
+                        "personalDataConsent": True,
+                        "website": "",
+                    },
+                )
+                leads = client.portal.call(client.app.state.public_lead_repository.list_recent_public_leads)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {"ok": True})
+        self.assertEqual(len(leads), 1)
+        lead = leads[0]
+        self.assertEqual(lead.name, "Persisted Client")
+        self.assertEqual(lead.contact, "@persisted")
+        self.assertEqual(lead.object_type, "Apartment")
+        self.assertEqual(lead.area, "52")
+        self.assertEqual(lead.package_type, "Package C")
+        self.assertEqual(lead.contact_method, "telegram")
+        self.assertEqual(lead.comment, "Persist public lead test")
+        self.assertEqual(lead.status, PUBLIC_LEAD_STATUS_NEW)
+        self.assertTrue(lead.personal_data_consent)
+        self.assertEqual(lead.telegram_delivery_status, PUBLIC_LEAD_TELEGRAM_SENT)
+        self.assertEqual(len(notifier.payloads), 1)
+
     def test_public_leads_endpoint_is_public_and_private_routes_remain_protected(self) -> None:
         with TemporaryDirectory() as tmp_dir:
             root = Path(tmp_dir)
@@ -198,9 +243,12 @@ class PublicLeadRouteTests(unittest.TestCase):
                         "website": "",
                     },
                 )
+                leads = client.portal.call(client.app.state.public_lead_repository.list_recent_public_leads)
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json(), {"ok": True})
+        self.assertEqual(len(leads), 1)
+        self.assertEqual(leads[0].telegram_delivery_status, PUBLIC_LEAD_TELEGRAM_FAILED)
 
     def test_public_leads_endpoint_validates_required_and_limited_fields_without_session(self) -> None:
         with TemporaryDirectory() as tmp_dir:
@@ -242,6 +290,7 @@ class PublicLeadRouteTests(unittest.TestCase):
                         "personalDataConsent": True,
                     },
                 )
+                leads_count = client.portal.call(client.app.state.public_lead_repository.count_public_leads)
 
         self.assertEqual(minimal_response.status_code, 200)
         self.assertEqual(minimal_response.json(), {"ok": True})
@@ -250,6 +299,7 @@ class PublicLeadRouteTests(unittest.TestCase):
         self.assertEqual(declined_consent_response.status_code, 422)
         self.assertEqual(honeypot_response.status_code, 422)
         self.assertEqual(long_area_response.status_code, 422)
+        self.assertEqual(leads_count, 1)
 
     def test_public_leads_endpoint_rate_limits_by_client_ip(self) -> None:
         with TemporaryDirectory() as tmp_dir:
@@ -270,12 +320,14 @@ class PublicLeadRouteTests(unittest.TestCase):
                     )
                     for _ in range(6)
                 ]
+                leads_count = client.portal.call(client.app.state.public_lead_repository.count_public_leads)
 
         for response in responses[:5]:
             self.assertEqual(response.status_code, 200)
             self.assertEqual(response.json(), {"ok": True})
         self.assertEqual(responses[5].status_code, 429)
         self.assertIn("retry-after", responses[5].headers)
+        self.assertEqual(leads_count, 5)
 
     def test_public_lead_rate_limiter_prunes_old_requests(self) -> None:
         current_time = 1000.0

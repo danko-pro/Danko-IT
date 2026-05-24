@@ -404,6 +404,28 @@ class DialogueServiceTests(IsolatedAsyncioTestCase):
     async def test_bot_address_accepts_human_and_telegram_names(self) -> None:
         self.assertTrue(self.service._is_addressed_to_bot("Данко, нужна заявка"))
         self.assertTrue(self.service._is_addressed_to_bot("@Danko_ai_bot привези цемент"))
+        self.assertTrue(self.service._is_addressed_to_bot("@Danko_ai_bot заявка кабель"))
+        self.assertTrue(self.service._is_addressed_to_bot("Danko_ai_bot, заявка кабель"))
+        self.assertTrue(self.service._is_addressed_to_bot("Данко, сделай заявку"))
+        self.assertTrue(self.service._is_addressed_to_bot("бот: заявка"))
+        self.assertFalse(self.service._is_addressed_to_bot("обсуждаем данко в середине фразы"))
+
+    async def test_group_request_topic_score_accepts_addressed_material_request(self) -> None:
+        text = "бот заявка кабель 3x2.5 150 м.п."
+
+        self.assertGreaterEqual(self.service._request_topic_score(text), 2)
+
+    async def test_material_segments_for_addressed_group_request_are_diagnostic_ready(self) -> None:
+        text = "бот заявка кабель 3x2.5 150 м.п. подрозетники 120 шт"
+
+        segments = self.service._extract_material_segments(text)
+        quantity, unit = self.service._extract_quantity(text)
+
+        self.assertTrue(segments)
+        self.assertTrue(any("кабель" in segment for segment in segments))
+        self.assertIsInstance(self.service._looks_like_material_segment(segments[0]), bool)
+        self.assertEqual(quantity, 150)
+        self.assertEqual(unit, "м.п.")
 
     async def test_unaddressed_direct_order_can_start_dialogue(self) -> None:
         text = "привези цемент 10 мешков"

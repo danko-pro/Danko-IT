@@ -2212,6 +2212,7 @@
 
 .public-estimate-room-index {
   grid-column: 1;
+  grid-row: 1;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -2228,26 +2229,32 @@
 
 .public-estimate-room-name {
   grid-column: 2;
+  grid-row: 1;
 }
 
 .public-estimate-room-type {
   grid-column: 3;
+  grid-row: 1;
 }
 
 .public-estimate-room-area {
   grid-column: 4;
+  grid-row: 1;
 }
 
 .public-estimate-room-doors {
   grid-column: 5;
+  grid-row: 1;
 }
 
 .public-estimate-room-windows {
   grid-column: 6;
+  grid-row: 1;
 }
 
 .public-estimate-room-result {
   grid-column: 7;
+  grid-row: 1;
   display: grid;
   gap: 0.12rem;
   min-width: 0;
@@ -2269,6 +2276,7 @@
 
 .public-estimate-row-remove {
   grid-column: 8;
+  grid-row: 1;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -2345,7 +2353,8 @@
   margin-top: 0;
 }
 
-.public-estimate-summary-head {
+.public-estimate-summary-head,
+.public-estimate-costs-head {
   display: grid;
   gap: 0.24rem;
 }
@@ -2413,6 +2422,73 @@
   font-weight: 560;
   line-height: 1.4;
   text-align: right;
+}
+
+.public-estimate-costs {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.72rem;
+  border: 1px solid rgba(30, 81, 74, 0.12);
+  border-radius: 18px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.78), rgba(246, 250, 248, 0.78)),
+    #ffffff;
+}
+
+.public-estimate-costs-head h2 {
+  margin: 0;
+  color: var(--public-ink);
+  font-size: clamp(1.08rem, 2vw, 1.32rem);
+  font-weight: 850;
+  line-height: 1.12;
+}
+
+.public-estimate-cost-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  overflow: hidden;
+  border: 1px solid rgba(30, 81, 74, 0.12);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.74);
+}
+
+.public-estimate-cost-cell {
+  display: grid;
+  gap: 0.26rem;
+  min-width: 0;
+  padding: 0.62rem 0.7rem;
+  border-right: 1px solid rgba(30, 81, 74, 0.1);
+  background: rgba(255, 255, 255, 0.54);
+}
+
+.public-estimate-cost-cell:last-child {
+  border-right: 0;
+}
+
+.public-estimate-cost-cell span {
+  color: rgba(19, 35, 31, 0.58);
+  font-size: 0.68rem;
+  font-weight: 760;
+  line-height: 1.2;
+}
+
+.public-estimate-cost-cell strong {
+  color: var(--public-green-deep);
+  font-size: clamp(0.98rem, 1.35vw, 1.16rem);
+  font-weight: 860;
+  line-height: 1.05;
+}
+
+.public-estimate-cost-cell-total {
+  background: rgba(233, 242, 239, 0.62);
+}
+
+.public-estimate-cost-note {
+  margin: 0;
+  color: rgba(19, 35, 31, 0.64);
+  font-size: 0.8rem;
+  font-weight: 560;
+  line-height: 1.45;
 }
 
 .public-estimate-status {
@@ -2524,6 +2600,22 @@
   .public-estimate-summary-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
+
+  .public-estimate-cost-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .public-estimate-cost-cell:nth-child(3n) {
+    border-right: 0;
+  }
+
+  .public-estimate-cost-cell {
+    border-bottom: 1px solid rgba(30, 81, 74, 0.1);
+  }
+
+  .public-estimate-cost-cell:nth-last-child(-n + 3) {
+    border-bottom: 0;
+  }
 }
 
 @media (max-width: 860px) {
@@ -2570,6 +2662,7 @@
   .public-estimate-room-result,
   .public-estimate-row-remove {
     grid-column: auto;
+    grid-row: auto;
   }
 
   .public-estimate-room-name .public-estimate-mobile-label {
@@ -2890,15 +2983,31 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .public-estimate-costs {
+    padding: 0.68rem;
+    border-radius: 16px;
+  }
+
+  .public-estimate-cost-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .public-estimate-cost-cell,
   .public-estimate-summary-card {
     padding: 0.6rem;
     border-right: 1px solid rgba(30, 81, 74, 0.1);
     border-bottom: 1px solid rgba(30, 81, 74, 0.1);
   }
 
+  .public-estimate-cost-cell:nth-child(even),
+  .public-estimate-cost-cell:last-child,
   .public-estimate-summary-card:nth-child(even),
   .public-estimate-summary-card:last-child {
     border-right: 0;
+  }
+
+  .public-estimate-cost-cell:nth-last-child(-n + 2) {
+    border-bottom: 0;
   }
 
   .public-privacy {

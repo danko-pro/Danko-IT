@@ -6,6 +6,7 @@ import {
   type EstimateRoomInput,
   type EstimateRoomType,
 } from "./public-estimate-geometry";
+import { createEmptyEstimateResult } from "./public-estimate-model";
 
 const estimateSteps = [
   "объект и помещения",
@@ -56,6 +57,13 @@ function formatMeasurement(value: number, unit: "м" | "м²") {
   }).format(value)} ${unit}`;
 }
 
+function formatMoney(value: number) {
+  return `${new Intl.NumberFormat("ru-RU", {
+    maximumFractionDigits: 0,
+    minimumFractionDigits: 0,
+  }).format(value)} ₽`;
+}
+
 function createEstimateRoom(): EstimateRoomDraft {
   return {
     id: `room-${Date.now()}-${Math.random().toString(16).slice(2)}`,
@@ -78,6 +86,7 @@ export function PublicEstimate() {
     [roomInputs, ceilingHeight],
   );
   const totals = useMemo(() => calculateEstimateGeometryTotals(roomGeometries), [roomGeometries]);
+  const estimateResult = useMemo(() => createEmptyEstimateResult(), []);
 
   const summaryItems = [
     { label: "Площадь пола", value: formatMeasurement(totals.floorArea, "м²") },
@@ -87,6 +96,14 @@ export function PublicEstimate() {
     { label: "Стены к отделке", value: formatMeasurement(totals.finishWallArea, "м²") },
     { label: "Потолки", value: formatMeasurement(totals.ceilingArea, "м²") },
     { label: "Плинтус", value: formatMeasurement(totals.plinthLength, "м") },
+  ];
+  const estimateTotalItems = [
+    { label: "Работы", value: formatMoney(estimateResult.totals.works) },
+    { label: "Материалы", value: formatMoney(estimateResult.totals.materials) },
+    { label: "Оборудование", value: formatMoney(estimateResult.totals.equipment) },
+    { label: "Расходники", value: formatMoney(estimateResult.totals.consumables) },
+    { label: "Итого", value: formatMoney(estimateResult.totals.total), isStrong: true },
+    { label: "₽/м²", value: `${formatMoney(estimateResult.totals.pricePerSquareMeter)}/м²` },
   ];
 
   function updateRoom(roomId: string, patch: Partial<EstimateRoomDraft>) {
@@ -274,6 +291,27 @@ export function PublicEstimate() {
                 Расчёт предварительный: используем площади по БТИ и коэффициент формы, без ручного замера каждой стены.
               </p>
             </div>
+          </section>
+
+          <section className="public-estimate-costs" aria-labelledby="public-estimate-costs-title">
+            <div className="public-estimate-costs-head">
+              <p className="public-section-kicker">Итоговая смета</p>
+              <h2 id="public-estimate-costs-title">Стоимость по разделам</h2>
+            </div>
+
+            <div className="public-estimate-cost-grid">
+              {estimateTotalItems.map((item) => (
+                <div className={`public-estimate-cost-cell${item.isStrong ? " public-estimate-cost-cell-total" : ""}`} key={item.label}>
+                  <span>{item.label}</span>
+                  <strong>{item.value}</strong>
+                </div>
+              ))}
+            </div>
+
+            <p className="public-estimate-cost-note">
+              Стоимость появится после подключения разделов работ: тёплый пол, полы, стены, потолки, электрика и
+              сантехника.
+            </p>
           </section>
 
           <div className="public-estimate-actions" aria-label="Действия на странице калькулятора">

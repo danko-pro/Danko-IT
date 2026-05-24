@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import logging
+
 from aiogram import Bot
 from aiogram.types import Message
 
@@ -16,6 +18,9 @@ from supply_bot.services.llm import DialogueDecider, DialogueNarrator
 from supply_bot.services.profiles import GroupProfileService
 from supply_bot.storage import BotStorage
 from supply_bot.utils import normalize_text
+
+DIALOGUE_LOG_PREVIEW_LIMIT = 240
+logger = logging.getLogger(__name__)
 
 
 class RequestDialogueService(
@@ -52,6 +57,38 @@ class RequestDialogueService(
             message_id=message_id,
         )
 
+    def _log_group_ignore(
+        self,
+        reason: str,
+        message: Message,
+        *,
+        text: str,
+        draft: dict | None = None,
+    ) -> None:
+        normalized = normalize_text(text)
+        from_user = message.from_user
+        request_topic_score = self._request_topic_score(text) if normalized else 0
+        is_addressed_to_bot = self._is_addressed_to_bot(text) if normalized else False
+        logger.info(
+            (
+                "group text diagnostic reason=%s chat_id=%s master_id=%s normalized_text=%r "
+                "request_topic_score=%s is_addressed_to_bot=%s has_draft=%s"
+            ),
+            reason,
+            message.chat.id,
+            from_user.id if from_user is not None else None,
+            self._format_group_log_preview(normalized),
+            request_topic_score,
+            is_addressed_to_bot,
+            draft is not None,
+        )
+
+    def _format_group_log_preview(self, text: str) -> str:
+        normalized = " ".join(text.split())
+        if len(normalized) <= DIALOGUE_LOG_PREVIEW_LIMIT:
+            return normalized
+        return f"{normalized[: DIALOGUE_LOG_PREVIEW_LIMIT - 1].rstrip()}…"
+
     async def handle_group_message(self, bot: Bot, message: Message) -> DialogueResult:
         """Обрабатывает обычное текстовое Telegram-сообщение из группы."""
         text = (message.text or "").strip()
@@ -72,6 +109,7 @@ class RequestDialogueService(
         """
         text = text.strip()
         if not text or message.from_user is None:
+            self._log_group_ignore("empty_text_or_no_from_user", message, text=text)
             return DialogueResult(text=None)
 
         master_name = message.from_user.full_name or message.from_user.username or str(message.from_user.id)
@@ -103,6 +141,12 @@ class RequestDialogueService(
                 )
             should_join_draft = self._should_join_active_draft(text)
             if not is_participant and not should_join_draft:
+                self._log_group_ignore(
+                    "active_draft_belongs_to_another_user",
+                    message,
+                    text=text,
+                    draft=active_chat_draft,
+                )
                 return DialogueResult(text=None)
             if should_join_draft:
                 await self.storage.add_draft_participant(
@@ -119,6 +163,7 @@ class RequestDialogueService(
             )
 
         if draft and not force_dialogue and not self._should_process_active_draft_message(text, draft):
+            self._log_group_ignore("active_draft_message_not_processable", message, text=text, draft=draft)
             return DialogueResult(text=None)
 
         profile = await self.profiles.sync_from_telegram(bot, message.chat.id)
@@ -159,6 +204,8 @@ class RequestDialogueService(
             and not self._is_addressed_to_bot(text)
             and not should_listen_without_address
         ):
+            reason = "smalltalk" if self._is_smalltalk_message(text) else "not_addressed_not_request_like"
+            self._log_group_ignore(reason, message, text=text, draft=draft)
             return DialogueResult(text=None)
 
         if draft and abort_requested:
@@ -182,6 +229,7 @@ class RequestDialogueService(
         )
         if llm_reply is not None:
             return DialogueResult(text=llm_reply)
+        self._log_group_ignore("llm_decision_none", message, text=text, draft=draft)
 
         if draft and abort_candidate:
             return DialogueResult(
@@ -210,6 +258,7 @@ class RequestDialogueService(
                 or self._is_addressed_to_bot(text)
                 or should_listen_without_address
             ):
+                self._log_group_ignore("material_match_not_request_like", message, text=text, draft=draft)
                 return DialogueResult(text=None)
             draft = await self.storage.get_or_create_active_draft(
                 chat_id=message.chat.id,
@@ -221,6 +270,7 @@ class RequestDialogueService(
 
         if unknown_segments and not draft:
             if self._is_smalltalk_message(text):
+                self._log_group_ignore("smalltalk", message, text=text, draft=draft)
                 return DialogueResult(text=None)
             if (
                 not force_dialogue
@@ -228,6 +278,7 @@ class RequestDialogueService(
                 and not self._should_start_new_request_message(text)
                 and not allow_unaddressed_unknown_material
             ):
+                self._log_group_ignore("unknown_segments_not_request_like", message, text=text, draft=draft)
                 return DialogueResult(text=None)
             draft = await self.storage.get_or_create_active_draft(
                 chat_id=message.chat.id,
@@ -278,4 +329,5 @@ class RequestDialogueService(
             if contextual_reply is not None:
                 return DialogueResult(text=contextual_reply)
 
+        self._log_group_ignore("material_analysis_no_matches_or_unknown_segments", message, text=text, draft=draft)
         return DialogueResult(text=None)

@@ -2031,35 +2031,40 @@
 .public-estimate {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(280px, 320px);
-  align-items: stretch;
-  gap: clamp(1rem, 3vw, 1.6rem);
-  width: min(100%, 1120px);
-  margin: 2.5rem auto 0;
+  align-items: start;
+  gap: clamp(0.8rem, 2vw, 1.1rem);
+  width: min(100%, 1180px);
+  margin: 1.45rem auto 0;
 }
 
 .public-estimate-card {
   min-width: 0;
-  padding: clamp(1rem, 2.6vw, 1.5rem);
+  padding: clamp(0.85rem, 1.8vw, 1.1rem);
   border: 1px solid rgba(30, 81, 74, 0.14);
-  border-radius: 28px;
+  border-radius: 20px;
   background: rgba(255, 255, 255, 0.82);
-  box-shadow: 0 18px 42px rgba(19, 35, 31, 0.06);
+  box-shadow: 0 14px 34px rgba(19, 35, 31, 0.045);
 }
 
 .public-estimate-card-main {
   display: grid;
   align-content: start;
-  gap: 1rem;
+  gap: 0.76rem;
+}
+
+.public-estimate-intro {
+  display: grid;
+  gap: 0.42rem;
 }
 
 .public-estimate h1 {
   max-width: 760px;
   margin: 0;
   color: var(--public-ink);
-  font-size: clamp(2.3rem, 5vw, 4.2rem);
-  font-weight: 870;
+  font-size: clamp(1.8rem, 3.2vw, 2.8rem);
+  font-weight: 860;
   letter-spacing: 0;
-  line-height: 1.02;
+  line-height: 1.04;
 }
 
 .public-estimate-subtitle,
@@ -2072,7 +2077,8 @@
 }
 
 .public-estimate-subtitle {
-  font-size: 1.06rem;
+  font-size: 0.95rem;
+  line-height: 1.46;
 }
 
 .public-estimate-description {
@@ -2081,11 +2087,11 @@
 
 .public-estimate-geometry {
   display: grid;
-  gap: 1rem;
-  margin-top: 0.35rem;
-  padding: 1rem;
+  gap: 0.6rem;
+  margin-top: 0;
+  padding: 0.72rem;
   border: 1px solid rgba(30, 81, 74, 0.12);
-  border-radius: 24px;
+  border-radius: 18px;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.76), rgba(246, 250, 248, 0.78)),
     #ffffff;
@@ -2093,16 +2099,16 @@
 
 .public-estimate-geometry-head {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(150px, 190px);
-  gap: 1rem;
+  grid-template-columns: minmax(0, 1fr) minmax(130px, 170px);
+  gap: 0.8rem;
   align-items: end;
 }
 
 .public-estimate-geometry-head span {
   display: inline-flex;
-  margin-bottom: 0.38rem;
+  margin-bottom: 0.22rem;
   color: var(--public-green);
-  font-size: 0.76rem;
+  font-size: 0.68rem;
   font-weight: 850;
   letter-spacing: 0;
   line-height: 1.2;
@@ -2113,7 +2119,7 @@
 .public-estimate-summary-head h2 {
   margin: 0;
   color: var(--public-ink);
-  font-size: clamp(1.35rem, 2.5vw, 1.75rem);
+  font-size: clamp(1.08rem, 2vw, 1.32rem);
   font-weight: 850;
   line-height: 1.12;
 }
@@ -2129,7 +2135,7 @@
 
 .public-estimate-field {
   display: grid;
-  gap: 0.34rem;
+  gap: 0.22rem;
   min-width: 0;
 }
 
@@ -2145,14 +2151,14 @@
 .public-estimate-select {
   width: 100%;
   min-width: 0;
-  min-height: 42px;
-  padding: 0 0.68rem;
+  min-height: 34px;
+  padding: 0 0.5rem;
   border: 1px solid rgba(30, 81, 74, 0.14);
-  border-radius: 14px;
+  border-radius: 10px;
   background: rgba(255, 255, 255, 0.86);
   color: var(--public-ink);
   font: inherit;
-  font-size: 0.9rem;
+  font-size: 0.82rem;
   font-weight: 650;
   line-height: 1.2;
   outline: none;
@@ -2171,18 +2177,30 @@
 
 .public-estimate-room-list {
   display: grid;
-  gap: 0.58rem;
+  gap: 0.34rem;
+}
+
+.public-estimate-room-header {
+  display: grid;
+  grid-template-columns: 2rem minmax(108px, 1.15fr) minmax(92px, 0.82fr) minmax(64px, 0.48fr) minmax(48px, 0.4fr) minmax(48px, 0.4fr) minmax(96px, 0.74fr) 1.8rem;
+  gap: 0.42rem;
+  align-items: center;
+  padding: 0 0.46rem;
+  color: rgba(19, 35, 31, 0.48);
+  font-size: 0.68rem;
+  font-weight: 820;
+  line-height: 1.2;
 }
 
 .public-estimate-room-row {
   display: grid;
-  grid-template-columns: auto minmax(100px, 1.2fr) minmax(96px, 0.82fr) minmax(68px, 0.48fr) minmax(56px, 0.4fr) minmax(56px, 0.4fr) minmax(104px, 0.74fr) auto;
-  gap: 0.52rem;
-  align-items: end;
+  grid-template-columns: 2rem minmax(108px, 1.15fr) minmax(92px, 0.82fr) minmax(64px, 0.48fr) minmax(48px, 0.4fr) minmax(48px, 0.4fr) minmax(96px, 0.74fr) 1.8rem;
+  gap: 0.42rem;
+  align-items: center;
   min-width: 0;
-  padding: 0.72rem;
+  padding: 0.38rem 0.46rem;
   border: 1px solid rgba(30, 81, 74, 0.1);
-  border-radius: 20px;
+  border-radius: 13px;
   background: rgba(255, 255, 255, 0.78);
 }
 
@@ -2190,31 +2208,69 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 2.35rem;
-  height: 2.35rem;
-  margin-bottom: 0.1rem;
+  width: 2rem;
+  height: 2rem;
+  margin-bottom: 0;
   border: 1px solid rgba(30, 81, 74, 0.16);
-  border-radius: 14px;
+  border-radius: 10px;
   background: var(--public-green-soft);
   color: var(--public-green-deep);
-  font-size: 0.74rem;
+  font-size: 0.68rem;
   font-weight: 850;
 }
 
 .public-estimate-room-result {
   display: grid;
-  gap: 0.34rem;
+  gap: 0.12rem;
   min-width: 0;
 }
 
 .public-estimate-room-result strong {
   display: inline-flex;
   align-items: center;
-  min-height: 42px;
+  min-height: 34px;
   color: var(--public-green-deep);
-  font-size: 0.94rem;
+  font-size: 0.84rem;
   font-weight: 820;
   line-height: 1.2;
+}
+
+.public-estimate-room-row .public-estimate-mobile-label {
+  display: none;
+}
+
+.public-estimate-row-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.8rem;
+  height: 1.8rem;
+  padding: 0;
+  border: 1px solid rgba(30, 81, 74, 0.14);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.72);
+  color: rgba(30, 81, 74, 0.72);
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 760;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    border-color var(--ui-motion-fast) var(--ui-motion-ease-soft),
+    background-color var(--ui-motion-fast) var(--ui-motion-ease-soft),
+    color var(--ui-motion-fast) var(--ui-motion-ease-soft);
+}
+
+.public-estimate-row-remove:hover:not(:disabled),
+.public-estimate-row-remove:focus-visible {
+  border-color: rgba(30, 81, 74, 0.38);
+  background: var(--public-green);
+  color: #ffffff;
+}
+
+.public-estimate-row-remove:disabled {
+  color: rgba(30, 81, 74, 0.28);
+  cursor: not-allowed;
 }
 
 .public-estimate-small-action {
@@ -2222,14 +2278,14 @@
   align-items: center;
   justify-content: center;
   width: fit-content;
-  min-height: 40px;
-  padding: 0 0.82rem;
+  min-height: 34px;
+  padding: 0 0.72rem;
   border: 1px solid var(--public-green);
   border-radius: 999px;
   background: var(--public-green);
   color: #ffffff;
   font: inherit;
-  font-size: 0.86rem;
+  font-size: 0.8rem;
   font-weight: 780;
   line-height: 1.2;
   cursor: pointer;
@@ -2254,18 +2310,10 @@
   cursor: not-allowed;
 }
 
-.public-estimate-small-action-muted {
-  min-height: 42px;
-  margin-bottom: 0;
-  border-color: rgba(30, 81, 74, 0.16);
-  background: rgba(255, 255, 255, 0.68);
-  color: var(--public-green-deep);
-}
-
 .public-estimate-summary {
   display: grid;
-  gap: 1rem;
-  margin-top: 0.2rem;
+  gap: 0.48rem;
+  margin-top: 0;
 }
 
 .public-estimate-summary-head {
@@ -2275,30 +2323,36 @@
 
 .public-estimate-summary-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 0.62rem;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  overflow: hidden;
+  border: 1px solid rgba(30, 81, 74, 0.12);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.74);
 }
 
 .public-estimate-summary-card {
   display: grid;
-  gap: 0.45rem;
+  gap: 0.26rem;
   min-width: 0;
-  padding: 0.86rem;
-  border: 1px solid rgba(30, 81, 74, 0.11);
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.76);
+  padding: 0.62rem 0.7rem;
+  border-right: 1px solid rgba(30, 81, 74, 0.1);
+  background: rgba(255, 255, 255, 0.54);
+}
+
+.public-estimate-summary-card:last-child {
+  border-right: 0;
 }
 
 .public-estimate-summary-card span {
   color: rgba(19, 35, 31, 0.58);
-  font-size: 0.76rem;
+  font-size: 0.68rem;
   font-weight: 760;
   line-height: 1.2;
 }
 
 .public-estimate-summary-card strong {
   color: var(--public-green-deep);
-  font-size: clamp(1.08rem, 2vw, 1.38rem);
+  font-size: clamp(0.98rem, 1.35vw, 1.16rem);
   font-weight: 860;
   line-height: 1.05;
 }
@@ -2313,6 +2367,23 @@
   font-size: 0.9rem;
   font-weight: 560;
   line-height: 1.5;
+}
+
+.public-estimate-geometry-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+}
+
+.public-estimate-geometry-footer p {
+  max-width: 560px;
+  margin: 0;
+  color: rgba(19, 35, 31, 0.62);
+  font-size: 0.78rem;
+  font-weight: 560;
+  line-height: 1.4;
+  text-align: right;
 }
 
 .public-estimate-status {
@@ -2331,18 +2402,18 @@
 .public-estimate-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.72rem;
-  margin-top: 0.45rem;
+  gap: 0.58rem;
+  margin-top: 0.12rem;
 }
 
 .public-estimate-preview-head {
   display: grid;
-  gap: 0.45rem;
+  gap: 0.28rem;
 }
 
 .public-estimate-preview-head span {
   color: var(--public-green);
-  font-size: 0.78rem;
+  font-size: 0.68rem;
   font-weight: 840;
   letter-spacing: 0;
   line-height: 1.2;
@@ -2352,15 +2423,15 @@
 .public-estimate-preview-head h2 {
   margin: 0;
   color: var(--public-ink);
-  font-size: clamp(1.35rem, 2.4vw, 1.75rem);
+  font-size: clamp(1.08rem, 1.8vw, 1.28rem);
   font-weight: 850;
   line-height: 1.12;
 }
 
 .public-estimate-steps {
   display: grid;
-  gap: 0.58rem;
-  margin: 1.15rem 0 0;
+  gap: 0.34rem;
+  margin: 0.72rem 0 0;
   padding: 0;
   list-style: none;
 }
@@ -2369,11 +2440,11 @@
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
-  gap: 0.72rem;
+  gap: 0.48rem;
   min-width: 0;
-  padding: 0.72rem 0.8rem;
+  padding: 0.48rem 0.54rem;
   border: 1px solid rgba(30, 81, 74, 0.1);
-  border-radius: 18px;
+  border-radius: 13px;
   background: rgba(255, 255, 255, 0.72);
 }
 
@@ -2381,22 +2452,28 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 2.35rem;
-  height: 2.35rem;
+  width: 1.85rem;
+  height: 1.85rem;
   border: 1px solid rgba(30, 81, 74, 0.18);
-  border-radius: 14px;
+  border-radius: 10px;
   background: var(--public-green-soft);
   color: var(--public-green-deep);
-  font-size: 0.74rem;
+  font-size: 0.66rem;
   font-weight: 850;
 }
 
 .public-estimate-steps strong {
   min-width: 0;
   color: #213b35;
-  font-size: 0.95rem;
+  font-size: 0.78rem;
   font-weight: 760;
   line-height: 1.25;
+}
+
+.public-estimate-scenario {
+  align-self: start;
+  padding: 0.82rem;
+  border-radius: 18px;
 }
 
 .public-estimate-step-active {
@@ -2416,13 +2493,24 @@
   }
 
   .public-estimate-summary-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
 
 @media (max-width: 860px) {
+  .public-estimate-room-header {
+    display: none;
+  }
+
   .public-estimate-room-row {
-    grid-template-columns: auto repeat(2, minmax(0, 1fr));
+    grid-template-columns: auto repeat(2, minmax(0, 1fr)) auto;
+    align-items: end;
+    padding: 0.62rem;
+    border-radius: 16px;
+  }
+
+  .public-estimate-room-row .public-estimate-mobile-label {
+    display: inline-flex;
   }
 
   .public-estimate-room-name {
@@ -2430,7 +2518,12 @@
   }
 
   .public-estimate-room-result {
-    grid-column: 2 / 3;
+    grid-column: span 2;
+  }
+
+  .public-estimate-row-remove {
+    width: 2rem;
+    height: 2rem;
   }
 }
 
@@ -2607,16 +2700,17 @@
 
   .public-estimate {
     grid-template-columns: minmax(0, 1fr);
-    gap: 0.85rem;
-    margin-top: 1.5rem;
+    gap: 0.7rem;
+    margin-top: 1rem;
   }
 
   .public-estimate-card {
-    border-radius: 20px;
+    padding: 0.8rem;
+    border-radius: 18px;
   }
 
   .public-estimate h1 {
-    font-size: clamp(2rem, 11vw, 2.75rem);
+    font-size: clamp(1.8rem, 9vw, 2.35rem);
   }
 
   .public-estimate-subtitle,
@@ -2650,9 +2744,9 @@
   }
 
   .public-estimate-geometry {
-    gap: 0.85rem;
-    padding: 0.82rem;
-    border-radius: 20px;
+    gap: 0.62rem;
+    padding: 0.68rem;
+    border-radius: 16px;
   }
 
   .public-estimate-geometry-head {
@@ -2662,9 +2756,9 @@
 
   .public-estimate-room-row {
     grid-template-columns: auto minmax(0, 1fr);
-    gap: 0.62rem;
-    padding: 0.72rem;
-    border-radius: 18px;
+    gap: 0.56rem;
+    padding: 0.62rem;
+    border-radius: 15px;
   }
 
   .public-estimate-room-index {
@@ -2674,7 +2768,7 @@
   .public-estimate-room-name,
   .public-estimate-room-row .public-estimate-field,
   .public-estimate-room-result,
-  .public-estimate-small-action-muted {
+  .public-estimate-row-remove {
     grid-column: 1 / -1;
   }
 
@@ -2687,8 +2781,8 @@
     align-items: center;
     justify-content: space-between;
     gap: 0.8rem;
-    min-height: 42px;
-    padding: 0 0.68rem;
+    min-height: 36px;
+    padding: 0 0.56rem;
     border: 1px solid rgba(30, 81, 74, 0.11);
     border-radius: 14px;
     background: rgba(255, 255, 255, 0.68);
@@ -2699,13 +2793,33 @@
     white-space: nowrap;
   }
 
+  .public-estimate-row-remove {
+    width: 100%;
+    height: 34px;
+  }
+
+  .public-estimate-geometry-footer {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .public-estimate-geometry-footer p {
+    text-align: left;
+  }
+
   .public-estimate-summary-grid {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 0.54rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .public-estimate-summary-card {
-    padding: 0.78rem;
+    padding: 0.6rem;
+    border-right: 1px solid rgba(30, 81, 74, 0.1);
+    border-bottom: 1px solid rgba(30, 81, 74, 0.1);
+  }
+
+  .public-estimate-summary-card:nth-child(even),
+  .public-estimate-summary-card:last-child {
+    border-right: 0;
   }
 
   .public-privacy {

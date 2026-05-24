@@ -1,4 +1,5 @@
 import { Suspense, lazy } from "react";
+import { PublicEstimate } from "./features/public/PublicEstimate";
 import { PublicLanding } from "./features/public/PublicLanding";
 import { PublicPrivacy } from "./features/public/PublicPrivacy";
 
@@ -12,6 +13,10 @@ function isPublicPrivacy(pathname: string) {
   return pathname === "/privacy";
 }
 
+function isPublicEstimate(pathname: string) {
+  return pathname === "/estimate";
+}
+
 export default function App() {
   const pathname = window.location.pathname;
 
@@ -21,6 +26,10 @@ export default function App() {
 
   if (isPublicPrivacy(pathname)) {
     return <PublicPrivacy />;
+  }
+
+  if (isPublicEstimate(pathname)) {
+    return <PublicEstimate />;
   }
 
   return (

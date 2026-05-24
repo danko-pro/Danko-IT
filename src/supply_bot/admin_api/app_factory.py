@@ -30,6 +30,7 @@ from supply_bot.storage_dashboard import SqlAlchemyDashboardReadModel
 from supply_bot.storage_estimates.runtime_repository import SqlAlchemyEstimateRuntimeRepository
 from supply_bot.storage_notifications import SqlAlchemyTelegramNotificationRepository
 from supply_bot.storage_projects import SqlAlchemyProjectWorkspaceRepository
+from supply_bot.storage_public_leads import SqlAlchemyPublicLeadRepository
 from supply_bot.storage_requests import SqlAlchemyRequestRuntimeRepository
 
 PUBLIC_ADMIN_API_PATHS = (
@@ -87,6 +88,7 @@ def create_admin_app(settings: Settings | None = None) -> FastAPI:
     request_repository = SqlAlchemyRequestRuntimeRepository(database_runtime.session_factory)
     notification_repository = SqlAlchemyTelegramNotificationRepository(database_runtime.session_factory)
     project_repository = SqlAlchemyProjectWorkspaceRepository(database_runtime.session_factory)
+    public_lead_repository = SqlAlchemyPublicLeadRepository(database_runtime.session_factory)
     estimate_repository = SqlAlchemyEstimateRuntimeRepository(database_runtime.session_factory)
     dashboard_read_model = SqlAlchemyDashboardReadModel(database_runtime.session_factory)
     system_project_owner_id = _resolve_system_project_owner_id(resolved_settings)
@@ -110,6 +112,7 @@ def create_admin_app(settings: Settings | None = None) -> FastAPI:
             request_repository,
             notification_repository,
             project_repository,
+            public_lead_repository,
             estimate_repository,
             dashboard_read_model,
             system_project_owner_id,
@@ -226,6 +229,7 @@ def _build_admin_lifespan(
     request_repository: SqlAlchemyRequestRuntimeRepository,
     notification_repository: SqlAlchemyTelegramNotificationRepository,
     project_repository: SqlAlchemyProjectWorkspaceRepository,
+    public_lead_repository: SqlAlchemyPublicLeadRepository,
     estimate_repository: SqlAlchemyEstimateRuntimeRepository,
     dashboard_read_model: SqlAlchemyDashboardReadModel,
     system_project_owner_id: int,
@@ -253,6 +257,7 @@ def _build_admin_lifespan(
         app.state.request_repository = request_repository
         app.state.notification_repository = notification_repository
         app.state.project_repository = project_repository
+        app.state.public_lead_repository = public_lead_repository
         app.state.estimate_repository = estimate_repository
         app.state.dashboard_read_model = dashboard_read_model
         app.state.system_project_owner_id = system_project_owner_id

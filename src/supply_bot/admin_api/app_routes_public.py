@@ -3,6 +3,11 @@ from __future__ import annotations
 from fastapi import FastAPI, HTTPException, Request
 
 from supply_bot.admin_api.public_lead_notifications import PublicLeadTelegramNotifier
+from supply_bot.domain.public_leads import (
+    PUBLIC_LEAD_TELEGRAM_FAILED,
+    PUBLIC_LEAD_TELEGRAM_SENT,
+    PUBLIC_LEAD_TELEGRAM_SKIPPED,
+)
 
 
 def _resolve_public_lead_client_ip(request: Request) -> str:
@@ -24,6 +29,10 @@ def _resolve_public_lead_notifier(request: Request):
     notifier = PublicLeadTelegramNotifier.from_settings(settings)
     request.app.state.public_lead_notifier = notifier
     return notifier
+
+
+def _resolve_public_lead_repository(request: Request):
+    return request.app.state.public_lead_repository
 
 
 def register_public_routes(
@@ -48,8 +57,19 @@ def register_public_routes(
                     headers=headers,
                 )
 
+        lead_id = await _resolve_public_lead_repository(request).create_from_payload(payload)
+        delivery_status = PUBLIC_LEAD_TELEGRAM_FAILED
         try:
-            await _resolve_public_lead_notifier(request).notify(payload)
+            delivered = await _resolve_public_lead_notifier(request).notify(payload)
+            delivery_status = PUBLIC_LEAD_TELEGRAM_SENT if delivered else PUBLIC_LEAD_TELEGRAM_SKIPPED
+        except Exception:
+            delivery_status = PUBLIC_LEAD_TELEGRAM_FAILED
+
+        try:
+            await _resolve_public_lead_repository(request).mark_telegram_delivery(
+                lead_id,
+                status=delivery_status,
+            )
         except Exception:
             pass
 

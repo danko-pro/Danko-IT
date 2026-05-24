@@ -14,3 +14,4 @@ class PublicLeadPayload(BaseModel):
     contactMethod: str = Field(default="", max_length=40)
     comment: str = Field(default="", max_length=2000)
     personalDataConsent: Literal[True]
+    website: str = Field(default="", max_length=120)

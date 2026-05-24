@@ -37,7 +37,7 @@ export function useLeadFormDraft() {
     setLeadForm((currentForm) => ({
       ...currentForm,
       [name]:
-        name === "personalDataConsent" && target instanceof HTMLInputElement
+        target instanceof HTMLInputElement && target.type === "checkbox"
           ? target.checked
           : target.value,
     }));

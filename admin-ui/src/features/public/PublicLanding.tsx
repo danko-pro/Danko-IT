@@ -630,6 +630,19 @@ export function PublicLanding() {
           <div className="public-contacts-layout">
             <div className="public-contacts-panel">
               <form className="public-lead-form" onSubmit={handleLeadFormSubmit}>
+                <label className="public-form-honeypot" htmlFor="public-lead-website" aria-hidden="true">
+                  <span>Website</span>
+                  <input
+                    id="public-lead-website"
+                    name="website"
+                    type="text"
+                    value={leadForm.website}
+                    onChange={handleLeadFormChange}
+                    autoComplete="off"
+                    tabIndex={-1}
+                  />
+                </label>
+
                 <div className="public-form-grid">
                   <label className="public-form-field" htmlFor="public-lead-name">
                     <span className="public-form-label">Имя</span>

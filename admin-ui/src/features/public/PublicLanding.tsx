@@ -27,7 +27,8 @@ export function PublicLanding() {
   const activeProcessIndexRef = useRef(-1);
   const lastProcessScrollYRef = useRef(0);
   const activeService = publicServiceItems[activeServiceIndex];
-  const { leadForm, leadFormStatus, handleLeadFormChange, handleLeadFormSubmit } = useLeadFormDraft();
+  const { leadForm, leadFormStatus, isLeadFormSubmitting, handleLeadFormChange, handleLeadFormSubmit } =
+    useLeadFormDraft();
 
   useEffect(() => {
     if (isMenuOpen) {
@@ -620,9 +621,9 @@ export function PublicLanding() {
             <p className="public-section-kicker">Контакты</p>
             <h2 id="public-contacts-title">Оставьте вводные по объекту</h2>
             <p>
-              Заполните короткую форму: тип объекта, площадь, формат ремонта и комментарий. На
-              следующем этапе мы подключим отправку заявки в Telegram-бота, чтобы менеджер сразу
-              получал структурированные данные.
+              Заполните короткую форму: тип объекта, площадь, формат ремонта и комментарий.
+              Форма уже отправляет вводные в backend. Следующим этапом подключим уведомление
+              менеджеру в Telegram.
             </p>
           </div>
 
@@ -737,11 +738,11 @@ export function PublicLanding() {
                 </div>
 
                 <div className="public-form-footer">
-                  <button className="public-form-submit" type="submit">
-                    Подготовить заявку
+                  <button className="public-form-submit" type="submit" disabled={isLeadFormSubmitting}>
+                    {isLeadFormSubmitting ? "Отправляем..." : "Отправить заявку"}
                   </button>
                   {leadFormStatus && (
-                    <p className="public-form-status" role="status">
+                    <p className="public-form-status" role="status" aria-live="polite">
                       {leadFormStatus}
                     </p>
                   )}

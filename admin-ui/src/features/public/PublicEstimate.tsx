@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { calculateCeiling } from "./public-estimate-ceiling";
+import { calculateElectric, type ElectricOptions } from "./public-estimate-electric";
 import {
   calculateEstimateGeometryTotals,
   calculateEstimateRoomGeometry,
@@ -121,9 +122,14 @@ type CeilingRoomDraft = {
   hasPointLights?: boolean;
 };
 
+type ElectricRoomDraft = {
+  isIncluded?: boolean;
+};
+
 const FLOORING_SPEC_COLLAPSED_LIMIT = 10;
 const WALLS_SPEC_COLLAPSED_LIMIT = 10;
 const CEILING_SPEC_COLLAPSED_LIMIT = 10;
+const ELECTRIC_SPEC_COLLAPSED_LIMIT = 10;
 
 const initialRooms: EstimateRoomDraft[] = [
   { id: "hallway", name: "Прихожая", type: "hallway", area: "6.5", doorCount: "1", windowCount: "0" },
@@ -246,6 +252,7 @@ export function PublicEstimate() {
   const [flooringRooms, setFlooringRooms] = useState<Record<string, FlooringRoomDraft>>({});
   const [wallsRooms, setWallsRooms] = useState<Record<string, WallsRoomDraft>>({});
   const [ceilingRooms, setCeilingRooms] = useState<Record<string, CeilingRoomDraft>>({});
+  const [electricRooms, setElectricRooms] = useState<Record<string, ElectricRoomDraft>>({});
   const [flooringOptions, setFlooringOptions] = useState<FlooringOptionsDraft>({
     includePlinth: true,
     plinthType: "duropolymer",
@@ -253,9 +260,14 @@ export function PublicEstimate() {
     thresholdCount: "0",
     includeDemolition: false,
   });
+  const [electricOptions, setElectricOptions] = useState<ElectricOptions>({
+    includeKitchenOutputs: true,
+    includeSwitchboard: true,
+  });
   const [isFlooringSpecExpanded, setIsFlooringSpecExpanded] = useState(false);
   const [isWallsSpecExpanded, setIsWallsSpecExpanded] = useState(false);
   const [isCeilingSpecExpanded, setIsCeilingSpecExpanded] = useState(false);
+  const [isElectricSpecExpanded, setIsElectricSpecExpanded] = useState(false);
 
   const ceilingHeight = useMemo(() => parseEstimateDecimal(ceilingHeightInput), [ceilingHeightInput]);
   const roomInputs = useMemo(() => rooms.map(normalizeRoom), [rooms]);
@@ -349,19 +361,41 @@ export function PublicEstimate() {
     [ceilingRooms, roomGeometries, rooms],
   );
   const ceilingResult = useMemo(() => calculateCeiling(ceilingRoomInputs), [ceilingRoomInputs]);
+  const electricRoomInputs = useMemo(
+    () =>
+      rooms.map((room, index) => {
+        const electricDraft = electricRooms[room.id] ?? {};
+        const ceilingRoom = ceilingResult.roomResults.find((ceilingResultRoom) => ceilingResultRoom.roomId === room.id);
+
+        return {
+          roomId: room.id,
+          roomName: room.name.trim() || "Помещение",
+          roomType: room.type,
+          area: roomInputs[index]?.area ?? 0,
+          isIncluded: electricDraft.isIncluded ?? true,
+          ceilingPointCount: ceilingRoom?.pointCount ?? 1,
+        };
+      }),
+    [ceilingResult.roomResults, electricRooms, roomInputs, rooms],
+  );
+  const electricResult = useMemo(
+    () => calculateElectric(electricRoomInputs, electricOptions),
+    [electricOptions, electricRoomInputs],
+  );
   const estimateResult = useMemo(() => {
     const sections = [
       ...(warmFloorResult.selectedArea > 0 ? [warmFloorResult.section] : []),
       ...(flooringResult.flooringArea > 0 ? [flooringResult.section] : []),
       ...(wallsResult.wallFinishArea > 0 ? [wallsResult.section] : []),
       ...(ceilingResult.ceilingArea > 0 ? [ceilingResult.section] : []),
+      ...(electricResult.section.items.length > 0 ? [electricResult.section] : []),
     ];
 
     return {
       sections,
       totals: calculateEstimateTotals(sections, totals.floorArea),
     };
-  }, [ceilingResult, flooringResult, totals.floorArea, wallsResult, warmFloorResult]);
+  }, [ceilingResult, electricResult, flooringResult, totals.floorArea, wallsResult, warmFloorResult]);
 
   const summaryItems = [
     { label: "Площадь пола", value: formatMeasurement(totals.floorArea, "м²") },
@@ -458,6 +492,25 @@ export function PublicEstimate() {
       ? ceilingSpecItems.slice(0, CEILING_SPEC_COLLAPSED_LIMIT)
       : ceilingSpecItems;
   const hiddenCeilingSpecCount = Math.max(0, ceilingSpecItems.length - visibleCeilingSpecItems.length);
+  const electricSummaryItems = [
+    { label: "Розетки", value: `${electricResult.socketCount} шт.` },
+    { label: "Световые выводы", value: `${electricResult.lightOutputCount} шт.` },
+    { label: "Выключатели", value: `${electricResult.switchCount} шт.` },
+    { label: "Кухонные выводы", value: `${electricResult.kitchenOutputCount} шт.` },
+    { label: "Щит / автоматика", value: `${electricResult.switchboardAutomationCount} поз.` },
+    { label: "Работы", value: formatMoney(electricResult.worksTotal) },
+    { label: "Материалы", value: formatMoney(electricResult.materialsTotal) },
+    { label: "Оборудование", value: formatMoney(electricResult.equipmentTotal) },
+    { label: "Расходники", value: formatMoney(electricResult.consumablesTotal) },
+    { label: "Итого", value: formatMoney(electricResult.total), isStrong: true },
+  ];
+  const electricSpecItems = electricResult.section.items;
+  const isElectricSpecLong = electricSpecItems.length > ELECTRIC_SPEC_COLLAPSED_LIMIT;
+  const visibleElectricSpecItems =
+    isElectricSpecLong && !isElectricSpecExpanded
+      ? electricSpecItems.slice(0, ELECTRIC_SPEC_COLLAPSED_LIMIT)
+      : electricSpecItems;
+  const hiddenElectricSpecCount = Math.max(0, electricSpecItems.length - visibleElectricSpecItems.length);
 
   function updateRoom(roomId: string, patch: Partial<EstimateRoomDraft>) {
     setRooms((currentRooms) => currentRooms.map((room) => (room.id === roomId ? { ...room, ...patch } : room)));
@@ -517,6 +570,23 @@ export function PublicEstimate() {
     }));
   }
 
+  function updateElectricRoom(roomId: string, patch: ElectricRoomDraft) {
+    setElectricRooms((currentRooms) => ({
+      ...currentRooms,
+      [roomId]: {
+        ...currentRooms[roomId],
+        ...patch,
+      },
+    }));
+  }
+
+  function updateElectricOptions(patch: Partial<ElectricOptions>) {
+    setElectricOptions((currentOptions) => ({
+      ...currentOptions,
+      ...patch,
+    }));
+  }
+
   function addRoom() {
     setRooms((currentRooms) => [...currentRooms, createEstimateRoom()]);
   }
@@ -545,6 +615,13 @@ export function PublicEstimate() {
       return nextRooms;
     });
     setCeilingRooms((currentRooms) => {
+      const nextRooms = { ...currentRooms };
+
+      delete nextRooms[roomId];
+
+      return nextRooms;
+    });
+    setElectricRooms((currentRooms) => {
       const nextRooms = { ...currentRooms };
 
       delete nextRooms[roomId];
@@ -1291,6 +1368,145 @@ export function PublicEstimate() {
             )}
           </section>
 
+          <section className="public-estimate-electric" aria-labelledby="public-estimate-electric-title">
+            <div className="public-estimate-electric-head">
+              <div>
+                <span>Шаг 06</span>
+                <h2 id="public-estimate-electric-title">Электрика</h2>
+                <p>Предварительный расчёт точек, кухонных выводов, света, выключателей и базового щита.</p>
+              </div>
+            </div>
+
+            <div className="public-estimate-electric-header" aria-hidden="true">
+              <span>Помещение</span>
+              <span>Розетки</span>
+              <span>Свет</span>
+              <span>Выключатель</span>
+              <span>Площадь</span>
+              <span>Итого</span>
+            </div>
+
+            <div className="public-estimate-electric-room-list" aria-label="Помещения для расчёта электрики">
+              {electricResult.roomResults.map((room) => {
+                const electricDraft = electricRooms[room.roomId] ?? {};
+                const isIncluded = electricDraft.isIncluded ?? true;
+
+                return (
+                  <article className="public-estimate-electric-row" key={room.roomId}>
+                    <label className="public-estimate-electric-room">
+                      <input
+                        type="checkbox"
+                        checked={isIncluded}
+                        onChange={(event) => updateElectricRoom(room.roomId, { isIncluded: event.target.checked })}
+                      />
+                      <span>
+                        <strong>{room.roomName}</strong>
+                        <small>{room.roomType === "bathroom" ? "влагозащищённые розетки" : "розетки 1 пост"}</small>
+                      </span>
+                    </label>
+
+                    <div className="public-estimate-electric-result">
+                      <span className="public-estimate-mobile-label">Розетки</span>
+                      <strong>
+                        {room.socketCount} шт.
+                        {room.waterproofSocketCount > 0 ? " IP" : ""}
+                      </strong>
+                    </div>
+
+                    <div className="public-estimate-electric-result">
+                      <span className="public-estimate-mobile-label">Свет</span>
+                      <strong>{room.lightOutputCount} шт.</strong>
+                    </div>
+
+                    <div className="public-estimate-electric-result">
+                      <span className="public-estimate-mobile-label">Выключатель</span>
+                      <strong>{room.switchCount} шт.</strong>
+                    </div>
+
+                    <div className="public-estimate-electric-result">
+                      <span className="public-estimate-mobile-label">Площадь</span>
+                      <strong>{formatMeasurement(room.area, "м²")}</strong>
+                    </div>
+
+                    <div className="public-estimate-electric-total">
+                      <span className="public-estimate-mobile-label">Итого</span>
+                      <strong>{formatMoney(room.roomTotal)}</strong>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+
+            <div className="public-estimate-electric-options" aria-label="Опции электрики">
+              <label className="public-estimate-electric-option-zone">
+                <input
+                  type="checkbox"
+                  checked={electricOptions.includeKitchenOutputs}
+                  onChange={(event) => updateElectricOptions({ includeKitchenOutputs: event.target.checked })}
+                />
+                <span>
+                  <strong>Кухонные выводы</strong>
+                  <small>варочная, духовка, ПММ, холодильник, СВЧ и вытяжка</small>
+                </span>
+              </label>
+
+              <label className="public-estimate-electric-option-zone">
+                <input
+                  type="checkbox"
+                  checked={electricOptions.includeSwitchboard}
+                  onChange={(event) => updateElectricOptions({ includeSwitchboard: event.target.checked })}
+                />
+                <span>
+                  <strong>Щит и базовая автоматика</strong>
+                  <small>щит, автоматы, УЗО, реле, шины и комплект расходников</small>
+                </span>
+              </label>
+            </div>
+
+            <div className="public-estimate-electric-summary" aria-label="Итоги по электрике">
+              {electricSummaryItems.map((item) => (
+                <div className={item.isStrong ? "public-estimate-electric-total-cell" : undefined} key={item.label}>
+                  <span>{item.label}</span>
+                  <strong>{item.value}</strong>
+                </div>
+              ))}
+            </div>
+
+            {electricResult.section.items.length > 0 ? (
+              <div className="public-estimate-electric-spec">
+                <div className="public-estimate-warm-floor-spec-head">
+                  <p>Состав раздела</p>
+                  <span>Розетки, выводы света, кухонные выводы и базовый щит</span>
+                </div>
+                <ul>
+                  {visibleElectricSpecItems.map((item) => (
+                    <li key={item.id}>
+                      <span className="public-estimate-warm-floor-line-title">{item.title}</span>
+                      <span className="public-estimate-warm-floor-line-meta">
+                        {formatEstimateQuantity(item.quantity)} {item.unit} × {formatMoney(item.unitPrice)}
+                      </span>
+                      <strong>{formatMoney(item.total)}</strong>
+                    </li>
+                  ))}
+                </ul>
+                {isElectricSpecLong ? (
+                  <button
+                    className="public-estimate-spec-toggle"
+                    type="button"
+                    aria-expanded={isElectricSpecExpanded}
+                    onClick={() => setIsElectricSpecExpanded((currentValue) => !currentValue)}
+                  >
+                    {isElectricSpecExpanded
+                      ? "Свернуть спецификацию"
+                      : `Показать всю спецификацию${hiddenElectricSpecCount > 0 ? `: ещё ${hiddenElectricSpecCount} строк` : ""}`}
+                  </button>
+                ) : null}
+              </div>
+            ) : (
+              <p className="public-estimate-warm-floor-empty">Включите хотя бы одно помещение, чтобы добавить электрику в смету.</p>
+            )}
+          </section>
+
           <section className="public-estimate-costs" aria-labelledby="public-estimate-costs-title">
             <div className="public-estimate-costs-head">
               <p className="public-section-kicker">Итоговая смета</p>
@@ -1307,7 +1523,7 @@ export function PublicEstimate() {
             </div>
 
             <p className="public-estimate-cost-note">
-              Сейчас в смету включены тёплый пол, полы, стены и потолки. Следующие разделы подключим отдельно: электрика и сантехника.
+              Сейчас в смету включены тёплый пол, полы, стены, потолки и электрика. Следующие разделы подключим отдельно: сантехника и двери.
             </p>
           </section>
 

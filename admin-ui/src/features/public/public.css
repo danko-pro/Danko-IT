@@ -2685,6 +2685,320 @@
   background: rgba(255, 255, 255, 0.62);
 }
 
+.public-estimate-flooring {
+  display: grid;
+  gap: 0.58rem;
+  padding: 0.72rem;
+  border: 1px solid rgba(30, 81, 74, 0.12);
+  border-radius: 18px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.78), rgba(246, 250, 248, 0.78)),
+    #ffffff;
+}
+
+.public-estimate-flooring-head {
+  display: grid;
+  gap: 0.36rem;
+}
+
+.public-estimate-flooring-head span {
+  display: inline-flex;
+  margin-bottom: 0.22rem;
+  color: var(--public-green);
+  font-size: 0.68rem;
+  font-weight: 850;
+  letter-spacing: 0;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.public-estimate-flooring-head h2 {
+  margin: 0;
+  color: var(--public-ink);
+  font-size: clamp(1.08rem, 2vw, 1.32rem);
+  font-weight: 850;
+  line-height: 1.12;
+}
+
+.public-estimate-flooring-head p {
+  max-width: 720px;
+  margin: 0.36rem 0 0;
+  color: var(--public-muted);
+  font-size: 0.84rem;
+  font-weight: 540;
+  line-height: 1.45;
+}
+
+.public-estimate-flooring-header,
+.public-estimate-flooring-row {
+  display: grid;
+  grid-template-columns:
+    minmax(130px, 1.2fr)
+    minmax(122px, 1fr)
+    minmax(112px, 0.9fr)
+    minmax(112px, 0.9fr)
+    minmax(76px, 0.58fr)
+    minmax(86px, 0.65fr);
+  gap: 0.42rem;
+  align-items: center;
+}
+
+.public-estimate-flooring-header {
+  padding: 0 0.46rem;
+  color: rgba(19, 35, 31, 0.48);
+  font-size: 0.68rem;
+  font-weight: 820;
+  line-height: 1.2;
+}
+
+.public-estimate-flooring-room-list {
+  display: grid;
+  gap: 0.34rem;
+}
+
+.public-estimate-flooring-row {
+  min-width: 0;
+  padding: 0.42rem 0.5rem;
+  border: 1px solid rgba(30, 81, 74, 0.1);
+  border-radius: 13px;
+  background: rgba(255, 255, 255, 0.74);
+}
+
+.public-estimate-flooring-room {
+  display: flex;
+  align-items: center;
+  gap: 0.56rem;
+  min-width: 0;
+  color: var(--public-ink);
+  cursor: pointer;
+}
+
+.public-estimate-flooring-room input,
+.public-estimate-option-check input {
+  width: 1rem;
+  height: 1rem;
+  accent-color: var(--public-green);
+  flex: 0 0 auto;
+}
+
+.public-estimate-flooring-room span {
+  display: grid;
+  gap: 0.12rem;
+  min-width: 0;
+}
+
+.public-estimate-flooring-room strong {
+  overflow: hidden;
+  font-size: 0.84rem;
+  font-weight: 820;
+  line-height: 1.18;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.public-estimate-flooring-room small {
+  color: rgba(19, 35, 31, 0.56);
+  font-size: 0.68rem;
+  font-weight: 740;
+  line-height: 1.2;
+}
+
+.public-estimate-flooring-row .public-estimate-mobile-label {
+  display: none;
+}
+
+.public-estimate-flooring-covering .public-estimate-select:disabled,
+.public-estimate-flooring-preparation .public-estimate-select:disabled,
+.public-estimate-flooring-layout .public-estimate-select:disabled,
+.public-estimate-flooring-options .public-estimate-select:disabled,
+.public-estimate-flooring-options .public-estimate-input:disabled {
+  background: rgba(233, 242, 239, 0.44);
+  color: rgba(19, 35, 31, 0.38);
+  cursor: not-allowed;
+}
+
+.public-estimate-flooring-result,
+.public-estimate-flooring-total {
+  display: grid;
+  gap: 0.12rem;
+  min-width: 0;
+}
+
+.public-estimate-flooring-result strong,
+.public-estimate-flooring-total strong {
+  color: var(--public-green-deep);
+  font-size: 0.84rem;
+  font-weight: 820;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.public-estimate-flooring-options {
+  display: grid;
+  grid-template-columns: minmax(220px, 1.25fr) minmax(180px, 0.9fr) minmax(140px, 0.62fr);
+  gap: 0.48rem;
+  align-items: stretch;
+  padding: 0.52rem;
+  border: 1px solid rgba(30, 81, 74, 0.1);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.62);
+}
+
+.public-estimate-flooring-option-zone {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.44rem;
+  min-width: 0;
+  padding: 0.48rem;
+  border: 1px solid rgba(30, 81, 74, 0.1);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.public-estimate-flooring-option-zone-compact {
+  align-content: center;
+}
+
+.public-estimate-flooring-option-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.56rem;
+  min-width: 0;
+}
+
+.public-estimate-flooring-option-head small {
+  color: rgba(19, 35, 31, 0.5);
+  font-size: 0.66rem;
+  font-weight: 740;
+  line-height: 1.2;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.public-estimate-option-check {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 34px;
+  min-width: 0;
+  color: var(--public-ink);
+  font-size: 0.78rem;
+  font-weight: 780;
+  line-height: 1.2;
+  cursor: pointer;
+}
+
+.public-estimate-option-check span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.public-estimate-flooring-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(94px, 1fr));
+  overflow: hidden;
+  border: 1px solid rgba(30, 81, 74, 0.12);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.74);
+}
+
+.public-estimate-flooring-summary div {
+  display: grid;
+  gap: 0.24rem;
+  min-width: 0;
+  padding: 0.58rem 0.64rem;
+  border-right: 1px solid rgba(30, 81, 74, 0.1);
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.public-estimate-flooring-summary div:last-child {
+  border-right: 0;
+}
+
+.public-estimate-flooring-summary span {
+  color: rgba(19, 35, 31, 0.58);
+  font-size: 0.66rem;
+  font-weight: 760;
+  line-height: 1.2;
+}
+
+.public-estimate-flooring-summary strong {
+  color: var(--public-green-deep);
+  font-size: 0.98rem;
+  font-weight: 850;
+  line-height: 1.05;
+}
+
+.public-estimate-flooring-summary .public-estimate-flooring-total-cell {
+  background: rgba(233, 242, 239, 0.62);
+}
+
+.public-estimate-flooring-spec {
+  display: grid;
+  gap: 0.34rem;
+  padding: 0.6rem 0.68rem;
+  border: 1px solid rgba(30, 81, 74, 0.1);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.66);
+}
+
+.public-estimate-flooring-spec ul {
+  display: grid;
+  gap: 0.24rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.public-estimate-flooring-spec li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(116px, auto) auto;
+  gap: 0.7rem;
+  align-items: baseline;
+  color: rgba(19, 35, 31, 0.72);
+  font-size: 0.78rem;
+  font-weight: 620;
+  line-height: 1.35;
+}
+
+.public-estimate-flooring-spec li strong {
+  color: var(--public-green-deep);
+  font-weight: 820;
+  white-space: nowrap;
+}
+
+.public-estimate-spec-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  justify-self: start;
+  min-height: 32px;
+  padding: 0 0.72rem;
+  border: 1px solid rgba(30, 81, 74, 0.16);
+  border-radius: 999px;
+  background: rgba(233, 242, 239, 0.72);
+  color: var(--public-green-deep);
+  font: inherit;
+  font-size: 0.76rem;
+  font-weight: 820;
+  line-height: 1.2;
+  cursor: pointer;
+  transition:
+    border-color var(--ui-motion-fast) var(--ui-motion-ease-soft),
+    background-color var(--ui-motion-fast) var(--ui-motion-ease-soft),
+    color var(--ui-motion-fast) var(--ui-motion-ease-soft);
+}
+
+.public-estimate-spec-toggle:hover,
+.public-estimate-spec-toggle:focus-visible {
+  border-color: rgba(30, 81, 74, 0.34);
+  background: var(--public-green);
+  color: #ffffff;
+  outline: none;
+}
+
 .public-estimate-costs {
   display: grid;
   gap: 0.5rem;
@@ -2950,6 +3264,43 @@
     width: 2rem;
     height: 2rem;
   }
+
+  .public-estimate-flooring-header {
+    display: none;
+  }
+
+  .public-estimate-flooring-row {
+    grid-template-columns: minmax(0, 1fr);
+    align-items: stretch;
+    gap: 0.46rem;
+    padding: 0.54rem;
+    border-radius: 16px;
+  }
+
+  .public-estimate-flooring-row .public-estimate-mobile-label {
+    display: inline-flex;
+  }
+
+  .public-estimate-flooring-result,
+  .public-estimate-flooring-total {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.7rem;
+    min-height: 32px;
+    padding: 0 0.52rem;
+    border: 1px solid rgba(30, 81, 74, 0.11);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.68);
+  }
+
+  .public-estimate-flooring-options {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .public-estimate-flooring-option-zone:first-child {
+    grid-column: 1 / -1;
+  }
 }
 
 .public-privacy-back {
@@ -3203,6 +3554,37 @@
     border-radius: 15px;
   }
 
+  .public-estimate-flooring {
+    gap: 0.62rem;
+    padding: 0.68rem;
+    border-radius: 16px;
+  }
+
+  .public-estimate-flooring-row {
+    gap: 0.42rem;
+    padding: 0.5rem;
+    border-radius: 15px;
+  }
+
+  .public-estimate-flooring-options {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .public-estimate-flooring-option-zone:first-child {
+    grid-column: auto;
+  }
+
+  .public-estimate-flooring-option-head {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.22rem;
+  }
+
+  .public-estimate-flooring-option-head small {
+    text-align: left;
+    white-space: normal;
+  }
+
   .public-estimate-warm-floor-spec-head {
     align-items: flex-start;
     flex-direction: column;
@@ -3228,6 +3610,11 @@
 
   .public-estimate-warm-floor-area .public-estimate-input {
     min-height: 32px;
+  }
+
+  .public-estimate-flooring-spec li {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.16rem 0.7rem;
   }
 
   .public-estimate-room-row {
@@ -3308,9 +3695,14 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .public-estimate-flooring-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .public-estimate-cost-cell,
   .public-estimate-summary-card,
-  .public-estimate-warm-floor-summary div {
+  .public-estimate-warm-floor-summary div,
+  .public-estimate-flooring-summary div {
     padding: 0.6rem;
     border-right: 1px solid rgba(30, 81, 74, 0.1);
     border-bottom: 1px solid rgba(30, 81, 74, 0.1);
@@ -3321,12 +3713,15 @@
   .public-estimate-summary-card:nth-child(even),
   .public-estimate-summary-card:last-child,
   .public-estimate-warm-floor-summary div:nth-child(even),
-  .public-estimate-warm-floor-summary div:last-child {
+  .public-estimate-warm-floor-summary div:last-child,
+  .public-estimate-flooring-summary div:nth-child(even),
+  .public-estimate-flooring-summary div:last-child {
     border-right: 0;
   }
 
   .public-estimate-cost-cell:nth-last-child(-n + 2),
-  .public-estimate-warm-floor-summary div:nth-last-child(-n + 2) {
+  .public-estimate-warm-floor-summary div:nth-last-child(-n + 2),
+  .public-estimate-flooring-summary div:nth-last-child(-n + 2) {
     border-bottom: 0;
   }
 

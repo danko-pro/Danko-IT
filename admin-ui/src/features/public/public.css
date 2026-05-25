@@ -3607,7 +3607,7 @@
 
 .public-estimate-electric-summary {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(92px, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   overflow: hidden;
   border: 1px solid rgba(30, 81, 74, 0.12);
   border-radius: 16px;
@@ -3620,11 +3620,16 @@
   min-width: 0;
   padding: 0.58rem 0.64rem;
   border-right: 1px solid rgba(30, 81, 74, 0.1);
+  border-bottom: 1px solid rgba(30, 81, 74, 0.1);
   background: rgba(255, 255, 255, 0.5);
 }
 
-.public-estimate-electric-summary div:last-child {
+.public-estimate-electric-summary div:nth-child(5n) {
   border-right: 0;
+}
+
+.public-estimate-electric-summary div:nth-child(n + 6) {
+  border-bottom: 0;
 }
 
 .public-estimate-electric-summary span {
@@ -4543,6 +4548,14 @@
   .public-estimate-electric-summary div {
     padding: 0.6rem;
     border-right: 1px solid rgba(30, 81, 74, 0.1);
+    border-bottom: 1px solid rgba(30, 81, 74, 0.1);
+  }
+
+  .public-estimate-electric-summary div:nth-child(5n) {
+    border-right: 1px solid rgba(30, 81, 74, 0.1);
+  }
+
+  .public-estimate-electric-summary div:nth-child(n + 6) {
     border-bottom: 1px solid rgba(30, 81, 74, 0.1);
   }
 

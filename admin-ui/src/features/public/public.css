@@ -2651,13 +2651,25 @@
 
 .public-estimate-warm-floor-spec li {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) minmax(116px, auto) auto;
   gap: 0.7rem;
   align-items: baseline;
   color: rgba(19, 35, 31, 0.72);
   font-size: 0.78rem;
   font-weight: 620;
   line-height: 1.35;
+}
+
+.public-estimate-warm-floor-line-title {
+  min-width: 0;
+}
+
+.public-estimate-warm-floor-line-meta {
+  color: rgba(19, 35, 31, 0.54);
+  font-size: 0.72rem;
+  font-weight: 760;
+  text-align: right;
+  white-space: nowrap;
 }
 
 .public-estimate-warm-floor-spec li strong {
@@ -3198,6 +3210,19 @@
   }
 
   .public-estimate-warm-floor-spec-head span {
+    text-align: left;
+  }
+
+  .public-estimate-warm-floor-spec li {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.16rem 0.7rem;
+  }
+
+  .public-estimate-warm-floor-line-title {
+    grid-column: 1 / -1;
+  }
+
+  .public-estimate-warm-floor-line-meta {
     text-align: left;
   }
 

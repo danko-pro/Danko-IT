@@ -164,7 +164,7 @@ export function calculateWarmFloor(mode: WarmFloorMode, rooms: WarmFloorRoomInpu
     items.push(
       createLineItem(
         "warm-floor-water-labor",
-        "Устройство водяного тёплого пола",
+        "Укладка трубного контура тёплого пола",
         "works",
         selectedArea,
         "м²",
@@ -172,7 +172,7 @@ export function calculateWarmFloor(mode: WarmFloorMode, rooms: WarmFloorRoomInpu
       ),
       createLineItem(
         "warm-floor-water-pipe",
-        "Труба для водяного тёплого пола",
+        "Труба тёплого пола PE-Xa / PE-RT",
         "materials",
         pipeMeters,
         "м",
@@ -180,7 +180,7 @@ export function calculateWarmFloor(mode: WarmFloorMode, rooms: WarmFloorRoomInpu
       ),
       createLineItem(
         "warm-floor-chase-labor",
-        "Устройство штробы под подключение тёплого пола",
+        "Штробление трассы до точки подключения",
         "works",
         chaseLengthMeters,
         "м.п.",
@@ -192,7 +192,7 @@ export function calculateWarmFloor(mode: WarmFloorMode, rooms: WarmFloorRoomInpu
       items.push(
         createLineItem(
           "warm-floor-towel-rail-connection-labor",
-          "Подключение водяного тёплого пола от контура полотенцесушителя",
+          "Врезка и обвязка от контура полотенцесушителя",
           "works",
           1,
           "компл.",
@@ -200,7 +200,7 @@ export function calculateWarmFloor(mode: WarmFloorMode, rooms: WarmFloorRoomInpu
         ),
         createLineItem(
           "warm-floor-towel-rail-connection-material",
-          "Материалы подключения водяного тёплого пола от полотенцесушителя",
+          "Фитинги и запорная арматура для подключения",
           "materials",
           1,
           "компл.",
@@ -245,7 +245,7 @@ export function calculateWarmFloor(mode: WarmFloorMode, rooms: WarmFloorRoomInpu
   items.push(
     createLineItem(
       "warm-floor-electric-labor",
-      "Монтаж электрического тёплого пола",
+      "Укладка нагревательного мата",
       "works",
       selectedArea,
       "м²",
@@ -253,7 +253,7 @@ export function calculateWarmFloor(mode: WarmFloorMode, rooms: WarmFloorRoomInpu
     ),
     createLineItem(
       "warm-floor-electric-mat",
-      "Электрический нагревательный мат",
+      "Нагревательный мат электрического тёплого пола",
       "materials",
       selectedArea,
       "м²",
@@ -277,7 +277,7 @@ export function calculateWarmFloor(mode: WarmFloorMode, rooms: WarmFloorRoomInpu
     ),
     createLineItem(
       "warm-floor-thermostat-socket",
-      "Подрозетник и материалы подключения",
+      "Подрозетник, кабель и клеммы терморегулятора",
       "materials",
       thermostatCount,
       "компл.",
@@ -301,7 +301,7 @@ export function calculateWarmFloor(mode: WarmFloorMode, rooms: WarmFloorRoomInpu
     ),
     createLineItem(
       "warm-floor-electric-chase-labor",
-      "Устройство штробы под подключение тёплого пола",
+      "Штробление трассы до точки подключения",
       "works",
       chaseLengthMeters,
       "м.п.",

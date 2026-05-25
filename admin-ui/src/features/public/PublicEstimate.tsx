@@ -70,6 +70,13 @@ function formatMoney(value: number) {
   }).format(value)} ₽`;
 }
 
+function formatEstimateQuantity(value: number) {
+  return new Intl.NumberFormat("ru-RU", {
+    maximumFractionDigits: 1,
+    minimumFractionDigits: 0,
+  }).format(value);
+}
+
 function createEstimateRoom(): EstimateRoomDraft {
   return {
     id: `room-${Date.now()}-${Math.random().toString(16).slice(2)}`,
@@ -459,7 +466,10 @@ export function PublicEstimate() {
                 <ul>
                   {warmFloorResult.section.items.map((item) => (
                     <li key={item.id}>
-                      <span>{item.title}</span>
+                      <span className="public-estimate-warm-floor-line-title">{item.title}</span>
+                      <span className="public-estimate-warm-floor-line-meta">
+                        {formatEstimateQuantity(item.quantity)} {item.unit} × {formatMoney(item.unitPrice)}
+                      </span>
                       <strong>{formatMoney(item.total)}</strong>
                     </li>
                   ))}

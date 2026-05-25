@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { calculateCeiling } from "./public-estimate-ceiling";
 import {
   calculateEstimateGeometryTotals,
   calculateEstimateRoomGeometry,
@@ -115,8 +116,14 @@ type WallsRoomDraft = {
   preparationType?: WallsPreparationType;
 };
 
+type CeilingRoomDraft = {
+  isIncluded?: boolean;
+  hasPointLights?: boolean;
+};
+
 const FLOORING_SPEC_COLLAPSED_LIMIT = 10;
 const WALLS_SPEC_COLLAPSED_LIMIT = 10;
+const CEILING_SPEC_COLLAPSED_LIMIT = 10;
 
 const initialRooms: EstimateRoomDraft[] = [
   { id: "hallway", name: "Прихожая", type: "hallway", area: "6.5", doorCount: "1", windowCount: "0" },
@@ -207,6 +214,30 @@ function getDefaultWallsPreparation(roomType: EstimateRoomType): WallsPreparatio
   return roomType === "bathroom" ? "waterproofing" : "primer";
 }
 
+function getDefaultCeilingLightSettings(roomType: EstimateRoomType) {
+  if (roomType === "hallway") {
+    return { squareMetersPerPoint: 2.5, minPoints: 2, hasPointLights: true };
+  }
+
+  if (roomType === "kitchen") {
+    return { squareMetersPerPoint: 2.5, minPoints: 3, hasPointLights: true };
+  }
+
+  if (roomType === "living_room") {
+    return { squareMetersPerPoint: 3, minPoints: 4, hasPointLights: true };
+  }
+
+  if (roomType === "bathroom") {
+    return { squareMetersPerPoint: 1.5, minPoints: 4, hasPointLights: true };
+  }
+
+  if (roomType === "balcony") {
+    return { squareMetersPerPoint: 4, minPoints: 1, hasPointLights: false };
+  }
+
+  return { squareMetersPerPoint: 3, minPoints: 2, hasPointLights: true };
+}
+
 export function PublicEstimate() {
   const [ceilingHeightInput, setCeilingHeightInput] = useState("2.7");
   const [rooms, setRooms] = useState<EstimateRoomDraft[]>(initialRooms);
@@ -214,6 +245,7 @@ export function PublicEstimate() {
   const [warmFloorRooms, setWarmFloorRooms] = useState<Record<string, WarmFloorRoomDraft>>({});
   const [flooringRooms, setFlooringRooms] = useState<Record<string, FlooringRoomDraft>>({});
   const [wallsRooms, setWallsRooms] = useState<Record<string, WallsRoomDraft>>({});
+  const [ceilingRooms, setCeilingRooms] = useState<Record<string, CeilingRoomDraft>>({});
   const [flooringOptions, setFlooringOptions] = useState<FlooringOptionsDraft>({
     includePlinth: true,
     plinthType: "duropolymer",
@@ -223,6 +255,7 @@ export function PublicEstimate() {
   });
   const [isFlooringSpecExpanded, setIsFlooringSpecExpanded] = useState(false);
   const [isWallsSpecExpanded, setIsWallsSpecExpanded] = useState(false);
+  const [isCeilingSpecExpanded, setIsCeilingSpecExpanded] = useState(false);
 
   const ceilingHeight = useMemo(() => parseEstimateDecimal(ceilingHeightInput), [ceilingHeightInput]);
   const roomInputs = useMemo(() => rooms.map(normalizeRoom), [rooms]);
@@ -297,18 +330,38 @@ export function PublicEstimate() {
     [roomGeometries, rooms, wallsRooms],
   );
   const wallsResult = useMemo(() => calculateWalls(wallsRoomInputs), [wallsRoomInputs]);
+  const ceilingRoomInputs = useMemo(
+    () =>
+      rooms.map((room, index) => {
+        const ceilingDraft = ceilingRooms[room.id] ?? {};
+        const lightDefaults = getDefaultCeilingLightSettings(room.type);
+
+        return {
+          roomId: room.id,
+          roomName: room.name.trim() || "Помещение",
+          ceilingArea: roomGeometries[index]?.ceilingArea ?? 0,
+          isIncluded: ceilingDraft.isIncluded ?? true,
+          hasPointLights: ceilingDraft.hasPointLights ?? lightDefaults.hasPointLights,
+          squareMetersPerPoint: lightDefaults.squareMetersPerPoint,
+          minPoints: lightDefaults.minPoints,
+        };
+      }),
+    [ceilingRooms, roomGeometries, rooms],
+  );
+  const ceilingResult = useMemo(() => calculateCeiling(ceilingRoomInputs), [ceilingRoomInputs]);
   const estimateResult = useMemo(() => {
     const sections = [
       ...(warmFloorResult.selectedArea > 0 ? [warmFloorResult.section] : []),
       ...(flooringResult.flooringArea > 0 ? [flooringResult.section] : []),
       ...(wallsResult.wallFinishArea > 0 ? [wallsResult.section] : []),
+      ...(ceilingResult.ceilingArea > 0 ? [ceilingResult.section] : []),
     ];
 
     return {
       sections,
       totals: calculateEstimateTotals(sections, totals.floorArea),
     };
-  }, [flooringResult, totals.floorArea, wallsResult, warmFloorResult]);
+  }, [ceilingResult, flooringResult, totals.floorArea, wallsResult, warmFloorResult]);
 
   const summaryItems = [
     { label: "Площадь пола", value: formatMeasurement(totals.floorArea, "м²") },
@@ -389,6 +442,22 @@ export function PublicEstimate() {
       ? wallsSpecItems.slice(0, WALLS_SPEC_COLLAPSED_LIMIT)
       : wallsSpecItems;
   const hiddenWallsSpecCount = Math.max(0, wallsSpecItems.length - visibleWallsSpecItems.length);
+  const ceilingSummaryItems = [
+    { label: "Площадь потолков", value: formatMeasurement(ceilingResult.ceilingArea, "м²") },
+    { label: "Точки света", value: `${ceilingResult.pointCount} шт.` },
+    { label: "Работы", value: formatMoney(ceilingResult.worksTotal) },
+    { label: "Материалы", value: formatMoney(ceilingResult.materialsTotal) },
+    { label: "Оборудование", value: formatMoney(ceilingResult.equipmentTotal) },
+    { label: "Расходники", value: formatMoney(ceilingResult.consumablesTotal) },
+    { label: "Итого", value: formatMoney(ceilingResult.total), isStrong: true },
+  ];
+  const ceilingSpecItems = ceilingResult.section.items;
+  const isCeilingSpecLong = ceilingSpecItems.length > CEILING_SPEC_COLLAPSED_LIMIT;
+  const visibleCeilingSpecItems =
+    isCeilingSpecLong && !isCeilingSpecExpanded
+      ? ceilingSpecItems.slice(0, CEILING_SPEC_COLLAPSED_LIMIT)
+      : ceilingSpecItems;
+  const hiddenCeilingSpecCount = Math.max(0, ceilingSpecItems.length - visibleCeilingSpecItems.length);
 
   function updateRoom(roomId: string, patch: Partial<EstimateRoomDraft>) {
     setRooms((currentRooms) => currentRooms.map((room) => (room.id === roomId ? { ...room, ...patch } : room)));
@@ -438,6 +507,16 @@ export function PublicEstimate() {
     }));
   }
 
+  function updateCeilingRoom(roomId: string, patch: CeilingRoomDraft) {
+    setCeilingRooms((currentRooms) => ({
+      ...currentRooms,
+      [roomId]: {
+        ...currentRooms[roomId],
+        ...patch,
+      },
+    }));
+  }
+
   function addRoom() {
     setRooms((currentRooms) => [...currentRooms, createEstimateRoom()]);
   }
@@ -459,6 +538,13 @@ export function PublicEstimate() {
       return nextRooms;
     });
     setWallsRooms((currentRooms) => {
+      const nextRooms = { ...currentRooms };
+
+      delete nextRooms[roomId];
+
+      return nextRooms;
+    });
+    setCeilingRooms((currentRooms) => {
       const nextRooms = { ...currentRooms };
 
       delete nextRooms[roomId];
@@ -1086,6 +1172,125 @@ export function PublicEstimate() {
             )}
           </section>
 
+          <section className="public-estimate-ceiling" aria-labelledby="public-estimate-ceiling-title">
+            <div className="public-estimate-ceiling-head">
+              <div>
+                <span>Шаг 05</span>
+                <h2 id="public-estimate-ceiling-title">Потолки</h2>
+                <p>Первый срез потолков: ПВХ матовый / сатин и точечный свет с закладными, врезкой и светильниками GX53.</p>
+              </div>
+            </div>
+
+            <div className="public-estimate-ceiling-header" aria-hidden="true">
+              <span>Помещение</span>
+              <span>Потолок</span>
+              <span>Точечный свет</span>
+              <span>Площадь</span>
+              <span>Точки</span>
+              <span>Итого</span>
+            </div>
+
+            <div className="public-estimate-ceiling-room-list" aria-label="Помещения для расчёта потолков">
+              {ceilingResult.roomResults.map((room) => {
+                const ceilingDraft = ceilingRooms[room.roomId] ?? {};
+                const lightDefaults = getDefaultCeilingLightSettings(
+                  rooms.find((estimateRoom) => estimateRoom.id === room.roomId)?.type ?? "other",
+                );
+                const isIncluded = ceilingDraft.isIncluded ?? true;
+                const hasPointLights = ceilingDraft.hasPointLights ?? lightDefaults.hasPointLights;
+
+                return (
+                  <article className="public-estimate-ceiling-row" key={room.roomId}>
+                    <label className="public-estimate-ceiling-room">
+                      <input
+                        type="checkbox"
+                        checked={isIncluded}
+                        onChange={(event) => updateCeilingRoom(room.roomId, { isIncluded: event.target.checked })}
+                      />
+                      <span>
+                        <strong>{room.roomName}</strong>
+                        <small>{formatMeasurement(room.ceilingArea, "м²")}</small>
+                      </span>
+                    </label>
+
+                    <div className="public-estimate-ceiling-type">
+                      <span className="public-estimate-mobile-label">Потолок</span>
+                      <strong>ПВХ матовый / сатин</strong>
+                    </div>
+
+                    <label className="public-estimate-ceiling-light">
+                      <input
+                        type="checkbox"
+                        checked={hasPointLights}
+                        disabled={!isIncluded}
+                        onChange={(event) => updateCeilingRoom(room.roomId, { hasPointLights: event.target.checked })}
+                      />
+                      <span>Точечный свет</span>
+                    </label>
+
+                    <div className="public-estimate-ceiling-result">
+                      <span className="public-estimate-mobile-label">Площадь</span>
+                      <strong>{formatMeasurement(room.ceilingArea, "м²")}</strong>
+                    </div>
+
+                    <div className="public-estimate-ceiling-result">
+                      <span className="public-estimate-mobile-label">Точки</span>
+                      <strong>{room.pointCount} шт.</strong>
+                    </div>
+
+                    <div className="public-estimate-ceiling-total">
+                      <span className="public-estimate-mobile-label">Итого</span>
+                      <strong>{formatMoney(room.roomTotal)}</strong>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+
+            <div className="public-estimate-ceiling-summary" aria-label="Итоги по потолкам">
+              {ceilingSummaryItems.map((item) => (
+                <div className={item.isStrong ? "public-estimate-ceiling-total-cell" : undefined} key={item.label}>
+                  <span>{item.label}</span>
+                  <strong>{item.value}</strong>
+                </div>
+              ))}
+            </div>
+
+            {ceilingResult.section.items.length > 0 ? (
+              <div className="public-estimate-ceiling-spec">
+                <div className="public-estimate-warm-floor-spec-head">
+                  <p>Состав раздела</p>
+                  <span>ПВХ потолок, закладные, врезка и светильники GX53</span>
+                </div>
+                <ul>
+                  {visibleCeilingSpecItems.map((item) => (
+                    <li key={item.id}>
+                      <span className="public-estimate-warm-floor-line-title">{item.title}</span>
+                      <span className="public-estimate-warm-floor-line-meta">
+                        {formatEstimateQuantity(item.quantity)} {item.unit} × {formatMoney(item.unitPrice)}
+                      </span>
+                      <strong>{formatMoney(item.total)}</strong>
+                    </li>
+                  ))}
+                </ul>
+                {isCeilingSpecLong ? (
+                  <button
+                    className="public-estimate-spec-toggle"
+                    type="button"
+                    aria-expanded={isCeilingSpecExpanded}
+                    onClick={() => setIsCeilingSpecExpanded((currentValue) => !currentValue)}
+                  >
+                    {isCeilingSpecExpanded
+                      ? "Свернуть спецификацию"
+                      : `Показать всю спецификацию${hiddenCeilingSpecCount > 0 ? `: ещё ${hiddenCeilingSpecCount} строк` : ""}`}
+                  </button>
+                ) : null}
+              </div>
+            ) : (
+              <p className="public-estimate-warm-floor-empty">Включите хотя бы одно помещение, чтобы добавить потолки в смету.</p>
+            )}
+          </section>
+
           <section className="public-estimate-costs" aria-labelledby="public-estimate-costs-title">
             <div className="public-estimate-costs-head">
               <p className="public-section-kicker">Итоговая смета</p>
@@ -1102,8 +1307,7 @@ export function PublicEstimate() {
             </div>
 
             <p className="public-estimate-cost-note">
-              Сейчас в смету включены тёплый пол, полы и стены. Следующие разделы подключим отдельно: потолки, электрика и
-              сантехника.
+              Сейчас в смету включены тёплый пол, полы, стены и потолки. Следующие разделы подключим отдельно: электрика и сантехника.
             </p>
           </section>
 

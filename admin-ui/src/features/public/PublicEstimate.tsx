@@ -140,29 +140,29 @@ export function PublicEstimate() {
     { label: "₽/м²", value: `${formatMoney(estimateResult.totals.pricePerSquareMeter)}/м²` },
   ];
   const warmFloorModeLabel = warmFloorMode === "water" ? "Водяной" : "Электрический";
-  const warmFloorConnectionLabel = warmFloorResult.usesTowelRailConnection
-    ? "от полотенцесушителя"
-    : warmFloorResult.needsPump
-      ? "гребенка + насос"
-      : warmFloorResult.needsManifold
-        ? "гребенка"
-        : "нет";
+  const warmFloorConnectionLabel =
+    warmFloorMode === "electric"
+      ? "автомат в щит"
+      : warmFloorResult.usesTowelRailConnection
+        ? "от полотенцесушителя"
+        : warmFloorResult.needsPump
+          ? "гребенка + насос"
+          : warmFloorResult.needsManifold
+            ? "гребенка"
+            : "без отдельного узла";
   const warmFloorSummaryItems =
     warmFloorMode === "water"
       ? [
           { label: "Площадь", value: formatMeasurement(warmFloorResult.selectedArea, "м²") },
-          { label: "Тип", value: warmFloorModeLabel },
           { label: "Штроба", value: formatMeasurement(warmFloorResult.chaseLengthMeters, "м.п.") },
           { label: "Труба", value: formatMeasurement(warmFloorResult.pipeMeters, "м") },
           { label: "Контуры", value: `${warmFloorResult.circuitCount} шт.` },
-          { label: "Подключение", value: warmFloorConnectionLabel },
           { label: "Работы", value: formatMoney(warmFloorResult.worksTotal) },
           { label: "Материалы", value: formatMoney(warmFloorResult.materialsTotal) },
           { label: "Итого", value: formatMoney(warmFloorResult.total), isStrong: true },
         ]
       : [
           { label: "Площадь", value: formatMeasurement(warmFloorResult.selectedArea, "м²") },
-          { label: "Тип", value: warmFloorModeLabel },
           { label: "Штроба", value: formatMeasurement(warmFloorResult.chaseLengthMeters, "м.п.") },
           { label: "Терморегулятор", value: `${warmFloorResult.thermostatCount} шт.` },
           { label: "Автомат в щит", value: `${warmFloorResult.electricBreakerCount} шт.` },
@@ -450,7 +450,12 @@ export function PublicEstimate() {
 
             {warmFloorResult.section.items.length > 0 ? (
               <div className="public-estimate-warm-floor-spec">
-                <p>Состав раздела</p>
+                <div className="public-estimate-warm-floor-spec-head">
+                  <p>Состав раздела</p>
+                  <span>
+                    {warmFloorModeLabel}; подключение: {warmFloorConnectionLabel}
+                  </span>
+                </div>
                 <ul>
                   {warmFloorResult.section.items.map((item) => (
                     <li key={item.id}>

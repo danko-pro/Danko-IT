@@ -2617,6 +2617,13 @@
   background: rgba(255, 255, 255, 0.66);
 }
 
+.public-estimate-warm-floor-spec-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.7rem;
+}
+
 .public-estimate-warm-floor-spec p,
 .public-estimate-warm-floor-empty {
   margin: 0;
@@ -2624,6 +2631,14 @@
   font-size: 0.76rem;
   font-weight: 760;
   line-height: 1.35;
+}
+
+.public-estimate-warm-floor-spec-head span {
+  color: rgba(19, 35, 31, 0.56);
+  font-size: 0.72rem;
+  font-weight: 720;
+  line-height: 1.35;
+  text-align: right;
 }
 
 .public-estimate-warm-floor-spec ul {
@@ -3174,6 +3189,16 @@
     gap: 0.42rem;
     padding: 0.5rem;
     border-radius: 15px;
+  }
+
+  .public-estimate-warm-floor-spec-head {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.18rem;
+  }
+
+  .public-estimate-warm-floor-spec-head span {
+    text-align: left;
   }
 
   .public-estimate-warm-floor-area .public-estimate-input {

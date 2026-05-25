@@ -2930,6 +2930,36 @@
   white-space: nowrap;
 }
 
+.public-estimate-spec-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  justify-self: start;
+  min-height: 32px;
+  padding: 0 0.72rem;
+  border: 1px solid rgba(30, 81, 74, 0.16);
+  border-radius: 999px;
+  background: rgba(233, 242, 239, 0.72);
+  color: var(--public-green-deep);
+  font: inherit;
+  font-size: 0.76rem;
+  font-weight: 820;
+  line-height: 1.2;
+  cursor: pointer;
+  transition:
+    border-color var(--ui-motion-fast) var(--ui-motion-ease-soft),
+    background-color var(--ui-motion-fast) var(--ui-motion-ease-soft),
+    color var(--ui-motion-fast) var(--ui-motion-ease-soft);
+}
+
+.public-estimate-spec-toggle:hover,
+.public-estimate-spec-toggle:focus-visible {
+  border-color: rgba(30, 81, 74, 0.34);
+  background: var(--public-green);
+  color: #ffffff;
+  outline: none;
+}
+
 .public-estimate-costs {
   display: grid;
   gap: 0.5rem;

@@ -89,6 +89,8 @@ type FlooringOptionsDraft = {
   includeDemolition: boolean;
 };
 
+const FLOORING_SPEC_COLLAPSED_LIMIT = 10;
+
 const initialRooms: EstimateRoomDraft[] = [
   { id: "hallway", name: "Прихожая", type: "hallway", area: "6.5", doorCount: "1", windowCount: "0" },
   { id: "kitchen", name: "Кухня", type: "kitchen", area: "12", doorCount: "1", windowCount: "1" },
@@ -183,6 +185,7 @@ export function PublicEstimate() {
     thresholdCount: "0",
     includeDemolition: false,
   });
+  const [isFlooringSpecExpanded, setIsFlooringSpecExpanded] = useState(false);
 
   const ceilingHeight = useMemo(() => parseEstimateDecimal(ceilingHeightInput), [ceilingHeightInput]);
   const roomInputs = useMemo(() => rooms.map(normalizeRoom), [rooms]);
@@ -309,6 +312,13 @@ export function PublicEstimate() {
     { label: "Расходники", value: formatMoney(flooringResult.consumablesTotal) },
     { label: "Итого", value: formatMoney(flooringResult.total), isStrong: true },
   ];
+  const flooringSpecItems = flooringResult.section.items;
+  const isFlooringSpecLong = flooringSpecItems.length > FLOORING_SPEC_COLLAPSED_LIMIT;
+  const visibleFlooringSpecItems =
+    isFlooringSpecLong && !isFlooringSpecExpanded
+      ? flooringSpecItems.slice(0, FLOORING_SPEC_COLLAPSED_LIMIT)
+      : flooringSpecItems;
+  const hiddenFlooringSpecCount = Math.max(0, flooringSpecItems.length - visibleFlooringSpecItems.length);
 
   function updateRoom(roomId: string, patch: Partial<EstimateRoomDraft>) {
     setRooms((currentRooms) => currentRooms.map((room) => (room.id === roomId ? { ...room, ...patch } : room)));
@@ -814,7 +824,7 @@ export function PublicEstimate() {
                   <span>Покрытия, подготовка, плинтус и расходники</span>
                 </div>
                 <ul>
-                  {flooringResult.section.items.map((item) => (
+                  {visibleFlooringSpecItems.map((item) => (
                     <li key={item.id}>
                       <span className="public-estimate-warm-floor-line-title">{item.title}</span>
                       <span className="public-estimate-warm-floor-line-meta">
@@ -824,6 +834,18 @@ export function PublicEstimate() {
                     </li>
                   ))}
                 </ul>
+                {isFlooringSpecLong ? (
+                  <button
+                    className="public-estimate-spec-toggle"
+                    type="button"
+                    aria-expanded={isFlooringSpecExpanded}
+                    onClick={() => setIsFlooringSpecExpanded((currentValue) => !currentValue)}
+                  >
+                    {isFlooringSpecExpanded
+                      ? "Свернуть спецификацию"
+                      : `Показать всю спецификацию${hiddenFlooringSpecCount > 0 ? `: ещё ${hiddenFlooringSpecCount} строк` : ""}`}
+                  </button>
+                ) : null}
               </div>
             ) : (
               <p className="public-estimate-warm-floor-empty">Включите хотя бы одно помещение, чтобы добавить полы в смету.</p>

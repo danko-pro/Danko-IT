@@ -2424,6 +2424,267 @@
   text-align: right;
 }
 
+.public-estimate-warm-floor {
+  display: grid;
+  gap: 0.58rem;
+  padding: 0.72rem;
+  border: 1px solid rgba(30, 81, 74, 0.12);
+  border-radius: 18px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.78), rgba(246, 250, 248, 0.78)),
+    #ffffff;
+}
+
+.public-estimate-warm-floor-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.8rem;
+  align-items: end;
+}
+
+.public-estimate-warm-floor-head span {
+  display: inline-flex;
+  margin-bottom: 0.22rem;
+  color: var(--public-green);
+  font-size: 0.68rem;
+  font-weight: 850;
+  letter-spacing: 0;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.public-estimate-warm-floor-head h2 {
+  margin: 0;
+  color: var(--public-ink);
+  font-size: clamp(1.08rem, 2vw, 1.32rem);
+  font-weight: 850;
+  line-height: 1.12;
+}
+
+.public-estimate-warm-floor-head p {
+  max-width: 620px;
+  margin: 0.36rem 0 0;
+  color: var(--public-muted);
+  font-size: 0.84rem;
+  font-weight: 540;
+  line-height: 1.45;
+}
+
+.public-estimate-toggle-group {
+  display: inline-grid;
+  grid-template-columns: repeat(2, minmax(92px, 1fr));
+  gap: 0.24rem;
+  min-width: 210px;
+  padding: 0.22rem;
+  border: 1px solid rgba(30, 81, 74, 0.12);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.74);
+}
+
+.public-estimate-toggle-group button {
+  min-height: 32px;
+  padding: 0 0.62rem;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  color: rgba(19, 35, 31, 0.68);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 780;
+  cursor: pointer;
+  transition:
+    border-color var(--ui-motion-fast) var(--ui-motion-ease-soft),
+    background-color var(--ui-motion-fast) var(--ui-motion-ease-soft),
+    color var(--ui-motion-fast) var(--ui-motion-ease-soft),
+    box-shadow var(--ui-motion-fast) var(--ui-motion-ease-soft);
+}
+
+.public-estimate-toggle-group button:hover,
+.public-estimate-toggle-group button:focus-visible,
+.public-estimate-toggle-group .public-estimate-toggle-active {
+  border-color: rgba(30, 81, 74, 0.22);
+  background: var(--public-green);
+  color: #ffffff;
+  box-shadow: 0 10px 24px rgba(30, 81, 74, 0.14);
+}
+
+.public-estimate-room-toggle-list {
+  display: grid;
+  gap: 0.34rem;
+}
+
+.public-estimate-warm-floor-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(130px, 168px);
+  gap: 0.52rem;
+  align-items: center;
+  padding: 0.42rem 0.5rem;
+  border: 1px solid rgba(30, 81, 74, 0.1);
+  border-radius: 13px;
+  background: rgba(255, 255, 255, 0.74);
+}
+
+.public-estimate-warm-floor-room {
+  display: flex;
+  align-items: center;
+  gap: 0.56rem;
+  min-width: 0;
+  color: var(--public-ink);
+  cursor: pointer;
+}
+
+.public-estimate-warm-floor-room input {
+  width: 1rem;
+  height: 1rem;
+  accent-color: var(--public-green);
+  flex: 0 0 auto;
+}
+
+.public-estimate-warm-floor-room span {
+  display: grid;
+  gap: 0.12rem;
+  min-width: 0;
+}
+
+.public-estimate-warm-floor-room strong {
+  overflow: hidden;
+  font-size: 0.84rem;
+  font-weight: 820;
+  line-height: 1.18;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.public-estimate-warm-floor-room small {
+  color: rgba(19, 35, 31, 0.56);
+  font-size: 0.68rem;
+  font-weight: 740;
+  line-height: 1.2;
+}
+
+.public-estimate-warm-floor-area .public-estimate-input:disabled {
+  background: rgba(233, 242, 239, 0.44);
+  color: rgba(19, 35, 31, 0.38);
+  cursor: not-allowed;
+}
+
+.public-estimate-warm-floor-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(94px, 1fr));
+  overflow: hidden;
+  border: 1px solid rgba(30, 81, 74, 0.12);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.74);
+}
+
+.public-estimate-warm-floor-summary div {
+  display: grid;
+  gap: 0.24rem;
+  min-width: 0;
+  padding: 0.58rem 0.64rem;
+  border-right: 1px solid rgba(30, 81, 74, 0.1);
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.public-estimate-warm-floor-summary div:last-child {
+  border-right: 0;
+}
+
+.public-estimate-warm-floor-summary span {
+  color: rgba(19, 35, 31, 0.58);
+  font-size: 0.66rem;
+  font-weight: 760;
+  line-height: 1.2;
+}
+
+.public-estimate-warm-floor-summary strong {
+  color: var(--public-green-deep);
+  font-size: 0.98rem;
+  font-weight: 850;
+  line-height: 1.05;
+}
+
+.public-estimate-warm-floor-summary .public-estimate-warm-floor-total {
+  background: rgba(233, 242, 239, 0.62);
+}
+
+.public-estimate-warm-floor-spec {
+  display: grid;
+  gap: 0.34rem;
+  padding: 0.6rem 0.68rem;
+  border: 1px solid rgba(30, 81, 74, 0.1);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.66);
+}
+
+.public-estimate-warm-floor-spec-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.7rem;
+}
+
+.public-estimate-warm-floor-spec p,
+.public-estimate-warm-floor-empty {
+  margin: 0;
+  color: rgba(19, 35, 31, 0.62);
+  font-size: 0.76rem;
+  font-weight: 760;
+  line-height: 1.35;
+}
+
+.public-estimate-warm-floor-spec-head span {
+  color: rgba(19, 35, 31, 0.56);
+  font-size: 0.72rem;
+  font-weight: 720;
+  line-height: 1.35;
+  text-align: right;
+}
+
+.public-estimate-warm-floor-spec ul {
+  display: grid;
+  gap: 0.24rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.public-estimate-warm-floor-spec li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(116px, auto) auto;
+  gap: 0.7rem;
+  align-items: baseline;
+  color: rgba(19, 35, 31, 0.72);
+  font-size: 0.78rem;
+  font-weight: 620;
+  line-height: 1.35;
+}
+
+.public-estimate-warm-floor-line-title {
+  min-width: 0;
+}
+
+.public-estimate-warm-floor-line-meta {
+  color: rgba(19, 35, 31, 0.54);
+  font-size: 0.72rem;
+  font-weight: 760;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.public-estimate-warm-floor-spec li strong {
+  color: var(--public-green-deep);
+  font-weight: 820;
+  white-space: nowrap;
+}
+
+.public-estimate-warm-floor-empty {
+  padding: 0.6rem 0.68rem;
+  border: 1px solid rgba(30, 81, 74, 0.1);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.62);
+}
+
 .public-estimate-costs {
   display: grid;
   gap: 0.5rem;
@@ -2913,9 +3174,60 @@
     border-radius: 16px;
   }
 
+  .public-estimate-warm-floor {
+    gap: 0.62rem;
+    padding: 0.68rem;
+    border-radius: 16px;
+  }
+
   .public-estimate-geometry-head {
     grid-template-columns: minmax(0, 1fr);
     gap: 0.8rem;
+  }
+
+  .public-estimate-warm-floor-head {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.7rem;
+    align-items: stretch;
+  }
+
+  .public-estimate-toggle-group {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .public-estimate-warm-floor-row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.42rem;
+    padding: 0.5rem;
+    border-radius: 15px;
+  }
+
+  .public-estimate-warm-floor-spec-head {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.18rem;
+  }
+
+  .public-estimate-warm-floor-spec-head span {
+    text-align: left;
+  }
+
+  .public-estimate-warm-floor-spec li {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.16rem 0.7rem;
+  }
+
+  .public-estimate-warm-floor-line-title {
+    grid-column: 1 / -1;
+  }
+
+  .public-estimate-warm-floor-line-meta {
+    text-align: left;
+  }
+
+  .public-estimate-warm-floor-area .public-estimate-input {
+    min-height: 32px;
   }
 
   .public-estimate-room-row {
@@ -2992,8 +3304,13 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .public-estimate-warm-floor-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .public-estimate-cost-cell,
-  .public-estimate-summary-card {
+  .public-estimate-summary-card,
+  .public-estimate-warm-floor-summary div {
     padding: 0.6rem;
     border-right: 1px solid rgba(30, 81, 74, 0.1);
     border-bottom: 1px solid rgba(30, 81, 74, 0.1);
@@ -3002,11 +3319,14 @@
   .public-estimate-cost-cell:nth-child(even),
   .public-estimate-cost-cell:last-child,
   .public-estimate-summary-card:nth-child(even),
-  .public-estimate-summary-card:last-child {
+  .public-estimate-summary-card:last-child,
+  .public-estimate-warm-floor-summary div:nth-child(even),
+  .public-estimate-warm-floor-summary div:last-child {
     border-right: 0;
   }
 
-  .public-estimate-cost-cell:nth-last-child(-n + 2) {
+  .public-estimate-cost-cell:nth-last-child(-n + 2),
+  .public-estimate-warm-floor-summary div:nth-last-child(-n + 2) {
     border-bottom: 0;
   }
 

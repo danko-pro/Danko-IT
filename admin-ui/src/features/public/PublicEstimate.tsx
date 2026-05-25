@@ -6,7 +6,8 @@ import {
   type EstimateRoomInput,
   type EstimateRoomType,
 } from "./public-estimate-geometry";
-import { createEmptyEstimateResult } from "./public-estimate-model";
+import { calculateEstimateTotals } from "./public-estimate-model";
+import { calculateWarmFloor, type WarmFloorMode } from "./public-estimate-warm-floor";
 
 const estimateSteps = [
   "объект и помещения",
@@ -33,6 +34,11 @@ type EstimateRoomDraft = Omit<EstimateRoomInput, "area" | "doorCount" | "windowC
   windowCount: string;
 };
 
+type WarmFloorRoomDraft = {
+  isSelected?: boolean;
+  warmFloorArea?: string;
+};
+
 const initialRooms: EstimateRoomDraft[] = [
   { id: "hallway", name: "Прихожая", type: "hallway", area: "6.5", doorCount: "1", windowCount: "0" },
   { id: "kitchen", name: "Кухня", type: "kitchen", area: "12", doorCount: "1", windowCount: "1" },
@@ -50,7 +56,7 @@ function normalizeRoom(room: EstimateRoomDraft): EstimateRoomInput {
   };
 }
 
-function formatMeasurement(value: number, unit: "м" | "м²") {
+function formatMeasurement(value: number, unit: "м" | "м²" | "м.п.") {
   return `${new Intl.NumberFormat("ru-RU", {
     maximumFractionDigits: 1,
     minimumFractionDigits: 0,
@@ -62,6 +68,13 @@ function formatMoney(value: number) {
     maximumFractionDigits: 0,
     minimumFractionDigits: 0,
   }).format(value)} ₽`;
+}
+
+function formatEstimateQuantity(value: number) {
+  return new Intl.NumberFormat("ru-RU", {
+    maximumFractionDigits: 1,
+    minimumFractionDigits: 0,
+  }).format(value);
 }
 
 function createEstimateRoom(): EstimateRoomDraft {
@@ -78,6 +91,8 @@ function createEstimateRoom(): EstimateRoomDraft {
 export function PublicEstimate() {
   const [ceilingHeightInput, setCeilingHeightInput] = useState("2.7");
   const [rooms, setRooms] = useState<EstimateRoomDraft[]>(initialRooms);
+  const [warmFloorMode, setWarmFloorMode] = useState<WarmFloorMode>("water");
+  const [warmFloorRooms, setWarmFloorRooms] = useState<Record<string, WarmFloorRoomDraft>>({});
 
   const ceilingHeight = useMemo(() => parseEstimateDecimal(ceilingHeightInput), [ceilingHeightInput]);
   const roomInputs = useMemo(() => rooms.map(normalizeRoom), [rooms]);
@@ -86,7 +101,33 @@ export function PublicEstimate() {
     [roomInputs, ceilingHeight],
   );
   const totals = useMemo(() => calculateEstimateGeometryTotals(roomGeometries), [roomGeometries]);
-  const estimateResult = useMemo(() => createEmptyEstimateResult(), []);
+  const warmFloorRoomInputs = useMemo(
+    () =>
+      rooms.map((room, index) => {
+        const warmFloorDraft = warmFloorRooms[room.id] ?? {};
+
+        return {
+          roomId: room.id,
+          roomName: room.name.trim() || "Помещение",
+          area: roomInputs[index]?.area ?? 0,
+          isSelected: warmFloorDraft.isSelected ?? room.type === "bathroom",
+          warmFloorArea: parseEstimateDecimal(warmFloorDraft.warmFloorArea ?? room.area),
+        };
+      }),
+    [roomInputs, rooms, warmFloorRooms],
+  );
+  const warmFloorResult = useMemo(
+    () => calculateWarmFloor(warmFloorMode, warmFloorRoomInputs),
+    [warmFloorMode, warmFloorRoomInputs],
+  );
+  const estimateResult = useMemo(() => {
+    const sections = warmFloorResult.selectedArea > 0 ? [warmFloorResult.section] : [];
+
+    return {
+      sections,
+      totals: calculateEstimateTotals(sections, totals.floorArea),
+    };
+  }, [totals.floorArea, warmFloorResult]);
 
   const summaryItems = [
     { label: "Площадь пола", value: formatMeasurement(totals.floorArea, "м²") },
@@ -105,9 +146,50 @@ export function PublicEstimate() {
     { label: "Итого", value: formatMoney(estimateResult.totals.total), isStrong: true },
     { label: "₽/м²", value: `${formatMoney(estimateResult.totals.pricePerSquareMeter)}/м²` },
   ];
+  const warmFloorModeLabel = warmFloorMode === "water" ? "Водяной" : "Электрический";
+  const warmFloorConnectionLabel =
+    warmFloorMode === "electric"
+      ? "автомат в щит"
+      : warmFloorResult.usesTowelRailConnection
+        ? "от полотенцесушителя"
+        : warmFloorResult.needsPump
+          ? "гребенка + насос"
+          : warmFloorResult.needsManifold
+            ? "гребенка"
+            : "без отдельного узла";
+  const warmFloorSummaryItems =
+    warmFloorMode === "water"
+      ? [
+          { label: "Площадь", value: formatMeasurement(warmFloorResult.selectedArea, "м²") },
+          { label: "Штроба", value: formatMeasurement(warmFloorResult.chaseLengthMeters, "м.п.") },
+          { label: "Труба", value: formatMeasurement(warmFloorResult.pipeMeters, "м") },
+          { label: "Контуры", value: `${warmFloorResult.circuitCount} шт.` },
+          { label: "Работы", value: formatMoney(warmFloorResult.worksTotal) },
+          { label: "Материалы", value: formatMoney(warmFloorResult.materialsTotal) },
+          { label: "Итого", value: formatMoney(warmFloorResult.total), isStrong: true },
+        ]
+      : [
+          { label: "Площадь", value: formatMeasurement(warmFloorResult.selectedArea, "м²") },
+          { label: "Штроба", value: formatMeasurement(warmFloorResult.chaseLengthMeters, "м.п.") },
+          { label: "Терморегулятор", value: `${warmFloorResult.thermostatCount} шт.` },
+          { label: "Автомат в щит", value: `${warmFloorResult.electricBreakerCount} шт.` },
+          { label: "Работы", value: formatMoney(warmFloorResult.worksTotal) },
+          { label: "Материалы", value: formatMoney(warmFloorResult.materialsTotal) },
+          { label: "Итого", value: formatMoney(warmFloorResult.total), isStrong: true },
+        ];
 
   function updateRoom(roomId: string, patch: Partial<EstimateRoomDraft>) {
     setRooms((currentRooms) => currentRooms.map((room) => (room.id === roomId ? { ...room, ...patch } : room)));
+  }
+
+  function updateWarmFloorRoom(roomId: string, patch: WarmFloorRoomDraft) {
+    setWarmFloorRooms((currentRooms) => ({
+      ...currentRooms,
+      [roomId]: {
+        ...currentRooms[roomId],
+        ...patch,
+      },
+    }));
   }
 
   function addRoom() {
@@ -116,6 +198,13 @@ export function PublicEstimate() {
 
   function removeRoom(roomId: string) {
     setRooms((currentRooms) => (currentRooms.length > 1 ? currentRooms.filter((room) => room.id !== roomId) : currentRooms));
+    setWarmFloorRooms((currentRooms) => {
+      const nextRooms = { ...currentRooms };
+
+      delete nextRooms[roomId];
+
+      return nextRooms;
+    });
   }
 
   return (
@@ -293,6 +382,104 @@ export function PublicEstimate() {
             </div>
           </section>
 
+          <section className="public-estimate-warm-floor" aria-labelledby="public-estimate-warm-floor-title">
+            <div className="public-estimate-warm-floor-head">
+              <div>
+                <span>Шаг 02</span>
+                <h2 id="public-estimate-warm-floor-title">Тёплый пол</h2>
+                <p>Выберите помещения, площадь зоны и тип системы. Раздел сразу попадает в итоговую смету.</p>
+              </div>
+
+              <div className="public-estimate-toggle-group" aria-label="Тип тёплого пола">
+                <button
+                  className={warmFloorMode === "water" ? "public-estimate-toggle-active" : undefined}
+                  type="button"
+                  aria-pressed={warmFloorMode === "water"}
+                  onClick={() => setWarmFloorMode("water")}
+                >
+                  Водяной
+                </button>
+                <button
+                  className={warmFloorMode === "electric" ? "public-estimate-toggle-active" : undefined}
+                  type="button"
+                  aria-pressed={warmFloorMode === "electric"}
+                  onClick={() => setWarmFloorMode("electric")}
+                >
+                  Электрический
+                </button>
+              </div>
+            </div>
+
+            <div className="public-estimate-room-toggle-list" aria-label="Помещения для тёплого пола">
+              {rooms.map((room, index) => {
+                const warmFloorDraft = warmFloorRooms[room.id] ?? {};
+                const isSelected = warmFloorDraft.isSelected ?? room.type === "bathroom";
+                const warmFloorArea = warmFloorDraft.warmFloorArea ?? room.area;
+                const normalizedArea = roomInputs[index]?.area ?? 0;
+
+                return (
+                  <article className="public-estimate-warm-floor-row" key={room.id}>
+                    <label className="public-estimate-warm-floor-room">
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={(event) => updateWarmFloorRoom(room.id, { isSelected: event.target.checked })}
+                      />
+                      <span>
+                        <strong>{room.name.trim() || "Помещение"}</strong>
+                        <small>{formatMeasurement(normalizedArea, "м²")}</small>
+                      </span>
+                    </label>
+
+                    <label className="public-estimate-field public-estimate-warm-floor-area">
+                      <span>Площадь тёплого пола</span>
+                      <input
+                        className="public-estimate-input"
+                        inputMode="decimal"
+                        value={warmFloorArea}
+                        disabled={!isSelected}
+                        onChange={(event) => updateWarmFloorRoom(room.id, { warmFloorArea: event.target.value })}
+                      />
+                    </label>
+                  </article>
+                );
+              })}
+            </div>
+
+            <div className="public-estimate-warm-floor-summary" aria-label="Итоги по тёплому полу">
+              {warmFloorSummaryItems.map((item) => (
+                <div className={item.isStrong ? "public-estimate-warm-floor-total" : undefined} key={item.label}>
+                  <span>{item.label}</span>
+                  <strong>{item.value}</strong>
+                </div>
+              ))}
+            </div>
+
+            {warmFloorResult.section.items.length > 0 ? (
+              <div className="public-estimate-warm-floor-spec">
+                <div className="public-estimate-warm-floor-spec-head">
+                  <p>Состав раздела</p>
+                  <span>
+                    {warmFloorModeLabel}; подключение: {warmFloorConnectionLabel}
+                  </span>
+                </div>
+                <ul>
+                  {warmFloorResult.section.items.map((item) => (
+                    <li key={item.id}>
+                      <span className="public-estimate-warm-floor-line-title">{item.title}</span>
+                      <span className="public-estimate-warm-floor-line-meta">
+                        {formatEstimateQuantity(item.quantity)} {item.unit} × {formatMoney(item.unitPrice)}
+                      </span>
+                      <strong>{formatMoney(item.total)}</strong>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : (
+              <p className="public-estimate-warm-floor-empty">Выберите хотя бы одно помещение, чтобы добавить тёплый пол в смету.</p>
+            )}
+          </section>
+
           <section className="public-estimate-costs" aria-labelledby="public-estimate-costs-title">
             <div className="public-estimate-costs-head">
               <p className="public-section-kicker">Итоговая смета</p>
@@ -309,7 +496,7 @@ export function PublicEstimate() {
             </div>
 
             <p className="public-estimate-cost-note">
-              Стоимость появится после подключения разделов работ: тёплый пол, полы, стены, потолки, электрика и
+              Сейчас в смету включён тёплый пол. Следующие разделы подключим отдельно: полы, стены, потолки, электрика и
               сантехника.
             </p>
           </section>

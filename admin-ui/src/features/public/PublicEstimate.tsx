@@ -6,6 +6,13 @@ import {
   type EstimateRoomInput,
   type EstimateRoomType,
 } from "./public-estimate-geometry";
+import {
+  calculateFlooring,
+  type FlooringCoveringType,
+  type FlooringLayoutType,
+  type FlooringPlinthType,
+  type FlooringPreparationType,
+} from "./public-estimate-flooring";
 import { calculateEstimateTotals } from "./public-estimate-model";
 import { calculateWarmFloor, type WarmFloorMode } from "./public-estimate-warm-floor";
 
@@ -28,6 +35,34 @@ const roomTypeOptions: Array<{ value: EstimateRoomType; label: string }> = [
   { value: "other", label: "Другое" },
 ];
 
+const flooringCoveringOptions: Array<{ value: FlooringCoveringType; label: string }> = [
+  { value: "porcelain", label: "Керамогранит" },
+  { value: "quartz_vinyl", label: "Кварцвинил" },
+  { value: "laminate", label: "Ламинат" },
+  { value: "carpet", label: "Ковролин" },
+  { value: "engineered_wood", label: "Инженерная доска" },
+];
+
+const flooringPreparationOptions: Array<{ value: FlooringPreparationType; label: string }> = [
+  { value: "none", label: "Без подготовки" },
+  { value: "primer", label: "Грунтование" },
+  { value: "self_leveling", label: "Наливной пол" },
+  { value: "waterproofing", label: "Гидроизоляция" },
+];
+
+const flooringLayoutOptions: Array<{ value: FlooringLayoutType; label: string }> = [
+  { value: "straight", label: "Прямая" },
+  { value: "large_format_straight", label: "Крупный формат" },
+  { value: "glue", label: "Клеевая" },
+  { value: "floating", label: "Плавающая" },
+];
+
+const flooringPlinthOptions: Array<{ value: FlooringPlinthType; label: string }> = [
+  { value: "none", label: "Без плинтуса" },
+  { value: "duropolymer", label: "Дюрополимерный" },
+  { value: "painted_mdf", label: "МДФ окрашенный" },
+];
+
 type EstimateRoomDraft = Omit<EstimateRoomInput, "area" | "doorCount" | "windowCount"> & {
   area: string;
   doorCount: string;
@@ -37,6 +72,21 @@ type EstimateRoomDraft = Omit<EstimateRoomInput, "area" | "doorCount" | "windowC
 type WarmFloorRoomDraft = {
   isSelected?: boolean;
   warmFloorArea?: string;
+};
+
+type FlooringRoomDraft = {
+  isIncluded?: boolean;
+  coveringType?: FlooringCoveringType;
+  preparationType?: FlooringPreparationType;
+  layoutType?: FlooringLayoutType;
+};
+
+type FlooringOptionsDraft = {
+  includePlinth: boolean;
+  plinthType: FlooringPlinthType;
+  includeThresholds: boolean;
+  thresholdCount: string;
+  includeDemolition: boolean;
 };
 
 const initialRooms: EstimateRoomDraft[] = [
@@ -88,11 +138,51 @@ function createEstimateRoom(): EstimateRoomDraft {
   };
 }
 
+function getDefaultFlooringCovering(roomType: EstimateRoomType): FlooringCoveringType {
+  if (roomType === "living_room") {
+    return "carpet";
+  }
+
+  if (roomType === "other") {
+    return "quartz_vinyl";
+  }
+
+  return "porcelain";
+}
+
+function getDefaultFlooringPreparation(roomType: EstimateRoomType): FlooringPreparationType {
+  return roomType === "living_room" ? "self_leveling" : "primer";
+}
+
+function getDefaultFlooringLayout(coveringType: FlooringCoveringType): FlooringLayoutType {
+  if (coveringType === "porcelain") {
+    return "large_format_straight";
+  }
+
+  if (coveringType === "carpet" || coveringType === "engineered_wood") {
+    return "glue";
+  }
+
+  if (coveringType === "laminate") {
+    return "floating";
+  }
+
+  return "straight";
+}
+
 export function PublicEstimate() {
   const [ceilingHeightInput, setCeilingHeightInput] = useState("2.7");
   const [rooms, setRooms] = useState<EstimateRoomDraft[]>(initialRooms);
   const [warmFloorMode, setWarmFloorMode] = useState<WarmFloorMode>("water");
   const [warmFloorRooms, setWarmFloorRooms] = useState<Record<string, WarmFloorRoomDraft>>({});
+  const [flooringRooms, setFlooringRooms] = useState<Record<string, FlooringRoomDraft>>({});
+  const [flooringOptions, setFlooringOptions] = useState<FlooringOptionsDraft>({
+    includePlinth: true,
+    plinthType: "duropolymer",
+    includeThresholds: false,
+    thresholdCount: "0",
+    includeDemolition: false,
+  });
 
   const ceilingHeight = useMemo(() => parseEstimateDecimal(ceilingHeightInput), [ceilingHeightInput]);
   const roomInputs = useMemo(() => rooms.map(normalizeRoom), [rooms]);
@@ -120,14 +210,47 @@ export function PublicEstimate() {
     () => calculateWarmFloor(warmFloorMode, warmFloorRoomInputs),
     [warmFloorMode, warmFloorRoomInputs],
   );
+  const flooringRoomInputs = useMemo(
+    () =>
+      rooms.map((room, index) => {
+        const flooringDraft = flooringRooms[room.id] ?? {};
+        const coveringType = flooringDraft.coveringType ?? getDefaultFlooringCovering(room.type);
+
+        return {
+          roomId: room.id,
+          roomName: room.name.trim() || "Помещение",
+          area: roomInputs[index]?.area ?? 0,
+          perimeter: roomGeometries[index]?.perimeter ?? 0,
+          coveringType,
+          preparationType: flooringDraft.preparationType ?? getDefaultFlooringPreparation(room.type),
+          layoutType: flooringDraft.layoutType ?? getDefaultFlooringLayout(coveringType),
+          isIncluded: flooringDraft.isIncluded ?? true,
+        };
+      }),
+    [flooringRooms, roomGeometries, roomInputs, rooms],
+  );
+  const flooringResult = useMemo(
+    () =>
+      calculateFlooring(flooringRoomInputs, {
+        includePlinth: flooringOptions.includePlinth,
+        plinthType: flooringOptions.plinthType,
+        includeThresholds: flooringOptions.includeThresholds,
+        thresholdCount: parseEstimateDecimal(flooringOptions.thresholdCount),
+        includeDemolition: flooringOptions.includeDemolition,
+      }),
+    [flooringOptions, flooringRoomInputs],
+  );
   const estimateResult = useMemo(() => {
-    const sections = warmFloorResult.selectedArea > 0 ? [warmFloorResult.section] : [];
+    const sections = [
+      ...(warmFloorResult.selectedArea > 0 ? [warmFloorResult.section] : []),
+      ...(flooringResult.flooringArea > 0 ? [flooringResult.section] : []),
+    ];
 
     return {
       sections,
       totals: calculateEstimateTotals(sections, totals.floorArea),
     };
-  }, [totals.floorArea, warmFloorResult]);
+  }, [flooringResult, totals.floorArea, warmFloorResult]);
 
   const summaryItems = [
     { label: "Площадь пола", value: formatMeasurement(totals.floorArea, "м²") },
@@ -176,7 +299,16 @@ export function PublicEstimate() {
           { label: "Работы", value: formatMoney(warmFloorResult.worksTotal) },
           { label: "Материалы", value: formatMoney(warmFloorResult.materialsTotal) },
           { label: "Итого", value: formatMoney(warmFloorResult.total), isStrong: true },
-        ];
+      ];
+  const flooringSummaryItems = [
+    { label: "Площадь пола", value: formatMeasurement(flooringResult.flooringArea, "м²") },
+    { label: "Площадь закупки", value: formatMeasurement(flooringResult.purchaseArea, "м²") },
+    { label: "Плинтус", value: formatMeasurement(flooringResult.plinthLength, "м") },
+    { label: "Работы", value: formatMoney(flooringResult.worksTotal) },
+    { label: "Материалы", value: formatMoney(flooringResult.materialsTotal) },
+    { label: "Расходники", value: formatMoney(flooringResult.consumablesTotal) },
+    { label: "Итого", value: formatMoney(flooringResult.total), isStrong: true },
+  ];
 
   function updateRoom(roomId: string, patch: Partial<EstimateRoomDraft>) {
     setRooms((currentRooms) => currentRooms.map((room) => (room.id === roomId ? { ...room, ...patch } : room)));
@@ -192,6 +324,30 @@ export function PublicEstimate() {
     }));
   }
 
+  function updateFlooringRoom(roomId: string, patch: FlooringRoomDraft) {
+    setFlooringRooms((currentRooms) => ({
+      ...currentRooms,
+      [roomId]: {
+        ...currentRooms[roomId],
+        ...patch,
+      },
+    }));
+  }
+
+  function updateFlooringCovering(roomId: string, coveringType: FlooringCoveringType) {
+    updateFlooringRoom(roomId, {
+      coveringType,
+      layoutType: getDefaultFlooringLayout(coveringType),
+    });
+  }
+
+  function updateFlooringOptions(patch: Partial<FlooringOptionsDraft>) {
+    setFlooringOptions((currentOptions) => ({
+      ...currentOptions,
+      ...patch,
+    }));
+  }
+
   function addRoom() {
     setRooms((currentRooms) => [...currentRooms, createEstimateRoom()]);
   }
@@ -199,6 +355,13 @@ export function PublicEstimate() {
   function removeRoom(roomId: string) {
     setRooms((currentRooms) => (currentRooms.length > 1 ? currentRooms.filter((room) => room.id !== roomId) : currentRooms));
     setWarmFloorRooms((currentRooms) => {
+      const nextRooms = { ...currentRooms };
+
+      delete nextRooms[roomId];
+
+      return nextRooms;
+    });
+    setFlooringRooms((currentRooms) => {
       const nextRooms = { ...currentRooms };
 
       delete nextRooms[roomId];
@@ -480,6 +643,193 @@ export function PublicEstimate() {
             )}
           </section>
 
+          <section className="public-estimate-flooring" aria-labelledby="public-estimate-flooring-title">
+            <div className="public-estimate-flooring-head">
+              <div>
+                <span>Шаг 03</span>
+                <h2 id="public-estimate-flooring-title">Полы</h2>
+                <p>Выберите покрытие, подготовку и способ укладки по помещениям. Плинтус, порожки и демонтаж считаются отдельными строками.</p>
+              </div>
+            </div>
+
+            <div className="public-estimate-flooring-header" aria-hidden="true">
+              <span>Помещение</span>
+              <span>Покрытие</span>
+              <span>Подготовка</span>
+              <span>Укладка</span>
+              <span>Закупка</span>
+              <span>Итого</span>
+            </div>
+
+            <div className="public-estimate-flooring-room-list" aria-label="Помещения для расчёта полов">
+              {flooringResult.roomResults.map((room) => {
+                const flooringDraft = flooringRooms[room.roomId] ?? {};
+                const isIncluded = flooringDraft.isIncluded ?? true;
+
+                return (
+                  <article className="public-estimate-flooring-row" key={room.roomId}>
+                    <label className="public-estimate-flooring-room">
+                      <input
+                        type="checkbox"
+                        checked={isIncluded}
+                        onChange={(event) => updateFlooringRoom(room.roomId, { isIncluded: event.target.checked })}
+                      />
+                      <span>
+                        <strong>{room.roomName}</strong>
+                        <small>{formatMeasurement(room.area, "м²")}</small>
+                      </span>
+                    </label>
+
+                    <label className="public-estimate-field public-estimate-flooring-covering">
+                      <span className="public-estimate-mobile-label">Покрытие</span>
+                      <select
+                        className="public-estimate-select"
+                        value={room.coveringType}
+                        disabled={!isIncluded}
+                        onChange={(event) => updateFlooringCovering(room.roomId, event.target.value as FlooringCoveringType)}
+                      >
+                        {flooringCoveringOptions.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+
+                    <label className="public-estimate-field public-estimate-flooring-preparation">
+                      <span className="public-estimate-mobile-label">Подготовка</span>
+                      <select
+                        className="public-estimate-select"
+                        value={room.preparationType}
+                        disabled={!isIncluded}
+                        onChange={(event) => updateFlooringRoom(room.roomId, { preparationType: event.target.value as FlooringPreparationType })}
+                      >
+                        {flooringPreparationOptions.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+
+                    <label className="public-estimate-field public-estimate-flooring-layout">
+                      <span className="public-estimate-mobile-label">Укладка</span>
+                      <select
+                        className="public-estimate-select"
+                        value={room.layoutType}
+                        disabled={!isIncluded}
+                        onChange={(event) => updateFlooringRoom(room.roomId, { layoutType: event.target.value as FlooringLayoutType })}
+                      >
+                        {flooringLayoutOptions.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+
+                    <div className="public-estimate-flooring-result">
+                      <span className="public-estimate-mobile-label">Закупка</span>
+                      <strong>{formatMeasurement(room.purchaseArea, "м²")}</strong>
+                    </div>
+
+                    <div className="public-estimate-flooring-total">
+                      <span className="public-estimate-mobile-label">Итого</span>
+                      <strong>{formatMoney(room.roomTotal)}</strong>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+
+            <div className="public-estimate-flooring-options">
+              <label className="public-estimate-option-check">
+                <input
+                  type="checkbox"
+                  checked={flooringOptions.includePlinth}
+                  onChange={(event) => updateFlooringOptions({ includePlinth: event.target.checked })}
+                />
+                <span>Плинтус</span>
+              </label>
+
+              <label className="public-estimate-field">
+                <span>Тип плинтуса</span>
+                <select
+                  className="public-estimate-select"
+                  value={flooringOptions.plinthType}
+                  disabled={!flooringOptions.includePlinth}
+                  onChange={(event) => updateFlooringOptions({ plinthType: event.target.value as FlooringPlinthType })}
+                >
+                  {flooringPlinthOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="public-estimate-option-check">
+                <input
+                  type="checkbox"
+                  checked={flooringOptions.includeThresholds}
+                  onChange={(event) => updateFlooringOptions({ includeThresholds: event.target.checked })}
+                />
+                <span>Порожки</span>
+              </label>
+
+              <label className="public-estimate-field">
+                <span>Количество</span>
+                <input
+                  className="public-estimate-input"
+                  inputMode="numeric"
+                  value={flooringOptions.thresholdCount}
+                  disabled={!flooringOptions.includeThresholds}
+                  onChange={(event) => updateFlooringOptions({ thresholdCount: event.target.value })}
+                />
+              </label>
+
+              <label className="public-estimate-option-check">
+                <input
+                  type="checkbox"
+                  checked={flooringOptions.includeDemolition}
+                  onChange={(event) => updateFlooringOptions({ includeDemolition: event.target.checked })}
+                />
+                <span>Демонтаж</span>
+              </label>
+            </div>
+
+            <div className="public-estimate-flooring-summary" aria-label="Итоги по полам">
+              {flooringSummaryItems.map((item) => (
+                <div className={item.isStrong ? "public-estimate-flooring-total-cell" : undefined} key={item.label}>
+                  <span>{item.label}</span>
+                  <strong>{item.value}</strong>
+                </div>
+              ))}
+            </div>
+
+            {flooringResult.section.items.length > 0 ? (
+              <div className="public-estimate-flooring-spec">
+                <div className="public-estimate-warm-floor-spec-head">
+                  <p>Состав раздела</p>
+                  <span>Покрытия, подготовка, плинтус и расходники</span>
+                </div>
+                <ul>
+                  {flooringResult.section.items.map((item) => (
+                    <li key={item.id}>
+                      <span className="public-estimate-warm-floor-line-title">{item.title}</span>
+                      <span className="public-estimate-warm-floor-line-meta">
+                        {formatEstimateQuantity(item.quantity)} {item.unit} × {formatMoney(item.unitPrice)}
+                      </span>
+                      <strong>{formatMoney(item.total)}</strong>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : (
+              <p className="public-estimate-warm-floor-empty">Включите хотя бы одно помещение, чтобы добавить полы в смету.</p>
+            )}
+          </section>
+
           <section className="public-estimate-costs" aria-labelledby="public-estimate-costs-title">
             <div className="public-estimate-costs-head">
               <p className="public-section-kicker">Итоговая смета</p>
@@ -496,7 +846,7 @@ export function PublicEstimate() {
             </div>
 
             <p className="public-estimate-cost-note">
-              Сейчас в смету включён тёплый пол. Следующие разделы подключим отдельно: полы, стены, потолки, электрика и
+              Сейчас в смету включены тёплый пол и полы. Следующие разделы подключим отдельно: стены, потолки, электрика и
               сантехника.
             </p>
           </section>

@@ -15,6 +15,11 @@ import {
 } from "./public-estimate-flooring";
 import { calculateEstimateTotals } from "./public-estimate-model";
 import { calculateWarmFloor, type WarmFloorMode } from "./public-estimate-warm-floor";
+import {
+  calculateWalls,
+  type WallsCoveringType,
+  type WallsPreparationType,
+} from "./public-estimate-walls";
 
 const estimateSteps = [
   "объект и помещения",
@@ -63,6 +68,21 @@ const flooringPlinthOptions: Array<{ value: FlooringPlinthType; label: string }>
   { value: "painted_mdf", label: "МДФ окрашенный" },
 ];
 
+const wallsCoveringOptions: Array<{ value: WallsCoveringType; label: string }> = [
+  { value: "wallpaper", label: "Обои" },
+  { value: "tile", label: "Плитка" },
+  { value: "paint", label: "Окраска" },
+  { value: "paintable_wallpaper", label: "Обои под покраску" },
+];
+
+const wallsPreparationOptions: Array<{ value: WallsPreparationType; label: string }> = [
+  { value: "none", label: "Без подготовки" },
+  { value: "primer", label: "Грунтование" },
+  { value: "putty_wallpaper", label: "Шпаклевка под обои" },
+  { value: "putty_paint", label: "Шпаклевка под покраску" },
+  { value: "waterproofing", label: "Гидроизоляция" },
+];
+
 type EstimateRoomDraft = Omit<EstimateRoomInput, "area" | "doorCount" | "windowCount"> & {
   area: string;
   doorCount: string;
@@ -89,7 +109,14 @@ type FlooringOptionsDraft = {
   includeDemolition: boolean;
 };
 
+type WallsRoomDraft = {
+  isIncluded?: boolean;
+  coveringType?: WallsCoveringType;
+  preparationType?: WallsPreparationType;
+};
+
 const FLOORING_SPEC_COLLAPSED_LIMIT = 10;
+const WALLS_SPEC_COLLAPSED_LIMIT = 10;
 
 const initialRooms: EstimateRoomDraft[] = [
   { id: "hallway", name: "Прихожая", type: "hallway", area: "6.5", doorCount: "1", windowCount: "0" },
@@ -172,12 +199,21 @@ function getDefaultFlooringLayout(coveringType: FlooringCoveringType): FlooringL
   return "straight";
 }
 
+function getDefaultWallsCovering(roomType: EstimateRoomType): WallsCoveringType {
+  return roomType === "bathroom" ? "tile" : "wallpaper";
+}
+
+function getDefaultWallsPreparation(roomType: EstimateRoomType): WallsPreparationType {
+  return roomType === "bathroom" ? "waterproofing" : "primer";
+}
+
 export function PublicEstimate() {
   const [ceilingHeightInput, setCeilingHeightInput] = useState("2.7");
   const [rooms, setRooms] = useState<EstimateRoomDraft[]>(initialRooms);
   const [warmFloorMode, setWarmFloorMode] = useState<WarmFloorMode>("water");
   const [warmFloorRooms, setWarmFloorRooms] = useState<Record<string, WarmFloorRoomDraft>>({});
   const [flooringRooms, setFlooringRooms] = useState<Record<string, FlooringRoomDraft>>({});
+  const [wallsRooms, setWallsRooms] = useState<Record<string, WallsRoomDraft>>({});
   const [flooringOptions, setFlooringOptions] = useState<FlooringOptionsDraft>({
     includePlinth: true,
     plinthType: "duropolymer",
@@ -186,6 +222,7 @@ export function PublicEstimate() {
     includeDemolition: false,
   });
   const [isFlooringSpecExpanded, setIsFlooringSpecExpanded] = useState(false);
+  const [isWallsSpecExpanded, setIsWallsSpecExpanded] = useState(false);
 
   const ceilingHeight = useMemo(() => parseEstimateDecimal(ceilingHeightInput), [ceilingHeightInput]);
   const roomInputs = useMemo(() => rooms.map(normalizeRoom), [rooms]);
@@ -243,17 +280,35 @@ export function PublicEstimate() {
       }),
     [flooringOptions, flooringRoomInputs],
   );
+  const wallsRoomInputs = useMemo(
+    () =>
+      rooms.map((room, index) => {
+        const wallsDraft = wallsRooms[room.id] ?? {};
+
+        return {
+          roomId: room.id,
+          roomName: room.name.trim() || "Помещение",
+          finishWallArea: roomGeometries[index]?.finishWallArea ?? 0,
+          coveringType: wallsDraft.coveringType ?? getDefaultWallsCovering(room.type),
+          preparationType: wallsDraft.preparationType ?? getDefaultWallsPreparation(room.type),
+          isIncluded: wallsDraft.isIncluded ?? true,
+        };
+      }),
+    [roomGeometries, rooms, wallsRooms],
+  );
+  const wallsResult = useMemo(() => calculateWalls(wallsRoomInputs), [wallsRoomInputs]);
   const estimateResult = useMemo(() => {
     const sections = [
       ...(warmFloorResult.selectedArea > 0 ? [warmFloorResult.section] : []),
       ...(flooringResult.flooringArea > 0 ? [flooringResult.section] : []),
+      ...(wallsResult.wallFinishArea > 0 ? [wallsResult.section] : []),
     ];
 
     return {
       sections,
       totals: calculateEstimateTotals(sections, totals.floorArea),
     };
-  }, [flooringResult, totals.floorArea, warmFloorResult]);
+  }, [flooringResult, totals.floorArea, wallsResult, warmFloorResult]);
 
   const summaryItems = [
     { label: "Площадь пола", value: formatMeasurement(totals.floorArea, "м²") },
@@ -319,6 +374,21 @@ export function PublicEstimate() {
       ? flooringSpecItems.slice(0, FLOORING_SPEC_COLLAPSED_LIMIT)
       : flooringSpecItems;
   const hiddenFlooringSpecCount = Math.max(0, flooringSpecItems.length - visibleFlooringSpecItems.length);
+  const wallsSummaryItems = [
+    { label: "Площадь стен", value: formatMeasurement(wallsResult.wallFinishArea, "м²") },
+    { label: "Площадь закупки", value: formatMeasurement(wallsResult.purchaseArea, "м²") },
+    { label: "Работы", value: formatMoney(wallsResult.worksTotal) },
+    { label: "Материалы", value: formatMoney(wallsResult.materialsTotal) },
+    { label: "Расходники", value: formatMoney(wallsResult.consumablesTotal) },
+    { label: "Итого", value: formatMoney(wallsResult.total), isStrong: true },
+  ];
+  const wallsSpecItems = wallsResult.section.items;
+  const isWallsSpecLong = wallsSpecItems.length > WALLS_SPEC_COLLAPSED_LIMIT;
+  const visibleWallsSpecItems =
+    isWallsSpecLong && !isWallsSpecExpanded
+      ? wallsSpecItems.slice(0, WALLS_SPEC_COLLAPSED_LIMIT)
+      : wallsSpecItems;
+  const hiddenWallsSpecCount = Math.max(0, wallsSpecItems.length - visibleWallsSpecItems.length);
 
   function updateRoom(roomId: string, patch: Partial<EstimateRoomDraft>) {
     setRooms((currentRooms) => currentRooms.map((room) => (room.id === roomId ? { ...room, ...patch } : room)));
@@ -358,6 +428,16 @@ export function PublicEstimate() {
     }));
   }
 
+  function updateWallsRoom(roomId: string, patch: WallsRoomDraft) {
+    setWallsRooms((currentRooms) => ({
+      ...currentRooms,
+      [roomId]: {
+        ...currentRooms[roomId],
+        ...patch,
+      },
+    }));
+  }
+
   function addRoom() {
     setRooms((currentRooms) => [...currentRooms, createEstimateRoom()]);
   }
@@ -372,6 +452,13 @@ export function PublicEstimate() {
       return nextRooms;
     });
     setFlooringRooms((currentRooms) => {
+      const nextRooms = { ...currentRooms };
+
+      delete nextRooms[roomId];
+
+      return nextRooms;
+    });
+    setWallsRooms((currentRooms) => {
       const nextRooms = { ...currentRooms };
 
       delete nextRooms[roomId];
@@ -867,6 +954,138 @@ export function PublicEstimate() {
             )}
           </section>
 
+          <section className="public-estimate-walls" aria-labelledby="public-estimate-walls-title">
+            <div className="public-estimate-walls-head">
+              <div>
+                <span>Шаг 04</span>
+                <h2 id="public-estimate-walls-title">Стены</h2>
+                <p>Расчёт отделки стен по чистой площади из геометрии: покрытие, подготовка, закупка и расходники по каждому помещению.</p>
+              </div>
+            </div>
+
+            <div className="public-estimate-walls-header" aria-hidden="true">
+              <span>Помещение</span>
+              <span>Покрытие</span>
+              <span>Подготовка</span>
+              <span>Площадь стен</span>
+              <span>Закупка</span>
+              <span>Итого</span>
+            </div>
+
+            <div className="public-estimate-walls-room-list" aria-label="Помещения для расчёта стен">
+              {wallsResult.roomResults.map((room) => {
+                const wallsDraft = wallsRooms[room.roomId] ?? {};
+                const isIncluded = wallsDraft.isIncluded ?? true;
+
+                return (
+                  <article className="public-estimate-walls-row" key={room.roomId}>
+                    <label className="public-estimate-walls-room">
+                      <input
+                        type="checkbox"
+                        checked={isIncluded}
+                        onChange={(event) => updateWallsRoom(room.roomId, { isIncluded: event.target.checked })}
+                      />
+                      <span>
+                        <strong>{room.roomName}</strong>
+                        <small>{formatMeasurement(room.finishWallArea, "м²")}</small>
+                      </span>
+                    </label>
+
+                    <label className="public-estimate-field public-estimate-walls-covering">
+                      <span className="public-estimate-mobile-label">Покрытие</span>
+                      <select
+                        className="public-estimate-select"
+                        value={room.coveringType}
+                        disabled={!isIncluded}
+                        onChange={(event) => updateWallsRoom(room.roomId, { coveringType: event.target.value as WallsCoveringType })}
+                      >
+                        {wallsCoveringOptions.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+
+                    <label className="public-estimate-field public-estimate-walls-preparation">
+                      <span className="public-estimate-mobile-label">Подготовка</span>
+                      <select
+                        className="public-estimate-select"
+                        value={room.preparationType}
+                        disabled={!isIncluded}
+                        onChange={(event) => updateWallsRoom(room.roomId, { preparationType: event.target.value as WallsPreparationType })}
+                      >
+                        {wallsPreparationOptions.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+
+                    <div className="public-estimate-walls-result">
+                      <span className="public-estimate-mobile-label">Площадь стен</span>
+                      <strong>{formatMeasurement(room.finishWallArea, "м²")}</strong>
+                    </div>
+
+                    <div className="public-estimate-walls-result">
+                      <span className="public-estimate-mobile-label">Закупка</span>
+                      <strong>{formatMeasurement(room.purchaseArea, "м²")}</strong>
+                    </div>
+
+                    <div className="public-estimate-walls-total">
+                      <span className="public-estimate-mobile-label">Итого</span>
+                      <strong>{formatMoney(room.roomTotal)}</strong>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+
+            <div className="public-estimate-walls-summary" aria-label="Итоги по стенам">
+              {wallsSummaryItems.map((item) => (
+                <div className={item.isStrong ? "public-estimate-walls-total-cell" : undefined} key={item.label}>
+                  <span>{item.label}</span>
+                  <strong>{item.value}</strong>
+                </div>
+              ))}
+            </div>
+
+            {wallsResult.section.items.length > 0 ? (
+              <div className="public-estimate-walls-spec">
+                <div className="public-estimate-warm-floor-spec-head">
+                  <p>Состав раздела</p>
+                  <span>Покрытия, подготовка стен и расходники</span>
+                </div>
+                <ul>
+                  {visibleWallsSpecItems.map((item) => (
+                    <li key={item.id}>
+                      <span className="public-estimate-warm-floor-line-title">{item.title}</span>
+                      <span className="public-estimate-warm-floor-line-meta">
+                        {formatEstimateQuantity(item.quantity)} {item.unit} × {formatMoney(item.unitPrice)}
+                      </span>
+                      <strong>{formatMoney(item.total)}</strong>
+                    </li>
+                  ))}
+                </ul>
+                {isWallsSpecLong ? (
+                  <button
+                    className="public-estimate-spec-toggle"
+                    type="button"
+                    aria-expanded={isWallsSpecExpanded}
+                    onClick={() => setIsWallsSpecExpanded((currentValue) => !currentValue)}
+                  >
+                    {isWallsSpecExpanded
+                      ? "Свернуть спецификацию"
+                      : `Показать всю спецификацию${hiddenWallsSpecCount > 0 ? `: ещё ${hiddenWallsSpecCount} строк` : ""}`}
+                  </button>
+                ) : null}
+              </div>
+            ) : (
+              <p className="public-estimate-warm-floor-empty">Включите хотя бы одно помещение, чтобы добавить стены в смету.</p>
+            )}
+          </section>
+
           <section className="public-estimate-costs" aria-labelledby="public-estimate-costs-title">
             <div className="public-estimate-costs-head">
               <p className="public-section-kicker">Итоговая смета</p>
@@ -883,7 +1102,7 @@ export function PublicEstimate() {
             </div>
 
             <p className="public-estimate-cost-note">
-              Сейчас в смету включены тёплый пол и полы. Следующие разделы подключим отдельно: стены, потолки, электрика и
+              Сейчас в смету включены тёплый пол, полы и стены. Следующие разделы подключим отдельно: потолки, электрика и
               сантехника.
             </p>
           </section>

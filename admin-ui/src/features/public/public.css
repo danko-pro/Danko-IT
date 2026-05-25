@@ -2835,13 +2835,45 @@
 
 .public-estimate-flooring-options {
   display: grid;
-  grid-template-columns: minmax(110px, 0.7fr) minmax(150px, 1fr) minmax(110px, 0.7fr) minmax(96px, 0.5fr) minmax(110px, 0.7fr);
-  gap: 0.42rem;
-  align-items: end;
+  grid-template-columns: minmax(220px, 1.25fr) minmax(180px, 0.9fr) minmax(140px, 0.62fr);
+  gap: 0.48rem;
+  align-items: stretch;
   padding: 0.52rem;
   border: 1px solid rgba(30, 81, 74, 0.1);
   border-radius: 14px;
   background: rgba(255, 255, 255, 0.62);
+}
+
+.public-estimate-flooring-option-zone {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.44rem;
+  min-width: 0;
+  padding: 0.48rem;
+  border: 1px solid rgba(30, 81, 74, 0.1);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.public-estimate-flooring-option-zone-compact {
+  align-content: center;
+}
+
+.public-estimate-flooring-option-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.56rem;
+  min-width: 0;
+}
+
+.public-estimate-flooring-option-head small {
+  color: rgba(19, 35, 31, 0.5);
+  font-size: 0.66rem;
+  font-weight: 740;
+  line-height: 1.2;
+  text-align: right;
+  white-space: nowrap;
 }
 
 .public-estimate-option-check {
@@ -2849,11 +2881,18 @@
   align-items: center;
   gap: 0.5rem;
   min-height: 34px;
+  min-width: 0;
   color: var(--public-ink);
   font-size: 0.78rem;
   font-weight: 780;
   line-height: 1.2;
   cursor: pointer;
+}
+
+.public-estimate-option-check span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .public-estimate-flooring-summary {
@@ -3258,6 +3297,10 @@
   .public-estimate-flooring-options {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .public-estimate-flooring-option-zone:first-child {
+    grid-column: 1 / -1;
+  }
 }
 
 .public-privacy-back {
@@ -3525,6 +3568,21 @@
 
   .public-estimate-flooring-options {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .public-estimate-flooring-option-zone:first-child {
+    grid-column: auto;
+  }
+
+  .public-estimate-flooring-option-head {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.22rem;
+  }
+
+  .public-estimate-flooring-option-head small {
+    text-align: left;
+    white-space: normal;
   }
 
   .public-estimate-warm-floor-spec-head {

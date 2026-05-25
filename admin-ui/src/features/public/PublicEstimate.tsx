@@ -753,59 +753,74 @@ export function PublicEstimate() {
             </div>
 
             <div className="public-estimate-flooring-options">
-              <label className="public-estimate-option-check">
-                <input
-                  type="checkbox"
-                  checked={flooringOptions.includePlinth}
-                  onChange={(event) => updateFlooringOptions({ includePlinth: event.target.checked })}
-                />
-                <span>Плинтус</span>
-              </label>
+              <div className="public-estimate-flooring-option-zone">
+                <div className="public-estimate-flooring-option-head">
+                  <label className="public-estimate-option-check">
+                    <input
+                      type="checkbox"
+                      checked={flooringOptions.includePlinth}
+                      onChange={(event) => updateFlooringOptions({ includePlinth: event.target.checked })}
+                    />
+                    <span>Плинтус</span>
+                  </label>
+                  <small>Периметр помещений</small>
+                </div>
 
-              <label className="public-estimate-field">
-                <span>Тип плинтуса</span>
-                <select
-                  className="public-estimate-select"
-                  value={flooringOptions.plinthType}
-                  disabled={!flooringOptions.includePlinth}
-                  onChange={(event) => updateFlooringOptions({ plinthType: event.target.value as FlooringPlinthType })}
-                >
-                  {flooringPlinthOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
+                <label className="public-estimate-field">
+                  <span>Тип плинтуса</span>
+                  <select
+                    className="public-estimate-select"
+                    value={flooringOptions.plinthType}
+                    disabled={!flooringOptions.includePlinth}
+                    onChange={(event) => updateFlooringOptions({ plinthType: event.target.value as FlooringPlinthType })}
+                  >
+                    {flooringPlinthOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
 
-              <label className="public-estimate-option-check">
-                <input
-                  type="checkbox"
-                  checked={flooringOptions.includeThresholds}
-                  onChange={(event) => updateFlooringOptions({ includeThresholds: event.target.checked })}
-                />
-                <span>Порожки</span>
-              </label>
+              <div className="public-estimate-flooring-option-zone">
+                <div className="public-estimate-flooring-option-head">
+                  <label className="public-estimate-option-check">
+                    <input
+                      type="checkbox"
+                      checked={flooringOptions.includeThresholds}
+                      onChange={(event) => updateFlooringOptions({ includeThresholds: event.target.checked })}
+                    />
+                    <span>Порожки</span>
+                  </label>
+                  <small>Стыки и переходы</small>
+                </div>
 
-              <label className="public-estimate-field">
-                <span>Количество</span>
-                <input
-                  className="public-estimate-input"
-                  inputMode="numeric"
-                  value={flooringOptions.thresholdCount}
-                  disabled={!flooringOptions.includeThresholds}
-                  onChange={(event) => updateFlooringOptions({ thresholdCount: event.target.value })}
-                />
-              </label>
+                <label className="public-estimate-field">
+                  <span>Количество</span>
+                  <input
+                    className="public-estimate-input"
+                    inputMode="numeric"
+                    value={flooringOptions.thresholdCount}
+                    disabled={!flooringOptions.includeThresholds}
+                    onChange={(event) => updateFlooringOptions({ thresholdCount: event.target.value })}
+                  />
+                </label>
+              </div>
 
-              <label className="public-estimate-option-check">
-                <input
-                  type="checkbox"
-                  checked={flooringOptions.includeDemolition}
-                  onChange={(event) => updateFlooringOptions({ includeDemolition: event.target.checked })}
-                />
-                <span>Демонтаж</span>
-              </label>
+              <div className="public-estimate-flooring-option-zone public-estimate-flooring-option-zone-compact">
+                <div className="public-estimate-flooring-option-head">
+                  <label className="public-estimate-option-check">
+                    <input
+                      type="checkbox"
+                      checked={flooringOptions.includeDemolition}
+                      onChange={(event) => updateFlooringOptions({ includeDemolition: event.target.checked })}
+                    />
+                    <span>Демонтаж</span>
+                  </label>
+                  <small>Старое покрытие</small>
+                </div>
+              </div>
             </div>
 
             <div className="public-estimate-flooring-summary" aria-label="Итоги по полам">

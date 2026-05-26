@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { calculateCeiling } from "./public-estimate-ceiling";
+import { calculateCompletion, type CompletionOptions } from "./public-estimate-completion";
 import {
   calculateDoors,
   type DoorOptions,
@@ -133,12 +134,17 @@ type ElectricRoomDraft = {
   isIncluded?: boolean;
 };
 
+type CompletionOptionsDraft = Omit<CompletionOptions, "kitchenLengthMeters"> & {
+  kitchenLengthMeters: string;
+};
+
 const FLOORING_SPEC_COLLAPSED_LIMIT = 10;
 const WALLS_SPEC_COLLAPSED_LIMIT = 10;
 const CEILING_SPEC_COLLAPSED_LIMIT = 10;
 const ELECTRIC_SPEC_COLLAPSED_LIMIT = 10;
 const PLUMBING_SPEC_COLLAPSED_LIMIT = 10;
 const DOORS_SPEC_COLLAPSED_LIMIT = 10;
+const COMPLETION_SPEC_COLLAPSED_LIMIT = 10;
 
 const initialRooms: EstimateRoomDraft[] = [
   { id: "hallway", name: "Прихожая", type: "hallway", area: "6.5", doorCount: "1", windowCount: "0" },
@@ -354,12 +360,22 @@ export function PublicEstimate() {
     includeLogistics: true,
     includeInstallation: true,
   });
+  const [completionOptions, setCompletionOptions] = useState<CompletionOptionsDraft>({
+    includeKitchenBase: false,
+    kitchenLengthMeters: "5",
+    includeKitchenAppliancePenal: false,
+    includeKitchenFridgePenal: false,
+    includeWardrobe: false,
+    includeBathroomFurniture: false,
+    includeAppliances: false,
+  });
   const [isFlooringSpecExpanded, setIsFlooringSpecExpanded] = useState(false);
   const [isWallsSpecExpanded, setIsWallsSpecExpanded] = useState(false);
   const [isCeilingSpecExpanded, setIsCeilingSpecExpanded] = useState(false);
   const [isElectricSpecExpanded, setIsElectricSpecExpanded] = useState(false);
   const [isPlumbingSpecExpanded, setIsPlumbingSpecExpanded] = useState(false);
   const [isDoorsSpecExpanded, setIsDoorsSpecExpanded] = useState(false);
+  const [isCompletionSpecExpanded, setIsCompletionSpecExpanded] = useState(false);
 
   const ceilingHeight = useMemo(() => parseEstimateDecimal(ceilingHeightInput), [ceilingHeightInput]);
   const roomInputs = useMemo(() => rooms.map(normalizeRoom), [rooms]);
@@ -500,6 +516,14 @@ export function PublicEstimate() {
     [roomInputs, rooms],
   );
   const doorsResult = useMemo(() => calculateDoors(doorRoomInputs, doorOptions), [doorOptions, doorRoomInputs]);
+  const completionResult = useMemo(
+    () =>
+      calculateCompletion({
+        ...completionOptions,
+        kitchenLengthMeters: parseEstimateDecimal(completionOptions.kitchenLengthMeters),
+      }),
+    [completionOptions],
+  );
   const estimateResult = useMemo(() => {
     const sections = [
       ...(warmFloorResult.selectedArea > 0 ? [warmFloorResult.section] : []),
@@ -509,13 +533,24 @@ export function PublicEstimate() {
       ...(electricResult.section.items.length > 0 ? [electricResult.section] : []),
       ...(plumbingResult.section.items.length > 0 ? [plumbingResult.section] : []),
       ...(doorsResult.section.items.length > 0 ? [doorsResult.section] : []),
+      ...(completionResult.section.items.length > 0 ? [completionResult.section] : []),
     ];
 
     return {
       sections,
       totals: calculateEstimateTotals(sections, totals.floorArea),
     };
-  }, [ceilingResult, doorsResult, electricResult, flooringResult, plumbingResult, totals.floorArea, wallsResult, warmFloorResult]);
+  }, [
+    ceilingResult,
+    completionResult,
+    doorsResult,
+    electricResult,
+    flooringResult,
+    plumbingResult,
+    totals.floorArea,
+    wallsResult,
+    warmFloorResult,
+  ]);
 
   const summaryItems = [
     { label: "Площадь пола", value: formatMeasurement(totals.floorArea, "м²") },
@@ -535,8 +570,27 @@ export function PublicEstimate() {
     { label: "₽/м²", value: `${formatMoney(estimateResult.totals.pricePerSquareMeter)}/м²` },
   ];
   const packageClassification = classifyEstimatePackage(estimateResult.totals.pricePerSquareMeter);
-  const passportIncludedItems = ["Ремонт", "Инженерия", "Двери"];
-  const passportExcludedItems = ["Кухня: не включена", "Мебель: не включена", "Техника: не включена"];
+  const isKitchenCompletionIncluded =
+    completionOptions.includeKitchenBase ||
+    completionOptions.includeKitchenAppliancePenal ||
+    completionOptions.includeKitchenFridgePenal;
+  const passportCompletionItems = [
+    { label: "Кухня", isIncluded: isKitchenCompletionIncluded },
+    { label: "Гардеробная", isIncluded: completionOptions.includeWardrobe },
+    { label: "Мебель санузла", isIncluded: completionOptions.includeBathroomFurniture },
+    { label: "Техника", isIncluded: completionOptions.includeAppliances },
+  ];
+  const passportIncludedItems = [
+    "Ремонт",
+    "Инженерия",
+    "Двери",
+    ...passportCompletionItems
+      .filter((item) => item.isIncluded)
+      .map((item) => `${item.label}: включена`),
+  ];
+  const passportExcludedItems = passportCompletionItems
+    .filter((item) => !item.isIncluded)
+    .map((item) => `${item.label}: не включена`);
   const warmFloorModeLabel = warmFloorMode === "water" ? "Водяной" : "Электрический";
   const warmFloorConnectionLabel =
     warmFloorMode === "electric"
@@ -570,7 +624,7 @@ export function PublicEstimate() {
       ];
   const flooringSummaryItems = [
     { label: "Площадь пола", value: formatMeasurement(flooringResult.flooringArea, "м²") },
-    { label: "Площадь закупки", value: formatMeasurement(flooringResult.purchaseArea, "м²") },
+    { label: "Площадь материалов", value: formatMeasurement(flooringResult.purchaseArea, "м²") },
     { label: "Плинтус", value: formatMeasurement(flooringResult.plinthLength, "м") },
     { label: "Работы", value: formatMoney(flooringResult.worksTotal) },
     { label: "Материалы", value: formatMoney(flooringResult.materialsTotal) },
@@ -586,7 +640,7 @@ export function PublicEstimate() {
   const hiddenFlooringSpecCount = Math.max(0, flooringSpecItems.length - visibleFlooringSpecItems.length);
   const wallsSummaryItems = [
     { label: "Площадь стен", value: formatMeasurement(wallsResult.wallFinishArea, "м²") },
-    { label: "Площадь закупки", value: formatMeasurement(wallsResult.purchaseArea, "м²") },
+    { label: "Площадь материалов", value: formatMeasurement(wallsResult.purchaseArea, "м²") },
     { label: "Работы", value: formatMoney(wallsResult.worksTotal) },
     { label: "Материалы", value: formatMoney(wallsResult.materialsTotal) },
     { label: "Расходники", value: formatMoney(wallsResult.consumablesTotal) },
@@ -684,6 +738,20 @@ export function PublicEstimate() {
       ? doorSpecItems.slice(0, DOORS_SPEC_COLLAPSED_LIMIT)
       : doorSpecItems;
   const hiddenDoorsSpecCount = Math.max(0, doorSpecItems.length - visibleDoorSpecItems.length);
+  const completionSummaryItems = [
+    { label: "Кухня", value: formatMoney(completionResult.kitchenTotal) },
+    { label: "Мебель", value: formatMoney(completionResult.furnitureTotal) },
+    { label: "Техника", value: formatMoney(completionResult.appliancesTotal) },
+    { label: "Компонентов включено", value: `${completionResult.includedComponentCount} шт.` },
+    { label: "Итого", value: formatMoney(completionResult.total), isStrong: true },
+  ];
+  const completionSpecItems = completionResult.section.items;
+  const isCompletionSpecLong = completionSpecItems.length > COMPLETION_SPEC_COLLAPSED_LIMIT;
+  const visibleCompletionSpecItems =
+    isCompletionSpecLong && !isCompletionSpecExpanded
+      ? completionSpecItems.slice(0, COMPLETION_SPEC_COLLAPSED_LIMIT)
+      : completionSpecItems;
+  const hiddenCompletionSpecCount = Math.max(0, completionSpecItems.length - visibleCompletionSpecItems.length);
 
   function updateRoom(roomId: string, patch: Partial<EstimateRoomDraft>) {
     setRooms((currentRooms) => currentRooms.map((room) => (room.id === roomId ? { ...room, ...patch } : room)));
@@ -769,6 +837,13 @@ export function PublicEstimate() {
 
   function updateDoorOptions(patch: Partial<DoorOptions>) {
     setDoorOptions((currentOptions) => ({
+      ...currentOptions,
+      ...patch,
+    }));
+  }
+
+  function updateCompletionOptions(patch: Partial<CompletionOptionsDraft>) {
+    setCompletionOptions((currentOptions) => ({
       ...currentOptions,
       ...patch,
     }));
@@ -1313,7 +1388,7 @@ export function PublicEstimate() {
               <div>
                 <span>Шаг 04</span>
                 <h2 id="public-estimate-walls-title">Стены</h2>
-                <p>Расчёт отделки стен по чистой площади из геометрии: покрытие, подготовка, закупка и расходники по каждому помещению.</p>
+                <p>Расчёт отделки стен по чистой площади из геометрии: покрытие, подготовка, материалы и расходники по каждому помещению.</p>
               </div>
             </div>
 
@@ -1997,6 +2072,175 @@ export function PublicEstimate() {
             )}
           </section>
 
+          <section className="public-estimate-completion" aria-labelledby="public-estimate-completion-title">
+            <div className="public-estimate-completion-head">
+              <div>
+                <span>Шаг 09</span>
+                <h2 id="public-estimate-completion-title">Комплектация</h2>
+                <p>Кухня, пеналы, гардеробная, мебель санузла и техника включаются отдельно.</p>
+              </div>
+            </div>
+
+            <div className="public-estimate-completion-groups" aria-label="Опции комплектации">
+              <div className="public-estimate-completion-group">
+                <div className="public-estimate-completion-group-head">
+                  <div>
+                    <span>Кухня</span>
+                    <strong>{formatMoney(completionResult.kitchenTotal)}</strong>
+                  </div>
+                  <small>базовая кухня и высокие модули</small>
+                </div>
+
+                <label className="public-estimate-completion-option-zone">
+                  <input
+                    type="checkbox"
+                    checked={completionOptions.includeKitchenBase}
+                    onChange={(event) => updateCompletionOptions({ includeKitchenBase: event.target.checked })}
+                  />
+                  <span>
+                    <strong>Кухня базовая</strong>
+                    <small>расчёт по длине в погонных метрах</small>
+                  </span>
+                </label>
+
+                <label className="public-estimate-field public-estimate-completion-length">
+                  <span>Длина кухни, м.п.</span>
+                  <input
+                    className="public-estimate-input"
+                    inputMode="decimal"
+                    min="0"
+                    type="text"
+                    value={completionOptions.kitchenLengthMeters}
+                    onChange={(event) => updateCompletionOptions({ kitchenLengthMeters: event.target.value })}
+                  />
+                </label>
+
+                <label className="public-estimate-completion-option-zone">
+                  <input
+                    type="checkbox"
+                    checked={completionOptions.includeKitchenAppliancePenal}
+                    onChange={(event) => updateCompletionOptions({ includeKitchenAppliancePenal: event.target.checked })}
+                  />
+                  <span>
+                    <strong>Пенал под технику</strong>
+                    <small>отдельный высокий модуль под встроенную технику</small>
+                  </span>
+                </label>
+
+                <label className="public-estimate-completion-option-zone">
+                  <input
+                    type="checkbox"
+                    checked={completionOptions.includeKitchenFridgePenal}
+                    onChange={(event) => updateCompletionOptions({ includeKitchenFridgePenal: event.target.checked })}
+                  />
+                  <span>
+                    <strong>Пенал под холодильник / высокий модуль</strong>
+                    <small>отдельная опция, не смешивается с базовой кухней</small>
+                  </span>
+                </label>
+              </div>
+
+              <div className="public-estimate-completion-group">
+                <div className="public-estimate-completion-group-head">
+                  <div>
+                    <span>Мебель</span>
+                    <strong>{formatMoney(completionResult.furnitureTotal)}</strong>
+                  </div>
+                  <small>гардеробная и мебель санузла отдельно</small>
+                </div>
+
+                <label className="public-estimate-completion-option-zone">
+                  <input
+                    type="checkbox"
+                    checked={completionOptions.includeWardrobe}
+                    onChange={(event) => updateCompletionOptions({ includeWardrobe: event.target.checked })}
+                  />
+                  <span>
+                    <strong>Гардеробная / шкаф-купе</strong>
+                    <small>встроенная мебель отдельным компонентом</small>
+                  </span>
+                </label>
+
+                <label className="public-estimate-completion-option-zone">
+                  <input
+                    type="checkbox"
+                    checked={completionOptions.includeBathroomFurniture}
+                    onChange={(event) => updateCompletionOptions({ includeBathroomFurniture: event.target.checked })}
+                  />
+                  <span>
+                    <strong>Мебель санузла / пеналы</strong>
+                    <small>пеналы и встроенная мебель санузла</small>
+                  </span>
+                </label>
+              </div>
+
+              <div className="public-estimate-completion-group">
+                <div className="public-estimate-completion-group-head">
+                  <div>
+                    <span>Техника</span>
+                    <strong>{formatMoney(completionResult.appliancesTotal)}</strong>
+                  </div>
+                  <small>первый публичный комплект бытовой техники</small>
+                </div>
+
+                <label className="public-estimate-completion-option-zone">
+                  <input
+                    type="checkbox"
+                    checked={completionOptions.includeAppliances}
+                    onChange={(event) => updateCompletionOptions({ includeAppliances: event.target.checked })}
+                  />
+                  <span>
+                    <strong>Комплект бытовой техники</strong>
+                    <small>агрегированный public rate без выбора моделей</small>
+                  </span>
+                </label>
+              </div>
+            </div>
+
+            <div className="public-estimate-completion-summary" aria-label="Итоги по комплектации">
+              {completionSummaryItems.map((item) => (
+                <div className={item.isStrong ? "public-estimate-completion-total-cell" : undefined} key={item.label}>
+                  <span>{item.label}</span>
+                  <strong>{item.value}</strong>
+                </div>
+              ))}
+            </div>
+
+            {completionResult.section.items.length > 0 ? (
+              <div className="public-estimate-completion-spec">
+                <div className="public-estimate-warm-floor-spec-head">
+                  <p>Состав раздела</p>
+                  <span>Кухня, пеналы, гардеробная, мебель санузла и техника</span>
+                </div>
+                <ul>
+                  {visibleCompletionSpecItems.map((item) => (
+                    <li key={item.id}>
+                      <span className="public-estimate-warm-floor-line-title">{item.title}</span>
+                      <span className="public-estimate-warm-floor-line-meta">
+                        {formatEstimateQuantity(item.quantity)} {item.unit} × {formatMoney(item.unitPrice)}
+                      </span>
+                      <strong>{formatMoney(item.total)}</strong>
+                    </li>
+                  ))}
+                </ul>
+                {isCompletionSpecLong ? (
+                  <button
+                    className="public-estimate-spec-toggle"
+                    type="button"
+                    aria-expanded={isCompletionSpecExpanded}
+                    onClick={() => setIsCompletionSpecExpanded((currentValue) => !currentValue)}
+                  >
+                    {isCompletionSpecExpanded
+                      ? "Свернуть спецификацию"
+                      : `Показать всю спецификацию${hiddenCompletionSpecCount > 0 ? `: ещё ${hiddenCompletionSpecCount} строк` : ""}`}
+                  </button>
+                ) : null}
+              </div>
+            ) : (
+              <p className="public-estimate-warm-floor-empty">Включите кухню, мебельные компоненты или технику, чтобы добавить комплектацию в смету.</p>
+            )}
+          </section>
+
           <section className="public-estimate-costs" aria-labelledby="public-estimate-costs-title">
             <div className="public-estimate-costs-head">
               <p className="public-section-kicker">Итоговая смета</p>
@@ -2013,7 +2257,7 @@ export function PublicEstimate() {
             </div>
 
             <p className="public-estimate-cost-note">
-              Сейчас в смету включены тёплый пол, полы, стены, потолки, электрика, сантехника и двери. Следующие разделы подключим отдельно: дополнительные работы и экспорт расчёта.
+              Сейчас в смету включены тёплый пол, полы, стены, потолки, электрика, сантехника, двери и выбранная комплектация. Следующие разделы подключим отдельно: дополнительные работы и экспорт расчёта.
             </p>
           </section>
 

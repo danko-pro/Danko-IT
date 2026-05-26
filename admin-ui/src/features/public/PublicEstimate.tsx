@@ -1,5 +1,10 @@
 import { useMemo, useState } from "react";
 import { calculateCeiling } from "./public-estimate-ceiling";
+import {
+  calculateDoors,
+  type DoorOptions,
+  type DoorPackageType,
+} from "./public-estimate-doors";
 import { calculateElectric, type ElectricOptions } from "./public-estimate-electric";
 import {
   calculateEstimateGeometryTotals,
@@ -86,6 +91,11 @@ const wallsPreparationOptions: Array<{ value: WallsPreparationType; label: strin
   { value: "waterproofing", label: "Гидроизоляция" },
 ];
 
+const doorPackageOptions: Array<{ value: DoorPackageType; label: string }> = [
+  { value: "invisible_19000", label: "INVISIBLE 3 / 19 000" },
+  { value: "invisible_20350", label: "INVISIBLE 3 / 20 350" },
+];
+
 type EstimateRoomDraft = Omit<EstimateRoomInput, "area" | "doorCount" | "windowCount"> & {
   area: string;
   doorCount: string;
@@ -132,6 +142,7 @@ const WALLS_SPEC_COLLAPSED_LIMIT = 10;
 const CEILING_SPEC_COLLAPSED_LIMIT = 10;
 const ELECTRIC_SPEC_COLLAPSED_LIMIT = 10;
 const PLUMBING_SPEC_COLLAPSED_LIMIT = 10;
+const DOORS_SPEC_COLLAPSED_LIMIT = 10;
 
 const initialRooms: EstimateRoomDraft[] = [
   { id: "hallway", name: "Прихожая", type: "hallway", area: "6.5", doorCount: "1", windowCount: "0" },
@@ -277,11 +288,19 @@ export function PublicEstimate() {
     includeWaterNode: true,
     includeLeakProtection: false,
   });
+  const [doorOptions, setDoorOptions] = useState<DoorOptions>({
+    packageType: "invisible_19000",
+    includeHandles: true,
+    includePrivacyLocks: true,
+    includeLogistics: true,
+    includeInstallation: true,
+  });
   const [isFlooringSpecExpanded, setIsFlooringSpecExpanded] = useState(false);
   const [isWallsSpecExpanded, setIsWallsSpecExpanded] = useState(false);
   const [isCeilingSpecExpanded, setIsCeilingSpecExpanded] = useState(false);
   const [isElectricSpecExpanded, setIsElectricSpecExpanded] = useState(false);
   const [isPlumbingSpecExpanded, setIsPlumbingSpecExpanded] = useState(false);
+  const [isDoorsSpecExpanded, setIsDoorsSpecExpanded] = useState(false);
 
   const ceilingHeight = useMemo(() => parseEstimateDecimal(ceilingHeightInput), [ceilingHeightInput]);
   const roomInputs = useMemo(() => rooms.map(normalizeRoom), [rooms]);
@@ -410,6 +429,18 @@ export function PublicEstimate() {
     () => calculatePlumbing(plumbingRoomInputs, plumbingOptions),
     [plumbingOptions, plumbingRoomInputs],
   );
+  const doorRoomInputs = useMemo(
+    () =>
+      rooms.map((room, index) => ({
+        roomId: room.id,
+        roomName: room.name.trim() || "Помещение",
+        roomType: room.type,
+        area: roomInputs[index]?.area ?? 0,
+        doorCount: roomInputs[index]?.doorCount ?? 0,
+      })),
+    [roomInputs, rooms],
+  );
+  const doorsResult = useMemo(() => calculateDoors(doorRoomInputs, doorOptions), [doorOptions, doorRoomInputs]);
   const estimateResult = useMemo(() => {
     const sections = [
       ...(warmFloorResult.selectedArea > 0 ? [warmFloorResult.section] : []),
@@ -418,13 +449,14 @@ export function PublicEstimate() {
       ...(ceilingResult.ceilingArea > 0 ? [ceilingResult.section] : []),
       ...(electricResult.section.items.length > 0 ? [electricResult.section] : []),
       ...(plumbingResult.section.items.length > 0 ? [plumbingResult.section] : []),
+      ...(doorsResult.section.items.length > 0 ? [doorsResult.section] : []),
     ];
 
     return {
       sections,
       totals: calculateEstimateTotals(sections, totals.floorArea),
     };
-  }, [ceilingResult, electricResult, flooringResult, plumbingResult, totals.floorArea, wallsResult, warmFloorResult]);
+  }, [ceilingResult, doorsResult, electricResult, flooringResult, plumbingResult, totals.floorArea, wallsResult, warmFloorResult]);
 
   const summaryItems = [
     { label: "Площадь пола", value: formatMeasurement(totals.floorArea, "м²") },
@@ -565,6 +597,31 @@ export function PublicEstimate() {
       ? plumbingSpecItems.slice(0, PLUMBING_SPEC_COLLAPSED_LIMIT)
       : plumbingSpecItems;
   const hiddenPlumbingSpecCount = Math.max(0, plumbingSpecItems.length - visiblePlumbingSpecItems.length);
+  const doorCompositionItems = [
+    { label: "Дверей", value: `${doorsResult.totalDoorCount} шт.` },
+    { label: "Санузловых заверток", value: `${doorsResult.privacyLockCount} шт.` },
+    { label: "Пакет", value: doorsResult.packageLabel },
+    { label: "Монтаж", value: doorOptions.includeInstallation ? "да" : "нет" },
+    { label: "Логистика", value: doorOptions.includeLogistics ? "да" : "нет" },
+  ];
+  const doorSummaryItems = [
+    { label: "Двери", value: `${doorsResult.totalDoorCount} шт.` },
+    { label: "Ручки", value: `${doorsResult.handleCount} шт.` },
+    { label: "Завертки", value: `${doorsResult.privacyLockCount} шт.` },
+    { label: "Доставка / подъём", value: formatMoney(doorsResult.logisticsTotal) },
+    { label: "Работы", value: formatMoney(doorsResult.worksTotal) },
+    { label: "Материалы", value: formatMoney(doorsResult.materialsTotal) },
+    { label: "Фурнитура", value: formatMoney(doorsResult.hardwareTotal) },
+    { label: "Доп. расходы", value: formatMoney(doorsResult.consumablesTotal) },
+    { label: "Итого", value: formatMoney(doorsResult.total), isStrong: true },
+  ];
+  const doorSpecItems = doorsResult.section.items;
+  const isDoorsSpecLong = doorSpecItems.length > DOORS_SPEC_COLLAPSED_LIMIT;
+  const visibleDoorSpecItems =
+    isDoorsSpecLong && !isDoorsSpecExpanded
+      ? doorSpecItems.slice(0, DOORS_SPEC_COLLAPSED_LIMIT)
+      : doorSpecItems;
+  const hiddenDoorsSpecCount = Math.max(0, doorSpecItems.length - visibleDoorSpecItems.length);
 
   function updateRoom(roomId: string, patch: Partial<EstimateRoomDraft>) {
     setRooms((currentRooms) => currentRooms.map((room) => (room.id === roomId ? { ...room, ...patch } : room)));
@@ -643,6 +700,13 @@ export function PublicEstimate() {
 
   function updatePlumbingOptions(patch: Partial<PlumbingOptions>) {
     setPlumbingOptions((currentOptions) => ({
+      ...currentOptions,
+      ...patch,
+    }));
+  }
+
+  function updateDoorOptions(patch: Partial<DoorOptions>) {
+    setDoorOptions((currentOptions) => ({
       ...currentOptions,
       ...patch,
     }));
@@ -1740,6 +1804,133 @@ export function PublicEstimate() {
             )}
           </section>
 
+          <section className="public-estimate-doors" aria-labelledby="public-estimate-doors-title">
+            <div className="public-estimate-doors-head">
+              <div>
+                <span>Шаг 08</span>
+                <h2 id="public-estimate-doors-title">Двери</h2>
+                <p>Предварительный расчёт дверных комплектов, фурнитуры, доставки, подъёма и монтажа.</p>
+              </div>
+            </div>
+
+            <div className="public-estimate-doors-composition" aria-label="Состав расчёта дверей">
+              {doorCompositionItems.map((item) => (
+                <div key={item.label}>
+                  <span>{item.label}</span>
+                  <strong>{item.value}</strong>
+                </div>
+              ))}
+            </div>
+
+            <div className="public-estimate-doors-options" aria-label="Опции дверей">
+              <label className="public-estimate-field public-estimate-doors-package">
+                <span>Пакет дверей</span>
+                <select
+                  className="public-estimate-select"
+                  value={doorOptions.packageType}
+                  onChange={(event) => updateDoorOptions({ packageType: event.target.value as DoorPackageType })}
+                >
+                  {doorPackageOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="public-estimate-doors-option-zone">
+                <input
+                  type="checkbox"
+                  checked={doorOptions.includeHandles}
+                  onChange={(event) => updateDoorOptions({ includeHandles: event.target.checked })}
+                />
+                <span>
+                  <strong>Ручки</strong>
+                  <small>по одной ручке на каждый дверной комплект</small>
+                </span>
+              </label>
+
+              <label className="public-estimate-doors-option-zone">
+                <input
+                  type="checkbox"
+                  checked={doorOptions.includePrivacyLocks}
+                  onChange={(event) => updateDoorOptions({ includePrivacyLocks: event.target.checked })}
+                />
+                <span>
+                  <strong>Завертки для санузлов</strong>
+                  <small>считаются по дверям помещений типа санузел</small>
+                </span>
+              </label>
+
+              <label className="public-estimate-doors-option-zone">
+                <input
+                  type="checkbox"
+                  checked={doorOptions.includeLogistics}
+                  onChange={(event) => updateDoorOptions({ includeLogistics: event.target.checked })}
+                />
+                <span>
+                  <strong>Доставка и подъём</strong>
+                  <small>одна доставка и подъём по количеству дверей</small>
+                </span>
+              </label>
+
+              <label className="public-estimate-doors-option-zone">
+                <input
+                  type="checkbox"
+                  checked={doorOptions.includeInstallation}
+                  onChange={(event) => updateDoorOptions({ includeInstallation: event.target.checked })}
+                />
+                <span>
+                  <strong>Монтаж</strong>
+                  <small>монтаж каждого дверного комплекта</small>
+                </span>
+              </label>
+            </div>
+
+            <div className="public-estimate-doors-summary" aria-label="Итоги по дверям">
+              {doorSummaryItems.map((item) => (
+                <div className={item.isStrong ? "public-estimate-doors-total-cell" : undefined} key={item.label}>
+                  <span>{item.label}</span>
+                  <strong>{item.value}</strong>
+                </div>
+              ))}
+            </div>
+
+            {doorsResult.section.items.length > 0 ? (
+              <div className="public-estimate-doors-spec">
+                <div className="public-estimate-warm-floor-spec-head">
+                  <p>Состав раздела</p>
+                  <span>Дверные комплекты, фурнитура, логистика и монтаж</span>
+                </div>
+                <ul>
+                  {visibleDoorSpecItems.map((item) => (
+                    <li key={item.id}>
+                      <span className="public-estimate-warm-floor-line-title">{item.title}</span>
+                      <span className="public-estimate-warm-floor-line-meta">
+                        {formatEstimateQuantity(item.quantity)} {item.unit} × {formatMoney(item.unitPrice)}
+                      </span>
+                      <strong>{formatMoney(item.total)}</strong>
+                    </li>
+                  ))}
+                </ul>
+                {isDoorsSpecLong ? (
+                  <button
+                    className="public-estimate-spec-toggle"
+                    type="button"
+                    aria-expanded={isDoorsSpecExpanded}
+                    onClick={() => setIsDoorsSpecExpanded((currentValue) => !currentValue)}
+                  >
+                    {isDoorsSpecExpanded
+                      ? "Свернуть спецификацию"
+                      : `Показать всю спецификацию${hiddenDoorsSpecCount > 0 ? `: ещё ${hiddenDoorsSpecCount} строк` : ""}`}
+                  </button>
+                ) : null}
+              </div>
+            ) : (
+              <p className="public-estimate-warm-floor-empty">Укажите двери в помещениях, чтобы добавить дверные комплекты в смету.</p>
+            )}
+          </section>
+
           <section className="public-estimate-costs" aria-labelledby="public-estimate-costs-title">
             <div className="public-estimate-costs-head">
               <p className="public-section-kicker">Итоговая смета</p>
@@ -1756,7 +1947,7 @@ export function PublicEstimate() {
             </div>
 
             <p className="public-estimate-cost-note">
-              Сейчас в смету включены тёплый пол, полы, стены, потолки, электрика и сантехника. Следующие разделы подключим отдельно: двери и дополнительные работы.
+              Сейчас в смету включены тёплый пол, полы, стены, потолки, электрика, сантехника и двери. Следующие разделы подключим отдельно: дополнительные работы и экспорт расчёта.
             </p>
           </section>
 

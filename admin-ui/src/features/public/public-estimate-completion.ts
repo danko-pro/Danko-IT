@@ -12,14 +12,12 @@ export type CompletionOptions = {
   includeKitchenFridgePenal: boolean;
   includeWardrobe: boolean;
   includeBathroomFurniture: boolean;
-  includeAppliances: boolean;
 };
 
 export type CompletionCalculationResult = {
   kitchenLengthMeters: number;
   kitchenTotal: number;
   furnitureTotal: number;
-  appliancesTotal: number;
   includedComponentCount: number;
   worksTotal: number;
   materialsTotal: number;
@@ -35,7 +33,6 @@ export const completionPublicRates = {
   kitchenFridgePenal: 39000,
   wardrobe: 135000,
   bathroomFurniture: 105000,
-  appliances: 264120,
 };
 
 function safeNumber(value: number) {
@@ -92,7 +89,6 @@ export function calculateCompletion(options: CompletionOptions): CompletionCalcu
   const kitchenFridgePenalTotal = options.includeKitchenFridgePenal ? completionPublicRates.kitchenFridgePenal : 0;
   const wardrobeTotal = options.includeWardrobe ? completionPublicRates.wardrobe : 0;
   const bathroomFurnitureTotal = options.includeBathroomFurniture ? completionPublicRates.bathroomFurniture : 0;
-  const appliancesTotal = options.includeAppliances ? completionPublicRates.appliances : 0;
   const kitchenTotal = kitchenBaseTotal + kitchenAppliancePenalTotal + kitchenFridgePenalTotal;
   const furnitureTotal = wardrobeTotal + bathroomFurnitureTotal;
   const includedComponentCount = [
@@ -101,7 +97,6 @@ export function calculateCompletion(options: CompletionOptions): CompletionCalcu
     options.includeKitchenFridgePenal,
     options.includeWardrobe,
     options.includeBathroomFurniture,
-    options.includeAppliances,
   ].filter(Boolean).length;
   const items: EstimateLineItem[] = [];
 
@@ -151,28 +146,17 @@ export function calculateCompletion(options: CompletionOptions): CompletionCalcu
     "компл.",
     completionPublicRates.bathroomFurniture,
   );
-  addLine(
-    items,
-    "completion-appliances",
-    "Комплект бытовой техники",
-    "equipment",
-    options.includeAppliances ? 1 : 0,
-    "компл.",
-    completionPublicRates.appliances,
-  );
-
   const section = createEstimateSection(
     "completion",
     "Комплектация",
     items,
-    "Кухня, пеналы, гардеробная, мебель санузла и техника.",
+    "Кухня, пеналы, гардеробная и мебель санузла.",
   );
 
   return {
     kitchenLengthMeters,
     kitchenTotal,
     furnitureTotal,
-    appliancesTotal,
     includedComponentCount,
     worksTotal: section.totals.works,
     materialsTotal: section.totals.materials,

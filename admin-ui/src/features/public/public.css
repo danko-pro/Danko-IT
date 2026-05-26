@@ -4129,7 +4129,7 @@
 
 .public-estimate-completion-groups {
   display: grid;
-  grid-template-columns: 1.25fr 1fr 0.9fr;
+  grid-template-columns: minmax(0, 1.18fr) minmax(0, 1fr);
   gap: 0.48rem;
   align-items: stretch;
 }

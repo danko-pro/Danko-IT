@@ -367,7 +367,6 @@ export function PublicEstimate() {
     includeKitchenFridgePenal: false,
     includeWardrobe: false,
     includeBathroomFurniture: false,
-    includeAppliances: false,
   });
   const [isFlooringSpecExpanded, setIsFlooringSpecExpanded] = useState(false);
   const [isWallsSpecExpanded, setIsWallsSpecExpanded] = useState(false);
@@ -574,11 +573,28 @@ export function PublicEstimate() {
     completionOptions.includeKitchenBase ||
     completionOptions.includeKitchenAppliancePenal ||
     completionOptions.includeKitchenFridgePenal;
+  const arePenalsIncluded = completionOptions.includeKitchenAppliancePenal || completionOptions.includeKitchenFridgePenal;
   const passportCompletionItems = [
-    { label: "Кухня", isIncluded: isKitchenCompletionIncluded },
-    { label: "Гардеробная", isIncluded: completionOptions.includeWardrobe },
-    { label: "Мебель санузла", isIncluded: completionOptions.includeBathroomFurniture },
-    { label: "Техника", isIncluded: completionOptions.includeAppliances },
+    {
+      isIncluded: isKitchenCompletionIncluded,
+      includedLabel: "Кухня: включена",
+      excludedLabel: "Кухня: не включена",
+    },
+    {
+      isIncluded: arePenalsIncluded,
+      includedLabel: "Пеналы: включены",
+      excludedLabel: "Пеналы: не включены",
+    },
+    {
+      isIncluded: completionOptions.includeWardrobe,
+      includedLabel: "Гардеробная: включена",
+      excludedLabel: "Гардеробная: не включена",
+    },
+    {
+      isIncluded: completionOptions.includeBathroomFurniture,
+      includedLabel: "Мебель санузла: включена",
+      excludedLabel: "Мебель санузла: не включена",
+    },
   ];
   const passportIncludedItems = [
     "Ремонт",
@@ -586,11 +602,15 @@ export function PublicEstimate() {
     "Двери",
     ...passportCompletionItems
       .filter((item) => item.isIncluded)
-      .map((item) => `${item.label}: включена`),
+      .map((item) => item.includedLabel),
   ];
-  const passportExcludedItems = passportCompletionItems
-    .filter((item) => !item.isIncluded)
-    .map((item) => `${item.label}: не включена`);
+  const passportExcludedItems = [
+    ...passportCompletionItems
+      .filter((item) => !item.isIncluded)
+      .map((item) => item.excludedLabel),
+    "Бытовая техника: не включена",
+    "Свободная мебель: не включена",
+  ];
   const warmFloorModeLabel = warmFloorMode === "water" ? "Водяной" : "Электрический";
   const warmFloorConnectionLabel =
     warmFloorMode === "electric"
@@ -741,7 +761,6 @@ export function PublicEstimate() {
   const completionSummaryItems = [
     { label: "Кухня", value: formatMoney(completionResult.kitchenTotal) },
     { label: "Мебель", value: formatMoney(completionResult.furnitureTotal) },
-    { label: "Техника", value: formatMoney(completionResult.appliancesTotal) },
     { label: "Компонентов включено", value: `${completionResult.includedComponentCount} шт.` },
     { label: "Итого", value: formatMoney(completionResult.total), isStrong: true },
   ];
@@ -2077,7 +2096,7 @@ export function PublicEstimate() {
               <div>
                 <span>Шаг 09</span>
                 <h2 id="public-estimate-completion-title">Комплектация</h2>
-                <p>Кухня, пеналы, гардеробная, мебель санузла и техника включаются отдельно.</p>
+                <p>Кухня, пеналы, гардеробная и мебель санузла включаются отдельно.</p>
               </div>
             </div>
 
@@ -2174,27 +2193,6 @@ export function PublicEstimate() {
                 </label>
               </div>
 
-              <div className="public-estimate-completion-group">
-                <div className="public-estimate-completion-group-head">
-                  <div>
-                    <span>Техника</span>
-                    <strong>{formatMoney(completionResult.appliancesTotal)}</strong>
-                  </div>
-                  <small>первый публичный комплект бытовой техники</small>
-                </div>
-
-                <label className="public-estimate-completion-option-zone">
-                  <input
-                    type="checkbox"
-                    checked={completionOptions.includeAppliances}
-                    onChange={(event) => updateCompletionOptions({ includeAppliances: event.target.checked })}
-                  />
-                  <span>
-                    <strong>Комплект бытовой техники</strong>
-                    <small>агрегированный public rate без выбора моделей</small>
-                  </span>
-                </label>
-              </div>
             </div>
 
             <div className="public-estimate-completion-summary" aria-label="Итоги по комплектации">
@@ -2210,7 +2208,7 @@ export function PublicEstimate() {
               <div className="public-estimate-completion-spec">
                 <div className="public-estimate-warm-floor-spec-head">
                   <p>Состав раздела</p>
-                  <span>Кухня, пеналы, гардеробная, мебель санузла и техника</span>
+                  <span>Кухня, пеналы, гардеробная и мебель санузла</span>
                 </div>
                 <ul>
                   {visibleCompletionSpecItems.map((item) => (

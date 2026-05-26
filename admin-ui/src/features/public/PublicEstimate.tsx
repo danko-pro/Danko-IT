@@ -16,6 +16,7 @@ import {
   type FlooringPreparationType,
 } from "./public-estimate-flooring";
 import { calculateEstimateTotals } from "./public-estimate-model";
+import { calculatePlumbing, type PlumbingOptions } from "./public-estimate-plumbing";
 import { calculateWarmFloor, type WarmFloorMode } from "./public-estimate-warm-floor";
 import {
   calculateWalls,
@@ -130,6 +131,7 @@ const FLOORING_SPEC_COLLAPSED_LIMIT = 10;
 const WALLS_SPEC_COLLAPSED_LIMIT = 10;
 const CEILING_SPEC_COLLAPSED_LIMIT = 10;
 const ELECTRIC_SPEC_COLLAPSED_LIMIT = 10;
+const PLUMBING_SPEC_COLLAPSED_LIMIT = 10;
 
 const initialRooms: EstimateRoomDraft[] = [
   { id: "hallway", name: "Прихожая", type: "hallway", area: "6.5", doorCount: "1", windowCount: "0" },
@@ -264,10 +266,22 @@ export function PublicEstimate() {
     includeKitchenOutputs: true,
     includeSwitchboard: true,
   });
+  const [plumbingOptions, setPlumbingOptions] = useState<PlumbingOptions>({
+    includeBathroomSet: true,
+    includeBath: true,
+    includeHygienicShower: true,
+    includeElectricTowelRail: false,
+    includeKitchenSink: true,
+    includeDishwasherOutput: true,
+    includeWasherOutput: true,
+    includeWaterNode: true,
+    includeLeakProtection: false,
+  });
   const [isFlooringSpecExpanded, setIsFlooringSpecExpanded] = useState(false);
   const [isWallsSpecExpanded, setIsWallsSpecExpanded] = useState(false);
   const [isCeilingSpecExpanded, setIsCeilingSpecExpanded] = useState(false);
   const [isElectricSpecExpanded, setIsElectricSpecExpanded] = useState(false);
+  const [isPlumbingSpecExpanded, setIsPlumbingSpecExpanded] = useState(false);
 
   const ceilingHeight = useMemo(() => parseEstimateDecimal(ceilingHeightInput), [ceilingHeightInput]);
   const roomInputs = useMemo(() => rooms.map(normalizeRoom), [rooms]);
@@ -382,6 +396,20 @@ export function PublicEstimate() {
     () => calculateElectric(electricRoomInputs, electricOptions),
     [electricOptions, electricRoomInputs],
   );
+  const plumbingRoomInputs = useMemo(
+    () =>
+      rooms.map((room, index) => ({
+        roomId: room.id,
+        roomName: room.name.trim() || "Помещение",
+        roomType: room.type,
+        area: roomInputs[index]?.area ?? 0,
+      })),
+    [roomInputs, rooms],
+  );
+  const plumbingResult = useMemo(
+    () => calculatePlumbing(plumbingRoomInputs, plumbingOptions),
+    [plumbingOptions, plumbingRoomInputs],
+  );
   const estimateResult = useMemo(() => {
     const sections = [
       ...(warmFloorResult.selectedArea > 0 ? [warmFloorResult.section] : []),
@@ -389,13 +417,14 @@ export function PublicEstimate() {
       ...(wallsResult.wallFinishArea > 0 ? [wallsResult.section] : []),
       ...(ceilingResult.ceilingArea > 0 ? [ceilingResult.section] : []),
       ...(electricResult.section.items.length > 0 ? [electricResult.section] : []),
+      ...(plumbingResult.section.items.length > 0 ? [plumbingResult.section] : []),
     ];
 
     return {
       sections,
       totals: calculateEstimateTotals(sections, totals.floorArea),
     };
-  }, [ceilingResult, electricResult, flooringResult, totals.floorArea, wallsResult, warmFloorResult]);
+  }, [ceilingResult, electricResult, flooringResult, plumbingResult, totals.floorArea, wallsResult, warmFloorResult]);
 
   const summaryItems = [
     { label: "Площадь пола", value: formatMeasurement(totals.floorArea, "м²") },
@@ -511,6 +540,31 @@ export function PublicEstimate() {
       ? electricSpecItems.slice(0, ELECTRIC_SPEC_COLLAPSED_LIMIT)
       : electricSpecItems;
   const hiddenElectricSpecCount = Math.max(0, electricSpecItems.length - visibleElectricSpecItems.length);
+  const plumbingCompositionItems = [
+    { label: "Санузлов", value: `${plumbingResult.bathroomCount} шт.` },
+    { label: "Кухня", value: plumbingResult.hasKitchen ? "да" : "нет" },
+    { label: "ХВС", value: `${plumbingResult.coldWaterPoints} точ.` },
+    { label: "ГВС", value: `${plumbingResult.hotWaterPoints} точ.` },
+    { label: "Канализация", value: `${plumbingResult.sewerPoints} точ.` },
+  ];
+  const plumbingSummaryItems = [
+    { label: "ХВС точки", value: `${plumbingResult.coldWaterPoints} точ.` },
+    { label: "ГВС точки", value: `${plumbingResult.hotWaterPoints} точ.` },
+    { label: "Канализация", value: `${plumbingResult.sewerPoints} точ.` },
+    { label: "Приборы", value: `${plumbingResult.fixtureCount} шт.` },
+    { label: "Работы", value: formatMoney(plumbingResult.worksTotal) },
+    { label: "Материалы", value: formatMoney(plumbingResult.materialsTotal) },
+    { label: "Оборудование", value: formatMoney(plumbingResult.equipmentTotal) },
+    { label: "Расходники", value: formatMoney(plumbingResult.consumablesTotal) },
+    { label: "Итого", value: formatMoney(plumbingResult.total), isStrong: true },
+  ];
+  const plumbingSpecItems = plumbingResult.section.items;
+  const isPlumbingSpecLong = plumbingSpecItems.length > PLUMBING_SPEC_COLLAPSED_LIMIT;
+  const visiblePlumbingSpecItems =
+    isPlumbingSpecLong && !isPlumbingSpecExpanded
+      ? plumbingSpecItems.slice(0, PLUMBING_SPEC_COLLAPSED_LIMIT)
+      : plumbingSpecItems;
+  const hiddenPlumbingSpecCount = Math.max(0, plumbingSpecItems.length - visiblePlumbingSpecItems.length);
 
   function updateRoom(roomId: string, patch: Partial<EstimateRoomDraft>) {
     setRooms((currentRooms) => currentRooms.map((room) => (room.id === roomId ? { ...room, ...patch } : room)));
@@ -582,6 +636,13 @@ export function PublicEstimate() {
 
   function updateElectricOptions(patch: Partial<ElectricOptions>) {
     setElectricOptions((currentOptions) => ({
+      ...currentOptions,
+      ...patch,
+    }));
+  }
+
+  function updatePlumbingOptions(patch: Partial<PlumbingOptions>) {
+    setPlumbingOptions((currentOptions) => ({
       ...currentOptions,
       ...patch,
     }));
@@ -1507,6 +1568,178 @@ export function PublicEstimate() {
             )}
           </section>
 
+          <section className="public-estimate-plumbing" aria-labelledby="public-estimate-plumbing-title">
+            <div className="public-estimate-plumbing-head">
+              <div>
+                <span>Шаг 07</span>
+                <h2 id="public-estimate-plumbing-title">Сантехника</h2>
+                <p>Предварительный расчёт санузла, кухни, выводов под технику и базового сантехнического узла.</p>
+              </div>
+            </div>
+
+            <div className="public-estimate-plumbing-composition" aria-label="Состав сантехнического расчёта">
+              {plumbingCompositionItems.map((item) => (
+                <div key={item.label}>
+                  <span>{item.label}</span>
+                  <strong>{item.value}</strong>
+                </div>
+              ))}
+            </div>
+
+            <div className="public-estimate-plumbing-options" aria-label="Опции сантехники">
+              <label className="public-estimate-plumbing-option-zone">
+                <input
+                  type="checkbox"
+                  checked={plumbingOptions.includeBathroomSet}
+                  onChange={(event) => updatePlumbingOptions({ includeBathroomSet: event.target.checked })}
+                />
+                <span>
+                  <strong>Санузел: тумба, смеситель, инсталляция</strong>
+                  <small>комплект базовых приборов на каждый санузел</small>
+                </span>
+              </label>
+
+              <label className="public-estimate-plumbing-option-zone">
+                <input
+                  type="checkbox"
+                  checked={plumbingOptions.includeBath}
+                  onChange={(event) => updatePlumbingOptions({ includeBath: event.target.checked })}
+                />
+                <span>
+                  <strong>Ванна со смесителем</strong>
+                  <small>акриловая ванна, сифон и смеситель с лейкой</small>
+                </span>
+              </label>
+
+              <label className="public-estimate-plumbing-option-zone">
+                <input
+                  type="checkbox"
+                  checked={plumbingOptions.includeHygienicShower}
+                  onChange={(event) => updatePlumbingOptions({ includeHygienicShower: event.target.checked })}
+                />
+                <span>
+                  <strong>Гигиенический душ</strong>
+                  <small>выводы и подключение в санузле</small>
+                </span>
+              </label>
+
+              <label className="public-estimate-plumbing-option-zone">
+                <input
+                  type="checkbox"
+                  checked={plumbingOptions.includeElectricTowelRail}
+                  onChange={(event) => updatePlumbingOptions({ includeElectricTowelRail: event.target.checked })}
+                />
+                <span>
+                  <strong>Электрический полотенцесушитель</strong>
+                  <small>монтаж и подключение к электрике</small>
+                </span>
+              </label>
+
+              <label className="public-estimate-plumbing-option-zone">
+                <input
+                  type="checkbox"
+                  checked={plumbingOptions.includeKitchenSink}
+                  onChange={(event) => updatePlumbingOptions({ includeKitchenSink: event.target.checked })}
+                />
+                <span>
+                  <strong>Кухонная мойка</strong>
+                  <small>выводы под мойку и сифон кухонной мойки</small>
+                </span>
+              </label>
+
+              <label className="public-estimate-plumbing-option-zone">
+                <input
+                  type="checkbox"
+                  checked={plumbingOptions.includeDishwasherOutput}
+                  onChange={(event) => updatePlumbingOptions({ includeDishwasherOutput: event.target.checked })}
+                />
+                <span>
+                  <strong>Вывод под ПММ</strong>
+                  <small>холодная вода, горячая вода и канализация</small>
+                </span>
+              </label>
+
+              <label className="public-estimate-plumbing-option-zone">
+                <input
+                  type="checkbox"
+                  checked={plumbingOptions.includeWasherOutput}
+                  onChange={(event) => updatePlumbingOptions({ includeWasherOutput: event.target.checked })}
+                />
+                <span>
+                  <strong>Вывод под стиральную машину</strong>
+                  <small>выводы под стиральную и сушильную машину</small>
+                </span>
+              </label>
+
+              <label className="public-estimate-plumbing-option-zone">
+                <input
+                  type="checkbox"
+                  checked={plumbingOptions.includeWaterNode}
+                  onChange={(event) => updatePlumbingOptions({ includeWaterNode: event.target.checked })}
+                />
+                <span>
+                  <strong>Коллектор, фильтры и отсечные краны</strong>
+                  <small>базовый сантехнический узел объекта</small>
+                </span>
+              </label>
+
+              <label className="public-estimate-plumbing-option-zone public-estimate-plumbing-option-zone-wide">
+                <input
+                  type="checkbox"
+                  checked={plumbingOptions.includeLeakProtection}
+                  onChange={(event) => updatePlumbingOptions({ includeLeakProtection: event.target.checked })}
+                />
+                <span>
+                  <strong>Система защиты от протечек</strong>
+                  <small>датчики и перекрытие воды, опционально</small>
+                </span>
+              </label>
+            </div>
+
+            <div className="public-estimate-plumbing-summary" aria-label="Итоги по сантехнике">
+              {plumbingSummaryItems.map((item) => (
+                <div className={item.isStrong ? "public-estimate-plumbing-total-cell" : undefined} key={item.label}>
+                  <span>{item.label}</span>
+                  <strong>{item.value}</strong>
+                </div>
+              ))}
+            </div>
+
+            {plumbingResult.section.items.length > 0 ? (
+              <div className="public-estimate-plumbing-spec">
+                <div className="public-estimate-warm-floor-spec-head">
+                  <p>Состав раздела</p>
+                  <span>Санузел, кухня, выводы под технику и сантехнический узел</span>
+                </div>
+                <ul>
+                  {visiblePlumbingSpecItems.map((item) => (
+                    <li key={item.id}>
+                      <span className="public-estimate-warm-floor-line-title">{item.title}</span>
+                      <span className="public-estimate-warm-floor-line-meta">
+                        {formatEstimateQuantity(item.quantity)} {item.unit} × {formatMoney(item.unitPrice)}
+                      </span>
+                      <strong>{formatMoney(item.total)}</strong>
+                    </li>
+                  ))}
+                </ul>
+                {isPlumbingSpecLong ? (
+                  <button
+                    className="public-estimate-spec-toggle"
+                    type="button"
+                    aria-expanded={isPlumbingSpecExpanded}
+                    onClick={() => setIsPlumbingSpecExpanded((currentValue) => !currentValue)}
+                  >
+                    {isPlumbingSpecExpanded
+                      ? "Свернуть спецификацию"
+                      : `Показать всю спецификацию${hiddenPlumbingSpecCount > 0 ? `: ещё ${hiddenPlumbingSpecCount} строк` : ""}`}
+                  </button>
+                ) : null}
+              </div>
+            ) : (
+              <p className="public-estimate-warm-floor-empty">Добавьте санузел, кухню или вывод под технику, чтобы включить сантехнику в смету.</p>
+            )}
+          </section>
+
           <section className="public-estimate-costs" aria-labelledby="public-estimate-costs-title">
             <div className="public-estimate-costs-head">
               <p className="public-section-kicker">Итоговая смета</p>
@@ -1523,7 +1756,7 @@ export function PublicEstimate() {
             </div>
 
             <p className="public-estimate-cost-note">
-              Сейчас в смету включены тёплый пол, полы, стены, потолки и электрика. Следующие разделы подключим отдельно: сантехника и двери.
+              Сейчас в смету включены тёплый пол, полы, стены, потолки, электрика и сантехника. Следующие разделы подключим отдельно: двери и дополнительные работы.
             </p>
           </section>
 

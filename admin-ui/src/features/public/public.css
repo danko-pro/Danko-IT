@@ -3684,6 +3684,205 @@
   white-space: nowrap;
 }
 
+.public-estimate-plumbing {
+  display: grid;
+  gap: 0.58rem;
+  padding: 0.72rem;
+  border: 1px solid rgba(30, 81, 74, 0.12);
+  border-radius: 18px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.78), rgba(246, 250, 248, 0.78)),
+    #ffffff;
+}
+
+.public-estimate-plumbing-head {
+  display: grid;
+  gap: 0.36rem;
+}
+
+.public-estimate-plumbing-head span {
+  display: inline-flex;
+  margin-bottom: 0.22rem;
+  color: var(--public-green);
+  font-size: 0.68rem;
+  font-weight: 850;
+  letter-spacing: 0;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.public-estimate-plumbing-head h2 {
+  margin: 0;
+  color: var(--public-ink);
+  font-size: clamp(1.08rem, 2vw, 1.32rem);
+  font-weight: 850;
+  line-height: 1.12;
+}
+
+.public-estimate-plumbing-head p {
+  max-width: 720px;
+  margin: 0.36rem 0 0;
+  color: var(--public-muted);
+  font-size: 0.84rem;
+  font-weight: 540;
+  line-height: 1.45;
+}
+
+.public-estimate-plumbing-composition {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  overflow: hidden;
+  border: 1px solid rgba(30, 81, 74, 0.12);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.74);
+}
+
+.public-estimate-plumbing-composition div {
+  display: grid;
+  gap: 0.24rem;
+  min-width: 0;
+  padding: 0.58rem 0.64rem;
+  border-right: 1px solid rgba(30, 81, 74, 0.1);
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.public-estimate-plumbing-composition div:last-child {
+  border-right: 0;
+}
+
+.public-estimate-plumbing-composition span,
+.public-estimate-plumbing-summary span {
+  color: rgba(19, 35, 31, 0.58);
+  font-size: 0.66rem;
+  font-weight: 760;
+  line-height: 1.2;
+}
+
+.public-estimate-plumbing-composition strong,
+.public-estimate-plumbing-summary strong {
+  color: var(--public-green-deep);
+  font-size: 0.98rem;
+  font-weight: 850;
+  line-height: 1.05;
+}
+
+.public-estimate-plumbing-options {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.44rem;
+}
+
+.public-estimate-plumbing-option-zone {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.58rem;
+  min-width: 0;
+  padding: 0.58rem 0.64rem;
+  border: 1px solid rgba(30, 81, 74, 0.1);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.68);
+  color: var(--public-ink);
+  cursor: pointer;
+}
+
+.public-estimate-plumbing-option-zone-wide {
+  grid-column: span 3;
+}
+
+.public-estimate-plumbing-option-zone input {
+  width: 1rem;
+  height: 1rem;
+  accent-color: var(--public-green);
+  flex: 0 0 auto;
+}
+
+.public-estimate-plumbing-option-zone span {
+  display: grid;
+  gap: 0.12rem;
+  min-width: 0;
+}
+
+.public-estimate-plumbing-option-zone strong {
+  overflow: hidden;
+  color: var(--public-ink);
+  font-size: 0.82rem;
+  font-weight: 820;
+  line-height: 1.18;
+  text-overflow: ellipsis;
+}
+
+.public-estimate-plumbing-option-zone small {
+  color: rgba(19, 35, 31, 0.56);
+  font-size: 0.68rem;
+  font-weight: 740;
+  line-height: 1.2;
+}
+
+.public-estimate-plumbing-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  overflow: hidden;
+  border: 1px solid rgba(30, 81, 74, 0.12);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.74);
+}
+
+.public-estimate-plumbing-summary div {
+  display: grid;
+  gap: 0.24rem;
+  min-width: 0;
+  padding: 0.58rem 0.64rem;
+  border-right: 1px solid rgba(30, 81, 74, 0.1);
+  border-bottom: 1px solid rgba(30, 81, 74, 0.1);
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.public-estimate-plumbing-summary div:nth-child(3n) {
+  border-right: 0;
+}
+
+.public-estimate-plumbing-summary div:nth-child(n + 7) {
+  border-bottom: 0;
+}
+
+.public-estimate-plumbing-summary .public-estimate-plumbing-total-cell {
+  background: rgba(233, 242, 239, 0.62);
+}
+
+.public-estimate-plumbing-spec {
+  display: grid;
+  gap: 0.34rem;
+  padding: 0.6rem 0.68rem;
+  border: 1px solid rgba(30, 81, 74, 0.1);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.66);
+}
+
+.public-estimate-plumbing-spec ul {
+  display: grid;
+  gap: 0.24rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.public-estimate-plumbing-spec li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(116px, auto) auto;
+  gap: 0.7rem;
+  align-items: baseline;
+  color: rgba(19, 35, 31, 0.72);
+  font-size: 0.78rem;
+  font-weight: 620;
+  line-height: 1.35;
+}
+
+.public-estimate-plumbing-spec li strong {
+  color: var(--public-green-deep);
+  font-weight: 820;
+  white-space: nowrap;
+}
+
 .public-estimate-costs {
   display: grid;
   gap: 0.5rem;
@@ -4074,6 +4273,14 @@
     border-radius: 12px;
     background: rgba(255, 255, 255, 0.68);
   }
+
+  .public-estimate-plumbing-options {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .public-estimate-plumbing-option-zone-wide {
+    grid-column: 1 / -1;
+  }
 }
 
 .public-privacy-back {
@@ -4351,6 +4558,12 @@
     border-radius: 16px;
   }
 
+  .public-estimate-plumbing {
+    gap: 0.62rem;
+    padding: 0.68rem;
+    border-radius: 16px;
+  }
+
   .public-estimate-flooring-row {
     gap: 0.42rem;
     padding: 0.5rem;
@@ -4377,6 +4590,32 @@
 
   .public-estimate-electric-options {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .public-estimate-plumbing-composition {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .public-estimate-plumbing-composition div {
+    border-right: 1px solid rgba(30, 81, 74, 0.1);
+    border-bottom: 1px solid rgba(30, 81, 74, 0.1);
+  }
+
+  .public-estimate-plumbing-composition div:nth-child(even),
+  .public-estimate-plumbing-composition div:last-child {
+    border-right: 0;
+  }
+
+  .public-estimate-plumbing-composition div:nth-last-child(-n + 1) {
+    border-bottom: 0;
+  }
+
+  .public-estimate-plumbing-options {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .public-estimate-plumbing-option-zone-wide {
+    grid-column: auto;
   }
 
   .public-estimate-flooring-options {
@@ -4441,6 +4680,11 @@
   }
 
   .public-estimate-electric-spec li {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.16rem 0.7rem;
+  }
+
+  .public-estimate-plumbing-spec li {
     grid-template-columns: minmax(0, 1fr) auto;
     gap: 0.16rem 0.7rem;
   }
@@ -4539,13 +4783,18 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .public-estimate-plumbing-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .public-estimate-cost-cell,
   .public-estimate-summary-card,
   .public-estimate-warm-floor-summary div,
   .public-estimate-flooring-summary div,
   .public-estimate-walls-summary div,
   .public-estimate-ceiling-summary div,
-  .public-estimate-electric-summary div {
+  .public-estimate-electric-summary div,
+  .public-estimate-plumbing-summary div {
     padding: 0.6rem;
     border-right: 1px solid rgba(30, 81, 74, 0.1);
     border-bottom: 1px solid rgba(30, 81, 74, 0.1);
@@ -4555,7 +4804,15 @@
     border-right: 1px solid rgba(30, 81, 74, 0.1);
   }
 
+  .public-estimate-plumbing-summary div:nth-child(3n) {
+    border-right: 1px solid rgba(30, 81, 74, 0.1);
+  }
+
   .public-estimate-electric-summary div:nth-child(n + 6) {
+    border-bottom: 1px solid rgba(30, 81, 74, 0.1);
+  }
+
+  .public-estimate-plumbing-summary div:nth-child(n + 7) {
     border-bottom: 1px solid rgba(30, 81, 74, 0.1);
   }
 
@@ -4572,7 +4829,9 @@
   .public-estimate-ceiling-summary div:nth-child(even),
   .public-estimate-ceiling-summary div:last-child,
   .public-estimate-electric-summary div:nth-child(even),
-  .public-estimate-electric-summary div:last-child {
+  .public-estimate-electric-summary div:last-child,
+  .public-estimate-plumbing-summary div:nth-child(even),
+  .public-estimate-plumbing-summary div:last-child {
     border-right: 0;
   }
 
@@ -4581,7 +4840,8 @@
   .public-estimate-flooring-summary div:nth-last-child(-n + 2),
   .public-estimate-walls-summary div:nth-last-child(-n + 2),
   .public-estimate-ceiling-summary div:nth-last-child(-n + 2),
-  .public-estimate-electric-summary div:nth-last-child(-n + 2) {
+  .public-estimate-electric-summary div:nth-last-child(-n + 2),
+  .public-estimate-plumbing-summary div:nth-last-child(-n + 1) {
     border-bottom: 0;
   }
 

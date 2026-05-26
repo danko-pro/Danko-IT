@@ -29,16 +29,6 @@ import {
   type WallsPreparationType,
 } from "./public-estimate-walls";
 
-const estimateSteps = [
-  "объект и помещения",
-  "объём объекта",
-  "стены и полы",
-  "тёплый пол",
-  "потолки, электрика, сантехника",
-  "итоговая смета",
-  "скачать / отправить заявку",
-];
-
 const roomTypeOptions: Array<{ value: EstimateRoomType; label: string }> = [
   { value: "living_room", label: "Комната" },
   { value: "kitchen", label: "Кухня" },
@@ -94,6 +84,12 @@ const wallsPreparationOptions: Array<{ value: WallsPreparationType; label: strin
 const doorPackageOptions: Array<{ value: DoorPackageType; label: string }> = [
   { value: "invisible_19000", label: "INVISIBLE 3 / 19 000" },
   { value: "invisible_20350", label: "INVISIBLE 3 / 20 350" },
+];
+
+const estimatePackageBenchmarks = [
+  { label: "Пакет C", pricePerM2: 40228 },
+  { label: "Пакет B", pricePerM2: 52280 },
+  { label: "Пакет A", pricePerM2: 75416 },
 ];
 
 type EstimateRoomDraft = Omit<EstimateRoomInput, "area" | "doorCount" | "windowCount"> & {
@@ -180,6 +176,69 @@ function formatEstimateQuantity(value: number) {
     maximumFractionDigits: 1,
     minimumFractionDigits: 0,
   }).format(value);
+}
+
+function classifyEstimatePackage(pricePerSquareMeter: number) {
+  const safePricePerSquareMeter = Number.isFinite(pricePerSquareMeter) ? Math.max(0, pricePerSquareMeter) : 0;
+  const [packageC, packageB, packageA] = estimatePackageBenchmarks;
+
+  if (safePricePerSquareMeter <= 0) {
+    return {
+      statusLabel: "Расчёт не заполнен",
+      badgeLabel: "Без пакета",
+      referenceLabel: "Ориентир появится после заполнения",
+      referencePrice: 0,
+      nextLabel: packageC.label,
+      nextDelta: packageC.pricePerM2,
+      explanation: "Добавьте состав работ, чтобы увидеть ориентир по пакету.",
+    };
+  }
+
+  if (safePricePerSquareMeter < packageC.pricePerM2) {
+    return {
+      statusLabel: "Ниже пакета C",
+      badgeLabel: "Ниже C",
+      referenceLabel: packageC.label,
+      referencePrice: packageC.pricePerM2,
+      nextLabel: packageC.label,
+      nextDelta: packageC.pricePerM2 - safePricePerSquareMeter,
+      explanation: "По текущей цене расчёт ниже пакета C: состав ещё неполный.",
+    };
+  }
+
+  if (safePricePerSquareMeter < packageB.pricePerM2) {
+    return {
+      statusLabel: "Ближе к пакету C",
+      badgeLabel: packageC.label,
+      referenceLabel: packageC.label,
+      referencePrice: packageC.pricePerM2,
+      nextLabel: packageB.label,
+      nextDelta: packageB.pricePerM2 - safePricePerSquareMeter,
+      explanation: "По текущей цене расчёт ближе к пакету C.",
+    };
+  }
+
+  if (safePricePerSquareMeter < packageA.pricePerM2) {
+    return {
+      statusLabel: "Ближе к пакету B",
+      badgeLabel: packageB.label,
+      referenceLabel: packageB.label,
+      referencePrice: packageB.pricePerM2,
+      nextLabel: packageA.label,
+      nextDelta: packageA.pricePerM2 - safePricePerSquareMeter,
+      explanation: "По текущей цене расчёт ближе к пакету B.",
+    };
+  }
+
+  return {
+    statusLabel: "Ближе к пакету A",
+    badgeLabel: packageA.label,
+    referenceLabel: packageA.label,
+    referencePrice: packageA.pricePerM2,
+    nextLabel: "",
+    nextDelta: 0,
+    explanation: "По текущей цене расчёт ближе к пакету A.",
+  };
 }
 
 function createEstimateRoom(): EstimateRoomDraft {
@@ -475,6 +534,9 @@ export function PublicEstimate() {
     { label: "Итого", value: formatMoney(estimateResult.totals.total), isStrong: true },
     { label: "₽/м²", value: `${formatMoney(estimateResult.totals.pricePerSquareMeter)}/м²` },
   ];
+  const packageClassification = classifyEstimatePackage(estimateResult.totals.pricePerSquareMeter);
+  const passportIncludedItems = ["Ремонт", "Инженерия", "Двери"];
+  const passportExcludedItems = ["Кухня: не включена", "Мебель: не включена", "Техника: не включена"];
   const warmFloorModeLabel = warmFloorMode === "water" ? "Водяной" : "Электрический";
   const warmFloorConnectionLabel =
     warmFloorMode === "electric"
@@ -710,6 +772,10 @@ export function PublicEstimate() {
       ...currentOptions,
       ...patch,
     }));
+  }
+
+  function handlePrintEstimate() {
+    window.print();
   }
 
   function addRoom() {
@@ -1961,19 +2027,69 @@ export function PublicEstimate() {
           </div>
         </div>
 
-        <aside className="public-estimate-card public-estimate-scenario" aria-label="Будущий сценарий расчёта">
-          <div className="public-estimate-preview-head">
-            <span>Сценарий</span>
-            <h2>Следующие блоки</h2>
+        <aside className="public-estimate-card public-estimate-passport" aria-label="Паспорт расчёта">
+          <div className="public-estimate-passport-head">
+            <span>Паспорт расчёта</span>
+            <h2>Предварительная оценка по текущему составу</h2>
           </div>
-          <ol className="public-estimate-steps">
-            {estimateSteps.map((step, index) => (
-              <li className={index === 0 ? "public-estimate-step-active" : undefined} key={step}>
-                <span>{String(index + 1).padStart(2, "0")}</span>
-                <strong>{step}</strong>
-              </li>
-            ))}
-          </ol>
+
+          <div className="public-estimate-passport-package">
+            <span className="public-estimate-passport-badge">{packageClassification.badgeLabel}</span>
+            <div>
+              <p>Пакет</p>
+              <strong>{packageClassification.statusLabel}</strong>
+            </div>
+            <small>{packageClassification.explanation}</small>
+          </div>
+
+          <div className="public-estimate-passport-metrics" aria-label="Итоги паспорта расчёта">
+            <div>
+              <span>Итого</span>
+              <strong>{formatMoney(estimateResult.totals.total)}</strong>
+            </div>
+            <div>
+              <span>₽/м²</span>
+              <strong>{formatMoney(estimateResult.totals.pricePerSquareMeter)}/м²</strong>
+            </div>
+          </div>
+
+          <div className="public-estimate-passport-detail">
+            <span>Ориентир пакета</span>
+            <strong>
+              {packageClassification.referencePrice > 0
+                ? `${packageClassification.referenceLabel}: ${formatMoney(packageClassification.referencePrice)}/м²`
+                : packageClassification.referenceLabel}
+            </strong>
+            {packageClassification.nextLabel ? (
+              <small>
+                До {packageClassification.nextLabel.replace("Пакет ", "")}: +{formatMoney(packageClassification.nextDelta)}/м²
+              </small>
+            ) : (
+              <small>Верхний ориентир публичной модели</small>
+            )}
+          </div>
+
+          <div className="public-estimate-passport-composition">
+            <p>Состав</p>
+            <div className="public-estimate-passport-chips" aria-label="Включённый состав">
+              {passportIncludedItems.map((item) => (
+                <span className="public-estimate-passport-chip public-estimate-passport-chip-included" key={item}>
+                  {item}
+                </span>
+              ))}
+            </div>
+            <div className="public-estimate-passport-chips" aria-label="Пока не включено">
+              {passportExcludedItems.map((item) => (
+                <span className="public-estimate-passport-chip" key={item}>
+                  {item}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <button className="public-estimate-passport-action" type="button" onClick={handlePrintEstimate}>
+            Скачать PDF сметы
+          </button>
         </aside>
       </section>
     </main>

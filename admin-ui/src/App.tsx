@@ -5,6 +5,12 @@ import { PublicPrivacy } from "./features/public/PublicPrivacy";
 
 const AdminApp = lazy(() => import("./AdminApp"));
 
+function normalizePathname(pathname: string) {
+  const normalizedPathname = pathname.replace(/\/+$/, "");
+
+  return normalizedPathname === "" ? "/" : normalizedPathname;
+}
+
 function isPublicRoot(pathname: string) {
   return pathname === "/";
 }
@@ -18,7 +24,7 @@ function isPublicEstimate(pathname: string) {
 }
 
 export default function App() {
-  const pathname = window.location.pathname;
+  const pathname = normalizePathname(window.location.pathname);
 
   if (isPublicRoot(pathname)) {
     return <PublicLanding />;

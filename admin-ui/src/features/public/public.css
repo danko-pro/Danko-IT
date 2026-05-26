@@ -4170,90 +4170,212 @@
   margin-top: 0.12rem;
 }
 
-.public-estimate-preview-head {
+.public-estimate-passport {
+  position: sticky;
+  top: 1.25rem;
+  align-self: start;
+  display: grid;
+  gap: 0.72rem;
+  padding: 0.9rem;
+  border-color: rgba(30, 81, 74, 0.24);
+  border-radius: 20px;
+  background:
+    linear-gradient(180deg, rgba(233, 242, 239, 0.92), rgba(255, 255, 255, 0.88)),
+    #ffffff;
+  box-shadow: 0 18px 42px rgba(19, 35, 31, 0.08);
+}
+
+.public-estimate-passport-head {
   display: grid;
   gap: 0.28rem;
 }
 
-.public-estimate-preview-head span {
+.public-estimate-passport-head span {
   color: var(--public-green);
   font-size: 0.68rem;
-  font-weight: 840;
+  font-weight: 860;
   letter-spacing: 0;
   line-height: 1.2;
   text-transform: uppercase;
 }
 
-.public-estimate-preview-head h2 {
+.public-estimate-passport-head h2 {
   margin: 0;
   color: var(--public-ink);
   font-size: clamp(1.08rem, 1.8vw, 1.28rem);
   font-weight: 850;
-  line-height: 1.12;
+  line-height: 1.14;
 }
 
-.public-estimate-steps {
+.public-estimate-passport-package {
   display: grid;
-  gap: 0.34rem;
-  margin: 0.72rem 0 0;
-  padding: 0;
-  list-style: none;
+  gap: 0.5rem;
+  padding: 0.72rem;
+  border: 1px solid rgba(30, 81, 74, 0.16);
+  border-left: 4px solid var(--public-green);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.74);
 }
 
-.public-estimate-steps li {
+.public-estimate-passport-badge {
+  display: inline-flex;
+  width: fit-content;
+  padding: 0.28rem 0.52rem;
+  border-radius: 999px;
+  background: var(--public-green);
+  color: #ffffff;
+  font-size: 0.72rem;
+  font-weight: 860;
+  line-height: 1.15;
+}
+
+.public-estimate-passport-package p,
+.public-estimate-passport-composition p {
+  margin: 0;
+  color: rgba(19, 35, 31, 0.58);
+  font-size: 0.68rem;
+  font-weight: 800;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.public-estimate-passport-package strong {
+  display: block;
+  margin-top: 0.18rem;
+  color: var(--public-ink);
+  font-size: 1.1rem;
+  font-weight: 870;
+  line-height: 1.08;
+}
+
+.public-estimate-passport-package small,
+.public-estimate-passport-detail small {
+  color: rgba(19, 35, 31, 0.64);
+  font-size: 0.76rem;
+  font-weight: 620;
+  line-height: 1.4;
+}
+
+.public-estimate-passport-metrics {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  align-items: center;
-  gap: 0.48rem;
+  grid-template-columns: minmax(0, 1fr);
+  overflow: hidden;
+  border: 1px solid rgba(30, 81, 74, 0.14);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.76);
+}
+
+.public-estimate-passport-metrics div {
+  display: grid;
+  gap: 0.24rem;
   min-width: 0;
-  padding: 0.48rem 0.54rem;
-  border: 1px solid rgba(30, 81, 74, 0.1);
-  border-radius: 13px;
-  background: rgba(255, 255, 255, 0.72);
+  padding: 0.72rem;
+  border-bottom: 1px solid rgba(30, 81, 74, 0.1);
 }
 
-.public-estimate-steps span {
+.public-estimate-passport-metrics div:last-child {
+  border-bottom: 0;
+  background: rgba(233, 242, 239, 0.64);
+}
+
+.public-estimate-passport-metrics span,
+.public-estimate-passport-detail span {
+  color: rgba(19, 35, 31, 0.58);
+  font-size: 0.68rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.public-estimate-passport-metrics strong {
+  color: var(--public-green-deep);
+  font-size: clamp(1.22rem, 2.1vw, 1.52rem);
+  font-weight: 900;
+  line-height: 1.02;
+}
+
+.public-estimate-passport-detail {
+  display: grid;
+  gap: 0.28rem;
+  padding: 0.68rem 0.72rem;
+  border: 1px solid rgba(30, 81, 74, 0.12);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.66);
+}
+
+.public-estimate-passport-detail strong {
+  color: var(--public-ink);
+  font-size: 0.92rem;
+  font-weight: 820;
+  line-height: 1.18;
+}
+
+.public-estimate-passport-composition {
+  display: grid;
+  gap: 0.44rem;
+}
+
+.public-estimate-passport-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.34rem;
+}
+
+.public-estimate-passport-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0.28rem 0.5rem;
+  border: 1px solid rgba(30, 81, 74, 0.12);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.62);
+  color: rgba(19, 35, 31, 0.66);
+  font-size: 0.72rem;
+  font-weight: 760;
+  line-height: 1.15;
+}
+
+.public-estimate-passport-chip-included {
+  border-color: rgba(30, 81, 74, 0.22);
+  background: rgba(30, 81, 74, 0.1);
+  color: var(--public-green-deep);
+}
+
+.public-estimate-passport-action {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 1.85rem;
-  height: 1.85rem;
-  border: 1px solid rgba(30, 81, 74, 0.18);
-  border-radius: 10px;
-  background: var(--public-green-soft);
-  color: var(--public-green-deep);
-  font-size: 0.66rem;
-  font-weight: 850;
-}
-
-.public-estimate-steps strong {
-  min-width: 0;
-  color: #213b35;
-  font-size: 0.78rem;
-  font-weight: 760;
-  line-height: 1.25;
-}
-
-.public-estimate-scenario {
-  align-self: start;
-  padding: 0.82rem;
-  border-radius: 18px;
-}
-
-.public-estimate-step-active {
-  border-color: rgba(30, 81, 74, 0.24);
-  background: rgba(233, 242, 239, 0.78);
-}
-
-.public-estimate-step-active span {
-  border-color: var(--public-green);
+  min-height: 42px;
+  padding: 0 0.95rem;
+  border: 1px solid var(--public-green);
+  border-radius: 999px;
   background: var(--public-green);
   color: #ffffff;
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 830;
+  line-height: 1.2;
+  cursor: pointer;
+  transition:
+    border-color var(--ui-motion-fast) var(--ui-motion-ease-soft),
+    background-color var(--ui-motion-fast) var(--ui-motion-ease-soft),
+    transform var(--ui-motion-fast) var(--ui-motion-ease-soft);
+}
+
+.public-estimate-passport-action:hover,
+.public-estimate-passport-action:focus-visible {
+  border-color: var(--public-green-deep);
+  background: var(--public-green-deep);
+  transform: translateY(-1px);
 }
 
 @media (max-width: 980px) {
   .public-estimate {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .public-estimate-passport {
+    position: static;
+    top: auto;
   }
 
   .public-estimate-summary-grid {
@@ -4698,13 +4820,29 @@
     width: 100%;
   }
 
-  .public-estimate-steps li {
-    padding: 0.66rem;
-    border-radius: 16px;
+  .public-estimate-passport {
+    gap: 0.62rem;
+    padding: 0.72rem;
+    border-radius: 18px;
   }
 
-  .public-estimate-steps strong {
-    font-size: 0.9rem;
+  .public-estimate-passport-package,
+  .public-estimate-passport-detail {
+    padding: 0.62rem;
+    border-radius: 14px;
+  }
+
+  .public-estimate-passport-metrics {
+    border-radius: 14px;
+  }
+
+  .public-estimate-passport-metrics div {
+    padding: 0.62rem;
+  }
+
+  .public-estimate-passport-action {
+    width: 100%;
+    min-height: 42px;
   }
 
   .public-estimate-geometry {
@@ -5125,6 +5263,71 @@
   .public-privacy-card,
   .public-privacy-note {
     border-radius: 20px;
+  }
+}
+
+@media print {
+  @page {
+    margin: 12mm;
+  }
+
+  body {
+    background: #ffffff !important;
+  }
+
+  .public-estimate-page,
+  .public-estimate {
+    background: #ffffff !important;
+    color: #111111 !important;
+  }
+
+  .public-estimate-page {
+    padding: 0 !important;
+  }
+
+  .public-estimate-header,
+  .public-estimate-passport,
+  .public-estimate-actions,
+  .public-estimate-small-action,
+  .public-estimate-row-remove,
+  .public-estimate-spec-toggle {
+    display: none !important;
+  }
+
+  .public-estimate {
+    display: block !important;
+    width: 100% !important;
+    margin: 0 !important;
+  }
+
+  .public-estimate-card,
+  .public-estimate-card-main,
+  .public-estimate-geometry,
+  .public-estimate-summary,
+  .public-estimate-warm-floor,
+  .public-estimate-flooring,
+  .public-estimate-walls,
+  .public-estimate-ceiling,
+  .public-estimate-electric,
+  .public-estimate-plumbing,
+  .public-estimate-doors,
+  .public-estimate-costs {
+    break-inside: avoid;
+    border-color: rgba(0, 0, 0, 0.14) !important;
+    background: #ffffff !important;
+    box-shadow: none !important;
+  }
+
+  .public-estimate-card-main {
+    border: 0 !important;
+    padding: 0 !important;
+  }
+
+  .public-estimate input,
+  .public-estimate select,
+  .public-estimate button {
+    background: #ffffff !important;
+    box-shadow: none !important;
   }
 }
 

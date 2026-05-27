@@ -3463,8 +3463,11 @@ export function PublicEstimate() {
           </div>
         </div>
 
-        <aside id="estimate-passport" className="public-estimate-card public-estimate-passport" aria-label="Паспорт сметы">
-          <div className="public-estimate-passport-volumes" aria-label="Объёмы объекта">
+        <aside id="estimate-passport" className="public-estimate-passport-sidebar" aria-label="Паспорт сметы">
+          <section
+            className="public-estimate-card public-estimate-passport public-estimate-passport-volumes-panel"
+            aria-label="Объёмы объекта"
+          >
             <p className="public-estimate-passport-volumes-kicker">Объём объекта</p>
             <dl className="public-estimate-passport-volumes-list">
               {summaryItems.map((item) => (
@@ -3481,42 +3484,47 @@ export function PublicEstimate() {
             >
               Скачать объёмы
             </button>
-          </div>
+          </section>
 
-          <div className="public-estimate-passport-head">
-            <h2>Оценка по составу сметы</h2>
-          </div>
-
-          <div className="public-estimate-passport-metrics" aria-label="Итоги паспорта сметы">
-            <div>
-              <span>Итого</span>
-              <strong>{formatMoney(estimateResult.totals.total)}</strong>
+          <section
+            className="public-estimate-card public-estimate-passport public-estimate-passport-estimate-panel"
+            aria-label="Оценка по составу сметы"
+          >
+            <div className="public-estimate-passport-head">
+              <h2>Оценка по составу сметы</h2>
             </div>
-            <div>
-              <span>₽/м²</span>
-              <strong>{formatMoney(estimateResult.totals.pricePerSquareMeter)}/м²</strong>
+
+            <div className="public-estimate-passport-metrics" aria-label="Итоги паспорта сметы">
+              <div>
+                <span>Итого</span>
+                <strong>{formatMoney(estimateResult.totals.total)}</strong>
+              </div>
+              <div>
+                <span>₽/м²</span>
+                <strong>{formatMoney(estimateResult.totals.pricePerSquareMeter)}/м²</strong>
+              </div>
             </div>
-          </div>
 
-          <div className="public-estimate-passport-detail">
-            <span>Ориентир пакета</span>
-            <strong>
-              {packageClassification.referencePrice > 0
-                ? `${packageClassification.referenceLabel}: ${formatMoney(packageClassification.referencePrice)}/м²`
-                : packageClassification.referenceLabel}
-            </strong>
-            {packageClassification.nextLabel ? (
-              <small>
-                До {packageClassification.nextLabel.replace("Пакет ", "")}: +{formatMoney(packageClassification.nextDelta)}/м²
-              </small>
-            ) : (
-              <small>Верхний ориентир публичной модели</small>
-            )}
-          </div>
+            <div className="public-estimate-passport-detail">
+              <span>Ориентир пакета</span>
+              <strong>
+                {packageClassification.referencePrice > 0
+                  ? `${packageClassification.referenceLabel}: ${formatMoney(packageClassification.referencePrice)}/м²`
+                  : packageClassification.referenceLabel}
+              </strong>
+              {packageClassification.nextLabel ? (
+                <small>
+                  До {packageClassification.nextLabel.replace("Пакет ", "")}: +{formatMoney(packageClassification.nextDelta)}/м²
+                </small>
+              ) : (
+                <small>Верхний ориентир публичной модели</small>
+              )}
+            </div>
 
-          <button className="public-estimate-passport-action" type="button" onClick={handlePrintEstimate}>
-            Скачать PDF сметы
-          </button>
+            <button className="public-estimate-passport-action" type="button" onClick={handlePrintEstimate}>
+              Скачать PDF сметы
+            </button>
+          </section>
         </aside>
       </section>
 

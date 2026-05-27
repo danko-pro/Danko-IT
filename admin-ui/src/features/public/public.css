@@ -6886,10 +6886,16 @@
   margin-top: 0.12rem;
 }
 
-.public-estimate-passport {
+.public-estimate-passport-sidebar {
   position: sticky;
   top: 1.25rem;
   align-self: start;
+  display: grid;
+  gap: 0.875rem;
+  min-width: 0;
+}
+
+.public-estimate-passport {
   display: grid;
   gap: 0.58rem;
   padding: 0.82rem;
@@ -7053,11 +7059,9 @@
   transform: translateY(-1px);
 }
 
-.public-estimate-passport-volumes {
+.public-estimate-passport-volumes-panel {
   display: grid;
   gap: 0.42rem;
-  padding-bottom: 0.52rem;
-  border-bottom: 1px solid rgba(30, 81, 74, 0.1);
 }
 
 .public-estimate-passport-volumes-kicker {
@@ -7775,12 +7779,12 @@ html:has(.public-estimate-page) {
     font-size: 0.76rem;
   }
 
-  .public-estimate-passport {
+  .public-estimate-passport-sidebar {
     position: static;
     top: auto;
   }
 
-  .public-estimate-passport-volumes {
+  .public-estimate-passport-volumes-panel {
     display: none;
   }
 
@@ -7888,7 +7892,7 @@ html:has(.public-estimate-page) {
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .public-estimate-passport {
+  .public-estimate-passport-sidebar {
     position: static;
     top: auto;
   }
@@ -9215,6 +9219,7 @@ html:has(.public-estimate-page) {
 
   .public-estimate-header,
   .public-estimate-rail,
+  .public-estimate-passport-sidebar,
   .public-estimate-passport,
   .public-estimate-mobile-total,
   .public-estimate-actions,

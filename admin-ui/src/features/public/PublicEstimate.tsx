@@ -847,25 +847,6 @@ export function PublicEstimate() {
     { label: "₽/м²", value: `${formatMoney(estimateResult.totals.pricePerSquareMeter)}/м²` },
   ];
   const packageClassification = classifyEstimatePackage(estimateResult.totals.pricePerSquareMeter);
-  const isKitchenCompletionIncluded =
-    completionOptions.includeKitchenBase ||
-    completionOptions.includeKitchenAppliancePenal ||
-    completionOptions.includeKitchenFridgePenal;
-  const arePenalsIncluded = completionOptions.includeKitchenAppliancePenal || completionOptions.includeKitchenFridgePenal;
-  const passportCompletionItems = [
-    { isIncluded: isKitchenCompletionIncluded, label: "Кухня" },
-    { isIncluded: arePenalsIncluded, label: "Пеналы" },
-    { isIncluded: completionOptions.includeWardrobe, label: "Гардеробная" },
-    { isIncluded: completionOptions.includeBathroomFurniture, label: "Мебель санузла" },
-  ];
-  const passportIncludedItems = [
-    ...passportCompletionItems.filter((item) => item.isIncluded).map((item) => item.label),
-    ...(appliancesResult.total > 0 ? ["Бытовая техника"] : []),
-    ...(looseFurnitureResult.total > 0 ? ["Свободная мебель"] : []),
-    ...(homeGoodsOptions.includeCleaning ? ["Уборка"] : []),
-    ...(homeGoodsOptions.includeHomeGoods ? ["Товары для дома"] : []),
-  ];
-
   const scrollToEstimateSection = useCallback((sectionId: string) => {
     const section = document.getElementById(sectionId);
 
@@ -3489,23 +3470,6 @@ export function PublicEstimate() {
             ) : (
               <small>Верхний ориентир публичной модели</small>
             )}
-          </div>
-
-          <div className="public-estimate-passport-composition">
-            <p>Состав</p>
-            <ul className="public-estimate-passport-composition-list" aria-label="Состав расчёта">
-              {passportIncludedItems.length === 0 ? (
-                <li className="public-estimate-passport-composition-item is-empty">
-                  Выберите разделы в смете
-                </li>
-              ) : (
-                passportIncludedItems.map((item) => (
-                  <li className="public-estimate-passport-composition-item is-included" key={item}>
-                    {item}
-                  </li>
-                ))
-              )}
-            </ul>
           </div>
 
           <button className="public-estimate-passport-action" type="button" onClick={handlePrintEstimate}>

@@ -7062,6 +7062,7 @@
 .public-estimate-passport-volumes-panel {
   display: grid;
   gap: 0.42rem;
+  scroll-margin-top: 6rem;
 }
 
 .public-estimate-passport-volumes-kicker {
@@ -7203,7 +7204,7 @@
   color: rgba(19, 35, 31, 0.62);
   text-decoration: none;
   transition:
-    border-color 180ms var(--ui-motion-ease-soft),
+    background-color 180ms var(--ui-motion-ease-soft),
     color 180ms var(--ui-motion-ease-soft);
 }
 
@@ -7214,8 +7215,23 @@
 }
 
 .public-estimate-rail-link.is-active {
-  border-color: rgba(30, 81, 74, 0.14);
+  background: rgba(255, 255, 255, 0.72);
   color: var(--public-green-deep);
+}
+
+.public-estimate-rail-link.is-informational {
+  min-height: 36px;
+  color: rgba(19, 35, 31, 0.46);
+}
+
+.public-estimate-rail-link.is-informational:hover,
+.public-estimate-rail-link.is-informational:focus-visible {
+  color: rgba(19, 35, 31, 0.62);
+}
+
+.public-estimate-rail-link.is-informational.is-active {
+  background: rgba(246, 250, 248, 0.72);
+  color: rgba(19, 35, 31, 0.58);
 }
 
 .public-estimate-rail-icon {
@@ -7261,6 +7277,15 @@
 
 .public-estimate-rail-link.is-informational .public-estimate-rail-copy {
   gap: 0;
+}
+
+.public-estimate-rail-link.is-informational .public-estimate-rail-label {
+  font-size: 0.76rem;
+  font-weight: 650;
+}
+
+.public-estimate-rail-link.is-informational .public-estimate-rail-icon svg {
+  opacity: 0.72;
 }
 
 .public-estimate-mobile-total {
@@ -7757,8 +7782,19 @@ html:has(.public-estimate-page) {
   }
 
   .public-estimate-rail-link.is-active {
-    border-color: rgba(30, 81, 74, 0.18);
-    background: rgba(255, 255, 255, 0.92);
+    border-color: rgba(30, 81, 74, 0.16);
+    background: rgba(255, 255, 255, 0.96);
+  }
+
+  .public-estimate-rail-link.is-informational {
+    border-color: rgba(30, 81, 74, 0.06);
+    background: rgba(246, 250, 248, 0.55);
+  }
+
+  .public-estimate-rail-link.is-informational.is-active {
+    border-color: rgba(30, 81, 74, 0.1);
+    background: rgba(246, 250, 248, 0.82);
+    color: rgba(19, 35, 31, 0.58);
   }
 
   .public-estimate-rail-icon {

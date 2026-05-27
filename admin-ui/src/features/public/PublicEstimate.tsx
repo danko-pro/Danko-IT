@@ -147,7 +147,7 @@ const estimateNavigationItems: Array<{
   icon: EstimateNavigationIcon;
   isInformational?: boolean;
 }> = [
-  { id: "estimate-geometry", label: "Геометрия", icon: "geometry", isInformational: true },
+  { id: "estimate-geometry", label: "Объёмы", icon: "geometry", isInformational: true },
   { id: "estimate-object", label: "Объект", icon: "object" },
   { id: "estimate-warm-floor", label: "Тёплый пол", icon: "warmFloor" },
   { id: "estimate-flooring", label: "Полы", icon: "flooring" },
@@ -163,7 +163,11 @@ const estimateNavigationItems: Array<{
   { id: "estimate-costs", label: "Итог", icon: "total" },
 ];
 
-const ESTIMATE_INITIAL_SECTION_ID = estimateNavigationItems[0].id;
+const ESTIMATE_INITIAL_SECTION_ID =
+  estimateNavigationItems.find((item) => !item.isInformational)?.id ?? "estimate-object";
+const ESTIMATE_SCROLL_SPY_SECTION_IDS = estimateNavigationItems
+  .filter((item) => !item.isInformational)
+  .map((item) => item.id);
 const ESTIMATE_PAGE_BOTTOM_THRESHOLD_PX = 96;
 const ESTIMATE_SCROLL_OFFSET_PX = 96;
 const ESTIMATE_PROGRAMMATIC_SCROLL_MAX_MS = 3000;
@@ -196,6 +200,16 @@ function releaseEstimateNavigationScrollLock(
 
   lock.cleanup();
   lockRef.current = null;
+}
+
+function resolveEstimateNavScrollTarget(navItemId: string): string {
+  if (navItemId === "estimate-geometry") {
+    return window.matchMedia("(min-width: 1181px)").matches
+      ? "estimate-passport-volumes"
+      : "estimate-geometry";
+  }
+
+  return navItemId;
 }
 
 function pickActiveEstimateSectionByScrollLine(sections: HTMLElement[], scrollOffsetPx: number): string {
@@ -844,7 +858,8 @@ export function PublicEstimate() {
   ];
   const packageClassification = classifyEstimatePackage(estimateResult.totals.pricePerSquareMeter);
   const scrollToEstimateSection = useCallback((sectionId: string) => {
-    const section = document.getElementById(sectionId);
+    const scrollTargetId = resolveEstimateNavScrollTarget(sectionId);
+    const section = document.getElementById(scrollTargetId);
 
     if (!section) {
       return;
@@ -968,9 +983,9 @@ export function PublicEstimate() {
   }, []);
 
   useEffect(() => {
-    const sections = estimateNavigationItems
-      .map((item) => document.getElementById(item.id))
-      .filter((section): section is HTMLElement => Boolean(section));
+    const sections = ESTIMATE_SCROLL_SPY_SECTION_IDS.map((sectionId) => document.getElementById(sectionId)).filter(
+      (section): section is HTMLElement => Boolean(section),
+    );
 
     if (!sections.length) {
       return;
@@ -3465,6 +3480,7 @@ export function PublicEstimate() {
 
         <aside id="estimate-passport" className="public-estimate-passport-sidebar" aria-label="Паспорт сметы">
           <section
+            id="estimate-passport-volumes"
             className="public-estimate-card public-estimate-passport public-estimate-passport-volumes-panel"
             aria-label="Объёмы объекта"
           >

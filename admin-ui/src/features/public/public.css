@@ -7144,9 +7144,24 @@
   color: rgba(19, 35, 31, 0.68);
   text-decoration: none;
   transition:
-    background-color var(--ui-motion-fast) var(--ui-motion-ease-soft),
-    color var(--ui-motion-fast) var(--ui-motion-ease-soft),
-    transform var(--ui-motion-fast) var(--ui-motion-ease-soft);
+    background-color 220ms var(--ui-motion-ease-soft),
+    color 220ms var(--ui-motion-ease-soft);
+}
+
+.public-estimate-rail-link::before {
+  position: absolute;
+  top: 9px;
+  bottom: 9px;
+  left: -0.3rem;
+  width: 3px;
+  border-radius: 999px;
+  background: var(--public-green);
+  content: "";
+  opacity: 0;
+  transform: scaleY(0.55);
+  transition:
+    opacity 220ms var(--ui-motion-ease-soft),
+    transform 220ms var(--ui-motion-ease-soft);
 }
 
 .public-estimate-rail-link:hover,
@@ -7162,14 +7177,8 @@
 }
 
 .public-estimate-rail-link.is-active::before {
-  position: absolute;
-  top: 9px;
-  bottom: 9px;
-  left: -0.3rem;
-  width: 3px;
-  border-radius: 999px;
-  background: var(--public-green);
-  content: "";
+  opacity: 1;
+  transform: scaleY(1);
 }
 
 .public-estimate-rail-icon {
@@ -7180,6 +7189,9 @@
   border-radius: 11px;
   background: rgba(30, 81, 74, 0.06);
   color: currentColor;
+  transition:
+    background-color 220ms var(--ui-motion-ease-soft),
+    color 220ms var(--ui-motion-ease-soft);
 }
 
 .public-estimate-rail-link.is-active .public-estimate-rail-icon {
@@ -7263,7 +7275,7 @@
   box-shadow:
     0 14px 34px rgba(19, 35, 31, 0.045),
     inset 0 1px 0 rgba(255, 255, 255, 0.72);
-  scroll-margin-top: 5.5rem;
+  scroll-margin-top: 6rem;
 }
 
 .public-estimate-summary {
@@ -10085,7 +10097,10 @@ html:has(.public-estimate-page) {
   .public-form-textarea,
   .public-form-submit,
   .public-calc-promise,
-  .public-calc-promise-text {
+  .public-calc-promise-text,
+  .public-estimate-rail-link,
+  .public-estimate-rail-link::before,
+  .public-estimate-rail-icon {
     transition: none;
     animation: none;
     transform: none;

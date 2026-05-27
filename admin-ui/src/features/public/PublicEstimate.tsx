@@ -164,6 +164,20 @@ const estimateNavigationItems: Array<{
 
 const ESTIMATE_INITIAL_SECTION_ID = estimateNavigationItems[0].id;
 const ESTIMATE_PAGE_BOTTOM_THRESHOLD_PX = 96;
+const ESTIMATE_SCROLL_OFFSET_PX = 96;
+const ESTIMATE_PROGRAMMATIC_SCROLL_LOCK_MS = 900;
+
+function pickActiveEstimateSectionByScrollLine(sections: HTMLElement[], scrollOffsetPx: number): string {
+  let activeId = sections[0]?.id ?? ESTIMATE_INITIAL_SECTION_ID;
+
+  for (const section of sections) {
+    if (section.getBoundingClientRect().top <= scrollOffsetPx + 2) {
+      activeId = section.id;
+    }
+  }
+
+  return activeId;
+}
 
 function formatEstimateStep(sectionId: string): string {
   const index = estimateNavigationItems.findIndex((item) => item.id === sectionId);
@@ -598,6 +612,7 @@ export function PublicEstimate() {
   const [isHomeGoodsSpecExpanded, setIsHomeGoodsSpecExpanded] = useState(false);
   const [activeEstimateSection, setActiveEstimateSection] = useState(ESTIMATE_INITIAL_SECTION_ID);
   const estimateRailScrollRef = useRef<HTMLElement>(null);
+  const estimateScrollLockRef = useRef<{ sectionId: string; until: number } | null>(null);
 
   const ceilingHeight = useMemo(() => parseEstimateDecimal(ceilingHeightInput), [ceilingHeightInput]);
   const roomInputs = useMemo(() => rooms.map(normalizeRoom), [rooms]);
@@ -864,12 +879,18 @@ export function PublicEstimate() {
     }
 
     const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const top = Math.max(0, section.getBoundingClientRect().top + window.scrollY - ESTIMATE_SCROLL_OFFSET_PX);
 
-    section.scrollIntoView({
-      behavior: prefersReducedMotion ? "auto" : "smooth",
-      block: "start",
-    });
+    estimateScrollLockRef.current = {
+      sectionId,
+      until: Date.now() + ESTIMATE_PROGRAMMATIC_SCROLL_LOCK_MS,
+    };
     setActiveEstimateSection(sectionId);
+
+    window.scrollTo({
+      top,
+      behavior: prefersReducedMotion ? "auto" : "smooth",
+    });
   }, []);
 
   const isEstimatePageBottom = useCallback(() => {
@@ -880,10 +901,6 @@ export function PublicEstimate() {
   }, []);
 
   useEffect(() => {
-    if (typeof IntersectionObserver === "undefined") {
-      return;
-    }
-
     const sections = estimateNavigationItems
       .map((item) => document.getElementById(item.id))
       .filter((section): section is HTMLElement => Boolean(section));
@@ -892,42 +909,50 @@ export function PublicEstimate() {
       return;
     }
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (isEstimatePageBottom()) {
-          setActiveEstimateSection("estimate-costs");
-          return;
-        }
+    let frameId = 0;
 
-        const visibleEntries = entries
-          .filter((entry) => entry.isIntersecting)
-          .sort((firstEntry, secondEntry) => firstEntry.boundingClientRect.top - secondEntry.boundingClientRect.top);
-        const nextSectionId = visibleEntries[0]?.target.id;
+    const updateActiveSection = () => {
+      const scrollLock = estimateScrollLockRef.current;
 
-        if (nextSectionId) {
-          setActiveEstimateSection(nextSectionId);
-        }
-      },
-      {
-        root: null,
-        rootMargin: "-18% 0px -68% 0px",
-        threshold: [0.05, 0.18, 0.32],
-      },
-    );
-
-    const handleScroll = () => {
-      if (isEstimatePageBottom()) {
-        setActiveEstimateSection("estimate-costs");
+      if (scrollLock && Date.now() < scrollLock.until) {
+        setActiveEstimateSection((current) =>
+          current === scrollLock.sectionId ? current : scrollLock.sectionId,
+        );
+        return;
       }
+
+      if (isEstimatePageBottom()) {
+        setActiveEstimateSection((current) => (current === "estimate-costs" ? current : "estimate-costs"));
+        return;
+      }
+
+      const nextSectionId = pickActiveEstimateSectionByScrollLine(sections, ESTIMATE_SCROLL_OFFSET_PX);
+
+      setActiveEstimateSection((current) => (current === nextSectionId ? current : nextSectionId));
     };
 
-    sections.forEach((section) => observer.observe(section));
+    const handleScroll = () => {
+      if (frameId) {
+        return;
+      }
+
+      frameId = window.requestAnimationFrame(() => {
+        frameId = 0;
+        updateActiveSection();
+      });
+    };
+
+    updateActiveSection();
     window.addEventListener("scroll", handleScroll, { passive: true });
-    handleScroll();
+    window.addEventListener("resize", handleScroll, { passive: true });
 
     return () => {
-      observer.disconnect();
       window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("resize", handleScroll);
+
+      if (frameId) {
+        window.cancelAnimationFrame(frameId);
+      }
     };
   }, [isEstimatePageBottom]);
 
@@ -945,11 +970,32 @@ export function PublicEstimate() {
     }
 
     const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const scrollBehavior = prefersReducedMotion ? "auto" : "smooth";
+    const isHorizontalRail = window.matchMedia("(max-width: 1180px)").matches;
 
-    activeLink.scrollIntoView({
-      behavior: prefersReducedMotion ? "auto" : "smooth",
-      block: "nearest",
-      inline: "center",
+    if (isHorizontalRail) {
+      activeLink.scrollIntoView({
+        behavior: scrollBehavior,
+        block: "nearest",
+        inline: "center",
+      });
+      return;
+    }
+
+    const railRect = railScroll.getBoundingClientRect();
+    const linkRect = activeLink.getBoundingClientRect();
+    const edgePadding = 10;
+
+    if (linkRect.top >= railRect.top + edgePadding && linkRect.bottom <= railRect.bottom - edgePadding) {
+      return;
+    }
+
+    const linkTop = linkRect.top - railRect.top + railScroll.scrollTop;
+    const targetTop = linkTop - (railScroll.clientHeight - activeLink.offsetHeight) / 2;
+
+    railScroll.scrollTo({
+      top: Math.max(0, targetTop),
+      behavior: scrollBehavior,
     });
   }, [activeEstimateSection]);
 

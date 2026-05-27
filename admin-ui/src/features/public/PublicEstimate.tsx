@@ -14,6 +14,17 @@ import {
   type FridgeVariant,
 } from "./public-estimate-appliances";
 import {
+  calculateLooseFurniture,
+  createDefaultLooseFurnitureOptions,
+  getLooseFurnitureUnitPrice,
+  looseFurnitureGroupLabels,
+  looseFurnitureItemCatalog,
+  looseFurniturePackageLabels,
+  type LooseFurnitureItemKey,
+  type LooseFurnitureOptions,
+  type LooseFurniturePackageLevel,
+} from "./public-estimate-loose-furniture";
+import {
   calculateDoors,
   type DoorOptions,
   type DoorPackageType,
@@ -158,6 +169,7 @@ const PLUMBING_SPEC_COLLAPSED_LIMIT = 10;
 const DOORS_SPEC_COLLAPSED_LIMIT = 10;
 const COMPLETION_SPEC_COLLAPSED_LIMIT = 10;
 const APPLIANCES_SPEC_COLLAPSED_LIMIT = 10;
+const LOOSE_FURNITURE_SPEC_COLLAPSED_LIMIT = 10;
 
 const initialRooms: EstimateRoomDraft[] = [
   { id: "hallway", name: "Прихожая", type: "hallway", area: "6.5", doorCount: "1", windowCount: "0" },
@@ -382,6 +394,9 @@ export function PublicEstimate() {
     includeBathroomFurniture: false,
   });
   const [appliancesOptions, setAppliancesOptions] = useState<AppliancesOptions>(() => createDefaultAppliancesOptions());
+  const [looseFurnitureOptions, setLooseFurnitureOptions] = useState<LooseFurnitureOptions>(() =>
+    createDefaultLooseFurnitureOptions(),
+  );
   const [isFlooringSpecExpanded, setIsFlooringSpecExpanded] = useState(false);
   const [isWallsSpecExpanded, setIsWallsSpecExpanded] = useState(false);
   const [isCeilingSpecExpanded, setIsCeilingSpecExpanded] = useState(false);
@@ -390,6 +405,7 @@ export function PublicEstimate() {
   const [isDoorsSpecExpanded, setIsDoorsSpecExpanded] = useState(false);
   const [isCompletionSpecExpanded, setIsCompletionSpecExpanded] = useState(false);
   const [isAppliancesSpecExpanded, setIsAppliancesSpecExpanded] = useState(false);
+  const [isLooseFurnitureSpecExpanded, setIsLooseFurnitureSpecExpanded] = useState(false);
 
   const ceilingHeight = useMemo(() => parseEstimateDecimal(ceilingHeightInput), [ceilingHeightInput]);
   const roomInputs = useMemo(() => rooms.map(normalizeRoom), [rooms]);
@@ -539,6 +555,10 @@ export function PublicEstimate() {
     [completionOptions],
   );
   const appliancesResult = useMemo(() => calculateAppliances(appliancesOptions), [appliancesOptions]);
+  const looseFurnitureResult = useMemo(
+    () => calculateLooseFurniture(looseFurnitureOptions),
+    [looseFurnitureOptions],
+  );
   const estimateResult = useMemo(() => {
     const sections = [
       ...(warmFloorResult.selectedArea > 0 ? [warmFloorResult.section] : []),
@@ -550,6 +570,7 @@ export function PublicEstimate() {
       ...(doorsResult.section.items.length > 0 ? [doorsResult.section] : []),
       ...(completionResult.section.items.length > 0 ? [completionResult.section] : []),
       ...(appliancesResult.section.items.length > 0 ? [appliancesResult.section] : []),
+      ...(looseFurnitureResult.section.items.length > 0 ? [looseFurnitureResult.section] : []),
     ];
 
     return {
@@ -558,6 +579,7 @@ export function PublicEstimate() {
     };
   }, [
     appliancesResult,
+    looseFurnitureResult,
     ceilingResult,
     completionResult,
     doorsResult,
@@ -622,13 +644,14 @@ export function PublicEstimate() {
       .filter((item) => item.isIncluded)
       .map((item) => item.includedLabel),
     ...(appliancesResult.total > 0 ? ["Бытовая техника"] : []),
+    ...(looseFurnitureResult.total > 0 ? ["Свободная мебель"] : []),
   ];
   const passportExcludedItems = [
     ...passportCompletionItems
       .filter((item) => !item.isIncluded)
       .map((item) => item.excludedLabel),
     ...(appliancesResult.total <= 0 ? ["Бытовая техника: не включена"] : []),
-    "Свободная мебель: не включена",
+    ...(looseFurnitureResult.total <= 0 ? ["Свободная мебель: не включена"] : []),
   ];
   const warmFloorModeLabel = warmFloorMode === "water" ? "Водяной" : "Электрический";
   const warmFloorConnectionLabel =
@@ -805,6 +828,28 @@ export function PublicEstimate() {
       ? appliancesSpecItems.slice(0, APPLIANCES_SPEC_COLLAPSED_LIMIT)
       : appliancesSpecItems;
   const hiddenAppliancesSpecCount = Math.max(0, appliancesSpecItems.length - visibleAppliancesSpecItems.length);
+  const looseFurnitureSummaryItems = [
+    { label: "Пакет", value: looseFurnitureResult.packageLabel },
+    { label: "Позиции включены", value: `${looseFurnitureResult.includedItemCount} шт.` },
+    { label: looseFurnitureGroupLabels.dining, value: formatMoney(looseFurnitureResult.diningTotal) },
+    { label: looseFurnitureGroupLabels.living, value: formatMoney(looseFurnitureResult.livingTotal) },
+    { label: looseFurnitureGroupLabels.bedroom, value: formatMoney(looseFurnitureResult.bedroomTotal) },
+    { label: looseFurnitureGroupLabels.loggia, value: formatMoney(looseFurnitureResult.loggiaTotal) },
+    { label: looseFurnitureGroupLabels.work, value: formatMoney(looseFurnitureResult.workTotal) },
+    { label: looseFurnitureGroupLabels.storage, value: formatMoney(looseFurnitureResult.storageTotal) },
+    { label: looseFurnitureGroupLabels.hall, value: formatMoney(looseFurnitureResult.hallTotal) },
+    { label: "Итого", value: formatMoney(looseFurnitureResult.total), isStrong: true },
+  ];
+  const looseFurnitureSpecItems = looseFurnitureResult.section.items;
+  const isLooseFurnitureSpecLong = looseFurnitureSpecItems.length > LOOSE_FURNITURE_SPEC_COLLAPSED_LIMIT;
+  const visibleLooseFurnitureSpecItems =
+    isLooseFurnitureSpecLong && !isLooseFurnitureSpecExpanded
+      ? looseFurnitureSpecItems.slice(0, LOOSE_FURNITURE_SPEC_COLLAPSED_LIMIT)
+      : looseFurnitureSpecItems;
+  const hiddenLooseFurnitureSpecCount = Math.max(
+    0,
+    looseFurnitureSpecItems.length - visibleLooseFurnitureSpecItems.length,
+  );
 
   function updateRoom(roomId: string, patch: Partial<EstimateRoomDraft>) {
     setRooms((currentRooms) => currentRooms.map((room) => (room.id === roomId ? { ...room, ...patch } : room)));
@@ -911,6 +956,29 @@ export function PublicEstimate() {
 
   function updateApplianceItem(key: ApplianceItemKey, patch: Partial<{ isIncluded: boolean; quantity: number }>) {
     setAppliancesOptions((currentOptions) => ({
+      ...currentOptions,
+      items: {
+        ...currentOptions.items,
+        [key]: {
+          ...currentOptions.items[key],
+          ...patch,
+        },
+      },
+    }));
+  }
+
+  function updateLooseFurnitureOptions(patch: Partial<Pick<LooseFurnitureOptions, "packageLevel">>) {
+    setLooseFurnitureOptions((currentOptions) => ({
+      ...currentOptions,
+      ...patch,
+    }));
+  }
+
+  function updateLooseFurnitureItem(
+    key: LooseFurnitureItemKey,
+    patch: Partial<{ isIncluded: boolean; quantity: number }>,
+  ) {
+    setLooseFurnitureOptions((currentOptions) => ({
       ...currentOptions,
       items: {
         ...currentOptions.items,
@@ -2459,6 +2527,165 @@ export function PublicEstimate() {
             )}
           </section>
 
+          <section className="public-estimate-loose-furniture" aria-labelledby="public-estimate-loose-furniture-title">
+            <div className="public-estimate-loose-furniture-head">
+              <div>
+                <span>Шаг 11</span>
+                <h2 id="public-estimate-loose-furniture-title">Свободная мебель</h2>
+                <p>Мебель выбирается по позициям, а уровень цены задаётся пакетом C / B / A.</p>
+              </div>
+            </div>
+
+            <div className="public-estimate-loose-furniture-package" aria-label="Пакет мебели">
+              <div className="public-estimate-loose-furniture-package-copy">
+                <span>Пакет мебели</span>
+                <small>
+                  Модели и бренды уточняются при финальной комплектации. Сейчас расчёт показывает публичный ориентир по
+                  классу мебели.
+                </small>
+              </div>
+              <div
+                className="public-estimate-toggle-group public-estimate-loose-furniture-toggle-group"
+                role="group"
+                aria-label="Пакет мебели"
+              >
+                {(["c", "b", "a"] as LooseFurniturePackageLevel[]).map((level) => (
+                  <button
+                    key={level}
+                    className={
+                      looseFurnitureOptions.packageLevel === level ? "public-estimate-toggle-active" : undefined
+                    }
+                    type="button"
+                    aria-pressed={looseFurnitureOptions.packageLevel === level}
+                    onClick={() => updateLooseFurnitureOptions({ packageLevel: level })}
+                  >
+                    {looseFurniturePackageLabels[level]}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="public-estimate-loose-furniture-header" aria-hidden="true">
+              <span>Включить</span>
+              <span>Позиция</span>
+              <span>Группа</span>
+              <span>Кол-во</span>
+              <span>Цена за ед.</span>
+              <span>Итого</span>
+            </div>
+
+            <div className="public-estimate-loose-furniture-list" aria-label="Позиции свободной мебели">
+              {looseFurnitureItemCatalog.map((catalogItem) => {
+                const itemDraft = looseFurnitureOptions.items[catalogItem.key];
+                const isIncluded = itemDraft.isIncluded;
+                const quantity = itemDraft.quantity;
+                const unitPrice = getLooseFurnitureUnitPrice(catalogItem.key, looseFurnitureOptions);
+                const lineTotal = isIncluded ? unitPrice * Math.max(1, quantity) : 0;
+
+                return (
+                  <article className="public-estimate-loose-furniture-row" key={catalogItem.key}>
+                    <label className="public-estimate-loose-furniture-include">
+                      <input
+                        type="checkbox"
+                        checked={isIncluded}
+                        onChange={(event) =>
+                          updateLooseFurnitureItem(catalogItem.key, { isIncluded: event.target.checked })
+                        }
+                      />
+                      <span className="public-estimate-mobile-label">Включить</span>
+                    </label>
+
+                    <div className="public-estimate-loose-furniture-title-cell">
+                      <span className="public-estimate-mobile-label">Позиция</span>
+                      <strong>{catalogItem.title}</strong>
+                    </div>
+
+                    <div className="public-estimate-loose-furniture-group-cell">
+                      <span className="public-estimate-mobile-label">Группа</span>
+                      <strong>{looseFurnitureGroupLabels[catalogItem.group]}</strong>
+                    </div>
+
+                    <label className="public-estimate-loose-furniture-quantity">
+                      <span className="public-estimate-mobile-label">Кол-во</span>
+                      <input
+                        className="public-estimate-input"
+                        disabled={!isIncluded}
+                        inputMode="numeric"
+                        min="1"
+                        step="1"
+                        type="number"
+                        value={quantity}
+                        onChange={(event) =>
+                          updateLooseFurnitureItem(catalogItem.key, {
+                            quantity: Math.max(1, Number.parseInt(event.target.value, 10) || 1),
+                          })
+                        }
+                      />
+                    </label>
+
+                    <div className="public-estimate-loose-furniture-unit-price">
+                      <span className="public-estimate-mobile-label">Цена за ед.</span>
+                      <strong>{formatMoney(unitPrice)}</strong>
+                    </div>
+
+                    <div className="public-estimate-loose-furniture-line-total">
+                      <span className="public-estimate-mobile-label">Итого</span>
+                      <strong>{formatMoney(lineTotal)}</strong>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+
+            <div className="public-estimate-loose-furniture-summary" aria-label="Итоги по свободной мебели">
+              {looseFurnitureSummaryItems.map((item) => (
+                <div
+                  className={item.isStrong ? "public-estimate-loose-furniture-total-cell" : undefined}
+                  key={item.label}
+                >
+                  <span>{item.label}</span>
+                  <strong>{item.value}</strong>
+                </div>
+              ))}
+            </div>
+
+            {looseFurnitureResult.section.items.length > 0 ? (
+              <div className="public-estimate-loose-furniture-spec">
+                <div className="public-estimate-warm-floor-spec-head">
+                  <p>Состав раздела</p>
+                  <span>Свободная мебель по выбранному пакету</span>
+                </div>
+                <ul>
+                  {visibleLooseFurnitureSpecItems.map((item) => (
+                    <li key={item.id}>
+                      <span className="public-estimate-warm-floor-line-title">{item.title}</span>
+                      <span className="public-estimate-warm-floor-line-meta">
+                        {formatEstimateQuantity(item.quantity)} {item.unit} × {formatMoney(item.unitPrice)}
+                      </span>
+                      <strong>{formatMoney(item.total)}</strong>
+                    </li>
+                  ))}
+                </ul>
+                {isLooseFurnitureSpecLong ? (
+                  <button
+                    className="public-estimate-spec-toggle"
+                    type="button"
+                    aria-expanded={isLooseFurnitureSpecExpanded}
+                    onClick={() => setIsLooseFurnitureSpecExpanded((currentValue) => !currentValue)}
+                  >
+                    {isLooseFurnitureSpecExpanded
+                      ? "Свернуть спецификацию"
+                      : `Показать всю спецификацию${hiddenLooseFurnitureSpecCount > 0 ? `: ещё ${hiddenLooseFurnitureSpecCount} строк` : ""}`}
+                  </button>
+                ) : null}
+              </div>
+            ) : (
+              <p className="public-estimate-warm-floor-empty">
+                Включите нужные позиции мебели, чтобы добавить их в смету.
+              </p>
+            )}
+          </section>
+
           <section className="public-estimate-costs" aria-labelledby="public-estimate-costs-title">
             <div className="public-estimate-costs-head">
               <p className="public-section-kicker">Итоговая смета</p>
@@ -2476,7 +2703,7 @@ export function PublicEstimate() {
 
             <p className="public-estimate-cost-note">
               Сейчас в смету включены тёплый пол, полы, стены, потолки, электрика, сантехника, двери, встроенная
-              комплектация и выбранная бытовая техника. Следующие разделы подключим отдельно: свободная мебель,
+              комплектация, выбранная бытовая техника и выбранная свободная мебель. Следующие разделы подключим отдельно:
               дополнительные работы и экспорт расчёта.
             </p>
           </section>

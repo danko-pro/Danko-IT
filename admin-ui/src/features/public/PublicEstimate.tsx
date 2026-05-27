@@ -125,6 +125,23 @@ const estimatePackageBenchmarks = [
   { label: "Пакет A", pricePerM2: 75416 },
 ];
 
+const estimateNavigationItems = [
+  { label: "Объект", href: "#estimate-object" },
+  { label: "Геометрия", href: "#estimate-geometry" },
+  { label: "Тёплый пол", href: "#estimate-warm-floor" },
+  { label: "Полы", href: "#estimate-flooring" },
+  { label: "Стены", href: "#estimate-walls" },
+  { label: "Потолки", href: "#estimate-ceiling" },
+  { label: "Электрика", href: "#estimate-electric" },
+  { label: "Сантехника", href: "#estimate-plumbing" },
+  { label: "Двери", href: "#estimate-doors" },
+  { label: "Комплектация", href: "#estimate-completion" },
+  { label: "Техника", href: "#estimate-appliances" },
+  { label: "Мебель", href: "#estimate-loose-furniture" },
+  { label: "Уборка", href: "#estimate-home-goods" },
+  { label: "Итог", href: "#estimate-costs" },
+];
+
 type EstimateRoomDraft = Omit<EstimateRoomInput, "area" | "doorCount" | "windowCount"> & {
   area: string;
   doorCount: string;
@@ -1105,7 +1122,7 @@ export function PublicEstimate() {
             </p>
           </div>
 
-          <section className="public-estimate-summary" aria-labelledby="public-estimate-summary-title">
+          <section id="estimate-geometry" className="public-estimate-summary" aria-labelledby="public-estimate-summary-title">
             <div className="public-estimate-summary-head">
               <p className="public-section-kicker">Объём объекта</p>
               <h2 id="public-estimate-summary-title">Предварительная геометрия</h2>
@@ -1121,7 +1138,21 @@ export function PublicEstimate() {
             </div>
           </section>
 
-          <section className="public-estimate-geometry" aria-labelledby="public-estimate-geometry-title">
+          <nav className="public-estimate-nav" aria-label="Состав расчёта">
+            <div className="public-estimate-nav-head">
+              <span>Состав расчёта</span>
+              <small>Быстрый переход по разделам</small>
+            </div>
+            <div className="public-estimate-nav-list">
+              {estimateNavigationItems.map((item) => (
+                <a className="public-estimate-nav-chip" href={item.href} key={item.href}>
+                  {item.label}
+                </a>
+              ))}
+            </div>
+          </nav>
+
+          <section id="estimate-object" className="public-estimate-geometry" aria-labelledby="public-estimate-geometry-title">
             <div className="public-estimate-geometry-head">
               <div>
                 <span>Шаг 01</span>
@@ -1254,7 +1285,7 @@ export function PublicEstimate() {
             </div>
           </section>
 
-          <section className="public-estimate-warm-floor" aria-labelledby="public-estimate-warm-floor-title">
+          <section id="estimate-warm-floor" className="public-estimate-warm-floor" aria-labelledby="public-estimate-warm-floor-title">
             <div className="public-estimate-warm-floor-head">
               <div>
                 <span>Шаг 02</span>
@@ -1352,7 +1383,7 @@ export function PublicEstimate() {
             )}
           </section>
 
-          <section className="public-estimate-flooring" aria-labelledby="public-estimate-flooring-title">
+          <section id="estimate-flooring" className="public-estimate-flooring" aria-labelledby="public-estimate-flooring-title">
             <div className="public-estimate-flooring-head">
               <div>
                 <span>Шаг 03</span>
@@ -1566,7 +1597,7 @@ export function PublicEstimate() {
             )}
           </section>
 
-          <section className="public-estimate-walls" aria-labelledby="public-estimate-walls-title">
+          <section id="estimate-walls" className="public-estimate-walls" aria-labelledby="public-estimate-walls-title">
             <div className="public-estimate-walls-head">
               <div>
                 <span>Шаг 04</span>
@@ -1698,7 +1729,7 @@ export function PublicEstimate() {
             )}
           </section>
 
-          <section className="public-estimate-ceiling" aria-labelledby="public-estimate-ceiling-title">
+          <section id="estimate-ceiling" className="public-estimate-ceiling" aria-labelledby="public-estimate-ceiling-title">
             <div className="public-estimate-ceiling-head">
               <div>
                 <span>Шаг 05</span>
@@ -1817,7 +1848,7 @@ export function PublicEstimate() {
             )}
           </section>
 
-          <section className="public-estimate-electric" aria-labelledby="public-estimate-electric-title">
+          <section id="estimate-electric" className="public-estimate-electric" aria-labelledby="public-estimate-electric-title">
             <div className="public-estimate-electric-head">
               <div>
                 <span>Шаг 06</span>
@@ -1956,7 +1987,7 @@ export function PublicEstimate() {
             )}
           </section>
 
-          <section className="public-estimate-plumbing" aria-labelledby="public-estimate-plumbing-title">
+          <section id="estimate-plumbing" className="public-estimate-plumbing" aria-labelledby="public-estimate-plumbing-title">
             <div className="public-estimate-plumbing-head">
               <div>
                 <span>Шаг 07</span>
@@ -2128,7 +2159,7 @@ export function PublicEstimate() {
             )}
           </section>
 
-          <section className="public-estimate-doors" aria-labelledby="public-estimate-doors-title">
+          <section id="estimate-doors" className="public-estimate-doors" aria-labelledby="public-estimate-doors-title">
             <div className="public-estimate-doors-head">
               <div>
                 <span>Шаг 08</span>
@@ -2255,7 +2286,7 @@ export function PublicEstimate() {
             )}
           </section>
 
-          <section className="public-estimate-completion" aria-labelledby="public-estimate-completion-title">
+          <section id="estimate-completion" className="public-estimate-completion" aria-labelledby="public-estimate-completion-title">
             <div className="public-estimate-completion-head">
               <div>
                 <span>Шаг 09</span>
@@ -2403,7 +2434,7 @@ export function PublicEstimate() {
             )}
           </section>
 
-          <section className="public-estimate-appliances" aria-labelledby="public-estimate-appliances-title">
+          <section id="estimate-appliances" className="public-estimate-appliances" aria-labelledby="public-estimate-appliances-title">
             <div className="public-estimate-appliances-head">
               <div>
                 <span>Шаг 10</span>
@@ -2569,7 +2600,7 @@ export function PublicEstimate() {
             )}
           </section>
 
-          <section className="public-estimate-loose-furniture" aria-labelledby="public-estimate-loose-furniture-title">
+          <section id="estimate-loose-furniture" className="public-estimate-loose-furniture" aria-labelledby="public-estimate-loose-furniture-title">
             <div className="public-estimate-loose-furniture-head">
               <div>
                 <span>Шаг 11</span>
@@ -2728,7 +2759,7 @@ export function PublicEstimate() {
             )}
           </section>
 
-          <section className="public-estimate-home-goods" aria-labelledby="public-estimate-home-goods-title">
+          <section id="estimate-home-goods" className="public-estimate-home-goods" aria-labelledby="public-estimate-home-goods-title">
             <div className="public-estimate-home-goods-head">
               <div>
                 <span>Шаг 12</span>
@@ -2858,7 +2889,7 @@ export function PublicEstimate() {
             )}
           </section>
 
-          <section className="public-estimate-costs" aria-labelledby="public-estimate-costs-title">
+          <section id="estimate-costs" className="public-estimate-costs" aria-labelledby="public-estimate-costs-title">
             <div className="public-estimate-costs-head">
               <p className="public-section-kicker">Итоговая смета</p>
               <h2 id="public-estimate-costs-title">Стоимость по разделам</h2>
@@ -2890,7 +2921,7 @@ export function PublicEstimate() {
           </div>
         </div>
 
-        <aside className="public-estimate-card public-estimate-passport" aria-label="Паспорт расчёта">
+        <aside id="estimate-passport" className="public-estimate-card public-estimate-passport" aria-label="Паспорт расчёта">
           <div className="public-estimate-passport-head">
             <span>Паспорт расчёта</span>
             <h2>Предварительная оценка по текущему составу</h2>
@@ -2955,6 +2986,20 @@ export function PublicEstimate() {
           </button>
         </aside>
       </section>
+
+      <aside className="public-estimate-mobile-total" aria-label="Краткий итог сметы">
+        <div className="public-estimate-mobile-total-main">
+          <span>Итого</span>
+          <strong>{formatMoney(estimateResult.totals.total)}</strong>
+        </div>
+        <div className="public-estimate-mobile-total-rate">
+          <span>₽/м²</span>
+          <strong>{formatMoney(estimateResult.totals.pricePerSquareMeter)}/м²</strong>
+        </div>
+        <a className="public-estimate-mobile-total-link" href="#estimate-costs">
+          К смете
+        </a>
+      </aside>
     </main>
   );
 }

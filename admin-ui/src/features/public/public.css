@@ -7086,6 +7086,85 @@
   transform: translateY(-1px);
 }
 
+.public-estimate-nav {
+  display: grid;
+  gap: 0.52rem;
+  padding: 0.68rem 0.72rem;
+  border: 1px solid rgba(30, 81, 74, 0.14);
+  border-radius: 18px;
+  background:
+    linear-gradient(135deg, rgba(30, 81, 74, 0.09), rgba(255, 255, 255, 0.9) 44%, rgba(247, 251, 249, 0.86)),
+    #ffffff;
+  box-shadow:
+    0 12px 30px rgba(19, 35, 31, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.72);
+}
+
+.public-estimate-nav-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.7rem;
+}
+
+.public-estimate-nav-head span {
+  color: var(--public-green-deep);
+  font-size: 0.78rem;
+  font-weight: 870;
+  line-height: 1.2;
+}
+
+.public-estimate-nav-head small {
+  color: rgba(19, 35, 31, 0.56);
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1.25;
+  text-align: right;
+}
+
+.public-estimate-nav-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.34rem;
+  min-width: 0;
+}
+
+.public-estimate-nav-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 30px;
+  padding: 0.28rem 0.56rem;
+  border: 1px solid rgba(30, 81, 74, 0.14);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.68);
+  color: rgba(19, 35, 31, 0.74);
+  font-size: 0.74rem;
+  font-weight: 790;
+  line-height: 1.12;
+  text-decoration: none;
+  white-space: nowrap;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
+  transition:
+    border-color var(--ui-motion-fast) var(--ui-motion-ease-soft),
+    background-color var(--ui-motion-fast) var(--ui-motion-ease-soft),
+    color var(--ui-motion-fast) var(--ui-motion-ease-soft),
+    transform var(--ui-motion-fast) var(--ui-motion-ease-soft);
+}
+
+.public-estimate-nav-chip:hover,
+.public-estimate-nav-chip:focus-visible {
+  border-color: rgba(30, 81, 74, 0.32);
+  background: var(--public-green);
+  color: #ffffff;
+  outline: none;
+  transform: translateY(-1px);
+}
+
+.public-estimate-mobile-total {
+  display: none;
+}
+
 /* public-estimate-ux hierarchy polish */
 .public-estimate-card-main {
   gap: 0.9rem;
@@ -7468,8 +7547,96 @@
   font-size: clamp(1.08rem, 1.7vw, 1.34rem);
 }
 
-.public-estimate-passport-action {
-  box-shadow: 0 14px 28px rgba(30, 81, 74, 0.18);
+  .public-estimate-passport-action {
+    box-shadow: 0 14px 28px rgba(30, 81, 74, 0.18);
+  }
+
+@media (max-width: 900px) {
+  .public-estimate-page {
+    padding-bottom: calc(6.25rem + env(safe-area-inset-bottom));
+  }
+
+  .public-estimate-mobile-total {
+    position: fixed;
+    right: 0.75rem;
+    bottom: calc(0.75rem + env(safe-area-inset-bottom));
+    left: 0.75rem;
+    z-index: 80;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(82px, auto) auto;
+    gap: 0.5rem;
+    align-items: center;
+    width: min(720px, calc(100% - 1.5rem));
+    margin: 0 auto;
+    padding: 0.54rem;
+    border: 1px solid rgba(30, 81, 74, 0.2);
+    border-radius: 18px;
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(233, 242, 239, 0.94)),
+      #ffffff;
+    box-shadow:
+      0 20px 48px rgba(19, 35, 31, 0.18),
+      inset 0 1px 0 rgba(255, 255, 255, 0.76);
+    transform: translateZ(0);
+  }
+
+  .public-estimate-mobile-total-main,
+  .public-estimate-mobile-total-rate {
+    display: grid;
+    gap: 0.12rem;
+    min-width: 0;
+  }
+
+  .public-estimate-mobile-total span {
+    color: rgba(19, 35, 31, 0.58);
+    font-size: 0.64rem;
+    font-weight: 820;
+    line-height: 1.1;
+    text-transform: uppercase;
+  }
+
+  .public-estimate-mobile-total strong {
+    overflow: hidden;
+    color: var(--public-green-deep);
+    font-size: 0.92rem;
+    font-weight: 900;
+    line-height: 1.05;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .public-estimate-mobile-total-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 36px;
+    padding: 0 0.7rem;
+    border: 1px solid var(--public-green);
+    border-radius: 999px;
+    background: var(--public-green);
+    color: #ffffff;
+    font-size: 0.76rem;
+    font-weight: 850;
+    line-height: 1.1;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+
+  .public-estimate-nav-list {
+    flex-wrap: nowrap;
+    margin-right: -0.32rem;
+    margin-left: -0.32rem;
+    padding: 0 0.32rem 0.08rem;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x proximity;
+    scrollbar-width: thin;
+  }
+
+  .public-estimate-nav-chip {
+    flex: 0 0 auto;
+    scroll-snap-align: start;
+  }
 }
 
 @media (max-width: 980px) {
@@ -8628,6 +8795,10 @@
 }
 
 @media (max-width: 640px) {
+  .public-estimate-page {
+    padding-bottom: calc(6.25rem + env(safe-area-inset-bottom));
+  }
+
   .public-estimate-card-main {
     gap: 0.68rem;
   }
@@ -8808,6 +8979,7 @@
 
   .public-estimate-header,
   .public-estimate-passport,
+  .public-estimate-mobile-total,
   .public-estimate-actions,
   .public-estimate-small-action,
   .public-estimate-row-remove,

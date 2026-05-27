@@ -6068,6 +6068,271 @@
   white-space: nowrap;
 }
 
+.public-estimate-appliances {
+  display: grid;
+  gap: 0.58rem;
+  padding: 0.72rem;
+  border: 1px solid rgba(30, 81, 74, 0.12);
+  border-radius: 18px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.78), rgba(246, 250, 248, 0.78)),
+    #ffffff;
+}
+
+.public-estimate-appliances-head {
+  display: grid;
+  gap: 0.36rem;
+}
+
+.public-estimate-appliances-head span {
+  display: inline-flex;
+  margin-bottom: 0.22rem;
+  color: var(--public-green);
+  font-size: 0.68rem;
+  font-weight: 850;
+  letter-spacing: 0;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.public-estimate-appliances-head h2 {
+  margin: 0;
+  color: var(--public-ink);
+  font-size: clamp(1.08rem, 2vw, 1.32rem);
+  font-weight: 850;
+  line-height: 1.12;
+}
+
+.public-estimate-appliances-head p {
+  max-width: 720px;
+  margin: 0.36rem 0 0;
+  color: var(--public-muted);
+  font-size: 0.84rem;
+  font-weight: 540;
+  line-height: 1.45;
+}
+
+.public-estimate-appliances-package {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.72rem;
+  align-items: center;
+  padding: 0.62rem 0.68rem;
+  border: 1px solid rgba(30, 81, 74, 0.1);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.68);
+}
+
+.public-estimate-appliances-package-copy {
+  display: grid;
+  gap: 0.24rem;
+  min-width: 0;
+}
+
+.public-estimate-appliances-package-copy span {
+  color: var(--public-ink);
+  font-size: 0.82rem;
+  font-weight: 820;
+  line-height: 1.2;
+}
+
+.public-estimate-appliances-package-copy small {
+  color: rgba(19, 35, 31, 0.58);
+  font-size: 0.72rem;
+  font-weight: 620;
+  line-height: 1.4;
+}
+
+.public-estimate-appliances-toggle-group {
+  grid-template-columns: repeat(3, minmax(92px, 1fr));
+  min-width: min(100%, 360px);
+}
+
+.public-estimate-appliances-header,
+.public-estimate-appliances-row {
+  display: grid;
+  grid-template-columns:
+    minmax(72px, 0.58fr)
+    minmax(0, 1.35fr)
+    minmax(132px, 1fr)
+    minmax(88px, 0.72fr)
+    minmax(108px, 0.82fr)
+    minmax(96px, 0.72fr);
+  gap: 0.52rem;
+  align-items: center;
+}
+
+.public-estimate-appliances-header {
+  padding: 0.34rem 0.52rem;
+  color: rgba(19, 35, 31, 0.58);
+  font-size: 0.66rem;
+  font-weight: 800;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.public-estimate-appliances-list {
+  display: grid;
+  gap: 0.34rem;
+}
+
+.public-estimate-appliances-row {
+  min-width: 0;
+  padding: 0.48rem 0.52rem;
+  border: 1px solid rgba(30, 81, 74, 0.1);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.74);
+}
+
+.public-estimate-appliances-include {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  cursor: pointer;
+}
+
+.public-estimate-appliances-include input {
+  width: 1rem;
+  height: 1rem;
+  accent-color: var(--public-green);
+}
+
+.public-estimate-appliances-title-cell {
+  display: grid;
+  gap: 0.14rem;
+  min-width: 0;
+}
+
+.public-estimate-appliances-title-cell strong {
+  color: var(--public-ink);
+  font-size: 0.82rem;
+  font-weight: 820;
+  line-height: 1.25;
+}
+
+.public-estimate-appliances-title-cell small {
+  color: rgba(19, 35, 31, 0.58);
+  font-size: 0.68rem;
+  font-weight: 620;
+  line-height: 1.35;
+}
+
+.public-estimate-appliances-variant-cell,
+.public-estimate-appliances-quantity,
+.public-estimate-appliances-unit-price,
+.public-estimate-appliances-line-total {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.52rem;
+  min-width: 0;
+}
+
+.public-estimate-appliances-variant-cell .public-estimate-select {
+  width: 100%;
+  min-width: 0;
+}
+
+.public-estimate-appliances-variant-placeholder {
+  color: rgba(19, 35, 31, 0.42);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.public-estimate-appliances-quantity .public-estimate-input {
+  width: 100%;
+  min-height: 34px;
+}
+
+.public-estimate-appliances-unit-price strong,
+.public-estimate-appliances-line-total strong {
+  color: var(--public-green-deep);
+  font-size: 0.82rem;
+  font-weight: 820;
+  line-height: 1.15;
+  white-space: nowrap;
+}
+
+.public-estimate-appliances-row .public-estimate-mobile-label {
+  display: none;
+}
+
+.public-estimate-appliances-summary {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  overflow: hidden;
+  border: 1px solid rgba(30, 81, 74, 0.12);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.74);
+}
+
+.public-estimate-appliances-summary div {
+  display: grid;
+  gap: 0.22rem;
+  min-width: 0;
+  padding: 0.58rem 0.64rem;
+  border-right: 1px solid rgba(30, 81, 74, 0.1);
+  background: rgba(255, 255, 255, 0.54);
+}
+
+.public-estimate-appliances-summary div:last-child {
+  border-right: 0;
+}
+
+.public-estimate-appliances-summary span {
+  color: rgba(19, 35, 31, 0.58);
+  font-size: 0.66rem;
+  font-weight: 780;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.public-estimate-appliances-summary strong {
+  color: var(--public-green-deep);
+  font-size: 0.92rem;
+  font-weight: 860;
+  line-height: 1.05;
+}
+
+.public-estimate-appliances-summary .public-estimate-appliances-total-cell {
+  background: rgba(233, 242, 239, 0.62);
+}
+
+.public-estimate-appliances-spec {
+  display: grid;
+  gap: 0.34rem;
+  padding: 0.6rem 0.68rem;
+  border: 1px solid rgba(30, 81, 74, 0.1);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.66);
+}
+
+.public-estimate-appliances-spec ul {
+  display: grid;
+  gap: 0.24rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.public-estimate-appliances-spec li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(116px, auto) auto;
+  gap: 0.7rem;
+  align-items: baseline;
+  color: rgba(19, 35, 31, 0.72);
+  font-size: 0.78rem;
+  font-weight: 620;
+  line-height: 1.35;
+}
+
+.public-estimate-appliances-spec li strong {
+  color: var(--public-green-deep);
+  font-weight: 820;
+  white-space: nowrap;
+}
+
 .public-estimate-costs {
   display: grid;
   gap: 0.5rem;
@@ -7096,6 +7361,78 @@
   .public-estimate-completion-spec li {
     grid-template-columns: minmax(0, 1fr) auto;
     gap: 0.16rem 0.7rem;
+  }
+
+  .public-estimate-appliances-package {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .public-estimate-appliances-toggle-group {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .public-estimate-appliances-header {
+    display: none;
+  }
+
+  .public-estimate-appliances-row {
+    grid-template-columns: minmax(0, 1fr);
+    align-items: stretch;
+    gap: 0.46rem;
+    padding: 0.54rem;
+    border-radius: 16px;
+  }
+
+  .public-estimate-appliances-row .public-estimate-mobile-label {
+    display: inline-flex;
+    color: rgba(19, 35, 31, 0.58);
+    font-size: 0.66rem;
+    font-weight: 780;
+    line-height: 1.2;
+    text-transform: uppercase;
+  }
+
+  .public-estimate-appliances-include {
+    justify-content: flex-start;
+    gap: 0.52rem;
+  }
+
+  .public-estimate-appliances-title-cell strong {
+    grid-column: 1 / -1;
+  }
+
+  .public-estimate-appliances-variant-cell,
+  .public-estimate-appliances-quantity,
+  .public-estimate-appliances-unit-price,
+  .public-estimate-appliances-line-total {
+    min-height: 32px;
+    padding: 0 0.52rem;
+    border: 1px solid rgba(30, 81, 74, 0.11);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.68);
+  }
+
+  .public-estimate-appliances-spec li {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.16rem 0.7rem;
+  }
+
+  .public-estimate-appliances-summary {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .public-estimate-appliances-summary div {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.7rem;
+    border-right: 0;
+    border-bottom: 1px solid rgba(30, 81, 74, 0.1);
+  }
+
+  .public-estimate-appliances-summary div:last-child {
+    border-bottom: 0;
   }
 
   .public-estimate-room-row {

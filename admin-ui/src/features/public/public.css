@@ -7105,49 +7105,53 @@
 
 .public-estimate-passport-volumes-panel {
   display: grid;
-  gap: 0.32rem;
-  padding: 0.46rem 0.5rem;
+  gap: 0.24rem;
+  padding: 0.38rem 0.42rem;
   scroll-margin-top: 96px;
   box-shadow: none;
 }
 
 .public-estimate-passport-volumes-head {
   margin: 0;
-  padding: 0 0 0.28rem;
+  padding: 0 0 0.2rem;
   border-bottom: 1px solid rgba(30, 81, 74, 0.1);
 }
 
 .public-estimate-passport-volumes-head span {
   color: var(--public-muted);
-  font-size: 0.58rem;
+  font-size: 0.56rem;
   font-weight: 650;
-  line-height: 1.15;
+  line-height: 1.12;
 }
 
 .public-estimate-passport-volumes-list {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  grid-auto-rows: 1fr;
-  gap: 0.08rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-auto-rows: minmax(2.05rem, auto);
+  gap: 0.06rem;
   margin: 0;
 }
 
 .public-estimate-passport-volumes-item {
   display: grid;
-  gap: 0.02rem;
+  gap: 0.01rem;
   align-content: center;
-  min-height: 40px;
   min-width: 0;
-  padding: 0.26rem 0.36rem;
+  min-height: 2.05rem;
+  padding: 0.14rem 0.18rem;
   border: 1px solid rgba(30, 81, 74, 0.1);
-  border-radius: 8px;
+  border-radius: 6px;
   background: rgba(255, 255, 255, 0.55);
+}
+
+.public-estimate-passport-volumes-item:last-child {
+  grid-column: 2;
 }
 
 .public-estimate-passport-volumes-item dt {
   margin: 0;
   color: var(--public-muted);
-  font-size: 0.54rem;
+  font-size: 0.5rem;
   font-weight: 600;
   line-height: 1.05;
 }
@@ -7155,16 +7159,17 @@
 .public-estimate-passport-volumes-item dd {
   margin: 0;
   color: rgba(19, 35, 31, 0.82);
-  font-size: 0.7rem;
+  font-size: 0.64rem;
   font-weight: 780;
-  line-height: 1.1;
+  line-height: 1.08;
+  white-space: nowrap;
 }
 
 .public-estimate-passport-volumes-action {
   justify-self: stretch;
   width: 100%;
   margin: 0;
-  padding: 0.26rem 0.36rem;
+  padding: 0.2rem 0.28rem;
   border: 1px solid rgba(30, 81, 74, 0.1);
   border-radius: 7px;
   background: rgba(246, 250, 248, 0.55);
@@ -7970,8 +7975,9 @@ html:has(.public-estimate-page) {
 
   .public-estimate-geometry-compact-full {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.14rem 0.28rem;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-auto-rows: minmax(2.05rem, auto);
+    gap: 0.06rem;
     margin: 0;
     padding-top: 0.08rem;
     border-top: 1px solid rgba(30, 81, 74, 0.08);
@@ -7979,24 +7985,35 @@ html:has(.public-estimate-page) {
 
   .public-estimate-geometry-compact-item {
     display: grid;
-    gap: 0.02rem;
+    gap: 0.01rem;
+    align-content: center;
     min-width: 0;
+    min-height: 2.05rem;
+    padding: 0.14rem 0.18rem;
+    border: 1px solid rgba(30, 81, 74, 0.1);
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.55);
+  }
+
+  .public-estimate-geometry-compact-item:last-child {
+    grid-column: 2;
   }
 
   .public-estimate-geometry-compact-item dt {
     margin: 0;
     color: rgba(19, 35, 31, 0.52);
-    font-size: 0.54rem;
+    font-size: 0.5rem;
     font-weight: 680;
-    line-height: 1.1;
+    line-height: 1.05;
   }
 
   .public-estimate-geometry-compact-item dd {
     margin: 0;
     color: rgba(19, 35, 31, 0.82);
-    font-size: 0.66rem;
+    font-size: 0.64rem;
     font-weight: 760;
-    line-height: 1.05;
+    line-height: 1.08;
+    white-space: nowrap;
   }
 
   .public-estimate-geometry-compact-print {

@@ -72,7 +72,7 @@ export function PublicHero() {
 
       <div className="public-calc-shell">
         <aside className="public-calc-card" aria-label="Клиентский калькулятор сметы">
-          <img className="public-calc-image" src="/brand/1.png" alt="" aria-hidden="true" />
+          <img className="public-calc-image" src="/brand/1.jpg" alt="" aria-hidden="true" />
 
           <div className="public-calc-head">
             <p className="public-calc-kicker">Клиентский калькулятор</p>

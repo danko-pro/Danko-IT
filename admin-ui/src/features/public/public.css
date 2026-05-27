@@ -7263,9 +7263,21 @@
 }
 
 .public-estimate-rail-link.is-active {
-  border-color: rgba(30, 81, 74, 0.16);
-  background: rgba(255, 255, 255, 0.72);
+  border-color: rgba(30, 81, 74, 0.26);
+  background: rgba(30, 81, 74, 0.07);
   color: var(--public-green-deep);
+}
+
+.public-estimate-rail-link.is-active .public-estimate-rail-step {
+  color: rgba(30, 81, 74, 0.68);
+}
+
+.public-estimate-rail-link.is-active .public-estimate-rail-label {
+  font-weight: 780;
+}
+
+.public-estimate-rail-link.is-active .public-estimate-rail-icon svg {
+  stroke-width: 2;
 }
 
 .public-estimate-rail-link.is-informational {
@@ -7282,9 +7294,13 @@
 }
 
 .public-estimate-rail-link.is-informational.is-active {
-  border-color: rgba(30, 81, 74, 0.1);
-  background: rgba(246, 250, 248, 0.82);
-  color: rgba(19, 35, 31, 0.58);
+  border-color: rgba(30, 81, 74, 0.18);
+  background: rgba(30, 81, 74, 0.05);
+  color: rgba(19, 35, 31, 0.66);
+}
+
+.public-estimate-rail-link.is-informational.is-active .public-estimate-rail-label {
+  font-weight: 700;
 }
 
 .public-estimate-rail-icon {
@@ -7841,8 +7857,9 @@ html:has(.public-estimate-page) {
   }
 
   .public-estimate-rail-link.is-active {
-    border-color: rgba(30, 81, 74, 0.16);
-    background: rgba(255, 255, 255, 0.96);
+    border-color: rgba(30, 81, 74, 0.26);
+    background: rgba(30, 81, 74, 0.08);
+    color: var(--public-green-deep);
   }
 
   .public-estimate-rail-link.is-informational {
@@ -7851,9 +7868,9 @@ html:has(.public-estimate-page) {
   }
 
   .public-estimate-rail-link.is-informational.is-active {
-    border-color: rgba(30, 81, 74, 0.1);
-    background: rgba(246, 250, 248, 0.82);
-    color: rgba(19, 35, 31, 0.58);
+    border-color: rgba(30, 81, 74, 0.18);
+    background: rgba(30, 81, 74, 0.05);
+    color: rgba(19, 35, 31, 0.66);
   }
 
   .public-estimate-rail-icon {

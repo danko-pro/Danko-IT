@@ -442,60 +442,45 @@ function classifyEstimatePackage(pricePerSquareMeter: number) {
 
   if (safePricePerSquareMeter <= 0) {
     return {
-      statusLabel: "Расчёт не заполнен",
-      badgeLabel: "Без пакета",
       referenceLabel: "Ориентир появится после заполнения",
       referencePrice: 0,
       nextLabel: packageC.label,
       nextDelta: packageC.pricePerM2,
-      explanation: "Добавьте состав работ, чтобы увидеть ориентир по пакету.",
     };
   }
 
   if (safePricePerSquareMeter < packageC.pricePerM2) {
     return {
-      statusLabel: "Ниже пакета C",
-      badgeLabel: "Ниже C",
       referenceLabel: packageC.label,
       referencePrice: packageC.pricePerM2,
       nextLabel: packageC.label,
       nextDelta: packageC.pricePerM2 - safePricePerSquareMeter,
-      explanation: "По текущей цене расчёт ниже пакета C: состав ещё неполный.",
     };
   }
 
   if (safePricePerSquareMeter < packageB.pricePerM2) {
     return {
-      statusLabel: "Ближе к пакету C",
-      badgeLabel: packageC.label,
       referenceLabel: packageC.label,
       referencePrice: packageC.pricePerM2,
       nextLabel: packageB.label,
       nextDelta: packageB.pricePerM2 - safePricePerSquareMeter,
-      explanation: "По текущей цене расчёт ближе к пакету C.",
     };
   }
 
   if (safePricePerSquareMeter < packageA.pricePerM2) {
     return {
-      statusLabel: "Ближе к пакету B",
-      badgeLabel: packageB.label,
       referenceLabel: packageB.label,
       referencePrice: packageB.pricePerM2,
       nextLabel: packageA.label,
       nextDelta: packageA.pricePerM2 - safePricePerSquareMeter,
-      explanation: "По текущей цене расчёт ближе к пакету B.",
     };
   }
 
   return {
-    statusLabel: "Ближе к пакету A",
-    badgeLabel: packageA.label,
     referenceLabel: packageA.label,
     referencePrice: packageA.pricePerM2,
     nextLabel: "",
     nextDelta: 0,
-    explanation: "По текущей цене расчёт ближе к пакету A.",
   };
 }
 
@@ -3432,17 +3417,7 @@ export function PublicEstimate() {
 
         <aside id="estimate-passport" className="public-estimate-card public-estimate-passport" aria-label="Паспорт сметы">
           <div className="public-estimate-passport-head">
-            <span>Паспорт сметы</span>
             <h2>Оценка по составу сметы</h2>
-          </div>
-
-          <div className="public-estimate-passport-package">
-            <span className="public-estimate-passport-badge">{packageClassification.badgeLabel}</span>
-            <div>
-              <p>Пакет</p>
-              <strong>{packageClassification.statusLabel}</strong>
-            </div>
-            <small>{packageClassification.explanation}</small>
           </div>
 
           <div className="public-estimate-passport-metrics" aria-label="Итоги паспорта сметы">

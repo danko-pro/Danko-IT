@@ -3546,7 +3546,9 @@ export function PublicEstimate() {
             className="public-estimate-card public-estimate-passport public-estimate-passport-volumes-panel"
             aria-label="Объёмы объекта"
           >
-            <p className="public-estimate-passport-volumes-kicker">Объём объекта</p>
+            <div className="public-estimate-passport-volumes-head">
+              <span>Объём объекта</span>
+            </div>
             <dl className="public-estimate-passport-volumes-list">
               {summaryItems.map((item) => (
                 <div className="public-estimate-passport-volumes-item" key={item.label}>

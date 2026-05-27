@@ -7537,6 +7537,30 @@
   background: #ffffff;
   box-shadow: none;
   scroll-margin-top: 96px;
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.public-estimate-summary.is-active,
+.public-estimate-object.is-active,
+.public-estimate-geometry.is-active,
+.public-estimate-warm-floor.is-active,
+.public-estimate-flooring.is-active,
+.public-estimate-walls.is-active,
+.public-estimate-ceiling.is-active,
+.public-estimate-electric.is-active,
+.public-estimate-plumbing.is-active,
+.public-estimate-doors.is-active,
+.public-estimate-completion.is-active,
+.public-estimate-appliances.is-active,
+.public-estimate-loose-furniture.is-active,
+.public-estimate-home-goods.is-active,
+.public-estimate-costs.is-active {
+  border-color: rgba(30, 81, 74, 0.26);
+  background: rgba(30, 81, 74, 0.04);
+  box-shadow: 0 0 0 1px rgba(30, 81, 74, 0.05);
 }
 
 .public-estimate-summary {

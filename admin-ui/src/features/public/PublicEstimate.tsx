@@ -258,6 +258,10 @@ function formatEstimateStep(sectionId: string): string {
   return `Шаг ${String(index + 1).padStart(2, "0")}`;
 }
 
+function withActiveEstimateSection(sectionId: string, activeSectionId: string, className: string): string {
+  return activeSectionId === sectionId ? `${className} is-active` : className;
+}
+
 function EstimateNavigationIcon({ name }: { name: EstimateNavigationIcon }) {
   const commonProps = {
     viewBox: "0 0 24 24",
@@ -1735,7 +1739,11 @@ export function PublicEstimate() {
             </p>
           </div>
 
-          <section id="estimate-object" className="public-estimate-object" aria-labelledby="public-estimate-object-title">
+          <section
+            id="estimate-object"
+            className={withActiveEstimateSection("estimate-object", activeEstimateSection, "public-estimate-object")}
+            aria-labelledby="public-estimate-object-title"
+          >
             <div className="public-estimate-object-head">
               <div>
                 <span>{formatEstimateStep("estimate-object")}</span>
@@ -1794,11 +1802,13 @@ export function PublicEstimate() {
 
           <section
             id="estimate-geometry"
-            className={
+            className={withActiveEstimateSection(
+              "estimate-geometry",
+              activeEstimateSection,
               showRoomTypeColumn
                 ? "public-estimate-geometry public-estimate-geometry--has-type"
-                : "public-estimate-geometry"
-            }
+                : "public-estimate-geometry",
+            )}
             aria-labelledby="public-estimate-geometry-title"
           >
             <div className="public-estimate-geometry-head">
@@ -1944,7 +1954,15 @@ export function PublicEstimate() {
             </div>
           </section>
 
-          <section id="estimate-warm-floor" className="public-estimate-warm-floor" aria-labelledby="public-estimate-warm-floor-title">
+          <section
+            id="estimate-warm-floor"
+            className={withActiveEstimateSection(
+              "estimate-warm-floor",
+              activeEstimateSection,
+              "public-estimate-warm-floor",
+            )}
+            aria-labelledby="public-estimate-warm-floor-title"
+          >
             <div className="public-estimate-warm-floor-head">
               <div>
                 <span>{formatEstimateStep("estimate-warm-floor")}</span>
@@ -2042,7 +2060,11 @@ export function PublicEstimate() {
             )}
           </section>
 
-          <section id="estimate-flooring" className="public-estimate-flooring" aria-labelledby="public-estimate-flooring-title">
+          <section
+            id="estimate-flooring"
+            className={withActiveEstimateSection("estimate-flooring", activeEstimateSection, "public-estimate-flooring")}
+            aria-labelledby="public-estimate-flooring-title"
+          >
             <div className="public-estimate-flooring-head">
               <div>
                 <span>{formatEstimateStep("estimate-flooring")}</span>
@@ -2256,7 +2278,11 @@ export function PublicEstimate() {
             )}
           </section>
 
-          <section id="estimate-walls" className="public-estimate-walls" aria-labelledby="public-estimate-walls-title">
+          <section
+            id="estimate-walls"
+            className={withActiveEstimateSection("estimate-walls", activeEstimateSection, "public-estimate-walls")}
+            aria-labelledby="public-estimate-walls-title"
+          >
             <div className="public-estimate-walls-head">
               <div>
                 <span>{formatEstimateStep("estimate-walls")}</span>
@@ -2388,7 +2414,11 @@ export function PublicEstimate() {
             )}
           </section>
 
-          <section id="estimate-ceiling" className="public-estimate-ceiling" aria-labelledby="public-estimate-ceiling-title">
+          <section
+            id="estimate-ceiling"
+            className={withActiveEstimateSection("estimate-ceiling", activeEstimateSection, "public-estimate-ceiling")}
+            aria-labelledby="public-estimate-ceiling-title"
+          >
             <div className="public-estimate-ceiling-head">
               <div>
                 <span>{formatEstimateStep("estimate-ceiling")}</span>
@@ -2507,7 +2537,11 @@ export function PublicEstimate() {
             )}
           </section>
 
-          <section id="estimate-electric" className="public-estimate-electric" aria-labelledby="public-estimate-electric-title">
+          <section
+            id="estimate-electric"
+            className={withActiveEstimateSection("estimate-electric", activeEstimateSection, "public-estimate-electric")}
+            aria-labelledby="public-estimate-electric-title"
+          >
             <div className="public-estimate-electric-head">
               <div>
                 <span>{formatEstimateStep("estimate-electric")}</span>
@@ -2646,7 +2680,11 @@ export function PublicEstimate() {
             )}
           </section>
 
-          <section id="estimate-plumbing" className="public-estimate-plumbing" aria-labelledby="public-estimate-plumbing-title">
+          <section
+            id="estimate-plumbing"
+            className={withActiveEstimateSection("estimate-plumbing", activeEstimateSection, "public-estimate-plumbing")}
+            aria-labelledby="public-estimate-plumbing-title"
+          >
             <div className="public-estimate-plumbing-head">
               <div>
                 <span>{formatEstimateStep("estimate-plumbing")}</span>
@@ -2818,7 +2856,11 @@ export function PublicEstimate() {
             )}
           </section>
 
-          <section id="estimate-doors" className="public-estimate-doors" aria-labelledby="public-estimate-doors-title">
+          <section
+            id="estimate-doors"
+            className={withActiveEstimateSection("estimate-doors", activeEstimateSection, "public-estimate-doors")}
+            aria-labelledby="public-estimate-doors-title"
+          >
             <div className="public-estimate-doors-head">
               <div>
                 <span>{formatEstimateStep("estimate-doors")}</span>
@@ -2945,7 +2987,15 @@ export function PublicEstimate() {
             )}
           </section>
 
-          <section id="estimate-completion" className="public-estimate-completion" aria-labelledby="public-estimate-completion-title">
+          <section
+            id="estimate-completion"
+            className={withActiveEstimateSection(
+              "estimate-completion",
+              activeEstimateSection,
+              "public-estimate-completion",
+            )}
+            aria-labelledby="public-estimate-completion-title"
+          >
             <div className="public-estimate-completion-head">
               <div>
                 <span>{formatEstimateStep("estimate-completion")}</span>
@@ -3093,7 +3143,15 @@ export function PublicEstimate() {
             )}
           </section>
 
-          <section id="estimate-appliances" className="public-estimate-appliances" aria-labelledby="public-estimate-appliances-title">
+          <section
+            id="estimate-appliances"
+            className={withActiveEstimateSection(
+              "estimate-appliances",
+              activeEstimateSection,
+              "public-estimate-appliances",
+            )}
+            aria-labelledby="public-estimate-appliances-title"
+          >
             <div className="public-estimate-appliances-head">
               <div>
                 <span>{formatEstimateStep("estimate-appliances")}</span>
@@ -3259,7 +3317,15 @@ export function PublicEstimate() {
             )}
           </section>
 
-          <section id="estimate-loose-furniture" className="public-estimate-loose-furniture" aria-labelledby="public-estimate-loose-furniture-title">
+          <section
+            id="estimate-loose-furniture"
+            className={withActiveEstimateSection(
+              "estimate-loose-furniture",
+              activeEstimateSection,
+              "public-estimate-loose-furniture",
+            )}
+            aria-labelledby="public-estimate-loose-furniture-title"
+          >
             <div className="public-estimate-loose-furniture-head">
               <div>
                 <span>{formatEstimateStep("estimate-loose-furniture")}</span>
@@ -3418,7 +3484,15 @@ export function PublicEstimate() {
             )}
           </section>
 
-          <section id="estimate-home-goods" className="public-estimate-home-goods" aria-labelledby="public-estimate-home-goods-title">
+          <section
+            id="estimate-home-goods"
+            className={withActiveEstimateSection(
+              "estimate-home-goods",
+              activeEstimateSection,
+              "public-estimate-home-goods",
+            )}
+            aria-labelledby="public-estimate-home-goods-title"
+          >
             <div className="public-estimate-home-goods-head">
               <div>
                 <span>{formatEstimateStep("estimate-home-goods")}</span>
@@ -3548,7 +3622,11 @@ export function PublicEstimate() {
             )}
           </section>
 
-          <section id="estimate-costs" className="public-estimate-costs" aria-labelledby="public-estimate-costs-title">
+          <section
+            id="estimate-costs"
+            className={withActiveEstimateSection("estimate-costs", activeEstimateSection, "public-estimate-costs")}
+            aria-labelledby="public-estimate-costs-title"
+          >
             <div className="public-estimate-costs-head">
               <div>
                 <span>{formatEstimateStep("estimate-costs")}</span>

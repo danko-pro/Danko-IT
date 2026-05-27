@@ -3905,13 +3905,43 @@
   border: 1px solid rgba(30, 81, 74, 0.12);
   border-radius: 16px;
   background: #ffffff;
+  min-width: 0;
+  overflow-x: clip;
 }
 
 .public-estimate-geometry-head {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(4.8rem, 5.6rem);
-  gap: 0.8rem;
+  gap: 0;
+}
+
+.public-estimate-geometry-title-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.65rem 1rem;
+  min-width: 0;
+}
+
+.public-estimate-geometry-hint {
+  margin: 0;
+  flex: 1 1 11rem;
+  max-width: 26rem;
+  color: rgba(19, 35, 31, 0.52);
+  font-size: 0.72rem;
+  font-weight: 520;
+  line-height: 1.34;
+  text-align: right;
+}
+
+.public-estimate-geometry-toolbar {
+  display: flex;
   align-items: end;
+  gap: 0.5rem;
+  margin-top: -0.08rem;
+}
+
+.public-estimate-ceiling-field {
+  width: min(100%, 8.4rem);
 }
 
 .public-estimate-ceiling-field .public-estimate-input {
@@ -3923,18 +3953,12 @@
   gap: 0.24rem;
 }
 
-.public-estimate-geometry-hint,
 .public-estimate-geometry-disclaimer {
   margin: 0;
-  color: rgba(19, 35, 31, 0.62);
-  font-size: 0.78rem;
-  font-weight: 560;
-  line-height: 1.42;
-}
-
-.public-estimate-geometry-disclaimer {
   color: rgba(19, 35, 31, 0.5);
   font-size: 0.74rem;
+  font-weight: 560;
+  line-height: 1.42;
 }
 
 .public-estimate-geometry-head span {
@@ -4011,6 +4035,7 @@
 .public-estimate-room-list {
   display: grid;
   gap: 0.28rem;
+  min-width: 0;
 }
 
 .public-estimate-room-header,
@@ -8160,6 +8185,27 @@ html:has(.public-estimate-page) {
     display: none;
   }
 
+  .public-estimate-geometry:not(.public-estimate-geometry--has-type) .public-estimate-room-header,
+  .public-estimate-geometry--has-type .public-estimate-room-header {
+    display: none;
+  }
+
+  .public-estimate-geometry:not(.public-estimate-geometry--has-type) .public-estimate-room-row,
+  .public-estimate-geometry--has-type .public-estimate-room-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: stretch;
+    gap: 0.46rem;
+    padding: 0.54rem;
+    border-radius: 16px;
+  }
+
+  .public-estimate-room-top,
+  .public-estimate-room-main,
+  .public-estimate-room-metrics {
+    display: grid;
+  }
+
   .public-estimate-room-row {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
@@ -8191,6 +8237,20 @@ html:has(.public-estimate-page) {
     display: inline-flex;
   }
 
+  .public-estimate-geometry:not(.public-estimate-geometry--has-type) .public-estimate-room-name,
+  .public-estimate-geometry:not(.public-estimate-geometry--has-type) .public-estimate-room-type,
+  .public-estimate-geometry:not(.public-estimate-geometry--has-type) .public-estimate-room-area,
+  .public-estimate-geometry:not(.public-estimate-geometry--has-type) .public-estimate-room-doors,
+  .public-estimate-geometry:not(.public-estimate-geometry--has-type) .public-estimate-room-windows,
+  .public-estimate-geometry:not(.public-estimate-geometry--has-type) .public-estimate-room-result,
+  .public-estimate-geometry:not(.public-estimate-geometry--has-type) .public-estimate-row-remove,
+  .public-estimate-geometry--has-type .public-estimate-room-name,
+  .public-estimate-geometry--has-type .public-estimate-room-type,
+  .public-estimate-geometry--has-type .public-estimate-room-area,
+  .public-estimate-geometry--has-type .public-estimate-room-doors,
+  .public-estimate-geometry--has-type .public-estimate-room-windows,
+  .public-estimate-geometry--has-type .public-estimate-room-result,
+  .public-estimate-geometry--has-type .public-estimate-row-remove,
   .public-estimate-room-name,
   .public-estimate-room-type,
   .public-estimate-room-area,
@@ -8200,6 +8260,9 @@ html:has(.public-estimate-page) {
   .public-estimate-row-remove {
     grid-column: auto;
     grid-row: auto;
+    justify-self: stretch;
+    max-width: none;
+    width: 100%;
   }
 
   .public-estimate-room-name .public-estimate-mobile-label {
@@ -8652,9 +8715,25 @@ html:has(.public-estimate-page) {
     border-radius: 16px;
   }
 
-  .public-estimate-geometry-head {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 0.8rem;
+  .public-estimate-geometry-title-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.28rem;
+  }
+
+  .public-estimate-geometry-hint {
+    max-width: none;
+    text-align: left;
+    font-size: 0.7rem;
+    line-height: 1.36;
+  }
+
+  .public-estimate-geometry-toolbar {
+    margin-top: 0;
+  }
+
+  .public-estimate-ceiling-field {
+    width: min(100%, 7.6rem);
   }
 
   .public-estimate-warm-floor-head {

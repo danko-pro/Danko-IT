@@ -1802,11 +1802,14 @@ export function PublicEstimate() {
             aria-labelledby="public-estimate-geometry-title"
           >
             <div className="public-estimate-geometry-head">
-              <div>
-                <span>{formatEstimateStep("estimate-geometry")}</span>
+              <span>{formatEstimateStep("estimate-geometry")}</span>
+              <div className="public-estimate-geometry-title-row">
                 <h2 id="public-estimate-geometry-title">Помещения и объём</h2>
+                <p className="public-estimate-geometry-hint">{GEOMETRY_STEP_HINT}</p>
               </div>
+            </div>
 
+            <div className="public-estimate-geometry-toolbar">
               <label className="public-estimate-field public-estimate-ceiling-field">
                 <span>Высота потолков, м</span>
                 <input
@@ -1819,7 +1822,6 @@ export function PublicEstimate() {
             </div>
 
             <div className="public-estimate-geometry-guide">
-              <p className="public-estimate-geometry-hint">{GEOMETRY_STEP_HINT}</p>
               <p className="public-estimate-geometry-disclaimer">{GEOMETRY_STEP_DISCLAIMER}</p>
             </div>
 

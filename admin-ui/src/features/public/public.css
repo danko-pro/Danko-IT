@@ -3918,19 +3918,27 @@
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: 0.65rem 1rem;
+  flex-wrap: nowrap;
+  gap: 0.5rem 0.85rem;
   min-width: 0;
+}
+
+.public-estimate-geometry-title-row h2 {
+  flex: 0 0 auto;
 }
 
 .public-estimate-geometry-hint {
   margin: 0;
-  flex: 1 1 11rem;
-  max-width: 26rem;
-  color: rgba(19, 35, 31, 0.52);
-  font-size: 0.72rem;
+  flex: 1 1 auto;
+  min-width: 0;
+  color: rgba(19, 35, 31, 0.48);
+  font-size: 0.62rem;
   font-weight: 520;
-  line-height: 1.34;
+  line-height: 1.2;
   text-align: right;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .public-estimate-geometry-toolbar {
@@ -3948,20 +3956,7 @@
   text-align: center;
 }
 
-.public-estimate-geometry-guide {
-  display: grid;
-  gap: 0.24rem;
-}
-
-.public-estimate-geometry-disclaimer {
-  margin: 0;
-  color: rgba(19, 35, 31, 0.5);
-  font-size: 0.74rem;
-  font-weight: 560;
-  line-height: 1.42;
-}
-
-.public-estimate-geometry-head span {
+.public-estimate-geometry-head > span {
   display: block;
   margin-bottom: 0.18rem;
   color: var(--public-muted);
@@ -7614,7 +7609,7 @@
 .public-estimate-costs-head span,
 .public-estimate-costs-head .public-section-kicker,
 .public-estimate-object-head span,
-.public-estimate-geometry-head span,
+.public-estimate-geometry-head > span,
 .public-estimate-warm-floor-head span,
 .public-estimate-flooring-head span,
 .public-estimate-walls-head span,
@@ -8769,10 +8764,12 @@ html:has(.public-estimate-page) {
   }
 
   .public-estimate-geometry-hint {
-    max-width: none;
     text-align: left;
-    font-size: 0.7rem;
-    line-height: 1.36;
+    font-size: 0.6rem;
+    line-height: 1.3;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
   }
 
   .public-estimate-geometry-toolbar {
@@ -9465,7 +9462,7 @@ html:has(.public-estimate-page) {
 
   .public-estimate-summary-head .public-section-kicker,
   .public-estimate-costs-head .public-section-kicker,
-  .public-estimate-geometry-head span,
+  .public-estimate-geometry-head > span,
   .public-estimate-warm-floor-head span,
   .public-estimate-flooring-head span,
   .public-estimate-walls-head span,

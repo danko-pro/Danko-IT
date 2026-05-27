@@ -72,9 +72,7 @@ const roomTypeOptions: Array<{ value: EstimateRoomType; label: string }> = [
 ];
 
 const GEOMETRY_STEP_HINT =
-  "Укажите помещения по БТИ: площадь, двери и окна — периметр и стены к отделке пересчитаются автоматически.";
-const GEOMETRY_STEP_DISCLAIMER =
-  "Предварительный расчёт по площадям БТИ и коэффициенту формы — без замера каждой стены.";
+  "Площадь, двери и окна по БТИ — периметр и стены пересчитаются автоматически.";
 
 function inferRoomTypeFromName(name: string): EstimateRoomType | null {
   const normalized = name.trim().toLocaleLowerCase("ru-RU");
@@ -1900,7 +1898,7 @@ export function PublicEstimate() {
               <span>{formatEstimateStep("estimate-geometry")}</span>
               <div className="public-estimate-geometry-title-row">
                 <h2 id="public-estimate-geometry-title">Помещения и объём</h2>
-                <p className="public-estimate-geometry-hint">{GEOMETRY_STEP_HINT}</p>
+                <span className="public-estimate-geometry-hint">{GEOMETRY_STEP_HINT}</span>
               </div>
             </div>
 
@@ -1914,10 +1912,6 @@ export function PublicEstimate() {
                   onChange={(event) => setCeilingHeightInput(event.target.value)}
                 />
               </label>
-            </div>
-
-            <div className="public-estimate-geometry-guide">
-              <p className="public-estimate-geometry-disclaimer">{GEOMETRY_STEP_DISCLAIMER}</p>
             </div>
 
             <div className="public-estimate-room-header" aria-hidden="true">

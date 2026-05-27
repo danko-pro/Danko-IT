@@ -3808,10 +3808,10 @@
 .public-estimate-card {
   min-width: 0;
   padding: clamp(0.85rem, 1.8vw, 1.1rem);
-  border: 1px solid rgba(30, 81, 74, 0.14);
-  border-radius: 20px;
-  background: rgba(255, 255, 255, 0.82);
-  box-shadow: 0 14px 34px rgba(19, 35, 31, 0.045);
+  border: 1px solid rgba(30, 81, 74, 0.12);
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: none;
 }
 
 .public-estimate-card-main {
@@ -3859,10 +3859,8 @@
   margin-top: 0;
   padding: 0.72rem;
   border: 1px solid rgba(30, 81, 74, 0.12);
-  border-radius: 18px;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.76), rgba(246, 250, 248, 0.78)),
-    #ffffff;
+  border-radius: 16px;
+  background: #ffffff;
 }
 
 .public-estimate-geometry-head {
@@ -3873,14 +3871,14 @@
 }
 
 .public-estimate-geometry-head span {
-  display: inline-flex;
-  margin-bottom: 0.22rem;
-  color: var(--public-green);
-  font-size: 0.68rem;
-  font-weight: 850;
+  display: block;
+  margin-bottom: 0.18rem;
+  color: var(--public-muted);
+  font-size: 0.72rem;
+  font-weight: 650;
   letter-spacing: 0;
-  line-height: 1.2;
-  text-transform: uppercase;
+  line-height: 1.25;
+  text-transform: none;
 }
 
 .public-estimate-geometry-head h2,
@@ -6895,12 +6893,10 @@
   display: grid;
   gap: 0.72rem;
   padding: 0.9rem;
-  border-color: rgba(30, 81, 74, 0.24);
-  border-radius: 20px;
-  background:
-    linear-gradient(180deg, rgba(233, 242, 239, 0.92), rgba(255, 255, 255, 0.88)),
-    #ffffff;
-  box-shadow: 0 18px 42px rgba(19, 35, 31, 0.08);
+  border: 1px solid rgba(30, 81, 74, 0.14);
+  border-radius: 16px;
+  background: rgba(246, 250, 248, 0.65);
+  box-shadow: 0 8px 24px rgba(19, 35, 31, 0.05);
 }
 
 .public-estimate-passport-head {
@@ -6909,12 +6905,12 @@
 }
 
 .public-estimate-passport-head span {
-  color: var(--public-green);
-  font-size: 0.68rem;
-  font-weight: 860;
+  color: var(--public-muted);
+  font-size: 0.72rem;
+  font-weight: 650;
   letter-spacing: 0;
-  line-height: 1.2;
-  text-transform: uppercase;
+  line-height: 1.25;
+  text-transform: none;
 }
 
 .public-estimate-passport-head h2 {
@@ -6929,10 +6925,9 @@
   display: grid;
   gap: 0.5rem;
   padding: 0.72rem;
-  border: 1px solid rgba(30, 81, 74, 0.16);
-  border-left: 4px solid var(--public-green);
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.74);
+  border: 1px solid rgba(30, 81, 74, 0.1);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.88);
 }
 
 .public-estimate-passport-badge {
@@ -7103,11 +7098,10 @@
 }
 
 .public-estimate-rail-head span {
-  color: rgba(30, 81, 74, 0.68);
+  color: var(--public-muted);
   font-size: 0.68rem;
-  font-weight: 850;
+  font-weight: 650;
   line-height: 1.2;
-  text-transform: uppercase;
 }
 
 .public-estimate-rail-head strong {
@@ -7133,70 +7127,38 @@
 }
 
 .public-estimate-rail-link {
-  position: relative;
   display: grid;
-  grid-template-columns: 30px minmax(0, 1fr);
-  gap: 0.52rem;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 0.5rem;
   align-items: center;
   min-height: 42px;
-  padding: 0.42rem 0.55rem;
-  border-radius: 13px;
-  color: rgba(19, 35, 31, 0.68);
+  padding: 0.4rem 0.5rem;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  color: rgba(19, 35, 31, 0.62);
   text-decoration: none;
   transition:
-    background-color 220ms var(--ui-motion-ease-soft),
-    color 220ms var(--ui-motion-ease-soft);
-}
-
-.public-estimate-rail-link::before {
-  position: absolute;
-  top: 9px;
-  bottom: 9px;
-  left: -0.3rem;
-  width: 3px;
-  border-radius: 999px;
-  background: var(--public-green);
-  content: "";
-  opacity: 0;
-  transform: scaleY(0.55);
-  transition:
-    opacity 220ms var(--ui-motion-ease-soft),
-    transform 220ms var(--ui-motion-ease-soft);
+    border-color 180ms var(--ui-motion-ease-soft),
+    color 180ms var(--ui-motion-ease-soft);
 }
 
 .public-estimate-rail-link:hover,
 .public-estimate-rail-link:focus-visible {
-  background: rgba(30, 81, 74, 0.06);
   color: var(--public-green-deep);
   outline: none;
 }
 
 .public-estimate-rail-link.is-active {
-  background: rgba(30, 81, 74, 0.1);
+  border-color: rgba(30, 81, 74, 0.14);
   color: var(--public-green-deep);
-}
-
-.public-estimate-rail-link.is-active::before {
-  opacity: 1;
-  transform: scaleY(1);
 }
 
 .public-estimate-rail-icon {
   display: grid;
   place-items: center;
-  width: 30px;
-  height: 30px;
-  border-radius: 11px;
-  background: rgba(30, 81, 74, 0.06);
+  width: 28px;
+  height: 28px;
   color: currentColor;
-  transition:
-    background-color 220ms var(--ui-motion-ease-soft),
-    color 220ms var(--ui-motion-ease-soft);
-}
-
-.public-estimate-rail-link.is-active .public-estimate-rail-icon {
-  background: var(--public-green);
-  color: #ffffff;
 }
 
 .public-estimate-rail-icon svg {
@@ -7216,17 +7178,17 @@
 }
 
 .public-estimate-rail-step {
-  color: rgba(30, 81, 74, 0.48);
+  color: var(--public-muted);
   font-size: 0.62rem;
-  font-weight: 850;
+  font-weight: 600;
   line-height: 1.1;
 }
 
 .public-estimate-rail-label {
   overflow: hidden;
   color: currentColor;
-  font-size: 0.82rem;
-  font-weight: 800;
+  font-size: 0.8rem;
+  font-weight: 700;
   line-height: 1.12;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -7236,17 +7198,23 @@
   display: none;
 }
 
-/* public-estimate-ux hierarchy polish */
+/* public-estimate-ux — minimal visual system */
 .public-estimate-card-main {
   gap: 0.9rem;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(247, 251, 249, 0.86)),
-    #ffffff;
+  background: #ffffff;
 }
 
 .public-estimate-intro {
   padding: 0.08rem 0.1rem 0.5rem;
-  border-bottom: 1px solid rgba(30, 81, 74, 0.1);
+  border-bottom: 1px solid rgba(30, 81, 74, 0.08);
+}
+
+.public-estimate-intro .public-section-kicker {
+  margin-bottom: 0.35rem;
+  color: var(--public-muted);
+  font-size: 0.76rem;
+  font-weight: 650;
+  text-transform: none;
 }
 
 .public-estimate-summary,
@@ -7266,104 +7234,15 @@
   --estimate-accent-rgb: 30, 81, 74;
   --estimate-accent-text: var(--public-green-deep);
   position: relative;
-  overflow: hidden;
-  border-color: rgba(var(--estimate-accent-rgb), 0.18);
-  border-left: 4px solid rgba(var(--estimate-accent-rgb), 0.58);
-  background:
-    linear-gradient(135deg, rgba(var(--estimate-accent-rgb), 0.085), rgba(255, 255, 255, 0.94) 34%, rgba(247, 251, 249, 0.9)),
-    #ffffff;
-  box-shadow:
-    0 14px 34px rgba(19, 35, 31, 0.045),
-    inset 0 1px 0 rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(30, 81, 74, 0.12);
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: none;
   scroll-margin-top: 6rem;
 }
 
 .public-estimate-summary {
   padding: 0.72rem;
-  border: 1px solid rgba(var(--estimate-accent-rgb), 0.18);
-  border-left-width: 4px;
-  border-radius: 18px;
-}
-
-.public-estimate-warm-floor {
-  --estimate-accent-rgb: 178, 91, 56;
-  --estimate-accent-text: #7f3d26;
-}
-
-.public-estimate-flooring {
-  --estimate-accent-rgb: 43, 109, 131;
-  --estimate-accent-text: #1e586c;
-}
-
-.public-estimate-walls {
-  --estimate-accent-rgb: 104, 128, 67;
-  --estimate-accent-text: #516737;
-}
-
-.public-estimate-ceiling {
-  --estimate-accent-rgb: 91, 99, 146;
-  --estimate-accent-text: #4d5680;
-}
-
-.public-estimate-electric {
-  --estimate-accent-rgb: 188, 133, 38;
-  --estimate-accent-text: #7d5a1b;
-}
-
-.public-estimate-plumbing {
-  --estimate-accent-rgb: 47, 120, 132;
-  --estimate-accent-text: #24616b;
-}
-
-.public-estimate-doors {
-  --estimate-accent-rgb: 126, 88, 126;
-  --estimate-accent-text: #68456b;
-}
-
-.public-estimate-completion {
-  --estimate-accent-rgb: 138, 105, 52;
-  --estimate-accent-text: #73582b;
-}
-
-.public-estimate-appliances {
-  --estimate-accent-rgb: 84, 96, 129;
-  --estimate-accent-text: #4b5574;
-}
-
-.public-estimate-loose-furniture {
-  --estimate-accent-rgb: 93, 113, 74;
-  --estimate-accent-text: #50633e;
-}
-
-.public-estimate-home-goods {
-  --estimate-accent-rgb: 120, 86, 65;
-  --estimate-accent-text: #694837;
-}
-
-.public-estimate-costs {
-  --estimate-accent-rgb: 30, 81, 74;
-  border-left-width: 5px;
-}
-
-.public-estimate-summary::before,
-.public-estimate-geometry::before,
-.public-estimate-warm-floor::before,
-.public-estimate-flooring::before,
-.public-estimate-walls::before,
-.public-estimate-ceiling::before,
-.public-estimate-electric::before,
-.public-estimate-plumbing::before,
-.public-estimate-doors::before,
-.public-estimate-completion::before,
-.public-estimate-appliances::before,
-.public-estimate-loose-furniture::before,
-.public-estimate-home-goods::before,
-.public-estimate-costs::before {
-  position: absolute;
-  inset: 0 auto 0 0;
-  width: 4px;
-  background: linear-gradient(180deg, rgba(var(--estimate-accent-rgb), 0.72), rgba(var(--estimate-accent-rgb), 0.28));
-  content: "";
 }
 
 .public-estimate-summary-head,
@@ -7380,9 +7259,8 @@
 .public-estimate-loose-furniture-head,
 .public-estimate-home-goods-head,
 .public-estimate-costs-head {
-  position: relative;
-  padding-bottom: 0.52rem;
-  border-bottom: 1px solid rgba(var(--estimate-accent-rgb), 0.12);
+  padding-bottom: 0.48rem;
+  border-bottom: 1px solid rgba(30, 81, 74, 0.08);
 }
 
 .public-estimate-summary-head span,
@@ -7401,15 +7279,20 @@
 .public-estimate-appliances-head span,
 .public-estimate-loose-furniture-head span,
 .public-estimate-home-goods-head span {
-  width: fit-content;
-  min-height: 22px;
-  margin-bottom: 0.28rem;
-  padding: 0.22rem 0.46rem;
-  border: 1px solid rgba(var(--estimate-accent-rgb), 0.16);
-  border-radius: 999px;
-  background: rgba(var(--estimate-accent-rgb), 0.1);
-  color: var(--estimate-accent-text);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  display: block;
+  width: auto;
+  min-height: 0;
+  margin-bottom: 0.18rem;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--public-muted);
+  font-size: 0.72rem;
+  font-weight: 650;
+  line-height: 1.25;
+  text-transform: none;
+  box-shadow: none;
 }
 
 .public-estimate-summary-head h2,
@@ -7445,9 +7328,9 @@
 .public-estimate-cost-grid,
 .public-estimate-plumbing-composition,
 .public-estimate-doors-composition {
-  border-color: rgba(var(--estimate-accent-rgb), 0.16);
-  background: rgba(255, 255, 255, 0.78);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
+  border-color: rgba(30, 81, 74, 0.1);
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: none;
 }
 
 .public-estimate-summary-card,
@@ -7465,8 +7348,8 @@
 .public-estimate-cost-cell,
 .public-estimate-plumbing-composition div,
 .public-estimate-doors-composition div {
-  border-color: rgba(var(--estimate-accent-rgb), 0.1);
-  background: rgba(255, 255, 255, 0.62);
+  border-color: rgba(30, 81, 74, 0.08);
+  background: transparent;
 }
 
 .public-estimate-summary-card strong,
@@ -7499,7 +7382,7 @@
 .public-estimate-loose-furniture-total-cell,
 .public-estimate-home-goods-total-cell,
 .public-estimate-cost-cell-total {
-  background: linear-gradient(180deg, rgba(var(--estimate-accent-rgb), 0.12), rgba(var(--estimate-accent-rgb), 0.07)) !important;
+  background: rgba(30, 81, 74, 0.05) !important;
 }
 
 .public-estimate-warm-floor-spec,
@@ -7514,9 +7397,9 @@
 .public-estimate-loose-furniture-spec,
 .public-estimate-home-goods-spec,
 .public-estimate-warm-floor-empty {
-  border-color: rgba(var(--estimate-accent-rgb), 0.13);
-  background: rgba(255, 255, 255, 0.68);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.68);
+  border-color: rgba(30, 81, 74, 0.1);
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: none;
 }
 
 .public-estimate-warm-floor-spec p,
@@ -7531,7 +7414,7 @@
 .public-estimate-appliances-spec p,
 .public-estimate-loose-furniture-spec p,
 .public-estimate-home-goods-spec p {
-  color: var(--estimate-accent-text);
+  color: var(--public-muted);
 }
 
 .public-estimate-warm-floor-spec li,
@@ -7546,7 +7429,7 @@
 .public-estimate-loose-furniture-spec li,
 .public-estimate-home-goods-spec li {
   padding: 0.18rem 0;
-  border-bottom: 1px solid rgba(var(--estimate-accent-rgb), 0.08);
+  border-bottom: 1px solid rgba(30, 81, 74, 0.06);
 }
 
 .public-estimate-warm-floor-spec li:last-child,
@@ -7563,43 +7446,27 @@
   border-bottom: 0;
 }
 
-.public-estimate-row-remove,
-.public-estimate-small-action,
-.public-estimate-spec-toggle,
-.public-estimate-toggle-group,
-.public-estimate-input,
-.public-estimate-select {
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
-}
-
 .public-estimate-passport {
-  overflow: hidden;
-  border-color: rgba(30, 81, 74, 0.28);
-  border-left: 4px solid var(--public-green);
-  background:
-    radial-gradient(circle at 16% 0%, rgba(30, 81, 74, 0.16), transparent 34%),
-    linear-gradient(180deg, rgba(233, 242, 239, 0.96), rgba(255, 255, 255, 0.92)),
-    #ffffff;
-  box-shadow:
-    0 22px 54px rgba(19, 35, 31, 0.11),
-    inset 0 1px 0 rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(30, 81, 74, 0.16);
+  background: rgba(246, 250, 248, 0.65);
+  box-shadow: 0 8px 24px rgba(19, 35, 31, 0.05);
 }
 
 .public-estimate-passport-head {
   padding-bottom: 0.52rem;
-  border-bottom: 1px solid rgba(30, 81, 74, 0.12);
+  border-bottom: 1px solid rgba(30, 81, 74, 0.1);
 }
 
 .public-estimate-passport-head span,
 .public-estimate-passport-badge {
-  box-shadow: 0 10px 22px rgba(30, 81, 74, 0.12);
+  box-shadow: none;
 }
 
 .public-estimate-passport-package,
 .public-estimate-passport-detail,
 .public-estimate-passport-metrics {
-  background: rgba(255, 255, 255, 0.78);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: none;
 }
 
 .public-estimate-passport-metrics {
@@ -7607,22 +7474,33 @@
 }
 
 .public-estimate-passport-metrics div {
-  border-right: 1px solid rgba(30, 81, 74, 0.1);
+  border-right: 1px solid rgba(30, 81, 74, 0.08);
   border-bottom: 0;
 }
 
 .public-estimate-passport-metrics div:last-child {
   border-right: 0;
-  background: rgba(30, 81, 74, 0.08);
+  background: rgba(30, 81, 74, 0.04);
 }
 
 .public-estimate-passport-metrics strong {
   font-size: clamp(1.08rem, 1.7vw, 1.34rem);
 }
 
-  .public-estimate-passport-action {
-    box-shadow: 0 14px 28px rgba(30, 81, 74, 0.18);
-  }
+.public-estimate-passport-action {
+  box-shadow: none;
+}
+
+.public-estimate-completion-group {
+  border-color: rgba(30, 81, 74, 0.1);
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: none;
+}
+
+.public-estimate-completion-group-head span {
+  text-transform: none;
+  font-weight: 650;
+}
 
 @media (max-width: 900px) {
   .public-estimate-page {
@@ -7820,14 +7698,14 @@ html:has(.public-estimate-page) {
     user-select: none;
   }
 
-  .public-estimate-rail-link.is-active::before {
-    display: none;
+  .public-estimate-rail-link.is-active {
+    border-color: rgba(30, 81, 74, 0.18);
+    background: rgba(255, 255, 255, 0.92);
   }
 
   .public-estimate-rail-icon {
     width: 26px;
     height: 26px;
-    border-radius: 9px;
   }
 
   .public-estimate-rail-icon svg {
@@ -9033,8 +8911,7 @@ html:has(.public-estimate-page) {
   .public-estimate-costs {
     gap: 0.54rem;
     padding: 0.62rem;
-    border-left-width: 3px;
-    border-radius: 15px;
+    border-radius: 14px;
   }
 
   .public-estimate-summary-head,
@@ -9069,9 +8946,7 @@ html:has(.public-estimate-page) {
   .public-estimate-appliances-head span,
   .public-estimate-loose-furniture-head span,
   .public-estimate-home-goods-head span {
-    min-height: 20px;
-    padding: 0.18rem 0.4rem;
-    font-size: 0.64rem;
+    font-size: 0.68rem;
   }
 
   .public-estimate-summary-head h2,
@@ -9106,10 +8981,6 @@ html:has(.public-estimate-page) {
   .public-estimate-cost-note {
     font-size: 0.78rem;
     line-height: 1.38;
-  }
-
-  .public-estimate-passport {
-    border-left-width: 3px;
   }
 
   .public-estimate-passport-metrics {
@@ -10099,7 +9970,6 @@ html:has(.public-estimate-page) {
   .public-calc-promise,
   .public-calc-promise-text,
   .public-estimate-rail-link,
-  .public-estimate-rail-link::before,
   .public-estimate-rail-icon {
     transition: none;
     animation: none;

@@ -224,124 +224,119 @@ function EstimateNavigationIcon({ name }: { name: EstimateNavigationIcon }) {
     viewBox: "0 0 24 24",
     "aria-hidden": true,
     focusable: false,
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: 1.75,
+    strokeLinecap: "round" as const,
+    strokeLinejoin: "round" as const,
   };
 
   switch (name) {
-    case "object":
-      return (
-        <svg {...commonProps}>
-          <path d="M4 6.5h16v11H4z" />
-          <path d="M8 17.5v-5h4v5" />
-          <path d="M4 10.5h16" />
-        </svg>
-      );
     case "geometry":
       return (
         <svg {...commonProps}>
-          <path d="M5 19 19 5" />
-          <path d="M7 7h10v10H7z" />
-          <path d="M5 19h6" />
-          <path d="M5 19v-6" />
+          <rect x="4" y="4" width="16" height="16" rx="1.5" />
+          <path d="M4 20 20 4" />
+        </svg>
+      );
+    case "object":
+      return (
+        <svg {...commonProps}>
+          <path d="M3 21h18" />
+          <path d="M6 21V8l6-4 6 4v13" />
+          <path d="M10 21v-5h4v5" />
         </svg>
       );
     case "warmFloor":
       return (
         <svg {...commonProps}>
-          <path d="M5 17c2-2 4-2 6 0s4 2 6 0" />
-          <path d="M5 12c2-2 4-2 6 0s4 2 6 0" />
-          <path d="M5 7c2-2 4-2 6 0s4 2 6 0" />
+          <path d="M3 10c2.5-2 5-2 7.5 0s5 2 7.5 0 5-2 7.5 0" />
+          <path d="M3 15c2.5-2 5-2 7.5 0s5 2 7.5 0 5-2 7.5 0" />
         </svg>
       );
     case "flooring":
       return (
         <svg {...commonProps}>
-          <path d="M4 6h16" />
-          <path d="M4 12h16" />
-          <path d="M4 18h16" />
-          <path d="M8 6v6" />
-          <path d="M16 12v6" />
+          <path d="M12 3 2 8l10 5 10-5-10-5z" />
+          <path d="M2 13l10 5 10-5" />
+          <path d="M2 18l10 5 10-5" />
         </svg>
       );
     case "walls":
       return (
         <svg {...commonProps}>
-          <path d="M4 7h16v10H4z" />
-          <path d="M4 12h16" />
-          <path d="M9 7v5" />
-          <path d="M15 12v5" />
+          <rect x="3" y="3" width="18" height="18" rx="2" />
+          <path d="M12 3v18" />
         </svg>
       );
     case "ceiling":
       return (
         <svg {...commonProps}>
-          <path d="M4 6h16" />
-          <path d="M7 10h10" />
-          <path d="M9 14h6" />
-          <path d="M12 6v12" />
+          <path d="M4 7h16" />
+          <path d="M6 11h12" />
+          <path d="M8 15h8" />
         </svg>
       );
     case "electric":
       return (
         <svg {...commonProps}>
-          <path d="m13 3-6 10h5l-1 8 6-11h-5z" />
+          <path d="M13 2 3 14h8l-1 8 10-12h-8l1-8z" />
         </svg>
       );
     case "plumbing":
       return (
         <svg {...commonProps}>
-          <path d="M7 5h8a3 3 0 0 1 3 3v2" />
-          <path d="M5 5h2" />
-          <path d="M18 10h-4v4a4 4 0 0 0 8 0v-4z" />
+          <path d="M12 3c3.5 3.5 5.5 6 5.5 9a5.5 5.5 0 1 1-11 0c0-3 2-5.5 5.5-9z" />
         </svg>
       );
     case "doors":
       return (
         <svg {...commonProps}>
-          <path d="M7 3h10v18H7z" />
-          <path d="M14 12h.01" />
+          <path d="M4 20V6a2 2 0 0 1 2-2h8" />
+          <path d="M14 4h4a2 2 0 0 1 2 2v14" />
+          <path d="M2 20h20" />
         </svg>
       );
     case "completion":
       return (
         <svg {...commonProps}>
-          <path d="M5 5h14v14H5z" />
-          <path d="M9 5v14" />
-          <path d="M5 12h14" />
+          <rect x="3" y="3" width="7" height="7" rx="1" />
+          <rect x="14" y="3" width="7" height="7" rx="1" />
+          <rect x="3" y="14" width="7" height="7" rx="1" />
+          <rect x="14" y="14" width="7" height="7" rx="1" />
         </svg>
       );
     case "appliances":
       return (
         <svg {...commonProps}>
-          <path d="M7 3h10v18H7z" />
-          <path d="M10 7h4" />
-          <path d="M10 11h1" />
-          <path d="M14 11h1" />
+          <rect x="5" y="2" width="14" height="20" rx="1.5" />
+          <path d="M5 10h14" />
         </svg>
       );
     case "furniture":
       return (
         <svg {...commonProps}>
-          <path d="M5 13h14v5H5z" />
-          <path d="M7 13V9a3 3 0 0 1 3-3h4a3 3 0 0 1 3 3v4" />
-          <path d="M7 18v2" />
-          <path d="M17 18v2" />
+          <path d="M19 9V7a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v2" />
+          <path d="M3 11v5a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-5" />
+          <path d="M5 18v2" />
+          <path d="M19 18v2" />
         </svg>
       );
     case "cleaning":
       return (
         <svg {...commonProps}>
-          <path d="M8 4h8" />
-          <path d="M10 4v5l-4 10h12L14 9V4" />
-          <path d="M9 15h6" />
+          <path d="M12 3v4" />
+          <path d="m8 7 4-4 4 4" />
+          <path d="M8 7v3l-3 9h14l-3-9V7" />
         </svg>
       );
     case "total":
       return (
         <svg {...commonProps}>
-          <path d="M6 4h12v16H6z" />
-          <path d="M9 8h6" />
-          <path d="M9 12h6" />
-          <path d="M9 16h3" />
+          <rect x="4" y="2" width="16" height="20" rx="2" />
+          <path d="M8 7h8" />
+          <path d="M8 11h8" />
+          <path d="M8 15h5" />
         </svg>
       );
   }

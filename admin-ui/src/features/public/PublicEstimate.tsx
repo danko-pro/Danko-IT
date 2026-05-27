@@ -25,6 +25,15 @@ import {
   type LooseFurniturePackageLevel,
 } from "./public-estimate-loose-furniture";
 import {
+  calculateHomeGoods,
+  cleaningRatePerM2,
+  createDefaultHomeGoodsOptions,
+  homeGoodsPackageLabels,
+  homeGoodsPackageRates,
+  type HomeGoodsOptions,
+  type HomeGoodsPackageLevel,
+} from "./public-estimate-home-goods";
+import {
   calculateDoors,
   type DoorOptions,
   type DoorPackageType,
@@ -170,6 +179,7 @@ const DOORS_SPEC_COLLAPSED_LIMIT = 10;
 const COMPLETION_SPEC_COLLAPSED_LIMIT = 10;
 const APPLIANCES_SPEC_COLLAPSED_LIMIT = 10;
 const LOOSE_FURNITURE_SPEC_COLLAPSED_LIMIT = 10;
+const HOME_GOODS_SPEC_COLLAPSED_LIMIT = 10;
 
 const initialRooms: EstimateRoomDraft[] = [
   { id: "hallway", name: "Прихожая", type: "hallway", area: "6.5", doorCount: "1", windowCount: "0" },
@@ -397,6 +407,7 @@ export function PublicEstimate() {
   const [looseFurnitureOptions, setLooseFurnitureOptions] = useState<LooseFurnitureOptions>(() =>
     createDefaultLooseFurnitureOptions(),
   );
+  const [homeGoodsOptions, setHomeGoodsOptions] = useState<HomeGoodsOptions>(() => createDefaultHomeGoodsOptions());
   const [isFlooringSpecExpanded, setIsFlooringSpecExpanded] = useState(false);
   const [isWallsSpecExpanded, setIsWallsSpecExpanded] = useState(false);
   const [isCeilingSpecExpanded, setIsCeilingSpecExpanded] = useState(false);
@@ -406,6 +417,7 @@ export function PublicEstimate() {
   const [isCompletionSpecExpanded, setIsCompletionSpecExpanded] = useState(false);
   const [isAppliancesSpecExpanded, setIsAppliancesSpecExpanded] = useState(false);
   const [isLooseFurnitureSpecExpanded, setIsLooseFurnitureSpecExpanded] = useState(false);
+  const [isHomeGoodsSpecExpanded, setIsHomeGoodsSpecExpanded] = useState(false);
 
   const ceilingHeight = useMemo(() => parseEstimateDecimal(ceilingHeightInput), [ceilingHeightInput]);
   const roomInputs = useMemo(() => rooms.map(normalizeRoom), [rooms]);
@@ -559,6 +571,10 @@ export function PublicEstimate() {
     () => calculateLooseFurniture(looseFurnitureOptions),
     [looseFurnitureOptions],
   );
+  const homeGoodsResult = useMemo(
+    () => calculateHomeGoods({ floorArea: totals.floorArea, options: homeGoodsOptions }),
+    [homeGoodsOptions, totals.floorArea],
+  );
   const estimateResult = useMemo(() => {
     const sections = [
       ...(warmFloorResult.selectedArea > 0 ? [warmFloorResult.section] : []),
@@ -571,6 +587,7 @@ export function PublicEstimate() {
       ...(completionResult.section.items.length > 0 ? [completionResult.section] : []),
       ...(appliancesResult.section.items.length > 0 ? [appliancesResult.section] : []),
       ...(looseFurnitureResult.section.items.length > 0 ? [looseFurnitureResult.section] : []),
+      ...(homeGoodsResult.section.items.length > 0 ? [homeGoodsResult.section] : []),
     ];
 
     return {
@@ -580,6 +597,7 @@ export function PublicEstimate() {
   }, [
     appliancesResult,
     looseFurnitureResult,
+    homeGoodsResult,
     ceilingResult,
     completionResult,
     doorsResult,
@@ -645,6 +663,8 @@ export function PublicEstimate() {
       .map((item) => item.includedLabel),
     ...(appliancesResult.total > 0 ? ["Бытовая техника"] : []),
     ...(looseFurnitureResult.total > 0 ? ["Свободная мебель"] : []),
+    ...(homeGoodsOptions.includeCleaning ? ["Уборка"] : []),
+    ...(homeGoodsOptions.includeHomeGoods ? ["Товары для дома"] : []),
   ];
   const passportExcludedItems = [
     ...passportCompletionItems
@@ -652,6 +672,8 @@ export function PublicEstimate() {
       .map((item) => item.excludedLabel),
     ...(appliancesResult.total <= 0 ? ["Бытовая техника: не включена"] : []),
     ...(looseFurnitureResult.total <= 0 ? ["Свободная мебель: не включена"] : []),
+    ...(!homeGoodsOptions.includeCleaning ? ["Уборка: не включена"] : []),
+    ...(!homeGoodsOptions.includeHomeGoods ? ["Товары для дома: не включены"] : []),
   ];
   const warmFloorModeLabel = warmFloorMode === "water" ? "Водяной" : "Электрический";
   const warmFloorConnectionLabel =
@@ -850,6 +872,19 @@ export function PublicEstimate() {
     0,
     looseFurnitureSpecItems.length - visibleLooseFurnitureSpecItems.length,
   );
+  const homeGoodsSummaryItems = [
+    { label: "Уборка", value: formatMoney(homeGoodsResult.cleaningTotal) },
+    { label: "Товары для дома", value: formatMoney(homeGoodsResult.homeGoodsTotal) },
+    { label: "Пакет", value: homeGoodsResult.packageLabel },
+    { label: "Итого", value: formatMoney(homeGoodsResult.total), isStrong: true },
+  ];
+  const homeGoodsSpecItems = homeGoodsResult.section.items;
+  const isHomeGoodsSpecLong = homeGoodsSpecItems.length > HOME_GOODS_SPEC_COLLAPSED_LIMIT;
+  const visibleHomeGoodsSpecItems =
+    isHomeGoodsSpecLong && !isHomeGoodsSpecExpanded
+      ? homeGoodsSpecItems.slice(0, HOME_GOODS_SPEC_COLLAPSED_LIMIT)
+      : homeGoodsSpecItems;
+  const hiddenHomeGoodsSpecCount = Math.max(0, homeGoodsSpecItems.length - visibleHomeGoodsSpecItems.length);
 
   function updateRoom(roomId: string, patch: Partial<EstimateRoomDraft>) {
     setRooms((currentRooms) => currentRooms.map((room) => (room.id === roomId ? { ...room, ...patch } : room)));
@@ -987,6 +1022,13 @@ export function PublicEstimate() {
           ...patch,
         },
       },
+    }));
+  }
+
+  function updateHomeGoodsOptions(patch: Partial<HomeGoodsOptions>) {
+    setHomeGoodsOptions((currentOptions) => ({
+      ...currentOptions,
+      ...patch,
     }));
   }
 
@@ -2686,6 +2728,136 @@ export function PublicEstimate() {
             )}
           </section>
 
+          <section className="public-estimate-home-goods" aria-labelledby="public-estimate-home-goods-title">
+            <div className="public-estimate-home-goods-head">
+              <div>
+                <span>Шаг 12</span>
+                <h2 id="public-estimate-home-goods-title">Уборка и товары для дома</h2>
+                <p>
+                  Финишная уборка считается по площади пола, а комплект товаров для дома — фиксированным пакетом C / B /
+                  A.
+                </p>
+              </div>
+            </div>
+
+            <div className="public-estimate-home-goods-cards" aria-label="Опции уборки и товаров для дома">
+              <article className="public-estimate-home-goods-card">
+                <label className="public-estimate-home-goods-card-head">
+                  <input
+                    type="checkbox"
+                    checked={homeGoodsOptions.includeCleaning}
+                    onChange={(event) => updateHomeGoodsOptions({ includeCleaning: event.target.checked })}
+                  />
+                  <span className="public-estimate-home-goods-card-title">Финишная уборка</span>
+                </label>
+                <div className="public-estimate-home-goods-card-body">
+                  <div className="public-estimate-home-goods-metric">
+                    <span className="public-estimate-mobile-label">Площадь</span>
+                    <span>Площадь</span>
+                    <strong>{formatMeasurement(totals.floorArea, "м²")}</strong>
+                  </div>
+                  <div className="public-estimate-home-goods-metric">
+                    <span className="public-estimate-mobile-label">Ставка</span>
+                    <span>Ставка</span>
+                    <strong>{formatMoney(cleaningRatePerM2)}/м²</strong>
+                  </div>
+                  <div className="public-estimate-home-goods-metric public-estimate-home-goods-metric-total">
+                    <span className="public-estimate-mobile-label">Итого</span>
+                    <span>Итого</span>
+                    <strong>{formatMoney(homeGoodsResult.cleaningTotal)}</strong>
+                  </div>
+                </div>
+              </article>
+
+              <article className="public-estimate-home-goods-card">
+                <label className="public-estimate-home-goods-card-head">
+                  <input
+                    type="checkbox"
+                    checked={homeGoodsOptions.includeHomeGoods}
+                    onChange={(event) => updateHomeGoodsOptions({ includeHomeGoods: event.target.checked })}
+                  />
+                  <span className="public-estimate-home-goods-card-title">Товары для дома</span>
+                </label>
+                <div className="public-estimate-home-goods-card-body">
+                  <div className="public-estimate-home-goods-package" aria-label="Пакет товаров для дома">
+                    <span className="public-estimate-mobile-label">Пакет</span>
+                    <span>Пакет</span>
+                    <div
+                      className="public-estimate-toggle-group public-estimate-home-goods-toggle-group"
+                      role="group"
+                      aria-label="Пакет товаров для дома"
+                    >
+                      {(["c", "b", "a"] as HomeGoodsPackageLevel[]).map((level) => (
+                        <button
+                          key={level}
+                          className={
+                            homeGoodsOptions.packageLevel === level ? "public-estimate-toggle-active" : undefined
+                          }
+                          type="button"
+                          aria-pressed={homeGoodsOptions.packageLevel === level}
+                          onClick={() => updateHomeGoodsOptions({ packageLevel: level })}
+                        >
+                          {homeGoodsPackageLabels[level]}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="public-estimate-home-goods-metric">
+                    <span className="public-estimate-mobile-label">Стоимость пакета</span>
+                    <span>Стоимость пакета</span>
+                    <strong>{formatMoney(homeGoodsPackageRates[homeGoodsOptions.packageLevel])}</strong>
+                  </div>
+                  <div className="public-estimate-home-goods-metric public-estimate-home-goods-metric-total">
+                    <span className="public-estimate-mobile-label">Итого</span>
+                    <span>Итого</span>
+                    <strong>{formatMoney(homeGoodsResult.homeGoodsTotal)}</strong>
+                  </div>
+                </div>
+              </article>
+            </div>
+
+            <div className="public-estimate-home-goods-summary" aria-label="Итоги по уборке и товарам для дома">
+              {homeGoodsSummaryItems.map((item) => (
+                <div className={item.isStrong ? "public-estimate-home-goods-total-cell" : undefined} key={item.label}>
+                  <span>{item.label}</span>
+                  <strong>{item.value}</strong>
+                </div>
+              ))}
+            </div>
+
+            {homeGoodsResult.section.items.length > 0 ? (
+              <div className="public-estimate-home-goods-spec">
+                <p>Спецификация раздела</p>
+                <ul>
+                  {visibleHomeGoodsSpecItems.map((item) => (
+                    <li key={item.id}>
+                      <span>
+                        {item.title} · {item.quantity} {item.unit} × {formatMoney(item.unitPrice)}
+                      </span>
+                      <strong>{formatMoney(item.total)}</strong>
+                    </li>
+                  ))}
+                </ul>
+                {isHomeGoodsSpecLong ? (
+                  <button
+                    className="public-estimate-spec-toggle"
+                    type="button"
+                    aria-expanded={isHomeGoodsSpecExpanded}
+                    onClick={() => setIsHomeGoodsSpecExpanded((currentValue) => !currentValue)}
+                  >
+                    {isHomeGoodsSpecExpanded
+                      ? "Свернуть спецификацию"
+                      : `Показать всю спецификацию${hiddenHomeGoodsSpecCount > 0 ? `: ещё ${hiddenHomeGoodsSpecCount} строк` : ""}`}
+                  </button>
+                ) : null}
+              </div>
+            ) : (
+              <p className="public-estimate-warm-floor-empty">
+                Включите финишную уборку или комплект товаров для дома, чтобы добавить их в смету.
+              </p>
+            )}
+          </section>
+
           <section className="public-estimate-costs" aria-labelledby="public-estimate-costs-title">
             <div className="public-estimate-costs-head">
               <p className="public-section-kicker">Итоговая смета</p>
@@ -2703,8 +2875,8 @@ export function PublicEstimate() {
 
             <p className="public-estimate-cost-note">
               Сейчас в смету включены тёплый пол, полы, стены, потолки, электрика, сантехника, двери, встроенная
-              комплектация, выбранная бытовая техника и выбранная свободная мебель. Следующие разделы подключим отдельно:
-              дополнительные работы и экспорт расчёта.
+              комплектация, выбранная бытовая техника, выбранная свободная мебель, а также выбранная финишная уборка и
+              товары для дома. Следующие разделы подключим отдельно: дополнительные работы и экспорт расчёта.
             </p>
           </section>
 

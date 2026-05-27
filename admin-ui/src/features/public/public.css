@@ -6591,6 +6591,216 @@
   white-space: nowrap;
 }
 
+.public-estimate-home-goods {
+  display: grid;
+  gap: 0.58rem;
+  padding: 0.72rem;
+  border: 1px solid rgba(30, 81, 74, 0.12);
+  border-radius: 18px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.78), rgba(246, 250, 248, 0.78)),
+    #ffffff;
+}
+
+.public-estimate-home-goods-head {
+  display: grid;
+  gap: 0.36rem;
+}
+
+.public-estimate-home-goods-head span {
+  display: inline-flex;
+  margin-bottom: 0.22rem;
+  color: var(--public-green);
+  font-size: 0.68rem;
+  font-weight: 850;
+  letter-spacing: 0;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.public-estimate-home-goods-head h2 {
+  margin: 0;
+  color: var(--public-ink);
+  font-size: clamp(1.08rem, 2vw, 1.32rem);
+  font-weight: 850;
+  line-height: 1.12;
+}
+
+.public-estimate-home-goods-head p {
+  max-width: 720px;
+  margin: 0.36rem 0 0;
+  color: var(--public-muted);
+  font-size: 0.84rem;
+  font-weight: 540;
+  line-height: 1.45;
+}
+
+.public-estimate-home-goods-cards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.52rem;
+}
+
+.public-estimate-home-goods-card {
+  display: grid;
+  gap: 0.46rem;
+  min-width: 0;
+  padding: 0.58rem 0.62rem;
+  border: 1px solid rgba(30, 81, 74, 0.1);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.68);
+}
+
+.public-estimate-home-goods-card-head {
+  display: flex;
+  align-items: center;
+  gap: 0.52rem;
+  min-width: 0;
+  cursor: pointer;
+}
+
+.public-estimate-home-goods-card-head input {
+  width: 1rem;
+  height: 1rem;
+  accent-color: var(--public-green);
+}
+
+.public-estimate-home-goods-card-title {
+  color: var(--public-ink);
+  font-size: 0.84rem;
+  font-weight: 820;
+  line-height: 1.25;
+}
+
+.public-estimate-home-goods-card-body {
+  display: grid;
+  gap: 0.34rem;
+}
+
+.public-estimate-home-goods-metric,
+.public-estimate-home-goods-package {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.52rem;
+  min-width: 0;
+  min-height: 34px;
+  padding: 0.34rem 0.52rem;
+  border: 1px solid rgba(30, 81, 74, 0.1);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.74);
+}
+
+.public-estimate-home-goods-metric > span:not(.public-estimate-mobile-label),
+.public-estimate-home-goods-package > span:not(.public-estimate-mobile-label) {
+  color: rgba(19, 35, 31, 0.58);
+  font-size: 0.68rem;
+  font-weight: 780;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.public-estimate-home-goods-metric strong,
+.public-estimate-home-goods-package strong {
+  color: var(--public-green-deep);
+  font-size: 0.82rem;
+  font-weight: 820;
+  line-height: 1.15;
+  white-space: nowrap;
+}
+
+.public-estimate-home-goods-metric-total {
+  background: rgba(233, 242, 239, 0.52);
+}
+
+.public-estimate-home-goods-package {
+  flex-wrap: wrap;
+}
+
+.public-estimate-home-goods-toggle-group {
+  grid-template-columns: repeat(3, minmax(72px, 1fr));
+  min-width: min(100%, 320px);
+}
+
+.public-estimate-home-goods-card .public-estimate-mobile-label {
+  display: none;
+}
+
+.public-estimate-home-goods-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  overflow: hidden;
+  border: 1px solid rgba(30, 81, 74, 0.12);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.74);
+}
+
+.public-estimate-home-goods-summary div {
+  display: grid;
+  gap: 0.22rem;
+  min-width: 0;
+  padding: 0.58rem 0.64rem;
+  border-right: 1px solid rgba(30, 81, 74, 0.1);
+  background: rgba(255, 255, 255, 0.54);
+}
+
+.public-estimate-home-goods-summary div:last-child {
+  border-right: 0;
+}
+
+.public-estimate-home-goods-summary span {
+  color: rgba(19, 35, 31, 0.58);
+  font-size: 0.66rem;
+  font-weight: 780;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.public-estimate-home-goods-summary strong {
+  color: var(--public-green-deep);
+  font-size: 0.92rem;
+  font-weight: 860;
+  line-height: 1.05;
+}
+
+.public-estimate-home-goods-summary .public-estimate-home-goods-total-cell {
+  background: rgba(233, 242, 239, 0.62);
+}
+
+.public-estimate-home-goods-spec {
+  display: grid;
+  gap: 0.34rem;
+  padding: 0.6rem 0.68rem;
+  border: 1px solid rgba(30, 81, 74, 0.1);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.66);
+}
+
+.public-estimate-home-goods-spec ul {
+  display: grid;
+  gap: 0.24rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.public-estimate-home-goods-spec li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(116px, auto) auto;
+  gap: 0.7rem;
+  align-items: baseline;
+  color: rgba(19, 35, 31, 0.72);
+  font-size: 0.78rem;
+  font-weight: 620;
+  line-height: 1.35;
+}
+
+.public-estimate-home-goods-spec li strong {
+  color: var(--public-green-deep);
+  font-weight: 820;
+  white-space: nowrap;
+}
+
 .public-estimate-costs {
   display: grid;
   gap: 0.5rem;
@@ -7769,6 +7979,58 @@
     border-bottom: 0;
   }
 
+  .public-estimate-home-goods-cards {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .public-estimate-home-goods-card .public-estimate-mobile-label {
+    display: inline-flex;
+    color: rgba(19, 35, 31, 0.58);
+    font-size: 0.66rem;
+    font-weight: 780;
+    line-height: 1.2;
+    text-transform: uppercase;
+  }
+
+  .public-estimate-home-goods-metric,
+  .public-estimate-home-goods-package {
+    flex-wrap: wrap;
+    align-items: stretch;
+    gap: 0.34rem;
+  }
+
+  .public-estimate-home-goods-metric > span:not(.public-estimate-mobile-label),
+  .public-estimate-home-goods-package > span:not(.public-estimate-mobile-label) {
+    display: none;
+  }
+
+  .public-estimate-home-goods-toggle-group {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .public-estimate-home-goods-spec li {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.16rem 0.7rem;
+  }
+
+  .public-estimate-home-goods-summary {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .public-estimate-home-goods-summary div {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.7rem;
+    border-right: 0;
+    border-bottom: 1px solid rgba(30, 81, 74, 0.1);
+  }
+
+  .public-estimate-home-goods-summary div:last-child {
+    border-bottom: 0;
+  }
+
   .public-estimate-room-row {
     gap: 0.36rem;
     padding: 0.48rem;
@@ -8026,6 +8288,7 @@
   .public-estimate-doors,
   .public-estimate-appliances,
   .public-estimate-loose-furniture,
+  .public-estimate-home-goods,
   .public-estimate-completion,
   .public-estimate-costs {
     break-inside: avoid;

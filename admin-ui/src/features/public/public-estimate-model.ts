@@ -12,6 +12,7 @@ export type EstimateSectionId =
   | "completion"
   | "appliances"
   | "loose_furniture"
+  | "home_goods"
   | "extras";
 
 export type EstimateLineItem = {

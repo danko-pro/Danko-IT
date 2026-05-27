@@ -71,6 +71,29 @@ const roomTypeOptions: Array<{ value: EstimateRoomType; label: string }> = [
   { value: "other", label: "Другое" },
 ];
 
+const GEOMETRY_STEP_HINT =
+  "Укажите помещения по БТИ: площадь, двери и окна — периметр и стены к отделке пересчитаются автоматически.";
+const GEOMETRY_STEP_DISCLAIMER =
+  "Предварительный расчёт по площадям БТИ и коэффициенту формы — без замера каждой стены.";
+
+function inferRoomTypeFromName(name: string): EstimateRoomType | null {
+  const normalized = name.trim().toLocaleLowerCase("ru-RU");
+
+  if (!normalized) {
+    return null;
+  }
+
+  const matchedOption = roomTypeOptions.find((option) => option.label.toLocaleLowerCase("ru-RU") === normalized);
+
+  return matchedOption?.value ?? null;
+}
+
+function shouldShowRoomTypeSelector(room: EstimateRoomDraft) {
+  const inferredType = inferRoomTypeFromName(room.name);
+
+  return inferredType === null || inferredType !== room.type;
+}
+
 const flooringCoveringOptions: Array<{ value: FlooringCoveringType; label: string }> = [
   { value: "porcelain", label: "Керамогранит" },
   { value: "quartz_vinyl", label: "Кварцвинил" },
@@ -660,6 +683,7 @@ export function PublicEstimate() {
     () => roomInputs.map((room) => calculateEstimateRoomGeometry(room, ceilingHeight)),
     [roomInputs, ceilingHeight],
   );
+  const showRoomTypeColumn = useMemo(() => rooms.some(shouldShowRoomTypeSelector), [rooms]);
   const totals = useMemo(() => calculateEstimateGeometryTotals(roomGeometries), [roomGeometries]);
   const warmFloorRoomInputs = useMemo(
     () =>
@@ -1768,7 +1792,15 @@ export function PublicEstimate() {
             </div>
           </section>
 
-          <section id="estimate-geometry" className="public-estimate-geometry" aria-labelledby="public-estimate-geometry-title">
+          <section
+            id="estimate-geometry"
+            className={
+              showRoomTypeColumn
+                ? "public-estimate-geometry public-estimate-geometry--has-type"
+                : "public-estimate-geometry"
+            }
+            aria-labelledby="public-estimate-geometry-title"
+          >
             <div className="public-estimate-geometry-head">
               <div>
                 <span>{formatEstimateStep("estimate-geometry")}</span>
@@ -1786,13 +1818,22 @@ export function PublicEstimate() {
               </label>
             </div>
 
+            <div className="public-estimate-geometry-guide">
+              <p className="public-estimate-geometry-hint">{GEOMETRY_STEP_HINT}</p>
+              <p className="public-estimate-geometry-disclaimer">{GEOMETRY_STEP_DISCLAIMER}</p>
+            </div>
+
             <div className="public-estimate-room-header" aria-hidden="true">
               <span>№</span>
               <span>Помещение</span>
-              <span>Тип</span>
-              <span>Площадь</span>
-              <span>Двери</span>
-              <span>Окна</span>
+              {showRoomTypeColumn ? (
+                <span className="public-estimate-room-header-type" title="Коэффициент формы и умолчания в разделах сметы">
+                  Назначение
+                </span>
+              ) : null}
+              <span className="public-estimate-room-header-metric">Площадь</span>
+              <span className="public-estimate-room-header-count">Двери</span>
+              <span className="public-estimate-room-header-count">Окна</span>
               <span>Стены к отделке</span>
               <span />
             </div>
@@ -1830,21 +1871,24 @@ export function PublicEstimate() {
                     </div>
 
                     <div className="public-estimate-room-main">
-                      <label className="public-estimate-field public-estimate-room-type">
-                        <span className="public-estimate-mobile-label">Тип</span>
-                        <select
-                          aria-label="Тип помещения"
-                          className="public-estimate-select"
-                          value={roomDraft.type}
-                          onChange={(event) => updateRoom(room.id, { type: event.target.value as EstimateRoomType })}
-                        >
-                          {roomTypeOptions.map((option) => (
-                            <option key={option.value} value={option.value}>
-                              {option.label}
-                            </option>
-                          ))}
-                        </select>
-                      </label>
+                      {shouldShowRoomTypeSelector(roomDraft) ? (
+                        <label className="public-estimate-field public-estimate-room-type">
+                          <span className="public-estimate-mobile-label">Назначение</span>
+                          <select
+                            aria-label="Назначение помещения"
+                            className="public-estimate-select"
+                            title="Коэффициент формы и умолчания в разделах сметы"
+                            value={roomDraft.type}
+                            onChange={(event) => updateRoom(room.id, { type: event.target.value as EstimateRoomType })}
+                          >
+                            {roomTypeOptions.map((option) => (
+                              <option key={option.value} value={option.value}>
+                                {option.label}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                      ) : null}
 
                       <div className="public-estimate-room-metrics">
                         <label className="public-estimate-field public-estimate-room-area">
@@ -1895,9 +1939,6 @@ export function PublicEstimate() {
               <button className="public-estimate-small-action" type="button" onClick={addRoom}>
                 Добавить помещение
               </button>
-              <p>
-                Расчёт предварительный: используем площади по БТИ и коэффициент формы, без ручного замера каждой стены.
-              </p>
             </div>
           </section>
 

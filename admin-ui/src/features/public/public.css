@@ -3798,7 +3798,7 @@
 
 .public-estimate {
   display: grid;
-  grid-template-columns: 168px minmax(0, 1fr) minmax(280px, 330px);
+  grid-template-columns: 240px minmax(0, 1fr) minmax(280px, 330px);
   align-items: start;
   gap: clamp(0.9rem, 1.4vw, 1.35rem);
   width: min(100%, 1520px);
@@ -7105,72 +7105,74 @@
 
 .public-estimate-passport-volumes-panel {
   display: grid;
-  gap: 0.58rem;
+  gap: 0.32rem;
+  padding: 0.46rem 0.5rem;
   scroll-margin-top: 96px;
+  box-shadow: none;
 }
 
 .public-estimate-passport-volumes-head {
   margin: 0;
-  padding: 0 0 0.52rem;
+  padding: 0 0 0.28rem;
   border-bottom: 1px solid rgba(30, 81, 74, 0.1);
 }
 
 .public-estimate-passport-volumes-head span {
   color: var(--public-muted);
-  font-size: 0.68rem;
+  font-size: 0.58rem;
   font-weight: 650;
-  line-height: 1.2;
+  line-height: 1.15;
 }
 
 .public-estimate-passport-volumes-list {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   grid-auto-rows: 1fr;
-  gap: 0.14rem;
+  gap: 0.08rem;
   margin: 0;
 }
 
 .public-estimate-passport-volumes-item {
   display: grid;
-  gap: 0.04rem;
+  gap: 0.02rem;
   align-content: center;
-  min-height: 58px;
+  min-height: 40px;
   min-width: 0;
-  padding: 0.48rem 0.55rem;
+  padding: 0.26rem 0.36rem;
   border: 1px solid rgba(30, 81, 74, 0.1);
-  border-radius: 13px;
+  border-radius: 8px;
   background: rgba(255, 255, 255, 0.55);
 }
 
 .public-estimate-passport-volumes-item dt {
   margin: 0;
   color: var(--public-muted);
-  font-size: 0.62rem;
+  font-size: 0.54rem;
   font-weight: 600;
-  line-height: 1.1;
+  line-height: 1.05;
 }
 
 .public-estimate-passport-volumes-item dd {
   margin: 0;
   color: rgba(19, 35, 31, 0.82);
-  font-size: 0.82rem;
+  font-size: 0.7rem;
   font-weight: 780;
-  line-height: 1.15;
+  line-height: 1.1;
 }
 
 .public-estimate-passport-volumes-action {
   justify-self: stretch;
   width: 100%;
   margin: 0;
-  padding: 0.4rem 0.5rem;
+  padding: 0.26rem 0.36rem;
   border: 1px solid rgba(30, 81, 74, 0.1);
-  border-radius: 10px;
+  border-radius: 7px;
   background: rgba(246, 250, 248, 0.55);
   color: rgba(19, 35, 31, 0.62);
   font: inherit;
-  font-size: 0.76rem;
+  font-size: 0.66rem;
   font-weight: 700;
-  line-height: 1.3;
+  line-height: 1.25;
   text-align: center;
   cursor: pointer;
   transition:
@@ -7211,29 +7213,29 @@
   top: 88px;
   align-self: start;
   min-width: 0;
-  padding: 0.55rem 0.15rem 0.55rem 0;
+  padding: 0.82rem 0.3rem 0.82rem 0;
 }
 
 .public-estimate-rail-head {
   display: grid;
-  gap: 0.1rem;
-  margin: 0 0 0.42rem;
-  padding: 0 0.36rem 0.48rem;
+  gap: 0.18rem;
+  margin: 0 0 0.65rem;
+  padding: 0 0.55rem 0.75rem;
   border-bottom: 1px solid rgba(30, 81, 74, 0.1);
 }
 
 .public-estimate-rail-head span {
   color: var(--public-muted);
-  font-size: 0.56rem;
+  font-size: 0.68rem;
   font-weight: 650;
-  line-height: 1.15;
+  line-height: 1.2;
 }
 
 .public-estimate-rail-head strong {
   color: var(--public-ink);
-  font-size: 0.82rem;
+  font-size: 1rem;
   font-weight: 860;
-  line-height: 1.1;
+  line-height: 1.12;
 }
 
 .public-estimate-rail-nav {
@@ -7245,7 +7247,7 @@
 
 .public-estimate-rail-list {
   display: grid;
-  gap: 0.06rem;
+  gap: 0.14rem;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -7253,13 +7255,13 @@
 
 .public-estimate-rail-link {
   display: grid;
-  grid-template-columns: 22px minmax(0, 1fr);
-  gap: 0.3rem;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 0.5rem;
   align-items: center;
-  min-height: 32px;
-  padding: 0.22rem 0.34rem;
+  min-height: 42px;
+  padding: 0.4rem 0.5rem;
   border: 1px solid rgba(30, 81, 74, 0.1);
-  border-radius: 7px;
+  border-radius: 10px;
   background: rgba(255, 255, 255, 0.55);
   color: rgba(19, 35, 31, 0.62);
   text-decoration: none;
@@ -7296,7 +7298,7 @@
 }
 
 .public-estimate-rail-link.is-informational {
-  min-height: 28px;
+  min-height: 36px;
   border-color: rgba(30, 81, 74, 0.06);
   background: rgba(246, 250, 248, 0.55);
   color: rgba(19, 35, 31, 0.46);
@@ -7321,14 +7323,14 @@
 .public-estimate-rail-icon {
   display: grid;
   place-items: center;
-  width: 22px;
-  height: 22px;
+  width: 28px;
+  height: 28px;
   color: currentColor;
 }
 
 .public-estimate-rail-icon svg {
-  width: 14px;
-  height: 14px;
+  width: 18px;
+  height: 18px;
   stroke: currentColor;
   fill: none;
   stroke-width: 1.75;
@@ -7338,23 +7340,23 @@
 
 .public-estimate-rail-copy {
   display: grid;
-  gap: 0.02rem;
+  gap: 0.04rem;
   min-width: 0;
 }
 
 .public-estimate-rail-step {
   color: var(--public-muted);
-  font-size: 0.52rem;
+  font-size: 0.62rem;
   font-weight: 600;
-  line-height: 1.05;
+  line-height: 1.1;
 }
 
 .public-estimate-rail-label {
   overflow: hidden;
   color: currentColor;
-  font-size: 0.6875rem;
+  font-size: 0.8rem;
   font-weight: 700;
-  line-height: 1.08;
+  line-height: 1.12;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -7364,7 +7366,7 @@
 }
 
 .public-estimate-rail-link.is-informational .public-estimate-rail-label {
-  font-size: 0.64rem;
+  font-size: 0.76rem;
   font-weight: 650;
 }
 
@@ -7790,8 +7792,8 @@ html:has(.public-estimate-page) {
     z-index: 30;
     width: 100%;
     min-width: 0;
-    margin: -0.12rem 0 0.2rem;
-    padding: 0.28rem 0;
+    margin: -0.2rem 0 0.35rem;
+    padding: 0.45rem 0;
     overflow: hidden;
     background: rgba(247, 252, 249, 0.94);
     backdrop-filter: blur(14px);
@@ -7801,8 +7803,8 @@ html:has(.public-estimate-page) {
   .public-estimate-rail::before,
   .public-estimate-rail::after {
     position: absolute;
-    top: 0.28rem;
-    bottom: 0.14rem;
+    top: 0.45rem;
+    bottom: 0.25rem;
     z-index: 1;
     width: 1.1rem;
     pointer-events: none;
@@ -7848,11 +7850,11 @@ html:has(.public-estimate-page) {
   .public-estimate-rail-list {
     display: flex;
     flex-wrap: nowrap;
-    gap: 0.26rem;
+    gap: 0.42rem;
     width: max-content;
     min-width: 100%;
     margin: 0;
-    padding: 0.04rem 0.14rem 0.12rem;
+    padding: 0.1rem 0.25rem 0.25rem;
   }
 
   .public-estimate-rail-item {
@@ -7860,11 +7862,10 @@ html:has(.public-estimate-page) {
   }
 
   .public-estimate-rail-link {
-    grid-template-columns: 20px auto;
-    min-height: 28px;
-    padding: 0.18rem 0.36rem;
+    grid-template-columns: 26px auto;
+    min-height: 36px;
+    padding: 0.34rem 0.55rem;
     border: 1px solid rgba(30, 81, 74, 0.1);
-    border-radius: 7px;
     background: rgba(255, 255, 255, 0.72);
     white-space: nowrap;
     flex-shrink: 0;
@@ -7890,13 +7891,13 @@ html:has(.public-estimate-page) {
   }
 
   .public-estimate-rail-icon {
-    width: 20px;
-    height: 20px;
+    width: 26px;
+    height: 26px;
   }
 
   .public-estimate-rail-icon svg {
-    width: 12px;
-    height: 12px;
+    width: 16px;
+    height: 16px;
   }
 
   .public-estimate-rail-step {
@@ -7904,7 +7905,7 @@ html:has(.public-estimate-page) {
   }
 
   .public-estimate-rail-label {
-    font-size: 0.6875rem;
+    font-size: 0.76rem;
   }
 
   .public-estimate-passport-sidebar {
@@ -7918,11 +7919,11 @@ html:has(.public-estimate-page) {
 
   .public-estimate-geometry-compact {
     display: grid;
-    gap: 0.38rem;
-    margin: 0.18rem 0.25rem 0;
-    padding: 0.48rem 0.55rem;
+    gap: 0.22rem;
+    margin: 0.12rem 0.18rem 0;
+    padding: 0.3rem 0.36rem;
     border: 1px solid rgba(30, 81, 74, 0.1);
-    border-radius: 14px;
+    border-radius: 10px;
     background: rgba(255, 255, 255, 0.82);
   }
 
@@ -7930,72 +7931,72 @@ html:has(.public-estimate-page) {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 0.34rem 0.52rem;
+    gap: 0.22rem 0.36rem;
   }
 
   .public-estimate-geometry-compact-metric {
     display: grid;
-    gap: 0.06rem;
+    gap: 0.02rem;
     min-width: 0;
   }
 
   .public-estimate-geometry-compact-metric span {
     color: rgba(19, 35, 31, 0.52);
-    font-size: 0.62rem;
+    font-size: 0.54rem;
     font-weight: 680;
-    line-height: 1.15;
+    line-height: 1.1;
   }
 
   .public-estimate-geometry-compact-metric strong {
     color: rgba(19, 35, 31, 0.84);
-    font-size: 0.76rem;
+    font-size: 0.68rem;
     font-weight: 780;
-    line-height: 1.1;
+    line-height: 1.05;
   }
 
   .public-estimate-geometry-compact-toggle {
     margin-left: auto;
-    padding: 0.18rem 0.42rem;
+    padding: 0.12rem 0.32rem;
     border: 1px solid rgba(30, 81, 74, 0.14);
     border-radius: 999px;
     background: rgba(255, 255, 255, 0.72);
     color: rgba(30, 81, 74, 0.78);
     font: inherit;
-    font-size: 0.68rem;
+    font-size: 0.6rem;
     font-weight: 740;
-    line-height: 1.2;
+    line-height: 1.15;
     cursor: pointer;
   }
 
   .public-estimate-geometry-compact-full {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.24rem 0.42rem;
+    gap: 0.14rem 0.28rem;
     margin: 0;
-    padding-top: 0.12rem;
+    padding-top: 0.08rem;
     border-top: 1px solid rgba(30, 81, 74, 0.08);
   }
 
   .public-estimate-geometry-compact-item {
     display: grid;
-    gap: 0.06rem;
+    gap: 0.02rem;
     min-width: 0;
   }
 
   .public-estimate-geometry-compact-item dt {
     margin: 0;
     color: rgba(19, 35, 31, 0.52);
-    font-size: 0.62rem;
+    font-size: 0.54rem;
     font-weight: 680;
-    line-height: 1.15;
+    line-height: 1.1;
   }
 
   .public-estimate-geometry-compact-item dd {
     margin: 0;
     color: rgba(19, 35, 31, 0.82);
-    font-size: 0.74rem;
+    font-size: 0.66rem;
     font-weight: 760;
-    line-height: 1.1;
+    line-height: 1.05;
   }
 
   .public-estimate-geometry-compact-print {
@@ -8005,9 +8006,9 @@ html:has(.public-estimate-page) {
     background: transparent;
     color: rgba(30, 81, 74, 0.68);
     font: inherit;
-    font-size: 0.68rem;
+    font-size: 0.6rem;
     font-weight: 700;
-    line-height: 1.3;
+    line-height: 1.25;
     text-decoration: underline;
     text-decoration-color: rgba(30, 81, 74, 0.24);
     text-underline-offset: 0.16em;

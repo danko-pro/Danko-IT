@@ -7086,6 +7086,392 @@
   transform: translateY(-1px);
 }
 
+/* public-estimate-ux hierarchy polish */
+.public-estimate-card-main {
+  gap: 0.9rem;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(247, 251, 249, 0.86)),
+    #ffffff;
+}
+
+.public-estimate-intro {
+  padding: 0.08rem 0.1rem 0.5rem;
+  border-bottom: 1px solid rgba(30, 81, 74, 0.1);
+}
+
+.public-estimate-summary,
+.public-estimate-geometry,
+.public-estimate-warm-floor,
+.public-estimate-flooring,
+.public-estimate-walls,
+.public-estimate-ceiling,
+.public-estimate-electric,
+.public-estimate-plumbing,
+.public-estimate-doors,
+.public-estimate-completion,
+.public-estimate-appliances,
+.public-estimate-loose-furniture,
+.public-estimate-home-goods,
+.public-estimate-costs {
+  --estimate-accent-rgb: 30, 81, 74;
+  --estimate-accent-text: var(--public-green-deep);
+  position: relative;
+  overflow: hidden;
+  border-color: rgba(var(--estimate-accent-rgb), 0.18);
+  border-left: 4px solid rgba(var(--estimate-accent-rgb), 0.58);
+  background:
+    linear-gradient(135deg, rgba(var(--estimate-accent-rgb), 0.085), rgba(255, 255, 255, 0.94) 34%, rgba(247, 251, 249, 0.9)),
+    #ffffff;
+  box-shadow:
+    0 14px 34px rgba(19, 35, 31, 0.045),
+    inset 0 1px 0 rgba(255, 255, 255, 0.72);
+  scroll-margin-top: 1rem;
+}
+
+.public-estimate-summary {
+  padding: 0.72rem;
+  border: 1px solid rgba(var(--estimate-accent-rgb), 0.18);
+  border-left-width: 4px;
+  border-radius: 18px;
+}
+
+.public-estimate-warm-floor {
+  --estimate-accent-rgb: 178, 91, 56;
+  --estimate-accent-text: #7f3d26;
+}
+
+.public-estimate-flooring {
+  --estimate-accent-rgb: 43, 109, 131;
+  --estimate-accent-text: #1e586c;
+}
+
+.public-estimate-walls {
+  --estimate-accent-rgb: 104, 128, 67;
+  --estimate-accent-text: #516737;
+}
+
+.public-estimate-ceiling {
+  --estimate-accent-rgb: 91, 99, 146;
+  --estimate-accent-text: #4d5680;
+}
+
+.public-estimate-electric {
+  --estimate-accent-rgb: 188, 133, 38;
+  --estimate-accent-text: #7d5a1b;
+}
+
+.public-estimate-plumbing {
+  --estimate-accent-rgb: 47, 120, 132;
+  --estimate-accent-text: #24616b;
+}
+
+.public-estimate-doors {
+  --estimate-accent-rgb: 126, 88, 126;
+  --estimate-accent-text: #68456b;
+}
+
+.public-estimate-completion {
+  --estimate-accent-rgb: 138, 105, 52;
+  --estimate-accent-text: #73582b;
+}
+
+.public-estimate-appliances {
+  --estimate-accent-rgb: 84, 96, 129;
+  --estimate-accent-text: #4b5574;
+}
+
+.public-estimate-loose-furniture {
+  --estimate-accent-rgb: 93, 113, 74;
+  --estimate-accent-text: #50633e;
+}
+
+.public-estimate-home-goods {
+  --estimate-accent-rgb: 120, 86, 65;
+  --estimate-accent-text: #694837;
+}
+
+.public-estimate-costs {
+  --estimate-accent-rgb: 30, 81, 74;
+  border-left-width: 5px;
+}
+
+.public-estimate-summary::before,
+.public-estimate-geometry::before,
+.public-estimate-warm-floor::before,
+.public-estimate-flooring::before,
+.public-estimate-walls::before,
+.public-estimate-ceiling::before,
+.public-estimate-electric::before,
+.public-estimate-plumbing::before,
+.public-estimate-doors::before,
+.public-estimate-completion::before,
+.public-estimate-appliances::before,
+.public-estimate-loose-furniture::before,
+.public-estimate-home-goods::before,
+.public-estimate-costs::before {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  background: linear-gradient(180deg, rgba(var(--estimate-accent-rgb), 0.72), rgba(var(--estimate-accent-rgb), 0.28));
+  content: "";
+}
+
+.public-estimate-summary-head,
+.public-estimate-geometry-head,
+.public-estimate-warm-floor-head,
+.public-estimate-flooring-head,
+.public-estimate-walls-head,
+.public-estimate-ceiling-head,
+.public-estimate-electric-head,
+.public-estimate-plumbing-head,
+.public-estimate-doors-head,
+.public-estimate-completion-head,
+.public-estimate-appliances-head,
+.public-estimate-loose-furniture-head,
+.public-estimate-home-goods-head,
+.public-estimate-costs-head {
+  position: relative;
+  padding-bottom: 0.52rem;
+  border-bottom: 1px solid rgba(var(--estimate-accent-rgb), 0.12);
+}
+
+.public-estimate-summary-head .public-section-kicker,
+.public-estimate-costs-head .public-section-kicker,
+.public-estimate-geometry-head span,
+.public-estimate-warm-floor-head span,
+.public-estimate-flooring-head span,
+.public-estimate-walls-head span,
+.public-estimate-ceiling-head span,
+.public-estimate-electric-head span,
+.public-estimate-plumbing-head span,
+.public-estimate-doors-head span,
+.public-estimate-completion-head span,
+.public-estimate-appliances-head span,
+.public-estimate-loose-furniture-head span,
+.public-estimate-home-goods-head span {
+  width: fit-content;
+  min-height: 22px;
+  margin-bottom: 0.28rem;
+  padding: 0.22rem 0.46rem;
+  border: 1px solid rgba(var(--estimate-accent-rgb), 0.16);
+  border-radius: 999px;
+  background: rgba(var(--estimate-accent-rgb), 0.1);
+  color: var(--estimate-accent-text);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+.public-estimate-summary-head h2,
+.public-estimate-geometry-head h2,
+.public-estimate-warm-floor-head h2,
+.public-estimate-flooring-head h2,
+.public-estimate-walls-head h2,
+.public-estimate-ceiling-head h2,
+.public-estimate-electric-head h2,
+.public-estimate-plumbing-head h2,
+.public-estimate-doors-head h2,
+.public-estimate-completion-head h2,
+.public-estimate-appliances-head h2,
+.public-estimate-loose-furniture-head h2,
+.public-estimate-home-goods-head h2,
+.public-estimate-costs-head h2 {
+  color: var(--public-ink);
+  letter-spacing: 0;
+}
+
+.public-estimate-summary-grid,
+.public-estimate-warm-floor-summary,
+.public-estimate-flooring-summary,
+.public-estimate-walls-summary,
+.public-estimate-ceiling-summary,
+.public-estimate-electric-summary,
+.public-estimate-plumbing-summary,
+.public-estimate-doors-summary,
+.public-estimate-completion-summary,
+.public-estimate-appliances-summary,
+.public-estimate-loose-furniture-summary,
+.public-estimate-home-goods-summary,
+.public-estimate-cost-grid,
+.public-estimate-plumbing-composition,
+.public-estimate-doors-composition {
+  border-color: rgba(var(--estimate-accent-rgb), 0.16);
+  background: rgba(255, 255, 255, 0.78);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
+}
+
+.public-estimate-summary-card,
+.public-estimate-warm-floor-summary div,
+.public-estimate-flooring-summary div,
+.public-estimate-walls-summary div,
+.public-estimate-ceiling-summary div,
+.public-estimate-electric-summary div,
+.public-estimate-plumbing-summary div,
+.public-estimate-doors-summary div,
+.public-estimate-completion-summary div,
+.public-estimate-appliances-summary div,
+.public-estimate-loose-furniture-summary div,
+.public-estimate-home-goods-summary div,
+.public-estimate-cost-cell,
+.public-estimate-plumbing-composition div,
+.public-estimate-doors-composition div {
+  border-color: rgba(var(--estimate-accent-rgb), 0.1);
+  background: rgba(255, 255, 255, 0.62);
+}
+
+.public-estimate-summary-card strong,
+.public-estimate-warm-floor-summary strong,
+.public-estimate-flooring-summary strong,
+.public-estimate-walls-summary strong,
+.public-estimate-ceiling-summary strong,
+.public-estimate-electric-summary strong,
+.public-estimate-plumbing-summary strong,
+.public-estimate-doors-summary strong,
+.public-estimate-completion-summary strong,
+.public-estimate-appliances-summary strong,
+.public-estimate-loose-furniture-summary strong,
+.public-estimate-home-goods-summary strong,
+.public-estimate-cost-cell strong,
+.public-estimate-plumbing-composition strong,
+.public-estimate-doors-composition strong {
+  color: var(--estimate-accent-text);
+}
+
+.public-estimate-warm-floor-total,
+.public-estimate-flooring-total-cell,
+.public-estimate-walls-total-cell,
+.public-estimate-ceiling-total-cell,
+.public-estimate-electric-total-cell,
+.public-estimate-plumbing-total-cell,
+.public-estimate-doors-total-cell,
+.public-estimate-completion-total-cell,
+.public-estimate-appliances-total-cell,
+.public-estimate-loose-furniture-total-cell,
+.public-estimate-home-goods-total-cell,
+.public-estimate-cost-cell-total {
+  background: linear-gradient(180deg, rgba(var(--estimate-accent-rgb), 0.12), rgba(var(--estimate-accent-rgb), 0.07)) !important;
+}
+
+.public-estimate-warm-floor-spec,
+.public-estimate-flooring-spec,
+.public-estimate-walls-spec,
+.public-estimate-ceiling-spec,
+.public-estimate-electric-spec,
+.public-estimate-plumbing-spec,
+.public-estimate-doors-spec,
+.public-estimate-completion-spec,
+.public-estimate-appliances-spec,
+.public-estimate-loose-furniture-spec,
+.public-estimate-home-goods-spec,
+.public-estimate-warm-floor-empty {
+  border-color: rgba(var(--estimate-accent-rgb), 0.13);
+  background: rgba(255, 255, 255, 0.68);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.68);
+}
+
+.public-estimate-warm-floor-spec p,
+.public-estimate-warm-floor-spec-head p,
+.public-estimate-flooring-spec p,
+.public-estimate-walls-spec p,
+.public-estimate-ceiling-spec p,
+.public-estimate-electric-spec p,
+.public-estimate-plumbing-spec p,
+.public-estimate-doors-spec p,
+.public-estimate-completion-spec p,
+.public-estimate-appliances-spec p,
+.public-estimate-loose-furniture-spec p,
+.public-estimate-home-goods-spec p {
+  color: var(--estimate-accent-text);
+}
+
+.public-estimate-warm-floor-spec li,
+.public-estimate-flooring-spec li,
+.public-estimate-walls-spec li,
+.public-estimate-ceiling-spec li,
+.public-estimate-electric-spec li,
+.public-estimate-plumbing-spec li,
+.public-estimate-doors-spec li,
+.public-estimate-completion-spec li,
+.public-estimate-appliances-spec li,
+.public-estimate-loose-furniture-spec li,
+.public-estimate-home-goods-spec li {
+  padding: 0.18rem 0;
+  border-bottom: 1px solid rgba(var(--estimate-accent-rgb), 0.08);
+}
+
+.public-estimate-warm-floor-spec li:last-child,
+.public-estimate-flooring-spec li:last-child,
+.public-estimate-walls-spec li:last-child,
+.public-estimate-ceiling-spec li:last-child,
+.public-estimate-electric-spec li:last-child,
+.public-estimate-plumbing-spec li:last-child,
+.public-estimate-doors-spec li:last-child,
+.public-estimate-completion-spec li:last-child,
+.public-estimate-appliances-spec li:last-child,
+.public-estimate-loose-furniture-spec li:last-child,
+.public-estimate-home-goods-spec li:last-child {
+  border-bottom: 0;
+}
+
+.public-estimate-row-remove,
+.public-estimate-small-action,
+.public-estimate-spec-toggle,
+.public-estimate-toggle-group,
+.public-estimate-input,
+.public-estimate-select {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
+}
+
+.public-estimate-passport {
+  overflow: hidden;
+  border-color: rgba(30, 81, 74, 0.28);
+  border-left: 4px solid var(--public-green);
+  background:
+    radial-gradient(circle at 16% 0%, rgba(30, 81, 74, 0.16), transparent 34%),
+    linear-gradient(180deg, rgba(233, 242, 239, 0.96), rgba(255, 255, 255, 0.92)),
+    #ffffff;
+  box-shadow:
+    0 22px 54px rgba(19, 35, 31, 0.11),
+    inset 0 1px 0 rgba(255, 255, 255, 0.78);
+}
+
+.public-estimate-passport-head {
+  padding-bottom: 0.52rem;
+  border-bottom: 1px solid rgba(30, 81, 74, 0.12);
+}
+
+.public-estimate-passport-head span,
+.public-estimate-passport-badge {
+  box-shadow: 0 10px 22px rgba(30, 81, 74, 0.12);
+}
+
+.public-estimate-passport-package,
+.public-estimate-passport-detail,
+.public-estimate-passport-metrics {
+  background: rgba(255, 255, 255, 0.78);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+.public-estimate-passport-metrics {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.public-estimate-passport-metrics div {
+  border-right: 1px solid rgba(30, 81, 74, 0.1);
+  border-bottom: 0;
+}
+
+.public-estimate-passport-metrics div:last-child {
+  border-right: 0;
+  background: rgba(30, 81, 74, 0.08);
+}
+
+.public-estimate-passport-metrics strong {
+  font-size: clamp(1.08rem, 1.7vw, 1.34rem);
+}
+
+.public-estimate-passport-action {
+  box-shadow: 0 14px 28px rgba(30, 81, 74, 0.18);
+}
+
 @media (max-width: 980px) {
   .public-estimate {
     grid-template-columns: minmax(0, 1fr);
@@ -8238,6 +8624,166 @@
   .public-privacy-card,
   .public-privacy-note {
     border-radius: 20px;
+  }
+}
+
+@media (max-width: 640px) {
+  .public-estimate-card-main {
+    gap: 0.68rem;
+  }
+
+  .public-estimate-intro {
+    padding-bottom: 0.42rem;
+  }
+
+  .public-estimate-summary,
+  .public-estimate-geometry,
+  .public-estimate-warm-floor,
+  .public-estimate-flooring,
+  .public-estimate-walls,
+  .public-estimate-ceiling,
+  .public-estimate-electric,
+  .public-estimate-plumbing,
+  .public-estimate-doors,
+  .public-estimate-completion,
+  .public-estimate-appliances,
+  .public-estimate-loose-furniture,
+  .public-estimate-home-goods,
+  .public-estimate-costs {
+    gap: 0.54rem;
+    padding: 0.62rem;
+    border-left-width: 3px;
+    border-radius: 15px;
+  }
+
+  .public-estimate-summary-head,
+  .public-estimate-geometry-head,
+  .public-estimate-warm-floor-head,
+  .public-estimate-flooring-head,
+  .public-estimate-walls-head,
+  .public-estimate-ceiling-head,
+  .public-estimate-electric-head,
+  .public-estimate-plumbing-head,
+  .public-estimate-doors-head,
+  .public-estimate-completion-head,
+  .public-estimate-appliances-head,
+  .public-estimate-loose-furniture-head,
+  .public-estimate-home-goods-head,
+  .public-estimate-costs-head {
+    gap: 0.28rem;
+    padding-bottom: 0.42rem;
+  }
+
+  .public-estimate-summary-head .public-section-kicker,
+  .public-estimate-costs-head .public-section-kicker,
+  .public-estimate-geometry-head span,
+  .public-estimate-warm-floor-head span,
+  .public-estimate-flooring-head span,
+  .public-estimate-walls-head span,
+  .public-estimate-ceiling-head span,
+  .public-estimate-electric-head span,
+  .public-estimate-plumbing-head span,
+  .public-estimate-doors-head span,
+  .public-estimate-completion-head span,
+  .public-estimate-appliances-head span,
+  .public-estimate-loose-furniture-head span,
+  .public-estimate-home-goods-head span {
+    min-height: 20px;
+    padding: 0.18rem 0.4rem;
+    font-size: 0.64rem;
+  }
+
+  .public-estimate-summary-head h2,
+  .public-estimate-geometry-head h2,
+  .public-estimate-warm-floor-head h2,
+  .public-estimate-flooring-head h2,
+  .public-estimate-walls-head h2,
+  .public-estimate-ceiling-head h2,
+  .public-estimate-electric-head h2,
+  .public-estimate-plumbing-head h2,
+  .public-estimate-doors-head h2,
+  .public-estimate-completion-head h2,
+  .public-estimate-appliances-head h2,
+  .public-estimate-loose-furniture-head h2,
+  .public-estimate-home-goods-head h2,
+  .public-estimate-costs-head h2 {
+    font-size: clamp(1.02rem, 5.4vw, 1.26rem);
+  }
+
+  .public-estimate-geometry-head p,
+  .public-estimate-warm-floor-head p,
+  .public-estimate-flooring-head p,
+  .public-estimate-walls-head p,
+  .public-estimate-ceiling-head p,
+  .public-estimate-electric-head p,
+  .public-estimate-plumbing-head p,
+  .public-estimate-doors-head p,
+  .public-estimate-completion-head p,
+  .public-estimate-appliances-head p,
+  .public-estimate-loose-furniture-head p,
+  .public-estimate-home-goods-head p,
+  .public-estimate-cost-note {
+    font-size: 0.78rem;
+    line-height: 1.38;
+  }
+
+  .public-estimate-passport {
+    border-left-width: 3px;
+  }
+
+  .public-estimate-passport-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .public-estimate-passport-metrics div {
+    padding: 0.58rem;
+  }
+
+  .public-estimate-summary-card,
+  .public-estimate-warm-floor-summary div,
+  .public-estimate-flooring-summary div,
+  .public-estimate-walls-summary div,
+  .public-estimate-ceiling-summary div,
+  .public-estimate-electric-summary div,
+  .public-estimate-plumbing-summary div,
+  .public-estimate-doors-summary div,
+  .public-estimate-completion-summary div,
+  .public-estimate-appliances-summary div,
+  .public-estimate-loose-furniture-summary div,
+  .public-estimate-home-goods-summary div,
+  .public-estimate-cost-cell {
+    gap: 0.2rem;
+    padding: 0.54rem;
+  }
+
+  .public-estimate-warm-floor-spec,
+  .public-estimate-flooring-spec,
+  .public-estimate-walls-spec,
+  .public-estimate-ceiling-spec,
+  .public-estimate-electric-spec,
+  .public-estimate-plumbing-spec,
+  .public-estimate-doors-spec,
+  .public-estimate-completion-spec,
+  .public-estimate-appliances-spec,
+  .public-estimate-loose-furniture-spec,
+  .public-estimate-home-goods-spec,
+  .public-estimate-warm-floor-empty {
+    padding: 0.52rem;
+    border-radius: 13px;
+  }
+
+  .public-estimate-warm-floor-spec li,
+  .public-estimate-flooring-spec li,
+  .public-estimate-walls-spec li,
+  .public-estimate-ceiling-spec li,
+  .public-estimate-electric-spec li,
+  .public-estimate-plumbing-spec li,
+  .public-estimate-doors-spec li,
+  .public-estimate-completion-spec li,
+  .public-estimate-appliances-spec li,
+  .public-estimate-loose-furniture-spec li,
+  .public-estimate-home-goods-spec li {
+    padding: 0.14rem 0;
   }
 }
 

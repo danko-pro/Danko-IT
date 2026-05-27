@@ -94,6 +94,10 @@ function shouldShowRoomTypeSelector(room: EstimateRoomDraft) {
   return inferredType === null || inferredType !== room.type;
 }
 
+function getRoomTypeLabel(type: EstimateRoomType) {
+  return roomTypeOptions.find((option) => option.value === type)?.label ?? "Другое";
+}
+
 const flooringCoveringOptions: Array<{ value: FlooringCoveringType; label: string }> = [
   { value: "porcelain", label: "Керамогранит" },
   { value: "quartz_vinyl", label: "Кварцвинил" },
@@ -537,9 +541,9 @@ function classifyEstimatePackage(pricePerSquareMeter: number) {
 function createEstimateRoom(): EstimateRoomDraft {
   return {
     id: `room-${Date.now()}-${Math.random().toString(16).slice(2)}`,
-    name: "Новое помещение",
+    name: "",
     type: "other",
-    area: "10",
+    area: "",
     doorCount: "1",
     windowCount: "0",
   };
@@ -680,6 +684,7 @@ export function PublicEstimate() {
   const [activeEstimateSection, setActiveEstimateSection] = useState(ESTIMATE_INITIAL_SECTION_ID);
   const estimateRailScrollRef = useRef<HTMLElement>(null);
   const navigationScrollTargetRef = useRef<EstimateNavigationScrollLock | null>(null);
+  const pendingAddedRoomIdRef = useRef<string | null>(null);
 
   const ceilingHeight = useMemo(() => parseEstimateDecimal(ceilingHeightInput), [ceilingHeightInput]);
   const roomInputs = useMemo(() => rooms.map(normalizeRoom), [rooms]);
@@ -1124,6 +1129,31 @@ export function PublicEstimate() {
   }, [activeEstimateSection]);
 
   useEffect(() => {
+    const roomId = pendingAddedRoomIdRef.current;
+
+    if (!roomId) {
+      return;
+    }
+
+    const row = document.querySelector<HTMLElement>(`[data-estimate-room-id="${roomId}"]`);
+
+    if (!row) {
+      return;
+    }
+
+    pendingAddedRoomIdRef.current = null;
+
+    const nameInput = row.querySelector<HTMLInputElement>(".public-estimate-room-name input");
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    nameInput?.focus({ preventScroll: true });
+    row.scrollIntoView({
+      block: prefersReducedMotion ? "nearest" : "center",
+      behavior: prefersReducedMotion ? "auto" : "smooth",
+    });
+  }, [rooms]);
+
+  useEffect(() => {
     const railScroll = estimateRailScrollRef.current;
 
     if (!railScroll) {
@@ -1434,7 +1464,25 @@ export function PublicEstimate() {
   const hiddenHomeGoodsSpecCount = Math.max(0, homeGoodsSpecItems.length - visibleHomeGoodsSpecItems.length);
 
   function updateRoom(roomId: string, patch: Partial<EstimateRoomDraft>) {
-    setRooms((currentRooms) => currentRooms.map((room) => (room.id === roomId ? { ...room, ...patch } : room)));
+    setRooms((currentRooms) =>
+      currentRooms.map((room) => {
+        if (room.id !== roomId) {
+          return room;
+        }
+
+        const nextRoom = { ...room, ...patch };
+
+        if ("name" in patch) {
+          const inferredType = inferRoomTypeFromName(nextRoom.name);
+
+          if (inferredType !== null) {
+            nextRoom.type = inferredType;
+          }
+        }
+
+        return nextRoom;
+      }),
+    );
   }
 
   function updateWarmFloorRoom(roomId: string, patch: WarmFloorRoomDraft) {
@@ -1595,7 +1643,10 @@ export function PublicEstimate() {
   }
 
   function addRoom() {
-    setRooms((currentRooms) => [...currentRooms, createEstimateRoom()]);
+    const newRoom = createEstimateRoom();
+
+    pendingAddedRoomIdRef.current = newRoom.id;
+    setRooms((currentRooms) => [...currentRooms, newRoom]);
   }
 
   function removeRoom(roomId: string) {
@@ -1855,7 +1906,7 @@ export function PublicEstimate() {
                 const roomDraft = rooms[index];
 
                 return (
-                  <article className="public-estimate-room-row" key={room.id}>
+                  <article className="public-estimate-room-row" data-estimate-room-id={room.id} key={room.id}>
                     <div className="public-estimate-room-top">
                       <div className="public-estimate-room-index" aria-hidden="true">
                         {String(index + 1).padStart(2, "0")}
@@ -1866,6 +1917,7 @@ export function PublicEstimate() {
                         <input
                           aria-label="Помещение"
                           className="public-estimate-input"
+                          placeholder="Название по БТИ"
                           value={roomDraft.name}
                           onChange={(event) => updateRoom(room.id, { name: event.target.value })}
                         />
@@ -1883,23 +1935,33 @@ export function PublicEstimate() {
                     </div>
 
                     <div className="public-estimate-room-main">
-                      {shouldShowRoomTypeSelector(roomDraft) ? (
-                        <label className="public-estimate-field public-estimate-room-type">
-                          <span className="public-estimate-mobile-label">Назначение</span>
-                          <select
-                            aria-label="Назначение помещения"
-                            className="public-estimate-select"
+                      {showRoomTypeColumn ? (
+                        shouldShowRoomTypeSelector(roomDraft) ? (
+                          <label className="public-estimate-field public-estimate-room-type">
+                            <span className="public-estimate-mobile-label">Назначение</span>
+                            <select
+                              aria-label="Назначение помещения"
+                              className="public-estimate-select"
+                              title="Коэффициент формы и умолчания в разделах сметы"
+                              value={roomDraft.type}
+                              onChange={(event) => updateRoom(room.id, { type: event.target.value as EstimateRoomType })}
+                            >
+                              {roomTypeOptions.map((option) => (
+                                <option key={option.value} value={option.value}>
+                                  {option.label}
+                                </option>
+                              ))}
+                            </select>
+                          </label>
+                        ) : (
+                          <div
+                            className="public-estimate-room-type public-estimate-room-type-readonly"
                             title="Коэффициент формы и умолчания в разделах сметы"
-                            value={roomDraft.type}
-                            onChange={(event) => updateRoom(room.id, { type: event.target.value as EstimateRoomType })}
                           >
-                            {roomTypeOptions.map((option) => (
-                              <option key={option.value} value={option.value}>
-                                {option.label}
-                              </option>
-                            ))}
-                          </select>
-                        </label>
+                            <span className="public-estimate-mobile-label">Назначение</span>
+                            <span className="public-estimate-room-type-value">{getRoomTypeLabel(roomDraft.type)}</span>
+                          </div>
+                        )
                       ) : null}
 
                       <div className="public-estimate-room-metrics">

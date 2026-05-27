@@ -4114,6 +4114,29 @@
   grid-row: 1;
 }
 
+.public-estimate-room-type-readonly {
+  display: grid;
+  gap: 0.12rem;
+  min-width: 0;
+}
+
+.public-estimate-room-type-value {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 34px;
+  padding: 0 0.42rem;
+  border: 1px solid rgba(30, 81, 74, 0.08);
+  border-radius: 10px;
+  background: rgba(246, 250, 248, 0.72);
+  color: rgba(19, 35, 31, 0.62);
+  font-size: 0.78rem;
+  font-weight: 760;
+  line-height: 1.2;
+  text-align: center;
+}
+
 .public-estimate-geometry:not(.public-estimate-geometry--has-type) .public-estimate-room-area {
   grid-column: 3;
   grid-row: 1;

@@ -7059,17 +7059,11 @@
   opacity: 0.5;
 }
 
-.public-estimate-passport-composition-item.is-excluded {
-  padding-left: 0.72rem;
-  color: rgba(19, 35, 31, 0.4);
-  font-size: 0.7rem;
+.public-estimate-passport-composition-item.is-empty {
+  color: rgba(19, 35, 31, 0.42);
+  font-size: 0.74rem;
   font-weight: 560;
-}
-
-.public-estimate-passport-composition-item.is-excluded::before {
-  content: "— ";
-  margin-left: -0.72rem;
-  color: rgba(19, 35, 31, 0.28);
+  font-style: italic;
 }
 
 .public-estimate-passport-action {

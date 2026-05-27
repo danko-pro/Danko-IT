@@ -853,44 +853,17 @@ export function PublicEstimate() {
     completionOptions.includeKitchenFridgePenal;
   const arePenalsIncluded = completionOptions.includeKitchenAppliancePenal || completionOptions.includeKitchenFridgePenal;
   const passportCompletionItems = [
-    {
-      isIncluded: isKitchenCompletionIncluded,
-      includedLabel: "Кухня: включена",
-      excludedLabel: "Кухня: не включена",
-    },
-    {
-      isIncluded: arePenalsIncluded,
-      includedLabel: "Пеналы: включены",
-      excludedLabel: "Пеналы: не включены",
-    },
-    {
-      isIncluded: completionOptions.includeWardrobe,
-      includedLabel: "Гардеробная: включена",
-      excludedLabel: "Гардеробная: не включена",
-    },
-    {
-      isIncluded: completionOptions.includeBathroomFurniture,
-      includedLabel: "Мебель санузла: включена",
-      excludedLabel: "Мебель санузла: не включена",
-    },
+    { isIncluded: isKitchenCompletionIncluded, label: "Кухня" },
+    { isIncluded: arePenalsIncluded, label: "Пеналы" },
+    { isIncluded: completionOptions.includeWardrobe, label: "Гардеробная" },
+    { isIncluded: completionOptions.includeBathroomFurniture, label: "Мебель санузла" },
   ];
   const passportIncludedItems = [
-    ...passportCompletionItems
-      .filter((item) => item.isIncluded)
-      .map((item) => item.includedLabel.replace(/:\s*включен[аы]?$/i, "")),
+    ...passportCompletionItems.filter((item) => item.isIncluded).map((item) => item.label),
     ...(appliancesResult.total > 0 ? ["Бытовая техника"] : []),
     ...(looseFurnitureResult.total > 0 ? ["Свободная мебель"] : []),
     ...(homeGoodsOptions.includeCleaning ? ["Уборка"] : []),
     ...(homeGoodsOptions.includeHomeGoods ? ["Товары для дома"] : []),
-  ];
-  const passportExcludedItems = [
-    ...passportCompletionItems
-      .filter((item) => !item.isIncluded)
-      .map((item) => item.excludedLabel),
-    ...(appliancesResult.total <= 0 ? ["Бытовая техника: не включена"] : []),
-    ...(looseFurnitureResult.total <= 0 ? ["Свободная мебель: не включена"] : []),
-    ...(!homeGoodsOptions.includeCleaning ? ["Уборка: не включена"] : []),
-    ...(!homeGoodsOptions.includeHomeGoods ? ["Товары для дома: не включены"] : []),
   ];
 
   const scrollToEstimateSection = useCallback((sectionId: string) => {
@@ -3521,16 +3494,17 @@ export function PublicEstimate() {
           <div className="public-estimate-passport-composition">
             <p>Состав</p>
             <ul className="public-estimate-passport-composition-list" aria-label="Состав расчёта">
-              {passportIncludedItems.map((item) => (
-                <li className="public-estimate-passport-composition-item is-included" key={`in-${item}`}>
-                  {item}
+              {passportIncludedItems.length === 0 ? (
+                <li className="public-estimate-passport-composition-item is-empty">
+                  Выберите разделы в смете
                 </li>
-              ))}
-              {passportExcludedItems.map((item) => (
-                <li className="public-estimate-passport-composition-item is-excluded" key={`ex-${item}`}>
-                  {item}
-                </li>
-              ))}
+              ) : (
+                passportIncludedItems.map((item) => (
+                  <li className="public-estimate-passport-composition-item is-included" key={item}>
+                    {item}
+                  </li>
+                ))
+              )}
             </ul>
           </div>
 

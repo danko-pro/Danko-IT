@@ -3853,6 +3853,50 @@
   font-size: 0.98rem;
 }
 
+.public-estimate-object {
+  display: grid;
+  gap: 0.6rem;
+  margin-top: 0;
+  padding: 0.72rem;
+  border: 1px solid rgba(30, 81, 74, 0.12);
+  border-radius: 16px;
+  background: #ffffff;
+}
+
+.public-estimate-object-head {
+  display: grid;
+  gap: 0.24rem;
+}
+
+.public-estimate-object-head span {
+  display: block;
+  margin-bottom: 0.18rem;
+  color: var(--public-muted);
+  font-size: 0.72rem;
+  font-weight: 650;
+  letter-spacing: 0;
+  line-height: 1.25;
+  text-transform: none;
+}
+
+.public-estimate-object-head h2 {
+  margin: 0;
+  color: var(--public-ink);
+  font-size: clamp(1.08rem, 2vw, 1.32rem);
+  font-weight: 850;
+  line-height: 1.12;
+}
+
+.public-estimate-object-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem 0.75rem;
+}
+
+.public-estimate-object-contact {
+  grid-column: 1 / -1;
+}
+
 .public-estimate-geometry {
   display: grid;
   gap: 0.6rem;
@@ -7062,7 +7106,7 @@
 .public-estimate-passport-volumes-panel {
   display: grid;
   gap: 0.42rem;
-  scroll-margin-top: 6rem;
+  scroll-margin-top: 96px;
 }
 
 .public-estimate-passport-volumes-kicker {
@@ -7312,6 +7356,7 @@
 }
 
 .public-estimate-summary,
+.public-estimate-object,
 .public-estimate-geometry,
 .public-estimate-warm-floor,
 .public-estimate-flooring,
@@ -7332,13 +7377,14 @@
   border-radius: 16px;
   background: #ffffff;
   box-shadow: none;
-  scroll-margin-top: 6rem;
+  scroll-margin-top: 96px;
 }
 
 .public-estimate-summary {
   padding: 0.72rem;
 }
 
+.public-estimate-object-head,
 .public-estimate-summary-head,
 .public-estimate-geometry-head,
 .public-estimate-warm-floor-head,
@@ -7361,6 +7407,7 @@
 .public-estimate-summary-head .public-section-kicker,
 .public-estimate-costs-head span,
 .public-estimate-costs-head .public-section-kicker,
+.public-estimate-object-head span,
 .public-estimate-geometry-head span,
 .public-estimate-warm-floor-head span,
 .public-estimate-flooring-head span,
@@ -7390,6 +7437,7 @@
 }
 
 .public-estimate-summary-head h2,
+.public-estimate-object-head h2,
 .public-estimate-geometry-head h2,
 .public-estimate-warm-floor-head h2,
 .public-estimate-flooring-head h2,
@@ -7678,6 +7726,7 @@ html:has(.public-estimate-page) {
   }
 
   .public-estimate-summary,
+  .public-estimate-object,
   .public-estimate-geometry,
   .public-estimate-warm-floor,
   .public-estimate-flooring,
@@ -7690,8 +7739,9 @@ html:has(.public-estimate-page) {
   .public-estimate-appliances,
   .public-estimate-loose-furniture,
   .public-estimate-home-goods,
-  .public-estimate-costs {
-    scroll-margin-top: 4rem;
+  .public-estimate-costs,
+  .public-estimate-passport-volumes-panel {
+    scroll-margin-top: 64px;
   }
 
   .public-estimate-rail {
@@ -8429,6 +8479,17 @@ html:has(.public-estimate-page) {
     gap: 0.62rem;
     padding: 0.68rem;
     border-radius: 16px;
+  }
+
+  .public-estimate-object {
+    gap: 0.62rem;
+    padding: 0.68rem;
+    border-radius: 16px;
+  }
+
+  .public-estimate-object-form {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.5rem;
   }
 
   .public-estimate-warm-floor {

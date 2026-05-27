@@ -145,10 +145,9 @@ const estimateNavigationItems: Array<{
   id: string;
   label: string;
   icon: EstimateNavigationIcon;
-  isInformational?: boolean;
 }> = [
-  { id: "estimate-geometry", label: "Объёмы", icon: "geometry", isInformational: true },
   { id: "estimate-object", label: "Объект", icon: "object" },
+  { id: "estimate-geometry", label: "Геометрия", icon: "geometry" },
   { id: "estimate-warm-floor", label: "Тёплый пол", icon: "warmFloor" },
   { id: "estimate-flooring", label: "Полы", icon: "flooring" },
   { id: "estimate-walls", label: "Стены", icon: "walls" },
@@ -163,13 +162,18 @@ const estimateNavigationItems: Array<{
   { id: "estimate-costs", label: "Итог", icon: "total" },
 ];
 
-const ESTIMATE_INITIAL_SECTION_ID =
-  estimateNavigationItems.find((item) => !item.isInformational)?.id ?? "estimate-object";
-const ESTIMATE_SCROLL_SPY_SECTION_IDS = estimateNavigationItems
-  .filter((item) => !item.isInformational)
-  .map((item) => item.id);
+const ESTIMATE_INITIAL_SECTION_ID = estimateNavigationItems[0]?.id ?? "estimate-object";
+const ESTIMATE_SCROLL_SPY_SECTION_IDS = estimateNavigationItems.map((item) => item.id);
 const ESTIMATE_PAGE_BOTTOM_THRESHOLD_PX = 96;
-const ESTIMATE_SCROLL_OFFSET_PX = 96;
+const ESTIMATE_SCROLL_ACTIVATION_LINE_DESKTOP_PX = 96;
+const ESTIMATE_SCROLL_ACTIVATION_LINE_MOBILE_PX = 64;
+const ESTIMATE_MOBILE_BREAKPOINT_QUERY = "(max-width: 1180px)";
+
+function getEstimateScrollActivationLinePx(): number {
+  return window.matchMedia(ESTIMATE_MOBILE_BREAKPOINT_QUERY).matches
+    ? ESTIMATE_SCROLL_ACTIVATION_LINE_MOBILE_PX
+    : ESTIMATE_SCROLL_ACTIVATION_LINE_DESKTOP_PX;
+}
 const ESTIMATE_PROGRAMMATIC_SCROLL_MAX_MS = 3000;
 const ESTIMATE_PROGRAMMATIC_SCROLL_REDUCED_MOTION_MAX_MS = 150;
 const ESTIMATE_SCROLL_STABILIZE_FRAMES = 4;
@@ -202,21 +206,14 @@ function releaseEstimateNavigationScrollLock(
   lockRef.current = null;
 }
 
-function resolveEstimateNavScrollTarget(navItemId: string): string {
-  if (navItemId === "estimate-geometry") {
-    return window.matchMedia("(min-width: 1181px)").matches
-      ? "estimate-passport-volumes"
-      : "estimate-geometry";
-  }
-
-  return navItemId;
-}
-
-function pickActiveEstimateSectionByScrollLine(sections: HTMLElement[], scrollOffsetPx: number): string {
+function pickActiveEstimateSectionByScrollLine(
+  sections: HTMLElement[],
+  activationLinePx: number,
+): string {
   let activeId = sections[0]?.id ?? ESTIMATE_INITIAL_SECTION_ID;
 
   for (const section of sections) {
-    if (section.getBoundingClientRect().top <= scrollOffsetPx + 2) {
+    if (section.getBoundingClientRect().top <= activationLinePx) {
       activeId = section.id;
     }
   }
@@ -225,9 +222,7 @@ function pickActiveEstimateSectionByScrollLine(sections: HTMLElement[], scrollOf
 }
 
 function getEstimateStepIndex(sectionId: string): number {
-  const numberedItems = estimateNavigationItems.filter((item) => !item.isInformational);
-
-  return numberedItems.findIndex((item) => item.id === sectionId);
+  return estimateNavigationItems.findIndex((item) => item.id === sectionId);
 }
 
 function formatEstimateStep(sectionId: string): string {
@@ -362,6 +357,13 @@ function EstimateNavigationIcon({ name }: { name: EstimateNavigationIcon }) {
       );
   }
 }
+
+type EstimateObjectMeta = {
+  address: string;
+  complexName: string;
+  apartmentNumber: string;
+  contact: string;
+};
 
 type EstimateRoomDraft = Omit<EstimateRoomInput, "area" | "doorCount" | "windowCount"> & {
   area: string;
@@ -581,6 +583,12 @@ function getDefaultCeilingLightSettings(roomType: EstimateRoomType) {
 }
 
 export function PublicEstimate() {
+  const [objectMeta, setObjectMeta] = useState<EstimateObjectMeta>({
+    address: "",
+    complexName: "",
+    apartmentNumber: "",
+    contact: "",
+  });
   const [ceilingHeightInput, setCeilingHeightInput] = useState("2.7");
   const [rooms, setRooms] = useState<EstimateRoomDraft[]>(initialRooms);
   const [warmFloorMode, setWarmFloorMode] = useState<WarmFloorMode>("water");
@@ -858,8 +866,7 @@ export function PublicEstimate() {
   ];
   const packageClassification = classifyEstimatePackage(estimateResult.totals.pricePerSquareMeter);
   const scrollToEstimateSection = useCallback((sectionId: string) => {
-    const scrollTargetId = resolveEstimateNavScrollTarget(sectionId);
-    const section = document.getElementById(scrollTargetId);
+    const section = document.getElementById(sectionId);
 
     if (!section) {
       return;
@@ -868,7 +875,8 @@ export function PublicEstimate() {
     releaseEstimateNavigationScrollLock(navigationScrollTargetRef);
 
     const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const targetTop = Math.max(0, section.getBoundingClientRect().top + window.scrollY - ESTIMATE_SCROLL_OFFSET_PX);
+    const activationLinePx = getEstimateScrollActivationLinePx();
+    const targetTop = Math.max(0, section.getBoundingClientRect().top + window.scrollY - activationLinePx);
 
     setActiveEstimateSection(sectionId);
 
@@ -1010,7 +1018,10 @@ export function PublicEstimate() {
         return;
       }
 
-      const nextSectionId = pickActiveEstimateSectionByScrollLine(sections, ESTIMATE_SCROLL_OFFSET_PX);
+      const nextSectionId = pickActiveEstimateSectionByScrollLine(
+        sections,
+        getEstimateScrollActivationLinePx(),
+      );
 
       setActiveEstimateSection((current) => (current === nextSectionId ? current : nextSectionId));
     };
@@ -1622,36 +1633,32 @@ export function PublicEstimate() {
 
           <nav className="public-estimate-rail-nav" aria-label="Разделы расчёта" ref={estimateRailScrollRef}>
             <ol className="public-estimate-rail-list">
-              {(() => {
-                let stepCounter = 0;
+              {estimateNavigationItems.map((item, index) => {
+                const isActive = activeEstimateSection === item.id;
+                const stepLabel = String(index + 1).padStart(2, "0");
 
-                return estimateNavigationItems.map((item) => {
-                  const isActive = activeEstimateSection === item.id;
-                  const stepLabel = item.isInformational ? null : String(++stepCounter).padStart(2, "0");
-
-                  return (
-                    <li className="public-estimate-rail-item" key={item.id}>
-                      <a
-                        className={`public-estimate-rail-link${isActive ? " is-active" : ""}${item.isInformational ? " is-informational" : ""}`}
-                        href={`#${item.id}`}
-                        aria-current={isActive ? "location" : undefined}
-                        onClick={(event) => {
-                          event.preventDefault();
-                          scrollToEstimateSection(item.id);
-                        }}
-                      >
-                        <span className="public-estimate-rail-icon">
-                          <EstimateNavigationIcon name={item.icon} />
-                        </span>
-                        <span className="public-estimate-rail-copy">
-                          {stepLabel ? <span className="public-estimate-rail-step">{stepLabel}</span> : null}
-                          <span className="public-estimate-rail-label">{item.label}</span>
-                        </span>
-                      </a>
-                    </li>
-                  );
-                });
-              })()}
+                return (
+                  <li className="public-estimate-rail-item" key={item.id}>
+                    <a
+                      className={`public-estimate-rail-link${isActive ? " is-active" : ""}`}
+                      href={`#${item.id}`}
+                      aria-current={isActive ? "location" : undefined}
+                      onClick={(event) => {
+                        event.preventDefault();
+                        scrollToEstimateSection(item.id);
+                      }}
+                    >
+                      <span className="public-estimate-rail-icon">
+                        <EstimateNavigationIcon name={item.icon} />
+                      </span>
+                      <span className="public-estimate-rail-copy">
+                        <span className="public-estimate-rail-step">{stepLabel}</span>
+                        <span className="public-estimate-rail-label">{item.label}</span>
+                      </span>
+                    </a>
+                  </li>
+                );
+              })}
             </ol>
           </nav>
 
@@ -1704,13 +1711,68 @@ export function PublicEstimate() {
             </p>
           </div>
 
-          <div id="estimate-geometry" className="public-estimate-geometry-anchor" aria-hidden="true" />
-
-          <section id="estimate-object" className="public-estimate-geometry" aria-labelledby="public-estimate-geometry-title">
-            <div className="public-estimate-geometry-head">
+          <section id="estimate-object" className="public-estimate-object" aria-labelledby="public-estimate-object-title">
+            <div className="public-estimate-object-head">
               <div>
                 <span>{formatEstimateStep("estimate-object")}</span>
-                <h2 id="public-estimate-geometry-title">Объект и помещения</h2>
+                <h2 id="public-estimate-object-title">Объект</h2>
+              </div>
+            </div>
+
+            <div className="public-estimate-object-form">
+              <label className="public-estimate-field">
+                <span>Адрес объекта</span>
+                <input
+                  className="public-estimate-input"
+                  value={objectMeta.address}
+                  onChange={(event) =>
+                    setObjectMeta((current) => ({ ...current, address: event.target.value }))
+                  }
+                />
+              </label>
+
+              <label className="public-estimate-field">
+                <span>Название ЖК</span>
+                <input
+                  className="public-estimate-input"
+                  placeholder="Необязательно"
+                  value={objectMeta.complexName}
+                  onChange={(event) =>
+                    setObjectMeta((current) => ({ ...current, complexName: event.target.value }))
+                  }
+                />
+              </label>
+
+              <label className="public-estimate-field">
+                <span>Номер квартиры</span>
+                <input
+                  className="public-estimate-input"
+                  value={objectMeta.apartmentNumber}
+                  onChange={(event) =>
+                    setObjectMeta((current) => ({ ...current, apartmentNumber: event.target.value }))
+                  }
+                />
+              </label>
+
+              <label className="public-estimate-field public-estimate-object-contact">
+                <span>Контакт</span>
+                <input
+                  className="public-estimate-input"
+                  placeholder="Телефон или имя + телефон"
+                  value={objectMeta.contact}
+                  onChange={(event) =>
+                    setObjectMeta((current) => ({ ...current, contact: event.target.value }))
+                  }
+                />
+              </label>
+            </div>
+          </section>
+
+          <section id="estimate-geometry" className="public-estimate-geometry" aria-labelledby="public-estimate-geometry-title">
+            <div className="public-estimate-geometry-head">
+              <div>
+                <span>{formatEstimateStep("estimate-geometry")}</span>
+                <h2 id="public-estimate-geometry-title">Помещения и объём</h2>
               </div>
 
               <label className="public-estimate-field public-estimate-ceiling-field">

@@ -7690,6 +7690,7 @@
   .public-estimate-electric,
   .public-estimate-plumbing,
   .public-estimate-doors,
+  .public-estimate-appliances,
   .public-estimate-completion,
   .public-estimate-costs {
     break-inside: avoid;

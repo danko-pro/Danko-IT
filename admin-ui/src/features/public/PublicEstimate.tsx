@@ -597,7 +597,7 @@ export function PublicEstimate() {
   const [isLooseFurnitureSpecExpanded, setIsLooseFurnitureSpecExpanded] = useState(false);
   const [isHomeGoodsSpecExpanded, setIsHomeGoodsSpecExpanded] = useState(false);
   const [activeEstimateSection, setActiveEstimateSection] = useState(ESTIMATE_INITIAL_SECTION_ID);
-  const estimateRailListRef = useRef<HTMLOListElement>(null);
+  const estimateRailScrollRef = useRef<HTMLElement>(null);
 
   const ceilingHeight = useMemo(() => parseEstimateDecimal(ceilingHeightInput), [ceilingHeightInput]);
   const roomInputs = useMemo(() => rooms.map(normalizeRoom), [rooms]);
@@ -932,13 +932,13 @@ export function PublicEstimate() {
   }, [isEstimatePageBottom]);
 
   useEffect(() => {
-    const railList = estimateRailListRef.current;
+    const railScroll = estimateRailScrollRef.current;
 
-    if (!railList) {
+    if (!railScroll) {
       return;
     }
 
-    const activeLink = railList.querySelector<HTMLAnchorElement>(`a[href="#${activeEstimateSection}"]`);
+    const activeLink = railScroll.querySelector<HTMLAnchorElement>(`a[href="#${activeEstimateSection}"]`);
 
     if (!activeLink) {
       return;
@@ -952,6 +952,105 @@ export function PublicEstimate() {
       inline: "center",
     });
   }, [activeEstimateSection]);
+
+  useEffect(() => {
+    const railScroll = estimateRailScrollRef.current;
+
+    if (!railScroll) {
+      return;
+    }
+
+    const horizontalRailQuery = window.matchMedia("(max-width: 1180px)");
+    let dragPointerId: number | null = null;
+    let dragStartX = 0;
+    let dragStartScrollLeft = 0;
+    let dragMoved = false;
+    let suppressLinkClickUntil = 0;
+
+    const isHorizontalRail = () => horizontalRailQuery.matches;
+
+    const canScrollHorizontally = () => railScroll.scrollWidth > railScroll.clientWidth + 1;
+
+    const handleWheel = (event: WheelEvent) => {
+      if (!isHorizontalRail() || !canScrollHorizontally()) {
+        return;
+      }
+
+      const delta =
+        Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY;
+
+      if (delta === 0) {
+        return;
+      }
+
+      railScroll.scrollLeft += delta;
+      event.preventDefault();
+    };
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (!isHorizontalRail() || event.button !== 0 || !canScrollHorizontally()) {
+        return;
+      }
+
+      dragPointerId = event.pointerId;
+      dragStartX = event.clientX;
+      dragStartScrollLeft = railScroll.scrollLeft;
+      dragMoved = false;
+      railScroll.classList.add("is-dragging");
+    };
+
+    const handlePointerMove = (event: PointerEvent) => {
+      if (dragPointerId === null || event.pointerId !== dragPointerId) {
+        return;
+      }
+
+      const deltaX = event.clientX - dragStartX;
+
+      if (Math.abs(deltaX) > 4) {
+        dragMoved = true;
+      }
+
+      railScroll.scrollLeft = dragStartScrollLeft - deltaX;
+    };
+
+    const finishDrag = (event: PointerEvent) => {
+      if (dragPointerId === null || event.pointerId !== dragPointerId) {
+        return;
+      }
+
+      if (dragMoved) {
+        suppressLinkClickUntil = Date.now() + 300;
+      }
+
+      dragPointerId = null;
+      dragMoved = false;
+      railScroll.classList.remove("is-dragging");
+    };
+
+    const handleClickCapture = (event: MouseEvent) => {
+      if (Date.now() < suppressLinkClickUntil) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+    };
+
+    railScroll.addEventListener("wheel", handleWheel, { passive: false });
+    railScroll.addEventListener("pointerdown", handlePointerDown);
+    railScroll.addEventListener("pointermove", handlePointerMove);
+    railScroll.addEventListener("pointerup", finishDrag);
+    railScroll.addEventListener("pointercancel", finishDrag);
+    railScroll.addEventListener("click", handleClickCapture, true);
+
+    return () => {
+      railScroll.removeEventListener("wheel", handleWheel);
+      railScroll.removeEventListener("pointerdown", handlePointerDown);
+      railScroll.removeEventListener("pointermove", handlePointerMove);
+      railScroll.removeEventListener("pointerup", finishDrag);
+      railScroll.removeEventListener("pointercancel", finishDrag);
+      railScroll.removeEventListener("click", handleClickCapture, true);
+      railScroll.classList.remove("is-dragging");
+    };
+  }, []);
 
   const warmFloorModeLabel = warmFloorMode === "water" ? "Водяной" : "Электрический";
   const warmFloorConnectionLabel =
@@ -1379,8 +1478,8 @@ export function PublicEstimate() {
             <strong>Разделы расчёта</strong>
           </div>
 
-          <nav className="public-estimate-rail-nav" aria-label="Разделы расчёта">
-            <ol className="public-estimate-rail-list" ref={estimateRailListRef}>
+          <nav className="public-estimate-rail-nav" aria-label="Разделы расчёта" ref={estimateRailScrollRef}>
+            <ol className="public-estimate-rail-list">
               {estimateNavigationItems.map((item, index) => {
                 const isActive = activeEstimateSection === item.id;
 

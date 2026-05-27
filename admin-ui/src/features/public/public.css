@@ -7725,8 +7725,11 @@ html:has(.public-estimate-page) {
     position: sticky;
     top: 0;
     z-index: 30;
+    width: 100%;
+    min-width: 0;
     margin: -0.2rem 0 0.35rem;
     padding: 0.45rem 0;
+    overflow: hidden;
     background: rgba(247, 252, 249, 0.94);
     backdrop-filter: blur(14px);
     isolation: isolate;
@@ -7759,22 +7762,34 @@ html:has(.public-estimate-page) {
 
   .public-estimate-rail-nav {
     max-height: none;
-    overflow: visible;
-  }
-
-  .public-estimate-rail-list {
-    display: flex;
-    gap: 0.42rem;
+    width: 100%;
+    min-width: 0;
     overflow-x: auto;
-    padding: 0.1rem 0.25rem 0.25rem;
+    overflow-y: hidden;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-x: contain;
     scrollbar-width: none;
     touch-action: pan-x;
+    cursor: grab;
   }
 
-  .public-estimate-rail-list::-webkit-scrollbar {
+  .public-estimate-rail-nav.is-dragging {
+    cursor: grabbing;
+    user-select: none;
+  }
+
+  .public-estimate-rail-nav::-webkit-scrollbar {
     display: none;
+  }
+
+  .public-estimate-rail-list {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 0.42rem;
+    width: max-content;
+    min-width: 100%;
+    margin: 0;
+    padding: 0.1rem 0.25rem 0.25rem;
   }
 
   .public-estimate-rail-item {
@@ -7788,6 +7803,9 @@ html:has(.public-estimate-page) {
     border: 1px solid rgba(30, 81, 74, 0.1);
     background: rgba(255, 255, 255, 0.72);
     white-space: nowrap;
+    flex-shrink: 0;
+    -webkit-user-drag: none;
+    user-select: none;
   }
 
   .public-estimate-rail-link.is-active::before {

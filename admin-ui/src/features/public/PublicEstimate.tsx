@@ -3430,10 +3430,10 @@ export function PublicEstimate() {
           </div>
         </div>
 
-        <aside id="estimate-passport" className="public-estimate-card public-estimate-passport" aria-label="Паспорт расчёта">
+        <aside id="estimate-passport" className="public-estimate-card public-estimate-passport" aria-label="Паспорт сметы">
           <div className="public-estimate-passport-head">
-            <span>Паспорт расчёта</span>
-            <h2>Предварительная оценка по текущему составу</h2>
+            <span>Паспорт сметы</span>
+            <h2>Оценка по составу сметы</h2>
           </div>
 
           <div className="public-estimate-passport-package">
@@ -3445,7 +3445,7 @@ export function PublicEstimate() {
             <small>{packageClassification.explanation}</small>
           </div>
 
-          <div className="public-estimate-passport-metrics" aria-label="Итоги паспорта расчёта">
+          <div className="public-estimate-passport-metrics" aria-label="Итоги паспорта сметы">
             <div>
               <span>Итого</span>
               <strong>{formatMoney(estimateResult.totals.total)}</strong>

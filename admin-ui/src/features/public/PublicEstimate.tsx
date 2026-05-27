@@ -145,8 +145,9 @@ const estimateNavigationItems: Array<{
   id: string;
   label: string;
   icon: EstimateNavigationIcon;
+  isInformational?: boolean;
 }> = [
-  { id: "estimate-geometry", label: "Геометрия", icon: "geometry" },
+  { id: "estimate-geometry", label: "Геометрия", icon: "geometry", isInformational: true },
   { id: "estimate-object", label: "Объект", icon: "object" },
   { id: "estimate-warm-floor", label: "Тёплый пол", icon: "warmFloor" },
   { id: "estimate-flooring", label: "Полы", icon: "flooring" },
@@ -209,8 +210,14 @@ function pickActiveEstimateSectionByScrollLine(sections: HTMLElement[], scrollOf
   return activeId;
 }
 
+function getEstimateStepIndex(sectionId: string): number {
+  const numberedItems = estimateNavigationItems.filter((item) => !item.isInformational);
+
+  return numberedItems.findIndex((item) => item.id === sectionId);
+}
+
 function formatEstimateStep(sectionId: string): string {
-  const index = estimateNavigationItems.findIndex((item) => item.id === sectionId);
+  const index = getEstimateStepIndex(sectionId);
 
   if (index < 0) {
     return "";
@@ -620,6 +627,7 @@ export function PublicEstimate() {
   const [isAppliancesSpecExpanded, setIsAppliancesSpecExpanded] = useState(false);
   const [isLooseFurnitureSpecExpanded, setIsLooseFurnitureSpecExpanded] = useState(false);
   const [isHomeGoodsSpecExpanded, setIsHomeGoodsSpecExpanded] = useState(false);
+  const [isMobileVolumesExpanded, setIsMobileVolumesExpanded] = useState(false);
   const [activeEstimateSection, setActiveEstimateSection] = useState(ESTIMATE_INITIAL_SECTION_ID);
   const estimateRailScrollRef = useRef<HTMLElement>(null);
   const navigationScrollTargetRef = useRef<EstimateNavigationScrollLock | null>(null);
@@ -823,6 +831,9 @@ export function PublicEstimate() {
     { label: "Потолки", value: formatMeasurement(totals.ceilingArea, "м²") },
     { label: "Плинтус", value: formatMeasurement(totals.plinthLength, "м") },
   ];
+  const compactVolumeItems = summaryItems.filter((item) =>
+    ["Площадь пола", "Стены к отделке", "Потолки"].includes(item.label),
+  );
   const estimateTotalItems = [
     { label: "Работы", value: formatMoney(estimateResult.totals.works) },
     { label: "Материалы", value: formatMoney(estimateResult.totals.materials) },
@@ -1518,6 +1529,17 @@ export function PublicEstimate() {
     window.print();
   }
 
+  function handlePrintVolumes() {
+    document.body.classList.add("public-estimate-print-volumes");
+
+    const cleanup = () => {
+      document.body.classList.remove("public-estimate-print-volumes");
+    };
+
+    window.addEventListener("afterprint", cleanup, { once: true });
+    window.print();
+  }
+
   function addRoom() {
     setRooms((currentRooms) => [...currentRooms, createEstimateRoom()]);
   }
@@ -1585,33 +1607,76 @@ export function PublicEstimate() {
 
           <nav className="public-estimate-rail-nav" aria-label="Разделы расчёта" ref={estimateRailScrollRef}>
             <ol className="public-estimate-rail-list">
-              {estimateNavigationItems.map((item, index) => {
-                const isActive = activeEstimateSection === item.id;
+              {(() => {
+                let stepCounter = 0;
 
-                return (
-                  <li className="public-estimate-rail-item" key={item.id}>
-                    <a
-                      className={`public-estimate-rail-link${isActive ? " is-active" : ""}`}
-                      href={`#${item.id}`}
-                      aria-current={isActive ? "location" : undefined}
-                      onClick={(event) => {
-                        event.preventDefault();
-                        scrollToEstimateSection(item.id);
-                      }}
-                    >
-                      <span className="public-estimate-rail-icon">
-                        <EstimateNavigationIcon name={item.icon} />
-                      </span>
-                      <span className="public-estimate-rail-copy">
-                        <span className="public-estimate-rail-step">{String(index + 1).padStart(2, "0")}</span>
-                        <span className="public-estimate-rail-label">{item.label}</span>
-                      </span>
-                    </a>
-                  </li>
-                );
-              })}
+                return estimateNavigationItems.map((item) => {
+                  const isActive = activeEstimateSection === item.id;
+                  const stepLabel = item.isInformational ? null : String(++stepCounter).padStart(2, "0");
+
+                  return (
+                    <li className="public-estimate-rail-item" key={item.id}>
+                      <a
+                        className={`public-estimate-rail-link${isActive ? " is-active" : ""}${item.isInformational ? " is-informational" : ""}`}
+                        href={`#${item.id}`}
+                        aria-current={isActive ? "location" : undefined}
+                        onClick={(event) => {
+                          event.preventDefault();
+                          scrollToEstimateSection(item.id);
+                        }}
+                      >
+                        <span className="public-estimate-rail-icon">
+                          <EstimateNavigationIcon name={item.icon} />
+                        </span>
+                        <span className="public-estimate-rail-copy">
+                          {stepLabel ? <span className="public-estimate-rail-step">{stepLabel}</span> : null}
+                          <span className="public-estimate-rail-label">{item.label}</span>
+                        </span>
+                      </a>
+                    </li>
+                  );
+                });
+              })()}
             </ol>
           </nav>
+
+          <div className="public-estimate-geometry-compact" aria-label="Ключевые объёмы объекта">
+            <div className="public-estimate-geometry-compact-row">
+              {compactVolumeItems.map((item) => (
+                <div className="public-estimate-geometry-compact-metric" key={item.label}>
+                  <span>{item.label}</span>
+                  <strong>{item.value}</strong>
+                </div>
+              ))}
+              <button
+                className="public-estimate-geometry-compact-toggle"
+                type="button"
+                aria-expanded={isMobileVolumesExpanded}
+                onClick={() => setIsMobileVolumesExpanded((expanded) => !expanded)}
+              >
+                {isMobileVolumesExpanded ? "Свернуть" : "Все объёмы"}
+              </button>
+            </div>
+
+            {isMobileVolumesExpanded ? (
+              <dl className="public-estimate-geometry-compact-full">
+                {summaryItems.map((item) => (
+                  <div className="public-estimate-geometry-compact-item" key={item.label}>
+                    <dt>{item.label}</dt>
+                    <dd>{item.value}</dd>
+                  </div>
+                ))}
+              </dl>
+            ) : null}
+
+            <button
+              className="public-estimate-geometry-compact-print"
+              type="button"
+              onClick={handlePrintVolumes}
+            >
+              Скачать объёмы
+            </button>
+          </div>
         </aside>
 
         <div className="public-estimate-card public-estimate-card-main">
@@ -1619,29 +1684,12 @@ export function PublicEstimate() {
             <p className="public-section-kicker">Калькулятор ремонта</p>
             <h1 id="public-estimate-title">Расчёт стоимости ремонта</h1>
             <p className="public-estimate-subtitle">
-              Первый блок считает геометрию объекта по площадям помещений: пол, периметр, стены, проёмы, потолки и
-              плинтус.
+              Задайте помещения и параметры объекта — геометрия и итоги обновляются автоматически по мере заполнения
+              разделов.
             </p>
           </div>
 
-          <section id="estimate-geometry" className="public-estimate-summary" aria-labelledby="public-estimate-summary-title">
-            <div className="public-estimate-summary-head">
-              <div>
-                <span>{formatEstimateStep("estimate-geometry")}</span>
-                <p className="public-section-kicker">Объём объекта</p>
-                <h2 id="public-estimate-summary-title">Предварительная геометрия</h2>
-              </div>
-            </div>
-
-            <div className="public-estimate-summary-grid">
-              {summaryItems.map((item) => (
-                <div className="public-estimate-summary-card" key={item.label}>
-                  <span>{item.label}</span>
-                  <strong>{item.value}</strong>
-                </div>
-              ))}
-            </div>
-          </section>
+          <div id="estimate-geometry" className="public-estimate-geometry-anchor" aria-hidden="true" />
 
           <section id="estimate-object" className="public-estimate-geometry" aria-labelledby="public-estimate-geometry-title">
             <div className="public-estimate-geometry-head">
@@ -3416,6 +3464,25 @@ export function PublicEstimate() {
         </div>
 
         <aside id="estimate-passport" className="public-estimate-card public-estimate-passport" aria-label="Паспорт сметы">
+          <div className="public-estimate-passport-volumes" aria-label="Объёмы объекта">
+            <p className="public-estimate-passport-volumes-kicker">Объём объекта</p>
+            <dl className="public-estimate-passport-volumes-list">
+              {summaryItems.map((item) => (
+                <div className="public-estimate-passport-volumes-item" key={item.label}>
+                  <dt>{item.label}</dt>
+                  <dd>{item.value}</dd>
+                </div>
+              ))}
+            </dl>
+            <button
+              className="public-estimate-passport-volumes-action"
+              type="button"
+              onClick={handlePrintVolumes}
+            >
+              Скачать объёмы
+            </button>
+          </div>
+
           <div className="public-estimate-passport-head">
             <h2>Оценка по составу сметы</h2>
           </div>
@@ -3473,6 +3540,18 @@ export function PublicEstimate() {
           Итог
         </a>
       </aside>
+
+      <section className="public-estimate-volumes-print" aria-hidden="true">
+        <h1>Объёмы объекта</h1>
+        <dl className="public-estimate-volumes-print-list">
+          {summaryItems.map((item) => (
+            <div className="public-estimate-volumes-print-item" key={item.label}>
+              <dt>{item.label}</dt>
+              <dd>{item.value}</dd>
+            </div>
+          ))}
+        </dl>
+      </section>
     </main>
   );
 }

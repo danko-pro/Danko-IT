@@ -7053,6 +7053,95 @@
   transform: translateY(-1px);
 }
 
+.public-estimate-passport-volumes {
+  display: grid;
+  gap: 0.42rem;
+  padding-bottom: 0.52rem;
+  border-bottom: 1px solid rgba(30, 81, 74, 0.1);
+}
+
+.public-estimate-passport-volumes-kicker {
+  margin: 0;
+  color: rgba(19, 35, 31, 0.52);
+  font-size: 0.64rem;
+  font-weight: 780;
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.public-estimate-passport-volumes-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.28rem 0.48rem;
+  margin: 0;
+}
+
+.public-estimate-passport-volumes-item {
+  display: grid;
+  gap: 0.08rem;
+  min-width: 0;
+}
+
+.public-estimate-passport-volumes-item dt {
+  margin: 0;
+  color: rgba(19, 35, 31, 0.52);
+  font-size: 0.64rem;
+  font-weight: 680;
+  line-height: 1.2;
+}
+
+.public-estimate-passport-volumes-item dd {
+  margin: 0;
+  color: rgba(19, 35, 31, 0.82);
+  font-size: 0.78rem;
+  font-weight: 760;
+  line-height: 1.15;
+}
+
+.public-estimate-passport-volumes-action {
+  justify-self: start;
+  margin-top: 0.08rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: rgba(30, 81, 74, 0.72);
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1.3;
+  text-decoration: underline;
+  text-decoration-color: rgba(30, 81, 74, 0.28);
+  text-underline-offset: 0.18em;
+  cursor: pointer;
+  transition: color var(--ui-motion-fast) var(--ui-motion-ease-soft);
+}
+
+.public-estimate-passport-volumes-action:hover,
+.public-estimate-passport-volumes-action:focus-visible {
+  color: var(--public-green-deep);
+  text-decoration-color: rgba(30, 81, 74, 0.48);
+}
+
+.public-estimate-geometry-anchor {
+  height: 0;
+  margin: 0;
+  overflow: hidden;
+  scroll-margin-top: 6rem;
+}
+
+.public-estimate-geometry-compact {
+  display: none;
+}
+
+.public-estimate-volumes-print {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
 .public-estimate-rail {
   position: sticky;
   top: 88px;
@@ -7164,6 +7253,10 @@
   line-height: 1.12;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.public-estimate-rail-link.is-informational .public-estimate-rail-copy {
+  gap: 0;
 }
 
 .public-estimate-mobile-total {
@@ -7685,6 +7778,108 @@ html:has(.public-estimate-page) {
   .public-estimate-passport {
     position: static;
     top: auto;
+  }
+
+  .public-estimate-passport-volumes {
+    display: none;
+  }
+
+  .public-estimate-geometry-compact {
+    display: grid;
+    gap: 0.38rem;
+    margin: 0.18rem 0.25rem 0;
+    padding: 0.48rem 0.55rem;
+    border: 1px solid rgba(30, 81, 74, 0.1);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.82);
+  }
+
+  .public-estimate-geometry-compact-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.34rem 0.52rem;
+  }
+
+  .public-estimate-geometry-compact-metric {
+    display: grid;
+    gap: 0.06rem;
+    min-width: 0;
+  }
+
+  .public-estimate-geometry-compact-metric span {
+    color: rgba(19, 35, 31, 0.52);
+    font-size: 0.62rem;
+    font-weight: 680;
+    line-height: 1.15;
+  }
+
+  .public-estimate-geometry-compact-metric strong {
+    color: rgba(19, 35, 31, 0.84);
+    font-size: 0.76rem;
+    font-weight: 780;
+    line-height: 1.1;
+  }
+
+  .public-estimate-geometry-compact-toggle {
+    margin-left: auto;
+    padding: 0.18rem 0.42rem;
+    border: 1px solid rgba(30, 81, 74, 0.14);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.72);
+    color: rgba(30, 81, 74, 0.78);
+    font: inherit;
+    font-size: 0.68rem;
+    font-weight: 740;
+    line-height: 1.2;
+    cursor: pointer;
+  }
+
+  .public-estimate-geometry-compact-full {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.24rem 0.42rem;
+    margin: 0;
+    padding-top: 0.12rem;
+    border-top: 1px solid rgba(30, 81, 74, 0.08);
+  }
+
+  .public-estimate-geometry-compact-item {
+    display: grid;
+    gap: 0.06rem;
+    min-width: 0;
+  }
+
+  .public-estimate-geometry-compact-item dt {
+    margin: 0;
+    color: rgba(19, 35, 31, 0.52);
+    font-size: 0.62rem;
+    font-weight: 680;
+    line-height: 1.15;
+  }
+
+  .public-estimate-geometry-compact-item dd {
+    margin: 0;
+    color: rgba(19, 35, 31, 0.82);
+    font-size: 0.74rem;
+    font-weight: 760;
+    line-height: 1.1;
+  }
+
+  .public-estimate-geometry-compact-print {
+    justify-self: start;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: rgba(30, 81, 74, 0.68);
+    font: inherit;
+    font-size: 0.68rem;
+    font-weight: 700;
+    line-height: 1.3;
+    text-decoration: underline;
+    text-decoration-color: rgba(30, 81, 74, 0.24);
+    text-underline-offset: 0.16em;
+    cursor: pointer;
   }
 }
 
@@ -9067,6 +9262,59 @@ html:has(.public-estimate-page) {
   .public-estimate button {
     background: #ffffff !important;
     box-shadow: none !important;
+  }
+
+  body.public-estimate-print-volumes * {
+    visibility: hidden !important;
+  }
+
+  body.public-estimate-print-volumes .public-estimate-volumes-print,
+  body.public-estimate-print-volumes .public-estimate-volumes-print * {
+    visibility: visible !important;
+  }
+
+  body.public-estimate-print-volumes .public-estimate-volumes-print {
+    position: static !important;
+    left: auto !important;
+    width: auto !important;
+    height: auto !important;
+    overflow: visible !important;
+    padding: 0 !important;
+  }
+
+  body.public-estimate-print-volumes .public-estimate-volumes-print h1 {
+    margin: 0 0 12mm;
+    color: #111111 !important;
+    font-size: 18pt;
+    font-weight: 700;
+    line-height: 1.2;
+  }
+
+  body.public-estimate-print-volumes .public-estimate-volumes-print-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6mm 10mm;
+    margin: 0;
+  }
+
+  body.public-estimate-print-volumes .public-estimate-volumes-print-item {
+    display: grid;
+    gap: 1.5mm;
+    break-inside: avoid;
+  }
+
+  body.public-estimate-print-volumes .public-estimate-volumes-print-item dt {
+    margin: 0;
+    color: #444444 !important;
+    font-size: 9pt;
+    font-weight: 600;
+  }
+
+  body.public-estimate-print-volumes .public-estimate-volumes-print-item dd {
+    margin: 0;
+    color: #111111 !important;
+    font-size: 12pt;
+    font-weight: 700;
   }
 }
 

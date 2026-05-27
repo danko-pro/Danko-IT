@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { calculateCeiling } from "./public-estimate-ceiling";
 import { calculateCompletion, type CompletionOptions } from "./public-estimate-completion";
 import {
@@ -146,8 +146,8 @@ const estimateNavigationItems: Array<{
   label: string;
   icon: EstimateNavigationIcon;
 }> = [
-  { id: "estimate-object", label: "Объект", icon: "object" },
   { id: "estimate-geometry", label: "Геометрия", icon: "geometry" },
+  { id: "estimate-object", label: "Объект", icon: "object" },
   { id: "estimate-warm-floor", label: "Тёплый пол", icon: "warmFloor" },
   { id: "estimate-flooring", label: "Полы", icon: "flooring" },
   { id: "estimate-walls", label: "Стены", icon: "walls" },
@@ -158,9 +158,22 @@ const estimateNavigationItems: Array<{
   { id: "estimate-completion", label: "Комплектация", icon: "completion" },
   { id: "estimate-appliances", label: "Техника", icon: "appliances" },
   { id: "estimate-loose-furniture", label: "Мебель", icon: "furniture" },
-  { id: "estimate-home-goods", label: "Уборка", icon: "cleaning" },
+  { id: "estimate-home-goods", label: "Уборка и товары для дома", icon: "cleaning" },
   { id: "estimate-costs", label: "Итог", icon: "total" },
 ];
+
+const ESTIMATE_INITIAL_SECTION_ID = estimateNavigationItems[0].id;
+const ESTIMATE_PAGE_BOTTOM_THRESHOLD_PX = 96;
+
+function formatEstimateStep(sectionId: string): string {
+  const index = estimateNavigationItems.findIndex((item) => item.id === sectionId);
+
+  if (index < 0) {
+    return "";
+  }
+
+  return `Шаг ${String(index + 1).padStart(2, "0")}`;
+}
 
 function EstimateNavigationIcon({ name }: { name: EstimateNavigationIcon }) {
   const commonProps = {
@@ -583,7 +596,8 @@ export function PublicEstimate() {
   const [isAppliancesSpecExpanded, setIsAppliancesSpecExpanded] = useState(false);
   const [isLooseFurnitureSpecExpanded, setIsLooseFurnitureSpecExpanded] = useState(false);
   const [isHomeGoodsSpecExpanded, setIsHomeGoodsSpecExpanded] = useState(false);
-  const [activeEstimateSection, setActiveEstimateSection] = useState(estimateNavigationItems[0].id);
+  const [activeEstimateSection, setActiveEstimateSection] = useState(ESTIMATE_INITIAL_SECTION_ID);
+  const estimateRailListRef = useRef<HTMLOListElement>(null);
 
   const ceilingHeight = useMemo(() => parseEstimateDecimal(ceilingHeightInput), [ceilingHeightInput]);
   const roomInputs = useMemo(() => rooms.map(normalizeRoom), [rooms]);
@@ -842,6 +856,29 @@ export function PublicEstimate() {
     ...(!homeGoodsOptions.includeHomeGoods ? ["Товары для дома: не включены"] : []),
   ];
 
+  const scrollToEstimateSection = useCallback((sectionId: string) => {
+    const section = document.getElementById(sectionId);
+
+    if (!section) {
+      return;
+    }
+
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    section.scrollIntoView({
+      behavior: prefersReducedMotion ? "auto" : "smooth",
+      block: "start",
+    });
+    setActiveEstimateSection(sectionId);
+  }, []);
+
+  const isEstimatePageBottom = useCallback(() => {
+    return (
+      window.scrollY + window.innerHeight >=
+      document.documentElement.scrollHeight - ESTIMATE_PAGE_BOTTOM_THRESHOLD_PX
+    );
+  }, []);
+
   useEffect(() => {
     if (typeof IntersectionObserver === "undefined") {
       return;
@@ -857,6 +894,11 @@ export function PublicEstimate() {
 
     const observer = new IntersectionObserver(
       (entries) => {
+        if (isEstimatePageBottom()) {
+          setActiveEstimateSection("estimate-costs");
+          return;
+        }
+
         const visibleEntries = entries
           .filter((entry) => entry.isIntersecting)
           .sort((firstEntry, secondEntry) => firstEntry.boundingClientRect.top - secondEntry.boundingClientRect.top);
@@ -873,10 +915,43 @@ export function PublicEstimate() {
       },
     );
 
-    sections.forEach((section) => observer.observe(section));
+    const handleScroll = () => {
+      if (isEstimatePageBottom()) {
+        setActiveEstimateSection("estimate-costs");
+      }
+    };
 
-    return () => observer.disconnect();
-  }, []);
+    sections.forEach((section) => observer.observe(section));
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll();
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, [isEstimatePageBottom]);
+
+  useEffect(() => {
+    const railList = estimateRailListRef.current;
+
+    if (!railList) {
+      return;
+    }
+
+    const activeLink = railList.querySelector<HTMLAnchorElement>(`a[href="#${activeEstimateSection}"]`);
+
+    if (!activeLink) {
+      return;
+    }
+
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    activeLink.scrollIntoView({
+      behavior: prefersReducedMotion ? "auto" : "smooth",
+      block: "nearest",
+      inline: "center",
+    });
+  }, [activeEstimateSection]);
 
   const warmFloorModeLabel = warmFloorMode === "water" ? "Водяной" : "Электрический";
   const warmFloorConnectionLabel =
@@ -1305,7 +1380,7 @@ export function PublicEstimate() {
           </div>
 
           <nav className="public-estimate-rail-nav" aria-label="Разделы расчёта">
-            <ol className="public-estimate-rail-list">
+            <ol className="public-estimate-rail-list" ref={estimateRailListRef}>
               {estimateNavigationItems.map((item, index) => {
                 const isActive = activeEstimateSection === item.id;
 
@@ -1314,7 +1389,11 @@ export function PublicEstimate() {
                     <a
                       className={`public-estimate-rail-link${isActive ? " is-active" : ""}`}
                       href={`#${item.id}`}
-                      aria-current={isActive ? "true" : undefined}
+                      aria-current={isActive ? "location" : undefined}
+                      onClick={(event) => {
+                        event.preventDefault();
+                        scrollToEstimateSection(item.id);
+                      }}
                     >
                       <span className="public-estimate-rail-icon">
                         <EstimateNavigationIcon name={item.icon} />
@@ -1343,8 +1422,11 @@ export function PublicEstimate() {
 
           <section id="estimate-geometry" className="public-estimate-summary" aria-labelledby="public-estimate-summary-title">
             <div className="public-estimate-summary-head">
-              <p className="public-section-kicker">Объём объекта</p>
-              <h2 id="public-estimate-summary-title">Предварительная геометрия</h2>
+              <div>
+                <span>{formatEstimateStep("estimate-geometry")}</span>
+                <p className="public-section-kicker">Объём объекта</p>
+                <h2 id="public-estimate-summary-title">Предварительная геометрия</h2>
+              </div>
             </div>
 
             <div className="public-estimate-summary-grid">
@@ -1360,7 +1442,7 @@ export function PublicEstimate() {
           <section id="estimate-object" className="public-estimate-geometry" aria-labelledby="public-estimate-geometry-title">
             <div className="public-estimate-geometry-head">
               <div>
-                <span>Шаг 01</span>
+                <span>{formatEstimateStep("estimate-object")}</span>
                 <h2 id="public-estimate-geometry-title">Объект и помещения</h2>
               </div>
 
@@ -1493,7 +1575,7 @@ export function PublicEstimate() {
           <section id="estimate-warm-floor" className="public-estimate-warm-floor" aria-labelledby="public-estimate-warm-floor-title">
             <div className="public-estimate-warm-floor-head">
               <div>
-                <span>Шаг 02</span>
+                <span>{formatEstimateStep("estimate-warm-floor")}</span>
                 <h2 id="public-estimate-warm-floor-title">Тёплый пол</h2>
                 <p>Выберите помещения, площадь зоны и тип системы. Раздел сразу попадает в итоговую смету.</p>
               </div>
@@ -1591,7 +1673,7 @@ export function PublicEstimate() {
           <section id="estimate-flooring" className="public-estimate-flooring" aria-labelledby="public-estimate-flooring-title">
             <div className="public-estimate-flooring-head">
               <div>
-                <span>Шаг 03</span>
+                <span>{formatEstimateStep("estimate-flooring")}</span>
                 <h2 id="public-estimate-flooring-title">Полы</h2>
                 <p>Выберите покрытие, подготовку и способ укладки по помещениям. Плинтус, порожки и демонтаж считаются отдельными строками.</p>
               </div>
@@ -1805,7 +1887,7 @@ export function PublicEstimate() {
           <section id="estimate-walls" className="public-estimate-walls" aria-labelledby="public-estimate-walls-title">
             <div className="public-estimate-walls-head">
               <div>
-                <span>Шаг 04</span>
+                <span>{formatEstimateStep("estimate-walls")}</span>
                 <h2 id="public-estimate-walls-title">Стены</h2>
                 <p>Расчёт отделки стен по чистой площади из геометрии: покрытие, подготовка, материалы и расходники по каждому помещению.</p>
               </div>
@@ -1937,7 +2019,7 @@ export function PublicEstimate() {
           <section id="estimate-ceiling" className="public-estimate-ceiling" aria-labelledby="public-estimate-ceiling-title">
             <div className="public-estimate-ceiling-head">
               <div>
-                <span>Шаг 05</span>
+                <span>{formatEstimateStep("estimate-ceiling")}</span>
                 <h2 id="public-estimate-ceiling-title">Потолки</h2>
                 <p>Первый срез потолков: ПВХ матовый / сатин и точечный свет с закладными, врезкой и светильниками GX53.</p>
               </div>
@@ -2056,7 +2138,7 @@ export function PublicEstimate() {
           <section id="estimate-electric" className="public-estimate-electric" aria-labelledby="public-estimate-electric-title">
             <div className="public-estimate-electric-head">
               <div>
-                <span>Шаг 06</span>
+                <span>{formatEstimateStep("estimate-electric")}</span>
                 <h2 id="public-estimate-electric-title">Электрика</h2>
                 <p>Предварительный расчёт точек, кухонных выводов, света, выключателей и базового щита.</p>
               </div>
@@ -2195,7 +2277,7 @@ export function PublicEstimate() {
           <section id="estimate-plumbing" className="public-estimate-plumbing" aria-labelledby="public-estimate-plumbing-title">
             <div className="public-estimate-plumbing-head">
               <div>
-                <span>Шаг 07</span>
+                <span>{formatEstimateStep("estimate-plumbing")}</span>
                 <h2 id="public-estimate-plumbing-title">Сантехника</h2>
                 <p>Предварительный расчёт санузла, кухни, выводов под технику и базового сантехнического узла.</p>
               </div>
@@ -2367,7 +2449,7 @@ export function PublicEstimate() {
           <section id="estimate-doors" className="public-estimate-doors" aria-labelledby="public-estimate-doors-title">
             <div className="public-estimate-doors-head">
               <div>
-                <span>Шаг 08</span>
+                <span>{formatEstimateStep("estimate-doors")}</span>
                 <h2 id="public-estimate-doors-title">Двери</h2>
                 <p>Предварительный расчёт дверных комплектов, фурнитуры, доставки, подъёма и монтажа.</p>
               </div>
@@ -2494,7 +2576,7 @@ export function PublicEstimate() {
           <section id="estimate-completion" className="public-estimate-completion" aria-labelledby="public-estimate-completion-title">
             <div className="public-estimate-completion-head">
               <div>
-                <span>Шаг 09</span>
+                <span>{formatEstimateStep("estimate-completion")}</span>
                 <h2 id="public-estimate-completion-title">Комплектация</h2>
                 <p>Кухня, пеналы, гардеробная и мебель санузла включаются отдельно.</p>
               </div>
@@ -2642,7 +2724,7 @@ export function PublicEstimate() {
           <section id="estimate-appliances" className="public-estimate-appliances" aria-labelledby="public-estimate-appliances-title">
             <div className="public-estimate-appliances-head">
               <div>
-                <span>Шаг 10</span>
+                <span>{formatEstimateStep("estimate-appliances")}</span>
                 <h2 id="public-estimate-appliances-title">Бытовая техника</h2>
                 <p>Техника выбирается по позициям, а уровень цены задаётся пакетом C / B / A.</p>
               </div>
@@ -2808,7 +2890,7 @@ export function PublicEstimate() {
           <section id="estimate-loose-furniture" className="public-estimate-loose-furniture" aria-labelledby="public-estimate-loose-furniture-title">
             <div className="public-estimate-loose-furniture-head">
               <div>
-                <span>Шаг 11</span>
+                <span>{formatEstimateStep("estimate-loose-furniture")}</span>
                 <h2 id="public-estimate-loose-furniture-title">Свободная мебель</h2>
                 <p>Мебель выбирается по позициям, а уровень цены задаётся пакетом C / B / A.</p>
               </div>
@@ -2967,7 +3049,7 @@ export function PublicEstimate() {
           <section id="estimate-home-goods" className="public-estimate-home-goods" aria-labelledby="public-estimate-home-goods-title">
             <div className="public-estimate-home-goods-head">
               <div>
-                <span>Шаг 12</span>
+                <span>{formatEstimateStep("estimate-home-goods")}</span>
                 <h2 id="public-estimate-home-goods-title">Уборка и товары для дома</h2>
                 <p>
                   Финишная уборка считается по площади пола, а комплект товаров для дома — фиксированным пакетом C / B /
@@ -3096,8 +3178,11 @@ export function PublicEstimate() {
 
           <section id="estimate-costs" className="public-estimate-costs" aria-labelledby="public-estimate-costs-title">
             <div className="public-estimate-costs-head">
-              <p className="public-section-kicker">Итоговая смета</p>
-              <h2 id="public-estimate-costs-title">Стоимость по разделам</h2>
+              <div>
+                <span>{formatEstimateStep("estimate-costs")}</span>
+                <p className="public-section-kicker">Итоговая смета</p>
+                <h2 id="public-estimate-costs-title">Стоимость по разделам</h2>
+              </div>
             </div>
 
             <div className="public-estimate-cost-grid">
@@ -3201,8 +3286,15 @@ export function PublicEstimate() {
           <span>₽/м²</span>
           <strong>{formatMoney(estimateResult.totals.pricePerSquareMeter)}/м²</strong>
         </div>
-        <a className="public-estimate-mobile-total-link" href="#estimate-costs">
-          К смете
+        <a
+          className="public-estimate-mobile-total-link"
+          href="#estimate-costs"
+          onClick={(event) => {
+            event.preventDefault();
+            scrollToEstimateSection("estimate-costs");
+          }}
+        >
+          Итог
         </a>
       </aside>
     </main>

@@ -7117,6 +7117,13 @@
   line-height: 1.12;
 }
 
+.public-estimate-rail-nav {
+  max-height: calc(100vh - 88px - 1.5rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+
 .public-estimate-rail-list {
   display: grid;
   gap: 0.14rem;
@@ -7256,7 +7263,7 @@
   box-shadow:
     0 14px 34px rgba(19, 35, 31, 0.045),
     inset 0 1px 0 rgba(255, 255, 255, 0.72);
-  scroll-margin-top: 1rem;
+  scroll-margin-top: 5.5rem;
 }
 
 .public-estimate-summary {
@@ -7366,7 +7373,9 @@
   border-bottom: 1px solid rgba(var(--estimate-accent-rgb), 0.12);
 }
 
+.public-estimate-summary-head span,
 .public-estimate-summary-head .public-section-kicker,
+.public-estimate-costs-head span,
 .public-estimate-costs-head .public-section-kicker,
 .public-estimate-geometry-head span,
 .public-estimate-warm-floor-head span,
@@ -7650,11 +7659,20 @@
   .public-estimate-mobile-total strong {
     overflow: hidden;
     color: var(--public-green-deep);
-    font-size: 0.92rem;
+    font-size: clamp(0.98rem, 3.8vw, 1.08rem);
     font-weight: 900;
     line-height: 1.05;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  .public-estimate-mobile-total-main {
+    flex: 1 1 auto;
+  }
+
+  .public-estimate-mobile-total-rate {
+    flex: 0 0 auto;
+    min-width: 5.5rem;
   }
 
   .public-estimate-mobile-total-link {
@@ -7676,10 +7694,31 @@
 
 }
 
+html:has(.public-estimate-page) {
+  scroll-behavior: smooth;
+}
+
 @media (max-width: 1180px) {
   .public-estimate {
     width: min(100%, 860px);
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .public-estimate-summary,
+  .public-estimate-geometry,
+  .public-estimate-warm-floor,
+  .public-estimate-flooring,
+  .public-estimate-walls,
+  .public-estimate-ceiling,
+  .public-estimate-electric,
+  .public-estimate-plumbing,
+  .public-estimate-doors,
+  .public-estimate-completion,
+  .public-estimate-appliances,
+  .public-estimate-loose-furniture,
+  .public-estimate-home-goods,
+  .public-estimate-costs {
+    scroll-margin-top: 4rem;
   }
 
   .public-estimate-rail {
@@ -7690,19 +7729,48 @@
     padding: 0.45rem 0;
     background: rgba(247, 252, 249, 0.94);
     backdrop-filter: blur(14px);
+    isolation: isolate;
+  }
+
+  .public-estimate-rail::before,
+  .public-estimate-rail::after {
+    position: absolute;
+    top: 0.45rem;
+    bottom: 0.25rem;
+    z-index: 1;
+    width: 1.1rem;
+    pointer-events: none;
+    content: "";
+  }
+
+  .public-estimate-rail::before {
+    left: 0;
+    background: linear-gradient(90deg, rgba(247, 252, 249, 0.98), rgba(247, 252, 249, 0));
+  }
+
+  .public-estimate-rail::after {
+    right: 0;
+    background: linear-gradient(270deg, rgba(247, 252, 249, 0.98), rgba(247, 252, 249, 0));
   }
 
   .public-estimate-rail-head {
     display: none;
   }
 
+  .public-estimate-rail-nav {
+    max-height: none;
+    overflow: visible;
+  }
+
   .public-estimate-rail-list {
     display: flex;
     gap: 0.42rem;
     overflow-x: auto;
-    padding: 0.1rem 0 0.25rem;
-    scroll-snap-type: x proximity;
+    padding: 0.1rem 0.25rem 0.25rem;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
     scrollbar-width: none;
+    touch-action: pan-x;
   }
 
   .public-estimate-rail-list::-webkit-scrollbar {
@@ -7711,7 +7779,6 @@
 
   .public-estimate-rail-item {
     flex: 0 0 auto;
-    scroll-snap-align: start;
   }
 
   .public-estimate-rail-link {
@@ -9953,6 +10020,10 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  html:has(.public-estimate-page) {
+    scroll-behavior: auto;
+  }
+
   .public-service-tab,
   .public-hero-blueprint,
   .public-hero-data-path,

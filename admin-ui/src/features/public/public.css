@@ -7243,38 +7243,47 @@
   align-items: center;
   min-height: 42px;
   padding: 0.4rem 0.5rem;
-  border: 1px solid transparent;
+  border: 1px solid rgba(30, 81, 74, 0.1);
   border-radius: 10px;
+  background: rgba(255, 255, 255, 0.55);
   color: rgba(19, 35, 31, 0.62);
   text-decoration: none;
   transition:
     background-color 180ms var(--ui-motion-ease-soft),
+    border-color 180ms var(--ui-motion-ease-soft),
     color 180ms var(--ui-motion-ease-soft);
 }
 
 .public-estimate-rail-link:hover,
 .public-estimate-rail-link:focus-visible {
+  border-color: rgba(30, 81, 74, 0.14);
+  background: rgba(255, 255, 255, 0.72);
   color: var(--public-green-deep);
   outline: none;
 }
 
 .public-estimate-rail-link.is-active {
+  border-color: rgba(30, 81, 74, 0.16);
   background: rgba(255, 255, 255, 0.72);
   color: var(--public-green-deep);
 }
 
 .public-estimate-rail-link.is-informational {
   min-height: 36px;
+  border-color: rgba(30, 81, 74, 0.06);
+  background: rgba(246, 250, 248, 0.55);
   color: rgba(19, 35, 31, 0.46);
 }
 
 .public-estimate-rail-link.is-informational:hover,
 .public-estimate-rail-link.is-informational:focus-visible {
+  border-color: rgba(30, 81, 74, 0.1);
   color: rgba(19, 35, 31, 0.62);
 }
 
 .public-estimate-rail-link.is-informational.is-active {
-  background: rgba(246, 250, 248, 0.72);
+  border-color: rgba(30, 81, 74, 0.1);
+  background: rgba(246, 250, 248, 0.82);
   color: rgba(19, 35, 31, 0.58);
 }
 

@@ -10,6 +10,7 @@ export type EstimateSectionId =
   | "plumbing"
   | "doors"
   | "completion"
+  | "appliances"
   | "extras";
 
 export type EstimateLineItem = {

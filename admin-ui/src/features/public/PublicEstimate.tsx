@@ -2,6 +2,18 @@ import { useMemo, useState } from "react";
 import { calculateCeiling } from "./public-estimate-ceiling";
 import { calculateCompletion, type CompletionOptions } from "./public-estimate-completion";
 import {
+  applianceItemCatalog,
+  appliancePackageLabels,
+  calculateAppliances,
+  createDefaultAppliancesOptions,
+  fridgeVariantLabels,
+  getApplianceUnitPrice,
+  type ApplianceItemKey,
+  type AppliancePackageLevel,
+  type AppliancesOptions,
+  type FridgeVariant,
+} from "./public-estimate-appliances";
+import {
   calculateDoors,
   type DoorOptions,
   type DoorPackageType,
@@ -145,6 +157,7 @@ const ELECTRIC_SPEC_COLLAPSED_LIMIT = 10;
 const PLUMBING_SPEC_COLLAPSED_LIMIT = 10;
 const DOORS_SPEC_COLLAPSED_LIMIT = 10;
 const COMPLETION_SPEC_COLLAPSED_LIMIT = 10;
+const APPLIANCES_SPEC_COLLAPSED_LIMIT = 10;
 
 const initialRooms: EstimateRoomDraft[] = [
   { id: "hallway", name: "Прихожая", type: "hallway", area: "6.5", doorCount: "1", windowCount: "0" },
@@ -368,6 +381,7 @@ export function PublicEstimate() {
     includeWardrobe: false,
     includeBathroomFurniture: false,
   });
+  const [appliancesOptions, setAppliancesOptions] = useState<AppliancesOptions>(() => createDefaultAppliancesOptions());
   const [isFlooringSpecExpanded, setIsFlooringSpecExpanded] = useState(false);
   const [isWallsSpecExpanded, setIsWallsSpecExpanded] = useState(false);
   const [isCeilingSpecExpanded, setIsCeilingSpecExpanded] = useState(false);
@@ -375,6 +389,7 @@ export function PublicEstimate() {
   const [isPlumbingSpecExpanded, setIsPlumbingSpecExpanded] = useState(false);
   const [isDoorsSpecExpanded, setIsDoorsSpecExpanded] = useState(false);
   const [isCompletionSpecExpanded, setIsCompletionSpecExpanded] = useState(false);
+  const [isAppliancesSpecExpanded, setIsAppliancesSpecExpanded] = useState(false);
 
   const ceilingHeight = useMemo(() => parseEstimateDecimal(ceilingHeightInput), [ceilingHeightInput]);
   const roomInputs = useMemo(() => rooms.map(normalizeRoom), [rooms]);
@@ -523,6 +538,7 @@ export function PublicEstimate() {
       }),
     [completionOptions],
   );
+  const appliancesResult = useMemo(() => calculateAppliances(appliancesOptions), [appliancesOptions]);
   const estimateResult = useMemo(() => {
     const sections = [
       ...(warmFloorResult.selectedArea > 0 ? [warmFloorResult.section] : []),
@@ -533,6 +549,7 @@ export function PublicEstimate() {
       ...(plumbingResult.section.items.length > 0 ? [plumbingResult.section] : []),
       ...(doorsResult.section.items.length > 0 ? [doorsResult.section] : []),
       ...(completionResult.section.items.length > 0 ? [completionResult.section] : []),
+      ...(appliancesResult.section.items.length > 0 ? [appliancesResult.section] : []),
     ];
 
     return {
@@ -540,6 +557,7 @@ export function PublicEstimate() {
       totals: calculateEstimateTotals(sections, totals.floorArea),
     };
   }, [
+    appliancesResult,
     ceilingResult,
     completionResult,
     doorsResult,
@@ -603,12 +621,13 @@ export function PublicEstimate() {
     ...passportCompletionItems
       .filter((item) => item.isIncluded)
       .map((item) => item.includedLabel),
+    ...(appliancesResult.total > 0 ? ["Бытовая техника"] : []),
   ];
   const passportExcludedItems = [
     ...passportCompletionItems
       .filter((item) => !item.isIncluded)
       .map((item) => item.excludedLabel),
-    "Бытовая техника: не включена",
+    ...(appliancesResult.total <= 0 ? ["Бытовая техника: не включена"] : []),
     "Свободная мебель: не включена",
   ];
   const warmFloorModeLabel = warmFloorMode === "water" ? "Водяной" : "Электрический";
@@ -771,6 +790,21 @@ export function PublicEstimate() {
       ? completionSpecItems.slice(0, COMPLETION_SPEC_COLLAPSED_LIMIT)
       : completionSpecItems;
   const hiddenCompletionSpecCount = Math.max(0, completionSpecItems.length - visibleCompletionSpecItems.length);
+  const appliancesSummaryItems = [
+    { label: "Пакет", value: appliancesResult.packageLabel },
+    { label: "Позиции включены", value: `${appliancesResult.includedItemCount} шт.` },
+    { label: "Кухонная техника", value: formatMoney(appliancesResult.kitchenAppliancesTotal) },
+    { label: "TV-зона", value: formatMoney(appliancesResult.tvTotal) },
+    { label: "Стирка", value: formatMoney(appliancesResult.laundryTotal) },
+    { label: "Итого", value: formatMoney(appliancesResult.total), isStrong: true },
+  ];
+  const appliancesSpecItems = appliancesResult.section.items;
+  const isAppliancesSpecLong = appliancesSpecItems.length > APPLIANCES_SPEC_COLLAPSED_LIMIT;
+  const visibleAppliancesSpecItems =
+    isAppliancesSpecLong && !isAppliancesSpecExpanded
+      ? appliancesSpecItems.slice(0, APPLIANCES_SPEC_COLLAPSED_LIMIT)
+      : appliancesSpecItems;
+  const hiddenAppliancesSpecCount = Math.max(0, appliancesSpecItems.length - visibleAppliancesSpecItems.length);
 
   function updateRoom(roomId: string, patch: Partial<EstimateRoomDraft>) {
     setRooms((currentRooms) => currentRooms.map((room) => (room.id === roomId ? { ...room, ...patch } : room)));
@@ -865,6 +899,26 @@ export function PublicEstimate() {
     setCompletionOptions((currentOptions) => ({
       ...currentOptions,
       ...patch,
+    }));
+  }
+
+  function updateAppliancesOptions(patch: Partial<Pick<AppliancesOptions, "packageLevel" | "fridgeVariant">>) {
+    setAppliancesOptions((currentOptions) => ({
+      ...currentOptions,
+      ...patch,
+    }));
+  }
+
+  function updateApplianceItem(key: ApplianceItemKey, patch: Partial<{ isIncluded: boolean; quantity: number }>) {
+    setAppliancesOptions((currentOptions) => ({
+      ...currentOptions,
+      items: {
+        ...currentOptions.items,
+        [key]: {
+          ...currentOptions.items[key],
+          ...patch,
+        },
+      },
     }));
   }
 
@@ -2239,6 +2293,172 @@ export function PublicEstimate() {
             )}
           </section>
 
+          <section className="public-estimate-appliances" aria-labelledby="public-estimate-appliances-title">
+            <div className="public-estimate-appliances-head">
+              <div>
+                <span>Шаг 10</span>
+                <h2 id="public-estimate-appliances-title">Бытовая техника</h2>
+                <p>Техника выбирается по позициям, а уровень цены задаётся пакетом C / B / A.</p>
+              </div>
+            </div>
+
+            <div className="public-estimate-appliances-package" aria-label="Пакет техники">
+              <div className="public-estimate-appliances-package-copy">
+                <span>Пакет техники</span>
+                <small>
+                  Модели и бренды уточняются при финальной комплектации. Сейчас расчёт показывает публичный ориентир по
+                  классу техники.
+                </small>
+              </div>
+              <div className="public-estimate-toggle-group public-estimate-appliances-toggle-group" role="group" aria-label="Пакет техники">
+                {(["c", "b", "a"] as AppliancePackageLevel[]).map((level) => (
+                  <button
+                    key={level}
+                    className={appliancesOptions.packageLevel === level ? "public-estimate-toggle-active" : undefined}
+                    type="button"
+                    aria-pressed={appliancesOptions.packageLevel === level}
+                    onClick={() => updateAppliancesOptions({ packageLevel: level })}
+                  >
+                    {appliancePackageLabels[level]}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="public-estimate-appliances-header" aria-hidden="true">
+              <span>Включить</span>
+              <span>Позиция</span>
+              <span>Вариант</span>
+              <span>Кол-во</span>
+              <span>Цена за ед.</span>
+              <span>Итого</span>
+            </div>
+
+            <div className="public-estimate-appliances-list" aria-label="Позиции бытовой техники">
+              {applianceItemCatalog.map((catalogItem) => {
+                const itemDraft = appliancesOptions.items[catalogItem.key];
+                const isIncluded = itemDraft.isIncluded;
+                const quantity = itemDraft.quantity;
+                const unitPrice = getApplianceUnitPrice(catalogItem.key, appliancesOptions);
+                const lineTotal = isIncluded ? unitPrice * Math.max(1, quantity) : 0;
+
+                return (
+                  <article className="public-estimate-appliances-row" key={catalogItem.key}>
+                    <label className="public-estimate-appliances-include">
+                      <input
+                        type="checkbox"
+                        checked={isIncluded}
+                        onChange={(event) => updateApplianceItem(catalogItem.key, { isIncluded: event.target.checked })}
+                      />
+                      <span className="public-estimate-mobile-label">Включить</span>
+                    </label>
+
+                    <div className="public-estimate-appliances-title-cell">
+                      <span className="public-estimate-mobile-label">Позиция</span>
+                      <strong>{catalogItem.title}</strong>
+                      {catalogItem.note ? <small>{catalogItem.note}</small> : null}
+                    </div>
+
+                    <div className="public-estimate-appliances-variant-cell">
+                      <span className="public-estimate-mobile-label">Вариант</span>
+                      {catalogItem.key === "fridge" ? (
+                        <select
+                          className="public-estimate-select"
+                          value={appliancesOptions.fridgeVariant}
+                          disabled={!isIncluded}
+                          onChange={(event) =>
+                            updateAppliancesOptions({ fridgeVariant: event.target.value as FridgeVariant })
+                          }
+                        >
+                          {(Object.keys(fridgeVariantLabels) as FridgeVariant[]).map((variant) => (
+                            <option key={variant} value={variant}>
+                              {fridgeVariantLabels[variant]}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <span className="public-estimate-appliances-variant-placeholder">—</span>
+                      )}
+                    </div>
+
+                    <label className="public-estimate-appliances-quantity">
+                      <span className="public-estimate-mobile-label">Кол-во</span>
+                      <input
+                        className="public-estimate-input"
+                        disabled={!isIncluded}
+                        inputMode="numeric"
+                        min="1"
+                        step="1"
+                        type="number"
+                        value={quantity}
+                        onChange={(event) =>
+                          updateApplianceItem(catalogItem.key, {
+                            quantity: Math.max(1, Number.parseInt(event.target.value, 10) || 1),
+                          })
+                        }
+                      />
+                    </label>
+
+                    <div className="public-estimate-appliances-unit-price">
+                      <span className="public-estimate-mobile-label">Цена за ед.</span>
+                      <strong>{formatMoney(unitPrice)}</strong>
+                    </div>
+
+                    <div className="public-estimate-appliances-line-total">
+                      <span className="public-estimate-mobile-label">Итого</span>
+                      <strong>{formatMoney(lineTotal)}</strong>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+
+            <div className="public-estimate-appliances-summary" aria-label="Итоги по бытовой технике">
+              {appliancesSummaryItems.map((item) => (
+                <div className={item.isStrong ? "public-estimate-appliances-total-cell" : undefined} key={item.label}>
+                  <span>{item.label}</span>
+                  <strong>{item.value}</strong>
+                </div>
+              ))}
+            </div>
+
+            {appliancesResult.section.items.length > 0 ? (
+              <div className="public-estimate-appliances-spec">
+                <div className="public-estimate-warm-floor-spec-head">
+                  <p>Состав раздела</p>
+                  <span>Бытовая техника по выбранному пакету</span>
+                </div>
+                <ul>
+                  {visibleAppliancesSpecItems.map((item) => (
+                    <li key={item.id}>
+                      <span className="public-estimate-warm-floor-line-title">{item.title}</span>
+                      <span className="public-estimate-warm-floor-line-meta">
+                        {formatEstimateQuantity(item.quantity)} {item.unit} × {formatMoney(item.unitPrice)}
+                      </span>
+                      <strong>{formatMoney(item.total)}</strong>
+                    </li>
+                  ))}
+                </ul>
+                {isAppliancesSpecLong ? (
+                  <button
+                    className="public-estimate-spec-toggle"
+                    type="button"
+                    aria-expanded={isAppliancesSpecExpanded}
+                    onClick={() => setIsAppliancesSpecExpanded((currentValue) => !currentValue)}
+                  >
+                    {isAppliancesSpecExpanded
+                      ? "Свернуть спецификацию"
+                      : `Показать всю спецификацию${hiddenAppliancesSpecCount > 0 ? `: ещё ${hiddenAppliancesSpecCount} строк` : ""}`}
+                  </button>
+                ) : null}
+              </div>
+            ) : (
+              <p className="public-estimate-warm-floor-empty">
+                Включите нужные позиции техники, чтобы добавить их в смету.
+              </p>
+            )}
+          </section>
+
           <section className="public-estimate-costs" aria-labelledby="public-estimate-costs-title">
             <div className="public-estimate-costs-head">
               <p className="public-section-kicker">Итоговая смета</p>
@@ -2255,7 +2475,9 @@ export function PublicEstimate() {
             </div>
 
             <p className="public-estimate-cost-note">
-              Сейчас в смету включены тёплый пол, полы, стены, потолки, электрика, сантехника, двери и выбранная комплектация. Следующие разделы подключим отдельно: дополнительные работы и экспорт расчёта.
+              Сейчас в смету включены тёплый пол, полы, стены, потолки, электрика, сантехника, двери, встроенная
+              комплектация и выбранная бытовая техника. Следующие разделы подключим отдельно: свободная мебель,
+              дополнительные работы и экспорт расчёта.
             </p>
           </section>
 

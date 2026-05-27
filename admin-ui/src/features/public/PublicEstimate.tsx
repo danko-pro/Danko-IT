@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { calculateCeiling } from "./public-estimate-ceiling";
 import { calculateCompletion, type CompletionOptions } from "./public-estimate-completion";
 import {
@@ -125,22 +125,170 @@ const estimatePackageBenchmarks = [
   { label: "Пакет A", pricePerM2: 75416 },
 ];
 
-const estimateNavigationItems = [
-  { label: "Объект", href: "#estimate-object" },
-  { label: "Геометрия", href: "#estimate-geometry" },
-  { label: "Тёплый пол", href: "#estimate-warm-floor" },
-  { label: "Полы", href: "#estimate-flooring" },
-  { label: "Стены", href: "#estimate-walls" },
-  { label: "Потолки", href: "#estimate-ceiling" },
-  { label: "Электрика", href: "#estimate-electric" },
-  { label: "Сантехника", href: "#estimate-plumbing" },
-  { label: "Двери", href: "#estimate-doors" },
-  { label: "Комплектация", href: "#estimate-completion" },
-  { label: "Техника", href: "#estimate-appliances" },
-  { label: "Мебель", href: "#estimate-loose-furniture" },
-  { label: "Уборка", href: "#estimate-home-goods" },
-  { label: "Итог", href: "#estimate-costs" },
+type EstimateNavigationIcon =
+  | "object"
+  | "geometry"
+  | "warmFloor"
+  | "flooring"
+  | "walls"
+  | "ceiling"
+  | "electric"
+  | "plumbing"
+  | "doors"
+  | "completion"
+  | "appliances"
+  | "furniture"
+  | "cleaning"
+  | "total";
+
+const estimateNavigationItems: Array<{
+  id: string;
+  label: string;
+  icon: EstimateNavigationIcon;
+}> = [
+  { id: "estimate-object", label: "Объект", icon: "object" },
+  { id: "estimate-geometry", label: "Геометрия", icon: "geometry" },
+  { id: "estimate-warm-floor", label: "Тёплый пол", icon: "warmFloor" },
+  { id: "estimate-flooring", label: "Полы", icon: "flooring" },
+  { id: "estimate-walls", label: "Стены", icon: "walls" },
+  { id: "estimate-ceiling", label: "Потолки", icon: "ceiling" },
+  { id: "estimate-electric", label: "Электрика", icon: "electric" },
+  { id: "estimate-plumbing", label: "Сантехника", icon: "plumbing" },
+  { id: "estimate-doors", label: "Двери", icon: "doors" },
+  { id: "estimate-completion", label: "Комплектация", icon: "completion" },
+  { id: "estimate-appliances", label: "Техника", icon: "appliances" },
+  { id: "estimate-loose-furniture", label: "Мебель", icon: "furniture" },
+  { id: "estimate-home-goods", label: "Уборка", icon: "cleaning" },
+  { id: "estimate-costs", label: "Итог", icon: "total" },
 ];
+
+function EstimateNavigationIcon({ name }: { name: EstimateNavigationIcon }) {
+  const commonProps = {
+    viewBox: "0 0 24 24",
+    "aria-hidden": true,
+    focusable: false,
+  };
+
+  switch (name) {
+    case "object":
+      return (
+        <svg {...commonProps}>
+          <path d="M4 6.5h16v11H4z" />
+          <path d="M8 17.5v-5h4v5" />
+          <path d="M4 10.5h16" />
+        </svg>
+      );
+    case "geometry":
+      return (
+        <svg {...commonProps}>
+          <path d="M5 19 19 5" />
+          <path d="M7 7h10v10H7z" />
+          <path d="M5 19h6" />
+          <path d="M5 19v-6" />
+        </svg>
+      );
+    case "warmFloor":
+      return (
+        <svg {...commonProps}>
+          <path d="M5 17c2-2 4-2 6 0s4 2 6 0" />
+          <path d="M5 12c2-2 4-2 6 0s4 2 6 0" />
+          <path d="M5 7c2-2 4-2 6 0s4 2 6 0" />
+        </svg>
+      );
+    case "flooring":
+      return (
+        <svg {...commonProps}>
+          <path d="M4 6h16" />
+          <path d="M4 12h16" />
+          <path d="M4 18h16" />
+          <path d="M8 6v6" />
+          <path d="M16 12v6" />
+        </svg>
+      );
+    case "walls":
+      return (
+        <svg {...commonProps}>
+          <path d="M4 7h16v10H4z" />
+          <path d="M4 12h16" />
+          <path d="M9 7v5" />
+          <path d="M15 12v5" />
+        </svg>
+      );
+    case "ceiling":
+      return (
+        <svg {...commonProps}>
+          <path d="M4 6h16" />
+          <path d="M7 10h10" />
+          <path d="M9 14h6" />
+          <path d="M12 6v12" />
+        </svg>
+      );
+    case "electric":
+      return (
+        <svg {...commonProps}>
+          <path d="m13 3-6 10h5l-1 8 6-11h-5z" />
+        </svg>
+      );
+    case "plumbing":
+      return (
+        <svg {...commonProps}>
+          <path d="M7 5h8a3 3 0 0 1 3 3v2" />
+          <path d="M5 5h2" />
+          <path d="M18 10h-4v4a4 4 0 0 0 8 0v-4z" />
+        </svg>
+      );
+    case "doors":
+      return (
+        <svg {...commonProps}>
+          <path d="M7 3h10v18H7z" />
+          <path d="M14 12h.01" />
+        </svg>
+      );
+    case "completion":
+      return (
+        <svg {...commonProps}>
+          <path d="M5 5h14v14H5z" />
+          <path d="M9 5v14" />
+          <path d="M5 12h14" />
+        </svg>
+      );
+    case "appliances":
+      return (
+        <svg {...commonProps}>
+          <path d="M7 3h10v18H7z" />
+          <path d="M10 7h4" />
+          <path d="M10 11h1" />
+          <path d="M14 11h1" />
+        </svg>
+      );
+    case "furniture":
+      return (
+        <svg {...commonProps}>
+          <path d="M5 13h14v5H5z" />
+          <path d="M7 13V9a3 3 0 0 1 3-3h4a3 3 0 0 1 3 3v4" />
+          <path d="M7 18v2" />
+          <path d="M17 18v2" />
+        </svg>
+      );
+    case "cleaning":
+      return (
+        <svg {...commonProps}>
+          <path d="M8 4h8" />
+          <path d="M10 4v5l-4 10h12L14 9V4" />
+          <path d="M9 15h6" />
+        </svg>
+      );
+    case "total":
+      return (
+        <svg {...commonProps}>
+          <path d="M6 4h12v16H6z" />
+          <path d="M9 8h6" />
+          <path d="M9 12h6" />
+          <path d="M9 16h3" />
+        </svg>
+      );
+  }
+}
 
 type EstimateRoomDraft = Omit<EstimateRoomInput, "area" | "doorCount" | "windowCount"> & {
   area: string;
@@ -435,6 +583,7 @@ export function PublicEstimate() {
   const [isAppliancesSpecExpanded, setIsAppliancesSpecExpanded] = useState(false);
   const [isLooseFurnitureSpecExpanded, setIsLooseFurnitureSpecExpanded] = useState(false);
   const [isHomeGoodsSpecExpanded, setIsHomeGoodsSpecExpanded] = useState(false);
+  const [activeEstimateSection, setActiveEstimateSection] = useState(estimateNavigationItems[0].id);
 
   const ceilingHeight = useMemo(() => parseEstimateDecimal(ceilingHeightInput), [ceilingHeightInput]);
   const roomInputs = useMemo(() => rooms.map(normalizeRoom), [rooms]);
@@ -692,6 +841,43 @@ export function PublicEstimate() {
     ...(!homeGoodsOptions.includeCleaning ? ["Уборка: не включена"] : []),
     ...(!homeGoodsOptions.includeHomeGoods ? ["Товары для дома: не включены"] : []),
   ];
+
+  useEffect(() => {
+    if (typeof IntersectionObserver === "undefined") {
+      return;
+    }
+
+    const sections = estimateNavigationItems
+      .map((item) => document.getElementById(item.id))
+      .filter((section): section is HTMLElement => Boolean(section));
+
+    if (!sections.length) {
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visibleEntries = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((firstEntry, secondEntry) => firstEntry.boundingClientRect.top - secondEntry.boundingClientRect.top);
+        const nextSectionId = visibleEntries[0]?.target.id;
+
+        if (nextSectionId) {
+          setActiveEstimateSection(nextSectionId);
+        }
+      },
+      {
+        root: null,
+        rootMargin: "-18% 0px -68% 0px",
+        threshold: [0.05, 0.18, 0.32],
+      },
+    );
+
+    sections.forEach((section) => observer.observe(section));
+
+    return () => observer.disconnect();
+  }, []);
+
   const warmFloorModeLabel = warmFloorMode === "water" ? "Водяной" : "Электрический";
   const warmFloorConnectionLabel =
     warmFloorMode === "electric"
@@ -1111,7 +1297,40 @@ export function PublicEstimate() {
         </a>
       </header>
 
-      <section className="public-estimate" aria-labelledby="public-estimate-title">
+      <section className="public-estimate public-estimate-workbench" aria-labelledby="public-estimate-title">
+        <aside className="public-estimate-rail" aria-label="Навигация по разделам расчёта">
+          <div className="public-estimate-rail-head">
+            <span>Калькулятор</span>
+            <strong>Разделы расчёта</strong>
+          </div>
+
+          <nav className="public-estimate-rail-nav" aria-label="Разделы расчёта">
+            <ol className="public-estimate-rail-list">
+              {estimateNavigationItems.map((item, index) => {
+                const isActive = activeEstimateSection === item.id;
+
+                return (
+                  <li className="public-estimate-rail-item" key={item.id}>
+                    <a
+                      className={`public-estimate-rail-link${isActive ? " is-active" : ""}`}
+                      href={`#${item.id}`}
+                      aria-current={isActive ? "true" : undefined}
+                    >
+                      <span className="public-estimate-rail-icon">
+                        <EstimateNavigationIcon name={item.icon} />
+                      </span>
+                      <span className="public-estimate-rail-copy">
+                        <span className="public-estimate-rail-step">{String(index + 1).padStart(2, "0")}</span>
+                        <span className="public-estimate-rail-label">{item.label}</span>
+                      </span>
+                    </a>
+                  </li>
+                );
+              })}
+            </ol>
+          </nav>
+        </aside>
+
         <div className="public-estimate-card public-estimate-card-main">
           <div className="public-estimate-intro">
             <p className="public-section-kicker">Калькулятор ремонта</p>
@@ -1137,20 +1356,6 @@ export function PublicEstimate() {
               ))}
             </div>
           </section>
-
-          <nav className="public-estimate-nav" aria-label="Состав расчёта">
-            <div className="public-estimate-nav-head">
-              <span>Состав расчёта</span>
-              <small>Быстрый переход по разделам</small>
-            </div>
-            <div className="public-estimate-nav-list">
-              {estimateNavigationItems.map((item) => (
-                <a className="public-estimate-nav-chip" href={item.href} key={item.href}>
-                  {item.label}
-                </a>
-              ))}
-            </div>
-          </nav>
 
           <section id="estimate-object" className="public-estimate-geometry" aria-labelledby="public-estimate-geometry-title">
             <div className="public-estimate-geometry-head">

@@ -4033,6 +4033,41 @@
   min-width: 0;
 }
 
+.public-estimate-geometry-row-shell {
+  display: grid;
+  grid-template-rows: 1fr;
+  opacity: 1;
+  transform: translateY(0);
+  transition:
+    grid-template-rows var(--public-motion-smooth) var(--ui-motion-ease-emphasis),
+    opacity var(--public-motion-smooth) var(--ui-motion-ease-soft),
+    transform var(--public-motion-smooth) var(--ui-motion-ease-soft);
+}
+
+.public-estimate-geometry-row-shell-inner {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.public-estimate-geometry-row-shell.is-entering {
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transform: translateY(-6px);
+}
+
+.public-estimate-geometry-row-shell.is-removing {
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transform: translateY(-4px);
+  pointer-events: none;
+}
+
+.public-estimate-geometry-row {
+  transition:
+    border-color var(--public-motion-smooth) var(--ui-motion-ease-soft),
+    background-color var(--public-motion-smooth) var(--ui-motion-ease-soft);
+}
+
 .public-estimate-room-header,
 .public-estimate-room-row {
   display: grid;
@@ -10552,7 +10587,9 @@ html:has(.public-estimate-page) {
   .public-calc-promise,
   .public-calc-promise-text,
   .public-estimate-rail-link,
-  .public-estimate-rail-icon {
+  .public-estimate-rail-icon,
+  .public-estimate-geometry-row-shell,
+  .public-estimate-geometry-row {
     transition: none;
     animation: none;
     transform: none;

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { calculateCeiling } from "./public-estimate-ceiling";
 import { calculateCompletion, type CompletionOptions } from "./public-estimate-completion";
 import {
@@ -73,6 +73,24 @@ const roomTypeOptions: Array<{ value: EstimateRoomType; label: string }> = [
 
 const GEOMETRY_STEP_HINT =
   "Площадь, двери и окна по БТИ — периметр и стены пересчитаются автоматически.";
+
+const GEOMETRY_ROW_REMOVE_MS = 280;
+
+function getGeometryRowRemoveDelayMs(): number {
+  if (typeof window === "undefined") {
+    return GEOMETRY_ROW_REMOVE_MS;
+  }
+
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : GEOMETRY_ROW_REMOVE_MS;
+}
+
+function prefersReducedEstimateMotion(): boolean {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
 
 function inferRoomTypeFromName(name: string): EstimateRoomType | null {
   const normalized = name.trim().toLocaleLowerCase("ru-RU");
@@ -716,6 +734,9 @@ export function PublicEstimate() {
   const estimateRailScrollRef = useRef<HTMLElement>(null);
   const navigationScrollTargetRef = useRef<EstimateNavigationScrollLock | null>(null);
   const pendingAddedRoomIdRef = useRef<string | null>(null);
+  const geometryRemoveTimeoutsRef = useRef<Record<string, number>>({});
+  const [enteringRoomIds, setEnteringRoomIds] = useState<string[]>([]);
+  const [removingRoomIds, setRemovingRoomIds] = useState<string[]>([]);
 
   const ceilingHeight = useMemo(() => parseEstimateDecimal(ceilingHeightInput), [ceilingHeightInput]);
   const roomInputs = useMemo(() => rooms.map(normalizeRoom), [rooms]);
@@ -1159,6 +1180,42 @@ export function PublicEstimate() {
   }, [activeEstimateSection]);
 
   useEffect(() => {
+    return () => {
+      Object.values(geometryRemoveTimeoutsRef.current).forEach((timeoutId) => window.clearTimeout(timeoutId));
+    };
+  }, []);
+
+  useLayoutEffect(() => {
+    if (!enteringRoomIds.length) {
+      return;
+    }
+
+    if (prefersReducedEstimateMotion()) {
+      setEnteringRoomIds([]);
+      return;
+    }
+
+    let outerFrame = 0;
+    let innerFrame = 0;
+
+    outerFrame = window.requestAnimationFrame(() => {
+      innerFrame = window.requestAnimationFrame(() => {
+        setEnteringRoomIds([]);
+      });
+    });
+
+    return () => {
+      if (outerFrame) {
+        window.cancelAnimationFrame(outerFrame);
+      }
+
+      if (innerFrame) {
+        window.cancelAnimationFrame(innerFrame);
+      }
+    };
+  }, [enteringRoomIds]);
+
+  useEffect(() => {
     const roomId = pendingAddedRoomIdRef.current;
 
     if (!roomId) {
@@ -1174,7 +1231,7 @@ export function PublicEstimate() {
     pendingAddedRoomIdRef.current = null;
 
     const nameInput = row.querySelector<HTMLInputElement>(".public-estimate-room-name input");
-    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const prefersReducedMotion = prefersReducedEstimateMotion();
 
     nameInput?.focus({ preventScroll: true });
     nameInput?.select();
@@ -1673,18 +1730,7 @@ export function PublicEstimate() {
     window.print();
   }
 
-  function addRoom() {
-    setRooms((currentRooms) => {
-      const newRoom = createEstimateRoom(currentRooms);
-
-      pendingAddedRoomIdRef.current = newRoom.id;
-
-      return [...currentRooms, newRoom];
-    });
-  }
-
-  function removeRoom(roomId: string) {
-    setRooms((currentRooms) => (currentRooms.length > 1 ? currentRooms.filter((room) => room.id !== roomId) : currentRooms));
+  function purgeRoomFromRelatedState(roomId: string) {
     setWarmFloorRooms((currentRooms) => {
       const nextRooms = { ...currentRooms };
 
@@ -1720,6 +1766,51 @@ export function PublicEstimate() {
 
       return nextRooms;
     });
+  }
+
+  function finalizeRoomRemove(roomId: string) {
+    setRooms((currentRooms) =>
+      currentRooms.length > 1 ? currentRooms.filter((room) => room.id !== roomId) : currentRooms,
+    );
+    purgeRoomFromRelatedState(roomId);
+    setRemovingRoomIds((current) => current.filter((id) => id !== roomId));
+    delete geometryRemoveTimeoutsRef.current[roomId];
+  }
+
+  function addRoom() {
+    let newRoomId = "";
+
+    setRooms((currentRooms) => {
+      const newRoom = createEstimateRoom(currentRooms);
+
+      newRoomId = newRoom.id;
+      pendingAddedRoomIdRef.current = newRoom.id;
+
+      return [...currentRooms, newRoom];
+    });
+
+    if (!prefersReducedEstimateMotion() && newRoomId) {
+      setEnteringRoomIds((current) => (current.includes(newRoomId) ? current : [...current, newRoomId]));
+    }
+  }
+
+  function removeRoom(roomId: string) {
+    if (rooms.length <= 1 || removingRoomIds.includes(roomId)) {
+      return;
+    }
+
+    const removeDelayMs = getGeometryRowRemoveDelayMs();
+
+    if (removeDelayMs === 0) {
+      finalizeRoomRemove(roomId);
+      return;
+    }
+
+    setRemovingRoomIds((current) => (current.includes(roomId) ? current : [...current, roomId]));
+
+    geometryRemoveTimeoutsRef.current[roomId] = window.setTimeout(() => {
+      finalizeRoomRemove(roomId);
+    }, removeDelayMs);
   }
 
   return (
@@ -1927,78 +2018,94 @@ export function PublicEstimate() {
             <div className="public-estimate-room-list" aria-label="Список помещений">
               {roomGeometries.map((room, index) => {
                 const roomDraft = rooms[index];
+                const isEntering = enteringRoomIds.includes(room.id);
+                const isRemoving = removingRoomIds.includes(room.id);
+                const rowShellClassName = [
+                  "public-estimate-geometry-row-shell",
+                  isEntering ? "is-entering" : "",
+                  isRemoving ? "is-removing" : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ");
 
                 return (
-                  <article className="public-estimate-room-row" data-estimate-room-id={room.id} key={room.id}>
-                    <div className="public-estimate-room-top">
-                      <div className="public-estimate-room-index" aria-hidden="true">
-                        {String(index + 1).padStart(2, "0")}
-                      </div>
-
-                      <label className="public-estimate-field public-estimate-room-name">
-                        <span className="public-estimate-mobile-label">Помещение</span>
-                        <input
-                          aria-label="Помещение"
-                          className="public-estimate-input"
-                          placeholder="Название по БТИ"
-                          value={roomDraft.name}
-                          onChange={(event) => updateRoom(room.id, { name: event.target.value })}
-                        />
-                      </label>
-
-                      <button
-                        aria-label="Удалить помещение"
-                        className="public-estimate-row-remove"
-                        type="button"
-                        disabled={rooms.length <= 1}
-                        onClick={() => removeRoom(room.id)}
+                  <div className={rowShellClassName} key={room.id}>
+                    <div className="public-estimate-geometry-row-shell-inner">
+                      <article
+                        className="public-estimate-room-row public-estimate-geometry-row"
+                        data-estimate-room-id={room.id}
                       >
-                        ×
-                      </button>
+                        <div className="public-estimate-room-top">
+                          <div className="public-estimate-room-index" aria-hidden="true">
+                            {String(index + 1).padStart(2, "0")}
+                          </div>
+
+                          <label className="public-estimate-field public-estimate-room-name">
+                            <span className="public-estimate-mobile-label">Помещение</span>
+                            <input
+                              aria-label="Помещение"
+                              className="public-estimate-input"
+                              placeholder="Название по БТИ"
+                              value={roomDraft.name}
+                              onChange={(event) => updateRoom(room.id, { name: event.target.value })}
+                            />
+                          </label>
+
+                          <button
+                            aria-label="Удалить помещение"
+                            className="public-estimate-row-remove"
+                            type="button"
+                            disabled={rooms.length <= 1 || isRemoving}
+                            onClick={() => removeRoom(room.id)}
+                          >
+                            ×
+                          </button>
+                        </div>
+
+                        <div className="public-estimate-room-main">
+                          <div className="public-estimate-room-metrics">
+                            <label className="public-estimate-field public-estimate-room-area">
+                              <span className="public-estimate-mobile-label">Площадь</span>
+                              <input
+                                aria-label="Площадь помещения"
+                                className="public-estimate-input"
+                                inputMode="decimal"
+                                value={roomDraft.area}
+                                onChange={(event) => updateRoom(room.id, { area: event.target.value })}
+                              />
+                            </label>
+
+                            <label className="public-estimate-field public-estimate-room-doors">
+                              <span className="public-estimate-mobile-label">Двери</span>
+                              <input
+                                aria-label="Количество дверей"
+                                className="public-estimate-input"
+                                inputMode="numeric"
+                                value={roomDraft.doorCount}
+                                onChange={(event) => updateRoom(room.id, { doorCount: event.target.value })}
+                              />
+                            </label>
+
+                            <label className="public-estimate-field public-estimate-room-windows">
+                              <span className="public-estimate-mobile-label">Окна</span>
+                              <input
+                                aria-label="Количество окон"
+                                className="public-estimate-input"
+                                inputMode="numeric"
+                                value={roomDraft.windowCount}
+                                onChange={(event) => updateRoom(room.id, { windowCount: event.target.value })}
+                              />
+                            </label>
+                          </div>
+
+                          <div className="public-estimate-room-result">
+                            <span className="public-estimate-mobile-label">Стены к отделке</span>
+                            <strong>{formatMeasurement(room.finishWallArea, "м²")}</strong>
+                          </div>
+                        </div>
+                      </article>
                     </div>
-
-                    <div className="public-estimate-room-main">
-                      <div className="public-estimate-room-metrics">
-                        <label className="public-estimate-field public-estimate-room-area">
-                          <span className="public-estimate-mobile-label">Площадь</span>
-                          <input
-                            aria-label="Площадь помещения"
-                            className="public-estimate-input"
-                            inputMode="decimal"
-                            value={roomDraft.area}
-                            onChange={(event) => updateRoom(room.id, { area: event.target.value })}
-                          />
-                        </label>
-
-                        <label className="public-estimate-field public-estimate-room-doors">
-                          <span className="public-estimate-mobile-label">Двери</span>
-                          <input
-                            aria-label="Количество дверей"
-                            className="public-estimate-input"
-                            inputMode="numeric"
-                            value={roomDraft.doorCount}
-                            onChange={(event) => updateRoom(room.id, { doorCount: event.target.value })}
-                          />
-                        </label>
-
-                        <label className="public-estimate-field public-estimate-room-windows">
-                          <span className="public-estimate-mobile-label">Окна</span>
-                          <input
-                            aria-label="Количество окон"
-                            className="public-estimate-input"
-                            inputMode="numeric"
-                            value={roomDraft.windowCount}
-                            onChange={(event) => updateRoom(room.id, { windowCount: event.target.value })}
-                          />
-                        </label>
-                      </div>
-
-                      <div className="public-estimate-room-result">
-                        <span className="public-estimate-mobile-label">Стены к отделке</span>
-                        <strong>{formatMeasurement(room.finishWallArea, "м²")}</strong>
-                      </div>
-                    </div>
-                  </article>
+                  </div>
                 );
               })}
             </div>

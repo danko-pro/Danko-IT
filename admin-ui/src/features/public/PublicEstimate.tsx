@@ -165,7 +165,37 @@ const estimateNavigationItems: Array<{
 const ESTIMATE_INITIAL_SECTION_ID = estimateNavigationItems[0].id;
 const ESTIMATE_PAGE_BOTTOM_THRESHOLD_PX = 96;
 const ESTIMATE_SCROLL_OFFSET_PX = 96;
-const ESTIMATE_PROGRAMMATIC_SCROLL_LOCK_MS = 900;
+const ESTIMATE_PROGRAMMATIC_SCROLL_MAX_MS = 3000;
+const ESTIMATE_PROGRAMMATIC_SCROLL_REDUCED_MOTION_MAX_MS = 150;
+const ESTIMATE_SCROLL_STABILIZE_FRAMES = 4;
+const ESTIMATE_SCROLL_STABILIZE_PX = 2;
+const ESTIMATE_USER_SCROLL_CANCEL_KEYS = new Set([
+  "ArrowUp",
+  "ArrowDown",
+  "PageUp",
+  "PageDown",
+  "Home",
+  "End",
+  " ",
+]);
+
+type EstimateNavigationScrollLock = {
+  targetSectionId: string;
+  cleanup: () => void;
+};
+
+function releaseEstimateNavigationScrollLock(
+  lockRef: { current: EstimateNavigationScrollLock | null },
+) {
+  const lock = lockRef.current;
+
+  if (!lock) {
+    return;
+  }
+
+  lock.cleanup();
+  lockRef.current = null;
+}
 
 function pickActiveEstimateSectionByScrollLine(sections: HTMLElement[], scrollOffsetPx: number): string {
   let activeId = sections[0]?.id ?? ESTIMATE_INITIAL_SECTION_ID;
@@ -612,7 +642,7 @@ export function PublicEstimate() {
   const [isHomeGoodsSpecExpanded, setIsHomeGoodsSpecExpanded] = useState(false);
   const [activeEstimateSection, setActiveEstimateSection] = useState(ESTIMATE_INITIAL_SECTION_ID);
   const estimateRailScrollRef = useRef<HTMLElement>(null);
-  const estimateScrollLockRef = useRef<{ sectionId: string; until: number } | null>(null);
+  const navigationScrollTargetRef = useRef<EstimateNavigationScrollLock | null>(null);
 
   const ceilingHeight = useMemo(() => parseEstimateDecimal(ceilingHeightInput), [ceilingHeightInput]);
   const roomInputs = useMemo(() => rooms.map(normalizeRoom), [rooms]);
@@ -878,19 +908,114 @@ export function PublicEstimate() {
       return;
     }
 
-    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const top = Math.max(0, section.getBoundingClientRect().top + window.scrollY - ESTIMATE_SCROLL_OFFSET_PX);
+    releaseEstimateNavigationScrollLock(navigationScrollTargetRef);
 
-    estimateScrollLockRef.current = {
-      sectionId,
-      until: Date.now() + ESTIMATE_PROGRAMMATIC_SCROLL_LOCK_MS,
-    };
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const targetTop = Math.max(0, section.getBoundingClientRect().top + window.scrollY - ESTIMATE_SCROLL_OFFSET_PX);
+
     setActiveEstimateSection(sectionId);
 
+    const cleanups: Array<() => void> = [];
+    let released = false;
+
+    const releaseLock = () => {
+      if (released) {
+        return;
+      }
+
+      released = true;
+      cleanups.forEach((cleanup) => cleanup());
+
+      if (navigationScrollTargetRef.current?.targetSectionId === sectionId) {
+        navigationScrollTargetRef.current = null;
+      }
+    };
+
+    const cancelLockForUserScroll = () => {
+      releaseLock();
+    };
+
+    const handleUserScrollKeydown = (event: KeyboardEvent) => {
+      if (ESTIMATE_USER_SCROLL_CANCEL_KEYS.has(event.key)) {
+        cancelLockForUserScroll();
+      }
+    };
+
+    window.addEventListener("wheel", cancelLockForUserScroll, { passive: true });
+    window.addEventListener("touchstart", cancelLockForUserScroll, { passive: true });
+    window.addEventListener("keydown", handleUserScrollKeydown);
+    cleanups.push(() => {
+      window.removeEventListener("wheel", cancelLockForUserScroll);
+      window.removeEventListener("touchstart", cancelLockForUserScroll);
+      window.removeEventListener("keydown", handleUserScrollKeydown);
+    });
+
+    const onScrollEnd = () => {
+      releaseLock();
+    };
+
+    const scrollEndSupported = "onscrollend" in window;
+
+    if (scrollEndSupported) {
+      window.addEventListener("scrollend", onScrollEnd, { once: true });
+      cleanups.push(() => window.removeEventListener("scrollend", onScrollEnd));
+    } else {
+      let lastScrollY = window.scrollY;
+      let stableFrames = 0;
+      let stabilizeFrameId = 0;
+
+      const checkScrollStable = () => {
+        if (released) {
+          return;
+        }
+
+        const currentScrollY = window.scrollY;
+
+        if (Math.abs(currentScrollY - lastScrollY) <= ESTIMATE_SCROLL_STABILIZE_PX) {
+          stableFrames += 1;
+
+          if (stableFrames >= ESTIMATE_SCROLL_STABILIZE_FRAMES) {
+            releaseLock();
+            return;
+          }
+        } else {
+          stableFrames = 0;
+          lastScrollY = currentScrollY;
+        }
+
+        stabilizeFrameId = window.requestAnimationFrame(checkScrollStable);
+      };
+
+      stabilizeFrameId = window.requestAnimationFrame(checkScrollStable);
+      cleanups.push(() => {
+        if (stabilizeFrameId) {
+          window.cancelAnimationFrame(stabilizeFrameId);
+        }
+      });
+    }
+
+    const maxLockMs = prefersReducedMotion
+      ? ESTIMATE_PROGRAMMATIC_SCROLL_REDUCED_MOTION_MAX_MS
+      : ESTIMATE_PROGRAMMATIC_SCROLL_MAX_MS;
+    const timeoutId = window.setTimeout(releaseLock, maxLockMs);
+
+    cleanups.push(() => window.clearTimeout(timeoutId));
+
+    navigationScrollTargetRef.current = {
+      targetSectionId: sectionId,
+      cleanup: releaseLock,
+    };
+
     window.scrollTo({
-      top,
+      top: targetTop,
       behavior: prefersReducedMotion ? "auto" : "smooth",
     });
+
+    if (prefersReducedMotion) {
+      window.requestAnimationFrame(() => {
+        releaseLock();
+      });
+    }
   }, []);
 
   const isEstimatePageBottom = useCallback(() => {
@@ -912,11 +1037,13 @@ export function PublicEstimate() {
     let frameId = 0;
 
     const updateActiveSection = () => {
-      const scrollLock = estimateScrollLockRef.current;
+      const navigationScrollTarget = navigationScrollTargetRef.current;
 
-      if (scrollLock && Date.now() < scrollLock.until) {
+      if (navigationScrollTarget) {
         setActiveEstimateSection((current) =>
-          current === scrollLock.sectionId ? current : scrollLock.sectionId,
+          current === navigationScrollTarget.targetSectionId
+            ? current
+            : navigationScrollTarget.targetSectionId,
         );
         return;
       }
@@ -949,6 +1076,7 @@ export function PublicEstimate() {
     return () => {
       window.removeEventListener("scroll", handleScroll);
       window.removeEventListener("resize", handleScroll);
+      releaseEstimateNavigationScrollLock(navigationScrollTargetRef);
 
       if (frameId) {
         window.cancelAnimationFrame(frameId);

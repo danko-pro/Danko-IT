@@ -7024,33 +7024,52 @@
 
 .public-estimate-passport-composition {
   display: grid;
-  gap: 0.44rem;
+  gap: 0.22rem;
 }
 
-.public-estimate-passport-chips {
+.public-estimate-passport-composition-list {
+  display: grid;
+  gap: 0.1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.public-estimate-passport-composition-item {
+  line-height: 1.32;
+}
+
+.public-estimate-passport-composition-item.is-included {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.34rem;
+  align-items: baseline;
+  gap: 0.36rem;
+  color: var(--public-ink);
+  font-size: 0.78rem;
+  font-weight: 620;
 }
 
-.public-estimate-passport-chip {
-  display: inline-flex;
-  align-items: center;
-  min-height: 28px;
-  padding: 0.28rem 0.5rem;
-  border: 1px solid rgba(30, 81, 74, 0.12);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.62);
-  color: rgba(19, 35, 31, 0.66);
-  font-size: 0.72rem;
-  font-weight: 760;
-  line-height: 1.15;
+.public-estimate-passport-composition-item.is-included::before {
+  content: "";
+  flex-shrink: 0;
+  width: 4px;
+  height: 4px;
+  margin-top: 0.44em;
+  border-radius: 50%;
+  background: var(--public-green);
+  opacity: 0.5;
 }
 
-.public-estimate-passport-chip-included {
-  border-color: rgba(30, 81, 74, 0.22);
-  background: rgba(30, 81, 74, 0.1);
-  color: var(--public-green-deep);
+.public-estimate-passport-composition-item.is-excluded {
+  padding-left: 0.72rem;
+  color: rgba(19, 35, 31, 0.4);
+  font-size: 0.7rem;
+  font-weight: 560;
+}
+
+.public-estimate-passport-composition-item.is-excluded::before {
+  content: "— ";
+  margin-left: -0.72rem;
+  color: rgba(19, 35, 31, 0.28);
 }
 
 .public-estimate-passport-action {

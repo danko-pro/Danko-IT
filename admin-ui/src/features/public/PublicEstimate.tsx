@@ -875,12 +875,9 @@ export function PublicEstimate() {
     },
   ];
   const passportIncludedItems = [
-    "Ремонт",
-    "Инженерия",
-    "Двери",
     ...passportCompletionItems
       .filter((item) => item.isIncluded)
-      .map((item) => item.includedLabel),
+      .map((item) => item.includedLabel.replace(/:\s*включен[аы]?$/i, "")),
     ...(appliancesResult.total > 0 ? ["Бытовая техника"] : []),
     ...(looseFurnitureResult.total > 0 ? ["Свободная мебель"] : []),
     ...(homeGoodsOptions.includeCleaning ? ["Уборка"] : []),
@@ -3523,20 +3520,18 @@ export function PublicEstimate() {
 
           <div className="public-estimate-passport-composition">
             <p>Состав</p>
-            <div className="public-estimate-passport-chips" aria-label="Включённый состав">
+            <ul className="public-estimate-passport-composition-list" aria-label="Состав расчёта">
               {passportIncludedItems.map((item) => (
-                <span className="public-estimate-passport-chip public-estimate-passport-chip-included" key={item}>
+                <li className="public-estimate-passport-composition-item is-included" key={`in-${item}`}>
                   {item}
-                </span>
+                </li>
               ))}
-            </div>
-            <div className="public-estimate-passport-chips" aria-label="Пока не включено">
               {passportExcludedItems.map((item) => (
-                <span className="public-estimate-passport-chip" key={item}>
+                <li className="public-estimate-passport-composition-item is-excluded" key={`ex-${item}`}>
                   {item}
-                </span>
+                </li>
               ))}
-            </div>
+            </ul>
           </div>
 
           <button className="public-estimate-passport-action" type="button" onClick={handlePrintEstimate}>

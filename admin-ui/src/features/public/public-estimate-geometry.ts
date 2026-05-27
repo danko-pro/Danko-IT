@@ -56,7 +56,7 @@ export function calculateEstimateRoomGeometry(
   const safeCeilingHeight = safeNumber(ceilingHeight);
   const doorCount = Math.round(safeNumber(room.doorCount));
   const windowCount = Math.round(safeNumber(room.windowCount));
-  const shapeFactor = estimateRoomShapeFactors[room.type];
+  const shapeFactor = estimateRoomShapeFactors[room.type] ?? estimateRoomShapeFactors.other;
   const perimeter = 4 * Math.sqrt(area) * shapeFactor;
   const wallArea = perimeter * safeCeilingHeight;
   const openingArea = doorCount * 1.6 + windowCount * 1.8;

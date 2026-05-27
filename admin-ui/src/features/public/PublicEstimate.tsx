@@ -98,6 +98,47 @@ function getRoomTypeLabel(type: EstimateRoomType) {
   return roomTypeOptions.find((option) => option.value === type)?.label ?? "Другое";
 }
 
+const validEstimateRoomTypes = new Set<EstimateRoomType>(roomTypeOptions.map((option) => option.value));
+
+function normalizeEstimateRoomType(type: string | undefined | null): EstimateRoomType {
+  if (type && validEstimateRoomTypes.has(type as EstimateRoomType)) {
+    return type as EstimateRoomType;
+  }
+
+  return "other";
+}
+
+function normalizeEstimateRoomDraft(room: EstimateRoomDraft): EstimateRoomDraft {
+  const type = normalizeEstimateRoomType(room.type);
+  const inferredType = inferRoomTypeFromName(room.name);
+
+  return {
+    ...room,
+    type: inferredType ?? type,
+  };
+}
+
+const NEW_ROOM_DEFAULT_NAME = "Новое помещение";
+
+function buildNewRoomName(existingRooms: EstimateRoomDraft[]): string {
+  const usedNames = new Set(existingRooms.map((room) => room.name.trim().toLocaleLowerCase("ru-RU")));
+  const baseName = NEW_ROOM_DEFAULT_NAME;
+
+  if (!usedNames.has(baseName.toLocaleLowerCase("ru-RU"))) {
+    return baseName;
+  }
+
+  for (let suffix = 2; suffix < 1000; suffix += 1) {
+    const candidate = `${baseName} ${suffix}`;
+
+    if (!usedNames.has(candidate.toLocaleLowerCase("ru-RU"))) {
+      return candidate;
+    }
+  }
+
+  return `Помещение ${existingRooms.length + 1}`;
+}
+
 const flooringCoveringOptions: Array<{ value: FlooringCoveringType; label: string }> = [
   { value: "porcelain", label: "Керамогранит" },
   { value: "quartz_vinyl", label: "Кварцвинил" },
@@ -461,11 +502,13 @@ const initialRooms: EstimateRoomDraft[] = [
 ];
 
 function normalizeRoom(room: EstimateRoomDraft): EstimateRoomInput {
+  const normalizedDraft = normalizeEstimateRoomDraft(room);
+
   return {
-    ...room,
-    area: parseEstimateDecimal(room.area),
-    doorCount: parseEstimateDecimal(room.doorCount),
-    windowCount: parseEstimateDecimal(room.windowCount),
+    ...normalizedDraft,
+    area: parseEstimateDecimal(normalizedDraft.area),
+    doorCount: parseEstimateDecimal(normalizedDraft.doorCount),
+    windowCount: parseEstimateDecimal(normalizedDraft.windowCount),
   };
 }
 
@@ -538,15 +581,15 @@ function classifyEstimatePackage(pricePerSquareMeter: number) {
   };
 }
 
-function createEstimateRoom(): EstimateRoomDraft {
-  return {
+function createEstimateRoom(existingRooms: EstimateRoomDraft[]): EstimateRoomDraft {
+  return normalizeEstimateRoomDraft({
     id: `room-${Date.now()}-${Math.random().toString(16).slice(2)}`,
-    name: "",
+    name: buildNewRoomName(existingRooms),
     type: "other",
     area: "",
     doorCount: "1",
     windowCount: "0",
-  };
+  });
 }
 
 function getDefaultFlooringCovering(roomType: EstimateRoomType): FlooringCoveringType {
@@ -621,7 +664,7 @@ export function PublicEstimate() {
     contact: "",
   });
   const [ceilingHeightInput, setCeilingHeightInput] = useState("2.7");
-  const [rooms, setRooms] = useState<EstimateRoomDraft[]>(initialRooms);
+  const [rooms, setRooms] = useState<EstimateRoomDraft[]>(() => initialRooms.map(normalizeEstimateRoomDraft));
   const [warmFloorMode, setWarmFloorMode] = useState<WarmFloorMode>("water");
   const [warmFloorRooms, setWarmFloorRooms] = useState<Record<string, WarmFloorRoomDraft>>({});
   const [flooringRooms, setFlooringRooms] = useState<Record<string, FlooringRoomDraft>>({});
@@ -1147,6 +1190,7 @@ export function PublicEstimate() {
     const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
     nameInput?.focus({ preventScroll: true });
+    nameInput?.select();
     row.scrollIntoView({
       block: prefersReducedMotion ? "nearest" : "center",
       behavior: prefersReducedMotion ? "auto" : "smooth",
@@ -1470,7 +1514,7 @@ export function PublicEstimate() {
           return room;
         }
 
-        const nextRoom = { ...room, ...patch };
+        const nextRoom = normalizeEstimateRoomDraft({ ...room, ...patch });
 
         if ("name" in patch) {
           const inferredType = inferRoomTypeFromName(nextRoom.name);
@@ -1478,6 +1522,10 @@ export function PublicEstimate() {
           if (inferredType !== null) {
             nextRoom.type = inferredType;
           }
+        }
+
+        if ("type" in patch) {
+          nextRoom.type = normalizeEstimateRoomType(nextRoom.type);
         }
 
         return nextRoom;
@@ -1643,10 +1691,13 @@ export function PublicEstimate() {
   }
 
   function addRoom() {
-    const newRoom = createEstimateRoom();
+    setRooms((currentRooms) => {
+      const newRoom = createEstimateRoom(currentRooms);
 
-    pendingAddedRoomIdRef.current = newRoom.id;
-    setRooms((currentRooms) => [...currentRooms, newRoom]);
+      pendingAddedRoomIdRef.current = newRoom.id;
+
+      return [...currentRooms, newRoom];
+    });
   }
 
   function removeRoom(roomId: string) {
@@ -1943,7 +1994,7 @@ export function PublicEstimate() {
                               aria-label="Назначение помещения"
                               className="public-estimate-select"
                               title="Коэффициент формы и умолчания в разделах сметы"
-                              value={roomDraft.type}
+                              value={normalizeEstimateRoomType(roomDraft.type)}
                               onChange={(event) => updateRoom(room.id, { type: event.target.value as EstimateRoomType })}
                             >
                               {roomTypeOptions.map((option) => (

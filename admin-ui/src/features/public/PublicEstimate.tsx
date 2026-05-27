@@ -88,16 +88,6 @@ function inferRoomTypeFromName(name: string): EstimateRoomType | null {
   return matchedOption?.value ?? null;
 }
 
-function shouldShowRoomTypeSelector(room: EstimateRoomDraft) {
-  const inferredType = inferRoomTypeFromName(room.name);
-
-  return inferredType === null || inferredType !== room.type;
-}
-
-function getRoomTypeLabel(type: EstimateRoomType) {
-  return roomTypeOptions.find((option) => option.value === type)?.label ?? "Другое";
-}
-
 const validEstimateRoomTypes = new Set<EstimateRoomType>(roomTypeOptions.map((option) => option.value));
 
 function normalizeEstimateRoomType(type: string | undefined | null): EstimateRoomType {
@@ -735,7 +725,6 @@ export function PublicEstimate() {
     () => roomInputs.map((room) => calculateEstimateRoomGeometry(room, ceilingHeight)),
     [roomInputs, ceilingHeight],
   );
-  const showRoomTypeColumn = useMemo(() => rooms.some(shouldShowRoomTypeSelector), [rooms]);
   const totals = useMemo(() => calculateEstimateGeometryTotals(roomGeometries), [roomGeometries]);
   const warmFloorRoomInputs = useMemo(
     () =>
@@ -1524,10 +1513,6 @@ export function PublicEstimate() {
           }
         }
 
-        if ("type" in patch) {
-          nextRoom.type = normalizeEstimateRoomType(nextRoom.type);
-        }
-
         return nextRoom;
       }),
     );
@@ -1907,9 +1892,7 @@ export function PublicEstimate() {
             className={withActiveEstimateSection(
               "estimate-geometry",
               activeEstimateSection,
-              showRoomTypeColumn
-                ? "public-estimate-geometry public-estimate-geometry--has-type"
-                : "public-estimate-geometry",
+              "public-estimate-geometry",
             )}
             aria-labelledby="public-estimate-geometry-title"
           >
@@ -1940,11 +1923,6 @@ export function PublicEstimate() {
             <div className="public-estimate-room-header" aria-hidden="true">
               <span>№</span>
               <span>Помещение</span>
-              {showRoomTypeColumn ? (
-                <span className="public-estimate-room-header-type" title="Коэффициент формы и умолчания в разделах сметы">
-                  Назначение
-                </span>
-              ) : null}
               <span className="public-estimate-room-header-metric">Площадь</span>
               <span className="public-estimate-room-header-count">Двери</span>
               <span className="public-estimate-room-header-count">Окна</span>
@@ -1986,35 +1964,6 @@ export function PublicEstimate() {
                     </div>
 
                     <div className="public-estimate-room-main">
-                      {showRoomTypeColumn ? (
-                        shouldShowRoomTypeSelector(roomDraft) ? (
-                          <label className="public-estimate-field public-estimate-room-type">
-                            <span className="public-estimate-mobile-label">Назначение</span>
-                            <select
-                              aria-label="Назначение помещения"
-                              className="public-estimate-select"
-                              title="Коэффициент формы и умолчания в разделах сметы"
-                              value={normalizeEstimateRoomType(roomDraft.type)}
-                              onChange={(event) => updateRoom(room.id, { type: event.target.value as EstimateRoomType })}
-                            >
-                              {roomTypeOptions.map((option) => (
-                                <option key={option.value} value={option.value}>
-                                  {option.label}
-                                </option>
-                              ))}
-                            </select>
-                          </label>
-                        ) : (
-                          <div
-                            className="public-estimate-room-type public-estimate-room-type-readonly"
-                            title="Коэффициент формы и умолчания в разделах сметы"
-                          >
-                            <span className="public-estimate-mobile-label">Назначение</span>
-                            <span className="public-estimate-room-type-value">{getRoomTypeLabel(roomDraft.type)}</span>
-                          </div>
-                        )
-                      ) : null}
-
                       <div className="public-estimate-room-metrics">
                         <label className="public-estimate-field public-estimate-room-area">
                           <span className="public-estimate-mobile-label">Площадь</span>

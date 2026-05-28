@@ -160,6 +160,63 @@ export const CATALOG_GROUPS: CatalogGroup[] = [
   "Отопление",
 ];
 
+// --- Иерархия зон (подгруппа → зона → состав) ---
+// Зона не хранит собственную цену: она ссылается на атомарные позиции библиотеки
+// по id и агрегирует их (Σ цена позиции × qty × коэффициент строки состава).
+
+export type ZoneSubgroup = "Кухня" | "Санузел" | "Узел" | "Тех. зона" | "Доп.";
+
+export type ZoneCompositionRow = {
+  atomicItemId: string;
+  quantity: number;
+  coefficient?: number;
+};
+
+export type CatalogZone = {
+  id: string;
+  subgroup: ZoneSubgroup;
+  title: string;
+  description?: string;
+  items: ZoneCompositionRow[];
+};
+
+// Фиксированный список подгрупп для иерархии зон.
+export const ZONE_SUBGROUPS: ZoneSubgroup[] = ["Кухня", "Санузел", "Узел", "Тех. зона", "Доп."];
+
+// Человеческие подписи подгрупп (значение остаётся коротким для совместимости с group).
+export const ZONE_SUBGROUP_LABELS: Record<ZoneSubgroup, string> = {
+  "Кухня": "Кухня",
+  "Санузел": "Санузел",
+  "Узел": "Инженерный узел",
+  "Тех. зона": "Тех. зона",
+  "Доп.": "Доп.",
+};
+
+// Демо-зоны: только ссылки на существующие позиции библиотеки, без выдуманных цен.
+export const ZONES_SEED: CatalogZone[] = [
+  {
+    id: "zone-kitchen-sink",
+    subgroup: "Кухня",
+    title: "Зона мойки",
+    description: "Базовый узел кухонной мойки: выводы и сифон.",
+    items: [
+      { atomicItemId: "kitchen-sink", quantity: 1 },
+      { atomicItemId: "kitchen-sink-siphon", quantity: 1 },
+    ],
+  },
+  {
+    id: "zone-bathroom-vanity",
+    subgroup: "Санузел",
+    title: "Зона умывальника",
+    description: "Тумба с раковиной, смеситель и сифон.",
+    items: [
+      { atomicItemId: "vanity-sink-set", quantity: 1 },
+      { atomicItemId: "sink-faucet", quantity: 1 },
+      { atomicItemId: "vanity-sink-siphon", quantity: 1 },
+    ],
+  },
+];
+
 export const CATALOG_CATEGORIES: CatalogCategory[] = ["works", "materials", "equipment", "consumables"];
 
 export const CATALOG_UNITS: CatalogUnit[] = ["шт", "м.п.", "м²", "комплект"];

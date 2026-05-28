@@ -137,4 +137,57 @@ select.ce-cell-input { appearance: none; cursor: pointer; }
 .ce-row-delete:hover { color: var(--ce-danger); border-color: rgba(255,93,93,.4); background: rgba(255,93,93,.1); }
 
 .ce-empty { padding: 32px; text-align: center; color: var(--ce-muted); }
+
+/* --- Под-вкладки внутри раздела --- */
+.ce-subtabs { display: inline-flex; gap: 4px; padding: 3px; border-radius: 9px; background: var(--ce-panel); border: 1px solid var(--ce-border); }
+.ce-subtab {
+  padding: 6px 14px; border-radius: 6px; cursor: pointer;
+  background: transparent; border: 0; color: var(--ce-muted); font-size: 13px; font-weight: 500;
+}
+.ce-subtab:hover { color: var(--ce-text); }
+.ce-subtab.is-active { background: var(--ce-accent); color: #fff; }
+
+.ce-btn-sm { height: 28px; padding: 0 10px; font-size: 12px; }
+
+/* --- Иерархия зон --- */
+.ce-zones { display: flex; flex-direction: column; gap: 12px; }
+.ce-subgroup { border: 1px solid var(--ce-border); border-radius: 12px; background: var(--ce-panel); overflow: hidden; }
+.ce-subgroup-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 10px 14px; background: var(--ce-panel-2);
+}
+.ce-disclosure {
+  display: inline-flex; align-items: center; gap: 10px;
+  background: transparent; border: 0; color: var(--ce-text); cursor: pointer; font-size: 14px; padding: 0;
+}
+.ce-chevron { display: inline-block; font-size: 10px; color: var(--ce-muted); transition: transform .12s ease; }
+.ce-chevron.is-open { transform: rotate(90deg); }
+.ce-subgroup-title { font-size: 15px; font-weight: 650; }
+.ce-subgroup-count { font-size: 11px; color: var(--ce-muted); }
+.ce-subgroup-right { display: inline-flex; align-items: center; gap: 14px; }
+.ce-subgroup-total { font-size: 14px; font-weight: 650; color: var(--ce-ok); }
+.ce-subgroup-body { padding: 10px 14px 14px; display: flex; flex-direction: column; gap: 10px; }
+.ce-zone-empty { padding: 14px; text-align: center; color: var(--ce-muted); font-size: 12px; border: 1px dashed var(--ce-border); border-radius: 8px; }
+
+.ce-zone { border: 1px solid var(--ce-border); border-radius: 10px; background: var(--ce-bg); overflow: hidden; }
+.ce-zone-head { display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: rgba(255,255,255,.02); }
+.ce-zone-title {
+  flex: 1; min-width: 0; height: 30px; padding: 0 8px; border-radius: 6px;
+  background: transparent; border: 1px solid transparent; color: var(--ce-text); font-size: 14px; font-weight: 600; outline: none;
+}
+.ce-zone-title:hover { border-color: var(--ce-border); }
+.ce-zone-title:focus { background: var(--ce-panel); border-color: var(--ce-accent); }
+.ce-zone-count { font-size: 11px; color: var(--ce-muted); white-space: nowrap; }
+.ce-zone-total { font-size: 14px; font-weight: 650; color: var(--ce-ok); white-space: nowrap; min-width: 90px; text-align: right; }
+.ce-zone-body { padding: 10px 12px 12px; }
+.ce-zone-desc {
+  width: 100%; height: 30px; padding: 0 8px; margin-bottom: 8px; border-radius: 6px;
+  background: var(--ce-panel); border: 1px solid var(--ce-border); color: var(--ce-muted); font-size: 12px; outline: none;
+}
+.ce-zone-desc:focus { border-color: var(--ce-accent); color: var(--ce-text); }
+.ce-zone-table { min-width: 0; width: 100%; border: 1px solid var(--ce-border); border-radius: 8px; }
+.ce-zone-table thead th { position: static; }
+.ce-row-missing td { background: rgba(255,93,93,.08); color: var(--ce-danger); }
+.ce-zone-add { margin-top: 8px; }
+.ce-zone-pick { width: 100%; max-width: 520px; cursor: pointer; }
 `;

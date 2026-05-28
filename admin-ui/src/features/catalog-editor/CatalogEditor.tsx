@@ -5,15 +5,21 @@ import {
   CATALOG_SOURCES,
   CATALOG_UNITS,
   PLUMBING_SEED,
+  ZONES_SEED,
+  ZONE_SUBGROUPS,
+  ZONE_SUBGROUP_LABELS,
   type CatalogCategory,
   type CatalogGroup,
   type CatalogItem,
   type CatalogSource,
   type CatalogUnit,
+  type CatalogZone,
+  type ZoneSubgroup,
 } from "./plumbing-seed";
 import { CATALOG_EDITOR_STYLES } from "./styles";
 
 const STORAGE_KEY = "danko-catalog-plumbing";
+const ZONES_KEY = "danko-catalog-plumbing-zones";
 
 const CATEGORY_LABELS: Record<CatalogCategory, string> = {
   works: "Работа",
@@ -46,6 +52,10 @@ function cloneSeed(): CatalogItem[] {
   return PLUMBING_SEED.map((item) => ({ ...item }));
 }
 
+function cloneZonesSeed(): CatalogZone[] {
+  return ZONES_SEED.map((zone) => ({ ...zone, items: zone.items.map((row) => ({ ...row })) }));
+}
+
 function isCatalogItem(value: unknown): value is CatalogItem {
   if (!value || typeof value !== "object") return false;
   const candidate = value as Record<string, unknown>;
@@ -76,7 +86,36 @@ function normalizeItem(raw: CatalogItem): CatalogItem {
   };
 }
 
-function loadFromStorage(): CatalogItem[] {
+function isCatalogZone(value: unknown): value is CatalogZone {
+  if (!value || typeof value !== "object") return false;
+  const candidate = value as Record<string, unknown>;
+  return typeof candidate.id === "string" && typeof candidate.title === "string" && Array.isArray(candidate.items);
+}
+
+function normalizeZone(raw: CatalogZone): CatalogZone {
+  const subgroup = ZONE_SUBGROUPS.includes(raw.subgroup) ? raw.subgroup : "Доп.";
+  const items = Array.isArray(raw.items)
+    ? raw.items
+        .filter((row) => row && typeof row.atomicItemId === "string")
+        .map((row) => ({
+          atomicItemId: row.atomicItemId,
+          quantity: Number.isFinite(row.quantity) && row.quantity > 0 ? row.quantity : 1,
+          coefficient:
+            row.coefficient != null && Number.isFinite(row.coefficient) && row.coefficient > 0
+              ? row.coefficient
+              : undefined,
+        }))
+    : [];
+  return {
+    id: raw.id,
+    subgroup,
+    title: raw.title ?? "Новая зона",
+    description: typeof raw.description === "string" ? raw.description : undefined,
+    items,
+  };
+}
+
+function loadItems(): CatalogItem[] {
   try {
     const stored = window.localStorage.getItem(STORAGE_KEY);
     if (!stored) return cloneSeed();
@@ -89,11 +128,23 @@ function loadFromStorage(): CatalogItem[] {
   }
 }
 
+function loadZones(): CatalogZone[] {
+  try {
+    const stored = window.localStorage.getItem(ZONES_KEY);
+    if (!stored) return cloneZonesSeed();
+    const parsed = JSON.parse(stored);
+    if (!Array.isArray(parsed)) return cloneZonesSeed();
+    return parsed.filter(isCatalogZone).map(normalizeZone);
+  } catch {
+    return cloneZonesSeed();
+  }
+}
+
 function baseSum(item: CatalogItem): number {
   return item.works + item.materials + item.equipment + item.consumables;
 }
 
-function totalWithCoefficient(item: CatalogItem): number {
+function itemUnitPrice(item: CatalogItem): number {
   return Math.round(baseSum(item) * item.coefficient);
 }
 
@@ -101,9 +152,9 @@ function formatMoney(value: number): string {
   return value.toLocaleString("ru-RU");
 }
 
-function makeNewId(existing: CatalogItem[]): string {
-  let counter = existing.length + 1;
+function makeNewItemId(existing: CatalogItem[]): string {
   const ids = new Set(existing.map((item) => item.id));
+  let counter = existing.length + 1;
   let candidate = `new-item-${counter}`;
   while (ids.has(candidate)) {
     counter += 1;
@@ -112,26 +163,43 @@ function makeNewId(existing: CatalogItem[]): string {
   return candidate;
 }
 
+function makeNewZoneId(existing: CatalogZone[]): string {
+  const ids = new Set(existing.map((zone) => zone.id));
+  let counter = existing.length + 1;
+  let candidate = `zone-${counter}`;
+  while (ids.has(candidate)) {
+    counter += 1;
+    candidate = `zone-${counter}`;
+  }
+  return candidate;
+}
+
 export function CatalogEditor() {
-  const [items, setItems] = useState<CatalogItem[]>(() => loadFromStorage());
+  const [items, setItems] = useState<CatalogItem[]>(() => loadItems());
+  const [zones, setZones] = useState<CatalogZone[]>(() => loadZones());
   const [activeTab, setActiveTab] = useState<string>("plumbing");
+  const [plumbingView, setPlumbingView] = useState<"zones" | "library">("zones");
   const [search, setSearch] = useState("");
   const [groupFilter, setGroupFilter] = useState<"all" | CatalogGroup>("all");
   const [savedAt, setSavedAt] = useState<string>("");
+  const [collapsedSubgroups, setCollapsedSubgroups] = useState<Set<string>>(new Set());
+  const [collapsedZones, setCollapsedZones] = useState<Set<string>>(new Set());
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const firstRender = useRef(true);
 
   useEffect(() => {
-    if (firstRender.current) {
-      firstRender.current = false;
-    }
     try {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
-      const now = new Date();
-      setSavedAt(now.toLocaleTimeString("ru-RU"));
+      window.localStorage.setItem(ZONES_KEY, JSON.stringify(zones));
+      setSavedAt(new Date().toLocaleTimeString("ru-RU"));
     } catch {
       setSavedAt("ошибка сохранения");
     }
+  }, [items, zones]);
+
+  const itemsById = useMemo(() => {
+    const map = new Map<string, CatalogItem>();
+    items.forEach((item) => map.set(item.id, item));
+    return map;
   }, [items]);
 
   const filteredItems = useMemo(() => {
@@ -147,26 +215,43 @@ export function CatalogEditor() {
     });
   }, [items, search, groupFilter]);
 
-  const totals = useMemo(() => {
+  const libraryTotals = useMemo(() => {
     const base = filteredItems.reduce((sum, item) => sum + baseSum(item), 0);
-    const withCoef = filteredItems.reduce((sum, item) => sum + totalWithCoefficient(item), 0);
+    const withCoef = filteredItems.reduce((sum, item) => sum + itemUnitPrice(item), 0);
     return { base, withCoef };
   }, [filteredItems]);
 
+  function zoneRowTotal(row: { atomicItemId: string; quantity: number; coefficient?: number }): number {
+    const item = itemsById.get(row.atomicItemId);
+    if (!item) return 0;
+    return Math.round(itemUnitPrice(item) * row.quantity * (row.coefficient ?? 1));
+  }
+
+  function zoneTotal(zone: CatalogZone): number {
+    return zone.items.reduce((sum, row) => sum + zoneRowTotal(row), 0);
+  }
+
+  const sectionTotal = useMemo(
+    () => zones.reduce((sum, zone) => sum + zoneTotal(zone), 0),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [zones, itemsById],
+  );
+
+  // --- Мутации библиотеки ---
   function updateItem(id: string, patch: Partial<CatalogItem>) {
     setItems((prev) => prev.map((item) => (item.id === id ? { ...item, ...patch } : item)));
   }
 
-  function updateNumber(id: string, field: keyof CatalogItem, value: string) {
+  function updateItemNumber(id: string, field: keyof CatalogItem, value: string) {
     const parsed = value === "" ? 0 : Number(value.replace(",", "."));
     if (!Number.isFinite(parsed)) return;
     updateItem(id, { [field]: parsed } as Partial<CatalogItem>);
   }
 
-  function addItem() {
+  function addLibraryItem() {
     setItems((prev) => {
       const newItem: CatalogItem = {
-        id: makeNewId(prev),
+        id: makeNewItemId(prev),
         publicTitle: "Новая позиция",
         technicalTitle: "",
         category: "materials",
@@ -183,17 +268,121 @@ export function CatalogEditor() {
     });
   }
 
-  function removeItem(id: string) {
+  function removeLibraryItem(id: string) {
+    const usedIn = zones.filter((zone) => zone.items.some((row) => row.atomicItemId === id));
+    if (usedIn.length > 0) {
+      const ok = window.confirm(
+        `Позиция используется в зонах: ${usedIn.map((z) => z.title).join(", ")}. Удалить из библиотеки и из состава этих зон?`,
+      );
+      if (!ok) return;
+      setZones((prev) =>
+        prev.map((zone) => ({ ...zone, items: zone.items.filter((row) => row.atomicItemId !== id) })),
+      );
+    }
     setItems((prev) => prev.filter((item) => item.id !== id));
   }
 
+  // --- Мутации зон ---
+  function addZone(subgroup: ZoneSubgroup) {
+    setZones((prev) => {
+      const zone: CatalogZone = {
+        id: makeNewZoneId(prev),
+        subgroup,
+        title: "Новая зона",
+        description: "",
+        items: [],
+      };
+      return [...prev, zone];
+    });
+  }
+
+  function updateZone(id: string, patch: Partial<CatalogZone>) {
+    setZones((prev) => prev.map((zone) => (zone.id === id ? { ...zone, ...patch } : zone)));
+  }
+
+  function removeZone(id: string, title: string) {
+    if (!window.confirm(`Удалить зону «${title}»?`)) return;
+    setZones((prev) => prev.filter((zone) => zone.id !== id));
+  }
+
+  function addZoneRow(zoneId: string, atomicItemId: string) {
+    if (!atomicItemId) return;
+    setZones((prev) =>
+      prev.map((zone) => {
+        if (zone.id !== zoneId) return zone;
+        if (zone.items.some((row) => row.atomicItemId === atomicItemId)) {
+          return {
+            ...zone,
+            items: zone.items.map((row) =>
+              row.atomicItemId === atomicItemId ? { ...row, quantity: row.quantity + 1 } : row,
+            ),
+          };
+        }
+        return { ...zone, items: [...zone.items, { atomicItemId, quantity: 1 }] };
+      }),
+    );
+  }
+
+  function updateZoneRow(
+    zoneId: string,
+    atomicItemId: string,
+    field: "quantity" | "coefficient",
+    value: string,
+  ) {
+    const parsed = value === "" ? (field === "coefficient" ? undefined : 0) : Number(value.replace(",", "."));
+    if (parsed !== undefined && !Number.isFinite(parsed)) return;
+    setZones((prev) =>
+      prev.map((zone) =>
+        zone.id !== zoneId
+          ? zone
+          : {
+              ...zone,
+              items: zone.items.map((row) =>
+                row.atomicItemId === atomicItemId ? { ...row, [field]: parsed } : row,
+              ),
+            },
+      ),
+    );
+  }
+
+  function removeZoneRow(zoneId: string, atomicItemId: string) {
+    setZones((prev) =>
+      prev.map((zone) =>
+        zone.id !== zoneId
+          ? zone
+          : { ...zone, items: zone.items.filter((row) => row.atomicItemId !== atomicItemId) },
+      ),
+    );
+  }
+
+  function toggleSubgroup(subgroup: string) {
+    setCollapsedSubgroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(subgroup)) next.delete(subgroup);
+      else next.add(subgroup);
+      return next;
+    });
+  }
+
+  function toggleZone(zoneId: string) {
+    setCollapsedZones((prev) => {
+      const next = new Set(prev);
+      if (next.has(zoneId)) next.delete(zoneId);
+      else next.add(zoneId);
+      return next;
+    });
+  }
+
+  // --- Сброс / экспорт / импорт (библиотека + зоны единым объектом) ---
   function resetToSeed() {
-    const ok = window.confirm("Сбросить каталог к «Сан v1»? Все локальные изменения будут потеряны.");
-    if (ok) setItems(cloneSeed());
+    if (!window.confirm("Сбросить библиотеку и зоны к «Сан v1»? Все локальные изменения будут потеряны.")) return;
+    setItems(cloneSeed());
+    setZones(cloneZonesSeed());
   }
 
   function exportJson() {
-    const blob = new Blob([JSON.stringify(items, null, 2)], { type: "application/json" });
+    const bundle = { version: 2, library: items, zones };
+    const blob = new Blob([JSON.stringify(bundle, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     const stamp = new Date().toISOString().slice(0, 10);
@@ -212,16 +401,22 @@ export function CatalogEditor() {
     reader.onload = () => {
       try {
         const parsed = JSON.parse(String(reader.result));
-        if (!Array.isArray(parsed)) {
-          window.alert("Неверный формат: ожидается массив позиций.");
+        // Новый формат: { library, zones }. Старый формат: массив позиций.
+        const rawLibrary = Array.isArray(parsed) ? parsed : parsed?.library;
+        const rawZones = Array.isArray(parsed) ? [] : parsed?.zones;
+        if (!Array.isArray(rawLibrary)) {
+          window.alert("Неверный формат файла: нет библиотеки позиций.");
           return;
         }
-        const imported = parsed.filter(isCatalogItem).map(normalizeItem);
-        if (imported.length === 0) {
+        const importedItems = rawLibrary.filter(isCatalogItem).map(normalizeItem);
+        if (importedItems.length === 0) {
           window.alert("В файле не найдено корректных позиций.");
           return;
         }
-        setItems(imported);
+        setItems(importedItems);
+        if (Array.isArray(rawZones)) {
+          setZones(rawZones.filter(isCatalogZone).map(normalizeZone));
+        }
       } catch {
         window.alert("Не удалось разобрать JSON-файл.");
       } finally {
@@ -274,31 +469,23 @@ export function CatalogEditor() {
       ) : (
         <>
           <div className="ce-toolbar">
-            <div className="ce-toolbar-group">
-              <input
-                type="search"
-                className="ce-input ce-search"
-                placeholder="Поиск по названию, id, комментарию…"
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-              />
-              <select
-                className="ce-input"
-                value={groupFilter}
-                onChange={(event) => setGroupFilter(event.target.value as "all" | CatalogGroup)}
+            <div className="ce-subtabs">
+              <button
+                type="button"
+                className={`ce-subtab${plumbingView === "zones" ? " is-active" : ""}`}
+                onClick={() => setPlumbingView("zones")}
               >
-                <option value="all">Все группы</option>
-                {CATALOG_GROUPS.map((group) => (
-                  <option key={group} value={group}>
-                    {group}
-                  </option>
-                ))}
-              </select>
+                Зоны
+              </button>
+              <button
+                type="button"
+                className={`ce-subtab${plumbingView === "library" ? " is-active" : ""}`}
+                onClick={() => setPlumbingView("library")}
+              >
+                Библиотека позиций (Сан v1)
+              </button>
             </div>
             <div className="ce-toolbar-group">
-              <button type="button" className="ce-btn ce-btn-primary" onClick={addItem}>
-                + Добавить позицию
-              </button>
               <button type="button" className="ce-btn" onClick={exportJson}>
                 Экспорт JSON
               </button>
@@ -318,122 +505,235 @@ export function CatalogEditor() {
             </div>
           </div>
 
-          <div className="ce-meta">
-            Показано: <strong>{filteredItems.length}</strong> из {items.length} позиций · База:{" "}
-            <strong>{formatMoney(totals.base)} ₽</strong> · С коэффициентом:{" "}
-            <strong>{formatMoney(totals.withCoef)} ₽</strong>
-          </div>
+          {plumbingView === "zones" ? (
+            <ZonesView
+              zones={zones}
+              itemsById={itemsById}
+              library={items}
+              collapsedSubgroups={collapsedSubgroups}
+              collapsedZones={collapsedZones}
+              sectionTotal={sectionTotal}
+              zoneTotal={zoneTotal}
+              zoneRowTotal={zoneRowTotal}
+              onToggleSubgroup={toggleSubgroup}
+              onToggleZone={toggleZone}
+              onAddZone={addZone}
+              onUpdateZone={updateZone}
+              onRemoveZone={removeZone}
+              onAddZoneRow={addZoneRow}
+              onUpdateZoneRow={updateZoneRow}
+              onRemoveZoneRow={removeZoneRow}
+            />
+          ) : (
+            <LibraryView
+              filteredItems={filteredItems}
+              totalCount={items.length}
+              search={search}
+              groupFilter={groupFilter}
+              libraryTotals={libraryTotals}
+              onSearch={setSearch}
+              onGroupFilter={setGroupFilter}
+              onAddItem={addLibraryItem}
+              onUpdateItem={updateItem}
+              onUpdateNumber={updateItemNumber}
+              onRemoveItem={removeLibraryItem}
+            />
+          )}
+        </>
+      )}
+    </div>
+  );
+}
 
-          <div className="ce-table-wrap">
-            <table className="ce-table">
-              <thead>
-                <tr>
-                  <th className="ce-col-id">ID</th>
-                  <th className="ce-col-title">Публичное название</th>
-                  <th className="ce-col-tech">Тех. название / комментарий</th>
-                  <th className="ce-col-select">Категория</th>
-                  <th className="ce-col-select">Ед.</th>
-                  <th className="ce-col-num">Работа ₽</th>
-                  <th className="ce-col-num">Материал ₽</th>
-                  <th className="ce-col-num">Оборуд. ₽</th>
-                  <th className="ce-col-num">Расходн. ₽</th>
-                  <th className="ce-col-num">Коэф.</th>
-                  <th className="ce-col-num ce-col-total">База ₽</th>
-                  <th className="ce-col-num ce-col-total">Итого ₽</th>
-                  <th className="ce-col-select">Группа</th>
-                  <th className="ce-col-select">Источник</th>
-                  <th className="ce-col-actions" aria-label="Действия" />
-                </tr>
-              </thead>
-              <tbody>
-                {filteredItems.length === 0 ? (
-                  <tr>
-                    <td colSpan={15} className="ce-empty">
-                      Ничего не найдено по текущему фильтру.
-                    </td>
-                  </tr>
+// =================== Представление "Зоны" ===================
+
+type ZonesViewProps = {
+  zones: CatalogZone[];
+  itemsById: Map<string, CatalogItem>;
+  library: CatalogItem[];
+  collapsedSubgroups: Set<string>;
+  collapsedZones: Set<string>;
+  sectionTotal: number;
+  zoneTotal: (zone: CatalogZone) => number;
+  zoneRowTotal: (row: { atomicItemId: string; quantity: number; coefficient?: number }) => number;
+  onToggleSubgroup: (subgroup: string) => void;
+  onToggleZone: (zoneId: string) => void;
+  onAddZone: (subgroup: ZoneSubgroup) => void;
+  onUpdateZone: (id: string, patch: Partial<CatalogZone>) => void;
+  onRemoveZone: (id: string, title: string) => void;
+  onAddZoneRow: (zoneId: string, atomicItemId: string) => void;
+  onUpdateZoneRow: (zoneId: string, atomicItemId: string, field: "quantity" | "coefficient", value: string) => void;
+  onRemoveZoneRow: (zoneId: string, atomicItemId: string) => void;
+};
+
+function ZonesView(props: ZonesViewProps) {
+  const { zones, itemsById, library, zoneTotal, zoneRowTotal } = props;
+
+  return (
+    <div className="ce-zones">
+      <div className="ce-meta">
+        Подгрупп: <strong>{ZONE_SUBGROUPS.length}</strong> · Зон: <strong>{zones.length}</strong> · Итог раздела
+        «Сантехника»: <strong>{formatMoney(props.sectionTotal)} ₽</strong>
+      </div>
+
+      {ZONE_SUBGROUPS.map((subgroup) => {
+        const subgroupZones = zones.filter((zone) => zone.subgroup === subgroup);
+        const subgroupTotal = subgroupZones.reduce((sum, zone) => sum + zoneTotal(zone), 0);
+        const collapsed = props.collapsedSubgroups.has(subgroup);
+        return (
+          <section key={subgroup} className="ce-subgroup">
+            <header className="ce-subgroup-head">
+              <button
+                type="button"
+                className="ce-disclosure"
+                onClick={() => props.onToggleSubgroup(subgroup)}
+                aria-expanded={!collapsed}
+              >
+                <span className={`ce-chevron${collapsed ? "" : " is-open"}`}>▶</span>
+                <span className="ce-subgroup-title">{ZONE_SUBGROUP_LABELS[subgroup]}</span>
+                <span className="ce-subgroup-count">{subgroupZones.length} зон</span>
+              </button>
+              <div className="ce-subgroup-right">
+                <span className="ce-subgroup-total">{formatMoney(subgroupTotal)} ₽</span>
+                <button type="button" className="ce-btn ce-btn-primary ce-btn-sm" onClick={() => props.onAddZone(subgroup)}>
+                  + Добавить зону
+                </button>
+              </div>
+            </header>
+
+            {!collapsed && (
+              <div className="ce-subgroup-body">
+                {subgroupZones.length === 0 ? (
+                  <div className="ce-zone-empty">В подгруппе пока нет зон. Нажмите «Добавить зону».</div>
                 ) : (
-                  filteredItems.map((item) => (
-                    <tr key={item.id}>
-                      <td className="ce-col-id">
-                        <input
-                          className="ce-cell-input ce-mono"
-                          value={item.id}
-                          onChange={(event) => updateItem(item.id, { id: event.target.value })}
-                        />
-                      </td>
+                  subgroupZones.map((zone) => (
+                    <ZoneCard
+                      key={zone.id}
+                      zone={zone}
+                      collapsed={props.collapsedZones.has(zone.id)}
+                      itemsById={itemsById}
+                      library={library}
+                      total={zoneTotal(zone)}
+                      zoneRowTotal={zoneRowTotal}
+                      onToggle={() => props.onToggleZone(zone.id)}
+                      onUpdateZone={props.onUpdateZone}
+                      onRemoveZone={props.onRemoveZone}
+                      onAddZoneRow={props.onAddZoneRow}
+                      onUpdateZoneRow={props.onUpdateZoneRow}
+                      onRemoveZoneRow={props.onRemoveZoneRow}
+                    />
+                  ))
+                )}
+              </div>
+            )}
+          </section>
+        );
+      })}
+    </div>
+  );
+}
+
+type ZoneCardProps = {
+  zone: CatalogZone;
+  collapsed: boolean;
+  itemsById: Map<string, CatalogItem>;
+  library: CatalogItem[];
+  total: number;
+  zoneRowTotal: (row: { atomicItemId: string; quantity: number; coefficient?: number }) => number;
+  onToggle: () => void;
+  onUpdateZone: (id: string, patch: Partial<CatalogZone>) => void;
+  onRemoveZone: (id: string, title: string) => void;
+  onAddZoneRow: (zoneId: string, atomicItemId: string) => void;
+  onUpdateZoneRow: (zoneId: string, atomicItemId: string, field: "quantity" | "coefficient", value: string) => void;
+  onRemoveZoneRow: (zoneId: string, atomicItemId: string) => void;
+};
+
+function ZoneCard(props: ZoneCardProps) {
+  const { zone, itemsById, library, total } = props;
+  const [pickValue, setPickValue] = useState("");
+
+  function handlePick(value: string) {
+    if (!value) return;
+    props.onAddZoneRow(zone.id, value);
+    setPickValue("");
+  }
+
+  return (
+    <div className="ce-zone">
+      <header className="ce-zone-head">
+        <button
+          type="button"
+          className="ce-disclosure"
+          onClick={props.onToggle}
+          aria-expanded={!props.collapsed}
+        >
+          <span className={`ce-chevron${props.collapsed ? "" : " is-open"}`}>▶</span>
+        </button>
+        <input
+          className="ce-zone-title"
+          value={zone.title}
+          onChange={(event) => props.onUpdateZone(zone.id, { title: event.target.value })}
+          placeholder="Название зоны"
+        />
+        <span className="ce-zone-count">{zone.items.length} поз.</span>
+        <span className="ce-zone-total">{formatMoney(total)} ₽</span>
+        <button
+          type="button"
+          className="ce-row-delete"
+          title="Удалить зону"
+          onClick={() => props.onRemoveZone(zone.id, zone.title)}
+        >
+          ✕
+        </button>
+      </header>
+
+      {!props.collapsed && (
+        <div className="ce-zone-body">
+          <input
+            className="ce-zone-desc"
+            value={zone.description ?? ""}
+            onChange={(event) => props.onUpdateZone(zone.id, { description: event.target.value })}
+            placeholder="Описание зоны (опционально)"
+          />
+
+          <table className="ce-table ce-zone-table">
+            <thead>
+              <tr>
+                <th className="ce-col-id">ID</th>
+                <th className="ce-col-title">Позиция</th>
+                <th className="ce-col-select">Ед.</th>
+                <th className="ce-col-num">Цена за ед. ₽</th>
+                <th className="ce-col-num">Кол-во</th>
+                <th className="ce-col-num">Коэф.</th>
+                <th className="ce-col-num ce-col-total">Итого ₽</th>
+                <th className="ce-col-actions" aria-label="Действия" />
+              </tr>
+            </thead>
+            <tbody>
+              {zone.items.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="ce-empty">
+                    Состав пуст. Добавьте позицию из библиотеки ниже.
+                  </td>
+                </tr>
+              ) : (
+                zone.items.map((row) => {
+                  const item = itemsById.get(row.atomicItemId);
+                  return (
+                    <tr key={row.atomicItemId} className={item ? "" : "ce-row-missing"}>
+                      <td className="ce-col-id ce-mono ce-readonly">{row.atomicItemId}</td>
+                      <td className="ce-readonly">{item ? item.publicTitle : "⚠ позиция не найдена в библиотеке"}</td>
+                      <td className="ce-readonly">{item ? item.unit : "—"}</td>
+                      <td className="ce-num ce-readonly">{item ? formatMoney(itemUnitPrice(item)) : "0"}</td>
                       <td>
                         <input
-                          className="ce-cell-input"
-                          value={item.publicTitle}
-                          onChange={(event) => updateItem(item.id, { publicTitle: event.target.value })}
-                        />
-                      </td>
-                      <td>
-                        <input
-                          className="ce-cell-input"
-                          value={item.technicalTitle}
-                          onChange={(event) => updateItem(item.id, { technicalTitle: event.target.value })}
-                        />
-                      </td>
-                      <td>
-                        <select
-                          className="ce-cell-input"
-                          value={item.category}
+                          className="ce-cell-input ce-num"
+                          type="number"
+                          min={0}
+                          value={row.quantity}
                           onChange={(event) =>
-                            updateItem(item.id, { category: event.target.value as CatalogCategory })
+                            props.onUpdateZoneRow(zone.id, row.atomicItemId, "quantity", event.target.value)
                           }
-                        >
-                          {CATALOG_CATEGORIES.map((category) => (
-                            <option key={category} value={category}>
-                              {CATEGORY_LABELS[category]}
-                            </option>
-                          ))}
-                        </select>
-                      </td>
-                      <td>
-                        <select
-                          className="ce-cell-input"
-                          value={item.unit}
-                          onChange={(event) => updateItem(item.id, { unit: event.target.value as CatalogUnit })}
-                        >
-                          {CATALOG_UNITS.map((unit) => (
-                            <option key={unit} value={unit}>
-                              {unit}
-                            </option>
-                          ))}
-                        </select>
-                      </td>
-                      <td>
-                        <input
-                          className="ce-cell-input ce-num"
-                          type="number"
-                          value={item.works}
-                          onChange={(event) => updateNumber(item.id, "works", event.target.value)}
-                        />
-                      </td>
-                      <td>
-                        <input
-                          className="ce-cell-input ce-num"
-                          type="number"
-                          value={item.materials}
-                          onChange={(event) => updateNumber(item.id, "materials", event.target.value)}
-                        />
-                      </td>
-                      <td>
-                        <input
-                          className="ce-cell-input ce-num"
-                          type="number"
-                          value={item.equipment}
-                          onChange={(event) => updateNumber(item.id, "equipment", event.target.value)}
-                        />
-                      </td>
-                      <td>
-                        <input
-                          className="ce-cell-input ce-num"
-                          type="number"
-                          value={item.consumables}
-                          onChange={(event) => updateNumber(item.id, "consumables", event.target.value)}
                         />
                       </td>
                       <td>
@@ -441,59 +741,272 @@ export function CatalogEditor() {
                           className="ce-cell-input ce-num"
                           type="number"
                           step="0.01"
-                          value={item.coefficient}
-                          onChange={(event) => updateNumber(item.id, "coefficient", event.target.value)}
+                          placeholder="1"
+                          value={row.coefficient ?? ""}
+                          onChange={(event) =>
+                            props.onUpdateZoneRow(zone.id, row.atomicItemId, "coefficient", event.target.value)
+                          }
                         />
                       </td>
-                      <td className="ce-num ce-readonly">{formatMoney(baseSum(item))}</td>
-                      <td className="ce-num ce-readonly ce-total-cell">{formatMoney(totalWithCoefficient(item))}</td>
-                      <td>
-                        <select
-                          className="ce-cell-input"
-                          value={item.group}
-                          onChange={(event) => updateItem(item.id, { group: event.target.value as CatalogGroup })}
-                        >
-                          {CATALOG_GROUPS.map((group) => (
-                            <option key={group} value={group}>
-                              {group}
-                            </option>
-                          ))}
-                        </select>
-                      </td>
-                      <td>
-                        <select
-                          className="ce-cell-input"
-                          value={item.source}
-                          onChange={(event) =>
-                            updateItem(item.id, { source: event.target.value as CatalogSource })
-                          }
-                        >
-                          {CATALOG_SOURCES.map((source) => (
-                            <option key={source} value={source}>
-                              {source}
-                            </option>
-                          ))}
-                        </select>
-                      </td>
+                      <td className="ce-num ce-readonly ce-total-cell">{formatMoney(props.zoneRowTotal(row))}</td>
                       <td className="ce-col-actions">
                         <button
                           type="button"
                           className="ce-row-delete"
-                          title="Удалить позицию"
-                          onClick={() => removeItem(item.id)}
+                          title="Убрать из состава"
+                          onClick={() => props.onRemoveZoneRow(zone.id, row.atomicItemId)}
                         >
                           ✕
                         </button>
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+
+          <div className="ce-zone-add">
+            <select
+              className="ce-input ce-zone-pick"
+              value={pickValue}
+              onChange={(event) => handlePick(event.target.value)}
+            >
+              <option value="">+ Добавить позицию в состав…</option>
+              {library.map((item) => (
+                <option key={item.id} value={item.id}>
+                  [{item.group}] {item.publicTitle} — {formatMoney(itemUnitPrice(item))} ₽/{item.unit}
+                </option>
+              ))}
+            </select>
           </div>
-        </>
+        </div>
       )}
     </div>
+  );
+}
+
+// =================== Представление "Библиотека" ===================
+
+type LibraryViewProps = {
+  filteredItems: CatalogItem[];
+  totalCount: number;
+  search: string;
+  groupFilter: "all" | CatalogGroup;
+  libraryTotals: { base: number; withCoef: number };
+  onSearch: (value: string) => void;
+  onGroupFilter: (value: "all" | CatalogGroup) => void;
+  onAddItem: () => void;
+  onUpdateItem: (id: string, patch: Partial<CatalogItem>) => void;
+  onUpdateNumber: (id: string, field: keyof CatalogItem, value: string) => void;
+  onRemoveItem: (id: string) => void;
+};
+
+function LibraryView(props: LibraryViewProps) {
+  const { filteredItems } = props;
+  return (
+    <>
+      <div className="ce-toolbar">
+        <div className="ce-toolbar-group">
+          <input
+            type="search"
+            className="ce-input ce-search"
+            placeholder="Поиск по названию, id, комментарию…"
+            value={props.search}
+            onChange={(event) => props.onSearch(event.target.value)}
+          />
+          <select
+            className="ce-input"
+            value={props.groupFilter}
+            onChange={(event) => props.onGroupFilter(event.target.value as "all" | CatalogGroup)}
+          >
+            <option value="all">Все группы</option>
+            {CATALOG_GROUPS.map((group) => (
+              <option key={group} value={group}>
+                {group}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="ce-toolbar-group">
+          <button type="button" className="ce-btn ce-btn-primary" onClick={props.onAddItem}>
+            + Добавить позицию в библиотеку
+          </button>
+        </div>
+      </div>
+
+      <div className="ce-meta">
+        Показано: <strong>{filteredItems.length}</strong> из {props.totalCount} позиций · База:{" "}
+        <strong>{formatMoney(props.libraryTotals.base)} ₽</strong> · С коэффициентом:{" "}
+        <strong>{formatMoney(props.libraryTotals.withCoef)} ₽</strong>
+      </div>
+
+      <div className="ce-table-wrap">
+        <table className="ce-table">
+          <thead>
+            <tr>
+              <th className="ce-col-id">ID</th>
+              <th className="ce-col-title">Публичное название</th>
+              <th className="ce-col-tech">Тех. название / комментарий</th>
+              <th className="ce-col-select">Категория</th>
+              <th className="ce-col-select">Ед.</th>
+              <th className="ce-col-num">Работа ₽</th>
+              <th className="ce-col-num">Материал ₽</th>
+              <th className="ce-col-num">Оборуд. ₽</th>
+              <th className="ce-col-num">Расходн. ₽</th>
+              <th className="ce-col-num">Коэф.</th>
+              <th className="ce-col-num ce-col-total">База ₽</th>
+              <th className="ce-col-num ce-col-total">Итого ₽</th>
+              <th className="ce-col-select">Группа</th>
+              <th className="ce-col-select">Источник</th>
+              <th className="ce-col-actions" aria-label="Действия" />
+            </tr>
+          </thead>
+          <tbody>
+            {filteredItems.length === 0 ? (
+              <tr>
+                <td colSpan={15} className="ce-empty">
+                  Ничего не найдено по текущему фильтру.
+                </td>
+              </tr>
+            ) : (
+              filteredItems.map((item) => (
+                <tr key={item.id}>
+                  <td className="ce-col-id">
+                    <input
+                      className="ce-cell-input ce-mono"
+                      value={item.id}
+                      onChange={(event) => props.onUpdateItem(item.id, { id: event.target.value })}
+                    />
+                  </td>
+                  <td>
+                    <input
+                      className="ce-cell-input"
+                      value={item.publicTitle}
+                      onChange={(event) => props.onUpdateItem(item.id, { publicTitle: event.target.value })}
+                    />
+                  </td>
+                  <td>
+                    <input
+                      className="ce-cell-input"
+                      value={item.technicalTitle}
+                      onChange={(event) => props.onUpdateItem(item.id, { technicalTitle: event.target.value })}
+                    />
+                  </td>
+                  <td>
+                    <select
+                      className="ce-cell-input"
+                      value={item.category}
+                      onChange={(event) =>
+                        props.onUpdateItem(item.id, { category: event.target.value as CatalogCategory })
+                      }
+                    >
+                      {CATALOG_CATEGORIES.map((category) => (
+                        <option key={category} value={category}>
+                          {CATEGORY_LABELS[category]}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
+                  <td>
+                    <select
+                      className="ce-cell-input"
+                      value={item.unit}
+                      onChange={(event) => props.onUpdateItem(item.id, { unit: event.target.value as CatalogUnit })}
+                    >
+                      {CATALOG_UNITS.map((unit) => (
+                        <option key={unit} value={unit}>
+                          {unit}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
+                  <td>
+                    <input
+                      className="ce-cell-input ce-num"
+                      type="number"
+                      value={item.works}
+                      onChange={(event) => props.onUpdateNumber(item.id, "works", event.target.value)}
+                    />
+                  </td>
+                  <td>
+                    <input
+                      className="ce-cell-input ce-num"
+                      type="number"
+                      value={item.materials}
+                      onChange={(event) => props.onUpdateNumber(item.id, "materials", event.target.value)}
+                    />
+                  </td>
+                  <td>
+                    <input
+                      className="ce-cell-input ce-num"
+                      type="number"
+                      value={item.equipment}
+                      onChange={(event) => props.onUpdateNumber(item.id, "equipment", event.target.value)}
+                    />
+                  </td>
+                  <td>
+                    <input
+                      className="ce-cell-input ce-num"
+                      type="number"
+                      value={item.consumables}
+                      onChange={(event) => props.onUpdateNumber(item.id, "consumables", event.target.value)}
+                    />
+                  </td>
+                  <td>
+                    <input
+                      className="ce-cell-input ce-num"
+                      type="number"
+                      step="0.01"
+                      value={item.coefficient}
+                      onChange={(event) => props.onUpdateNumber(item.id, "coefficient", event.target.value)}
+                    />
+                  </td>
+                  <td className="ce-num ce-readonly">{formatMoney(baseSum(item))}</td>
+                  <td className="ce-num ce-readonly ce-total-cell">{formatMoney(itemUnitPrice(item))}</td>
+                  <td>
+                    <select
+                      className="ce-cell-input"
+                      value={item.group}
+                      onChange={(event) => props.onUpdateItem(item.id, { group: event.target.value as CatalogGroup })}
+                    >
+                      {CATALOG_GROUPS.map((group) => (
+                        <option key={group} value={group}>
+                          {group}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
+                  <td>
+                    <select
+                      className="ce-cell-input"
+                      value={item.source}
+                      onChange={(event) => props.onUpdateItem(item.id, { source: event.target.value as CatalogSource })}
+                    >
+                      {CATALOG_SOURCES.map((source) => (
+                        <option key={source} value={source}>
+                          {source}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
+                  <td className="ce-col-actions">
+                    <button
+                      type="button"
+                      className="ce-row-delete"
+                      title="Удалить позицию"
+                      onClick={() => props.onRemoveItem(item.id)}
+                    >
+                      ✕
+                    </button>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+    </>
   );
 }
 

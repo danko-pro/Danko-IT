@@ -43,9 +43,19 @@ import {
   calculateEstimateGeometryTotals,
   calculateEstimateRoomGeometry,
   parseEstimateDecimal,
+  parseEstimateInteger,
   type EstimateRoomInput,
   type EstimateRoomType,
 } from "./public-estimate-geometry";
+import {
+  normalizeEstimateCeilingHeightOnBlur,
+  normalizeEstimateCountOnBlur,
+  normalizeEstimateDecimalOnBlur,
+  normalizeEstimateQuantityOnBlur,
+  sanitizeEstimateDecimalInput,
+  sanitizeEstimateIntegerInput,
+  selectEstimateInputContent,
+} from "./public-estimate-input";
 import {
   calculateFlooring,
   type FlooringCoveringType,
@@ -54,6 +64,7 @@ import {
   type FlooringPreparationType,
 } from "./public-estimate-flooring";
 import { calculateEstimateTotals } from "./public-estimate-model";
+import { classifyEstimatePackage } from "./public-estimate-package";
 import { calculatePlumbing, type PlumbingOptions } from "./public-estimate-plumbing";
 import { calculateWarmFloor, type WarmFloorMode } from "./public-estimate-warm-floor";
 import {
@@ -191,12 +202,6 @@ const wallsPreparationOptions: Array<{ value: WallsPreparationType; label: strin
 const doorPackageOptions: Array<{ value: DoorPackageType; label: string }> = [
   { value: "invisible_19000", label: "INVISIBLE 3 / 19 000" },
   { value: "invisible_20350", label: "INVISIBLE 3 / 20 350" },
-];
-
-const estimatePackageBenchmarks = [
-  { label: "Пакет C", pricePerM2: 40228 },
-  { label: "Пакет B", pricePerM2: 52280 },
-  { label: "Пакет A", pricePerM2: 75416 },
 ];
 
 type EstimateNavigationIcon =
@@ -488,6 +493,70 @@ type CompletionOptionsDraft = Omit<CompletionOptions, "kitchenLengthMeters"> & {
   kitchenLengthMeters: string;
 };
 
+type AppliancesOptionsDraft = Omit<AppliancesOptions, "items"> & {
+  items: Record<ApplianceItemKey, { isIncluded: boolean; quantity: string }>;
+};
+
+type LooseFurnitureOptionsDraft = Omit<LooseFurnitureOptions, "items"> & {
+  items: Record<LooseFurnitureItemKey, { isIncluded: boolean; quantity: string }>;
+};
+
+function createDefaultAppliancesOptionsDraft(): AppliancesOptionsDraft {
+  const base = createDefaultAppliancesOptions();
+  const items = {} as AppliancesOptionsDraft["items"];
+
+  for (const item of applianceItemCatalog) {
+    items[item.key] = {
+      isIncluded: base.items[item.key].isIncluded,
+      quantity: String(base.items[item.key].quantity),
+    };
+  }
+
+  return { packageLevel: base.packageLevel, fridgeVariant: base.fridgeVariant, items };
+}
+
+function normalizeAppliancesOptionsDraft(draft: AppliancesOptionsDraft): AppliancesOptions {
+  const items = {} as AppliancesOptions["items"];
+
+  for (const item of applianceItemCatalog) {
+    const itemDraft = draft.items[item.key];
+    items[item.key] = {
+      isIncluded: itemDraft.isIncluded,
+      quantity: Math.max(1, parseEstimateInteger(itemDraft.quantity)),
+    };
+  }
+
+  return { packageLevel: draft.packageLevel, fridgeVariant: draft.fridgeVariant, items };
+}
+
+function createDefaultLooseFurnitureOptionsDraft(): LooseFurnitureOptionsDraft {
+  const base = createDefaultLooseFurnitureOptions();
+  const items = {} as LooseFurnitureOptionsDraft["items"];
+
+  for (const item of looseFurnitureItemCatalog) {
+    items[item.key] = {
+      isIncluded: base.items[item.key].isIncluded,
+      quantity: String(base.items[item.key].quantity),
+    };
+  }
+
+  return { packageLevel: base.packageLevel, items };
+}
+
+function normalizeLooseFurnitureOptionsDraft(draft: LooseFurnitureOptionsDraft): LooseFurnitureOptions {
+  const items = {} as LooseFurnitureOptions["items"];
+
+  for (const item of looseFurnitureItemCatalog) {
+    const itemDraft = draft.items[item.key];
+    items[item.key] = {
+      isIncluded: itemDraft.isIncluded,
+      quantity: Math.max(1, parseEstimateInteger(itemDraft.quantity)),
+    };
+  }
+
+  return { packageLevel: draft.packageLevel, items };
+}
+
 const FLOORING_SPEC_COLLAPSED_LIMIT = 10;
 const WALLS_SPEC_COLLAPSED_LIMIT = 10;
 const CEILING_SPEC_COLLAPSED_LIMIT = 10;
@@ -537,54 +606,6 @@ function formatEstimateQuantity(value: number) {
     maximumFractionDigits: 1,
     minimumFractionDigits: 0,
   }).format(value);
-}
-
-function classifyEstimatePackage(pricePerSquareMeter: number) {
-  const safePricePerSquareMeter = Number.isFinite(pricePerSquareMeter) ? Math.max(0, pricePerSquareMeter) : 0;
-  const [packageC, packageB, packageA] = estimatePackageBenchmarks;
-
-  if (safePricePerSquareMeter <= 0) {
-    return {
-      referenceLabel: "Ориентир появится после заполнения",
-      referencePrice: 0,
-      nextLabel: packageC.label,
-      nextDelta: packageC.pricePerM2,
-    };
-  }
-
-  if (safePricePerSquareMeter < packageC.pricePerM2) {
-    return {
-      referenceLabel: packageC.label,
-      referencePrice: packageC.pricePerM2,
-      nextLabel: packageC.label,
-      nextDelta: packageC.pricePerM2 - safePricePerSquareMeter,
-    };
-  }
-
-  if (safePricePerSquareMeter < packageB.pricePerM2) {
-    return {
-      referenceLabel: packageC.label,
-      referencePrice: packageC.pricePerM2,
-      nextLabel: packageB.label,
-      nextDelta: packageB.pricePerM2 - safePricePerSquareMeter,
-    };
-  }
-
-  if (safePricePerSquareMeter < packageA.pricePerM2) {
-    return {
-      referenceLabel: packageB.label,
-      referencePrice: packageB.pricePerM2,
-      nextLabel: packageA.label,
-      nextDelta: packageA.pricePerM2 - safePricePerSquareMeter,
-    };
-  }
-
-  return {
-    referenceLabel: packageA.label,
-    referencePrice: packageA.pricePerM2,
-    nextLabel: "",
-    nextDelta: 0,
-  };
 }
 
 function createEstimateRoom(existingRooms: EstimateRoomDraft[]): EstimateRoomDraft {
@@ -714,9 +735,11 @@ export function PublicEstimate() {
     includeWardrobe: false,
     includeBathroomFurniture: false,
   });
-  const [appliancesOptions, setAppliancesOptions] = useState<AppliancesOptions>(() => createDefaultAppliancesOptions());
-  const [looseFurnitureOptions, setLooseFurnitureOptions] = useState<LooseFurnitureOptions>(() =>
-    createDefaultLooseFurnitureOptions(),
+  const [appliancesOptions, setAppliancesOptions] = useState<AppliancesOptionsDraft>(() =>
+    createDefaultAppliancesOptionsDraft(),
+  );
+  const [looseFurnitureOptions, setLooseFurnitureOptions] = useState<LooseFurnitureOptionsDraft>(() =>
+    createDefaultLooseFurnitureOptionsDraft(),
   );
   const [homeGoodsOptions, setHomeGoodsOptions] = useState<HomeGoodsOptions>(() => createDefaultHomeGoodsOptions());
   const [isFlooringSpecExpanded, setIsFlooringSpecExpanded] = useState(false);
@@ -775,6 +798,7 @@ export function PublicEstimate() {
           roomName: room.name.trim() || "Помещение",
           area: roomInputs[index]?.area ?? 0,
           perimeter: roomGeometries[index]?.perimeter ?? 0,
+          plinthLength: roomGeometries[index]?.plinthLength ?? 0,
           coveringType,
           preparationType: flooringDraft.preparationType ?? getDefaultFlooringPreparation(room.type),
           layoutType: flooringDraft.layoutType ?? getDefaultFlooringLayout(coveringType),
@@ -885,10 +909,21 @@ export function PublicEstimate() {
       }),
     [completionOptions],
   );
-  const appliancesResult = useMemo(() => calculateAppliances(appliancesOptions), [appliancesOptions]);
-  const looseFurnitureResult = useMemo(
-    () => calculateLooseFurniture(looseFurnitureOptions),
+  const normalizedAppliancesOptions = useMemo(
+    () => normalizeAppliancesOptionsDraft(appliancesOptions),
+    [appliancesOptions],
+  );
+  const normalizedLooseFurnitureOptions = useMemo(
+    () => normalizeLooseFurnitureOptionsDraft(looseFurnitureOptions),
     [looseFurnitureOptions],
+  );
+  const appliancesResult = useMemo(
+    () => calculateAppliances(normalizedAppliancesOptions),
+    [normalizedAppliancesOptions],
+  );
+  const looseFurnitureResult = useMemo(
+    () => calculateLooseFurniture(normalizedLooseFurnitureOptions),
+    [normalizedLooseFurnitureOptions],
   );
   const homeGoodsResult = useMemo(
     () => calculateHomeGoods({ floorArea: totals.floorArea, options: homeGoodsOptions }),
@@ -1672,7 +1707,7 @@ export function PublicEstimate() {
     }));
   }
 
-  function updateApplianceItem(key: ApplianceItemKey, patch: Partial<{ isIncluded: boolean; quantity: number }>) {
+  function updateApplianceItem(key: ApplianceItemKey, patch: Partial<{ isIncluded: boolean; quantity: string }>) {
     setAppliancesOptions((currentOptions) => ({
       ...currentOptions,
       items: {
@@ -1694,7 +1729,7 @@ export function PublicEstimate() {
 
   function updateLooseFurnitureItem(
     key: LooseFurnitureItemKey,
-    patch: Partial<{ isIncluded: boolean; quantity: number }>,
+    patch: Partial<{ isIncluded: boolean; quantity: string }>,
   ) {
     setLooseFurnitureOptions((currentOptions) => ({
       ...currentOptions,
@@ -2000,7 +2035,9 @@ export function PublicEstimate() {
                   className="public-estimate-input"
                   inputMode="decimal"
                   value={ceilingHeightInput}
-                  onChange={(event) => setCeilingHeightInput(event.target.value)}
+                  onFocus={selectEstimateInputContent}
+                  onChange={(event) => setCeilingHeightInput(sanitizeEstimateDecimalInput(event.target.value))}
+                  onBlur={(event) => setCeilingHeightInput(normalizeEstimateCeilingHeightOnBlur(event.target.value))}
                 />
               </label>
             </div>
@@ -2071,7 +2108,13 @@ export function PublicEstimate() {
                                 className="public-estimate-input"
                                 inputMode="decimal"
                                 value={roomDraft.area}
-                                onChange={(event) => updateRoom(room.id, { area: event.target.value })}
+                                onFocus={selectEstimateInputContent}
+                                onChange={(event) =>
+                                  updateRoom(room.id, { area: sanitizeEstimateDecimalInput(event.target.value) })
+                                }
+                                onBlur={(event) =>
+                                  updateRoom(room.id, { area: normalizeEstimateDecimalOnBlur(event.target.value) })
+                                }
                               />
                             </label>
 
@@ -2082,7 +2125,13 @@ export function PublicEstimate() {
                                 className="public-estimate-input"
                                 inputMode="numeric"
                                 value={roomDraft.doorCount}
-                                onChange={(event) => updateRoom(room.id, { doorCount: event.target.value })}
+                                onFocus={selectEstimateInputContent}
+                                onChange={(event) =>
+                                  updateRoom(room.id, { doorCount: sanitizeEstimateIntegerInput(event.target.value) })
+                                }
+                                onBlur={(event) =>
+                                  updateRoom(room.id, { doorCount: normalizeEstimateCountOnBlur(event.target.value) })
+                                }
                               />
                             </label>
 
@@ -2093,7 +2142,13 @@ export function PublicEstimate() {
                                 className="public-estimate-input"
                                 inputMode="numeric"
                                 value={roomDraft.windowCount}
-                                onChange={(event) => updateRoom(room.id, { windowCount: event.target.value })}
+                                onFocus={selectEstimateInputContent}
+                                onChange={(event) =>
+                                  updateRoom(room.id, { windowCount: sanitizeEstimateIntegerInput(event.target.value) })
+                                }
+                                onBlur={(event) =>
+                                  updateRoom(room.id, { windowCount: normalizeEstimateCountOnBlur(event.target.value) })
+                                }
                               />
                             </label>
                           </div>
@@ -2181,7 +2236,17 @@ export function PublicEstimate() {
                         inputMode="decimal"
                         value={warmFloorArea}
                         disabled={!isSelected}
-                        onChange={(event) => updateWarmFloorRoom(room.id, { warmFloorArea: event.target.value })}
+                        onFocus={selectEstimateInputContent}
+                        onChange={(event) =>
+                          updateWarmFloorRoom(room.id, {
+                            warmFloorArea: sanitizeEstimateDecimalInput(event.target.value),
+                          })
+                        }
+                        onBlur={(event) =>
+                          updateWarmFloorRoom(room.id, {
+                            warmFloorArea: normalizeEstimateDecimalOnBlur(event.target.value),
+                          })
+                        }
                       />
                     </label>
                   </article>
@@ -2377,7 +2442,13 @@ export function PublicEstimate() {
                     inputMode="numeric"
                     value={flooringOptions.thresholdCount}
                     disabled={!flooringOptions.includeThresholds}
-                    onChange={(event) => updateFlooringOptions({ thresholdCount: event.target.value })}
+                    onFocus={selectEstimateInputContent}
+                    onChange={(event) =>
+                      updateFlooringOptions({ thresholdCount: sanitizeEstimateIntegerInput(event.target.value) })
+                    }
+                    onBlur={(event) =>
+                      updateFlooringOptions({ thresholdCount: normalizeEstimateCountOnBlur(event.target.value) })
+                    }
                   />
                 </label>
               </div>
@@ -3197,7 +3268,17 @@ export function PublicEstimate() {
                     min="0"
                     type="text"
                     value={completionOptions.kitchenLengthMeters}
-                    onChange={(event) => updateCompletionOptions({ kitchenLengthMeters: event.target.value })}
+                    onFocus={selectEstimateInputContent}
+                    onChange={(event) =>
+                      updateCompletionOptions({
+                        kitchenLengthMeters: sanitizeEstimateDecimalInput(event.target.value),
+                      })
+                    }
+                    onBlur={(event) =>
+                      updateCompletionOptions({
+                        kitchenLengthMeters: normalizeEstimateDecimalOnBlur(event.target.value),
+                      })
+                    }
                   />
                 </label>
 
@@ -3361,7 +3442,7 @@ export function PublicEstimate() {
                 const isIncluded = itemDraft.isIncluded;
                 const quantity = itemDraft.quantity;
                 const unitPrice = getApplianceUnitPrice(catalogItem.key, appliancesOptions);
-                const lineTotal = isIncluded ? unitPrice * Math.max(1, quantity) : 0;
+                const lineTotal = isIncluded ? unitPrice * Math.max(1, parseEstimateInteger(quantity)) : 0;
 
                 return (
                   <article className="public-estimate-appliances-row" key={catalogItem.key}>
@@ -3408,13 +3489,17 @@ export function PublicEstimate() {
                         className="public-estimate-input"
                         disabled={!isIncluded}
                         inputMode="numeric"
-                        min="1"
-                        step="1"
-                        type="number"
+                        type="text"
                         value={quantity}
+                        onFocus={selectEstimateInputContent}
                         onChange={(event) =>
                           updateApplianceItem(catalogItem.key, {
-                            quantity: Math.max(1, Number.parseInt(event.target.value, 10) || 1),
+                            quantity: sanitizeEstimateIntegerInput(event.target.value),
+                          })
+                        }
+                        onBlur={(event) =>
+                          updateApplianceItem(catalogItem.key, {
+                            quantity: normalizeEstimateQuantityOnBlur(event.target.value),
                           })
                         }
                       />
@@ -3541,7 +3626,7 @@ export function PublicEstimate() {
                 const isIncluded = itemDraft.isIncluded;
                 const quantity = itemDraft.quantity;
                 const unitPrice = getLooseFurnitureUnitPrice(catalogItem.key, looseFurnitureOptions);
-                const lineTotal = isIncluded ? unitPrice * Math.max(1, quantity) : 0;
+                const lineTotal = isIncluded ? unitPrice * Math.max(1, parseEstimateInteger(quantity)) : 0;
 
                 return (
                   <article className="public-estimate-loose-furniture-row" key={catalogItem.key}>
@@ -3572,13 +3657,17 @@ export function PublicEstimate() {
                         className="public-estimate-input"
                         disabled={!isIncluded}
                         inputMode="numeric"
-                        min="1"
-                        step="1"
-                        type="number"
+                        type="text"
                         value={quantity}
+                        onFocus={selectEstimateInputContent}
                         onChange={(event) =>
                           updateLooseFurnitureItem(catalogItem.key, {
-                            quantity: Math.max(1, Number.parseInt(event.target.value, 10) || 1),
+                            quantity: sanitizeEstimateIntegerInput(event.target.value),
+                          })
+                        }
+                        onBlur={(event) =>
+                          updateLooseFurnitureItem(catalogItem.key, {
+                            quantity: normalizeEstimateQuantityOnBlur(event.target.value),
                           })
                         }
                       />
@@ -3807,6 +3896,31 @@ export function PublicEstimate() {
               ))}
             </div>
 
+            {estimateResult.sections.length > 0 ? (
+              <div className="public-estimate-cost-sections" aria-label="Стоимость по разделам">
+                <div className="public-estimate-cost-sections-head" aria-hidden="true">
+                  <span>Раздел</span>
+                  <span>Сумма ₽</span>
+                </div>
+                <ul className="public-estimate-cost-sections-list">
+                  {estimateResult.sections.map((section) => (
+                    <li className="public-estimate-cost-sections-row" key={section.id}>
+                      <span>{section.title}</span>
+                      <strong>{formatMoney(section.totals.total)}</strong>
+                    </li>
+                  ))}
+                  <li className="public-estimate-cost-sections-row public-estimate-cost-sections-row-total">
+                    <span>Итого по разделам</span>
+                    <strong>{formatMoney(estimateResult.totals.total)}</strong>
+                  </li>
+                </ul>
+              </div>
+            ) : (
+              <p className="public-estimate-cost-empty">
+                Заполните геометрию и выберите разделы — разбивка по разделам появится здесь автоматически.
+              </p>
+            )}
+
             <p className="public-estimate-cost-note">
               Сейчас в смету включены тёплый пол, полы, стены, потолки, электрика, сантехника, двери, встроенная
               комплектация, выбранная бытовая техника, выбранная свободная мебель, а также выбранная финишная уборка и
@@ -3870,7 +3984,7 @@ export function PublicEstimate() {
             </div>
 
             <div className="public-estimate-passport-detail">
-              <span>Ориентир пакета</span>
+              <span>Ориентир пакета (по всей смете)</span>
               <strong>
                 {packageClassification.referencePrice > 0
                   ? `${packageClassification.referenceLabel}: ${formatMoney(packageClassification.referencePrice)}/м²`
@@ -3883,6 +3997,10 @@ export function PublicEstimate() {
               ) : (
                 <small>Верхний ориентир публичной модели</small>
               )}
+              <small className="public-estimate-passport-hint">
+                Это ориентир уровня всей сметы по ₽/м², а не выбранный вами пакет C / B / A в разделах
+                техники, мебели и комплектации.
+              </small>
             </div>
 
             <button className="public-estimate-passport-action" type="button" onClick={handlePrintEstimate}>

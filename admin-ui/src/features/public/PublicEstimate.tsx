@@ -43,9 +43,20 @@ import {
   calculateEstimateGeometryTotals,
   calculateEstimateRoomGeometry,
   parseEstimateDecimal,
+  parseEstimateInteger,
   type EstimateRoomInput,
   type EstimateRoomType,
 } from "./public-estimate-geometry";
+import {
+  estimateNumericFieldProps,
+  estimateTextFieldProps,
+  normalizeEstimateCeilingHeightOnBlur,
+  normalizeEstimateCountOnBlur,
+  normalizeEstimateDecimalOnBlur,
+  normalizeEstimateQuantityOnBlur,
+  sanitizeEstimateDecimalInput,
+  sanitizeEstimateIntegerInput,
+} from "./public-estimate-input";
 import {
   calculateFlooring,
   type FlooringCoveringType,
@@ -53,7 +64,9 @@ import {
   type FlooringPlinthType,
   type FlooringPreparationType,
 } from "./public-estimate-flooring";
-import { calculateEstimateTotals } from "./public-estimate-model";
+import { calculateEstimateTotals, type EstimateSection, type EstimateSectionId } from "./public-estimate-model";
+import { classifyEstimatePackage } from "./public-estimate-package";
+import { EstimateSpecOverlay } from "./EstimateSpecOverlay";
 import { calculatePlumbing, type PlumbingOptions } from "./public-estimate-plumbing";
 import { calculateWarmFloor, type WarmFloorMode } from "./public-estimate-warm-floor";
 import {
@@ -191,12 +204,6 @@ const wallsPreparationOptions: Array<{ value: WallsPreparationType; label: strin
 const doorPackageOptions: Array<{ value: DoorPackageType; label: string }> = [
   { value: "invisible_19000", label: "INVISIBLE 3 / 19 000" },
   { value: "invisible_20350", label: "INVISIBLE 3 / 20 350" },
-];
-
-const estimatePackageBenchmarks = [
-  { label: "Пакет C", pricePerM2: 40228 },
-  { label: "Пакет B", pricePerM2: 52280 },
-  { label: "Пакет A", pricePerM2: 75416 },
 ];
 
 type EstimateNavigationIcon =
@@ -488,16 +495,69 @@ type CompletionOptionsDraft = Omit<CompletionOptions, "kitchenLengthMeters"> & {
   kitchenLengthMeters: string;
 };
 
-const FLOORING_SPEC_COLLAPSED_LIMIT = 10;
-const WALLS_SPEC_COLLAPSED_LIMIT = 10;
-const CEILING_SPEC_COLLAPSED_LIMIT = 10;
-const ELECTRIC_SPEC_COLLAPSED_LIMIT = 10;
-const PLUMBING_SPEC_COLLAPSED_LIMIT = 10;
-const DOORS_SPEC_COLLAPSED_LIMIT = 10;
-const COMPLETION_SPEC_COLLAPSED_LIMIT = 10;
-const APPLIANCES_SPEC_COLLAPSED_LIMIT = 10;
-const LOOSE_FURNITURE_SPEC_COLLAPSED_LIMIT = 10;
-const HOME_GOODS_SPEC_COLLAPSED_LIMIT = 10;
+type AppliancesOptionsDraft = Omit<AppliancesOptions, "items"> & {
+  items: Record<ApplianceItemKey, { isIncluded: boolean; quantity: string }>;
+};
+
+type LooseFurnitureOptionsDraft = Omit<LooseFurnitureOptions, "items"> & {
+  items: Record<LooseFurnitureItemKey, { isIncluded: boolean; quantity: string }>;
+};
+
+function createDefaultAppliancesOptionsDraft(): AppliancesOptionsDraft {
+  const base = createDefaultAppliancesOptions();
+  const items = {} as AppliancesOptionsDraft["items"];
+
+  for (const item of applianceItemCatalog) {
+    items[item.key] = {
+      isIncluded: base.items[item.key].isIncluded,
+      quantity: String(base.items[item.key].quantity),
+    };
+  }
+
+  return { packageLevel: base.packageLevel, fridgeVariant: base.fridgeVariant, items };
+}
+
+function normalizeAppliancesOptionsDraft(draft: AppliancesOptionsDraft): AppliancesOptions {
+  const items = {} as AppliancesOptions["items"];
+
+  for (const item of applianceItemCatalog) {
+    const itemDraft = draft.items[item.key];
+    items[item.key] = {
+      isIncluded: itemDraft.isIncluded,
+      quantity: Math.max(1, parseEstimateInteger(itemDraft.quantity)),
+    };
+  }
+
+  return { packageLevel: draft.packageLevel, fridgeVariant: draft.fridgeVariant, items };
+}
+
+function createDefaultLooseFurnitureOptionsDraft(): LooseFurnitureOptionsDraft {
+  const base = createDefaultLooseFurnitureOptions();
+  const items = {} as LooseFurnitureOptionsDraft["items"];
+
+  for (const item of looseFurnitureItemCatalog) {
+    items[item.key] = {
+      isIncluded: base.items[item.key].isIncluded,
+      quantity: String(base.items[item.key].quantity),
+    };
+  }
+
+  return { packageLevel: base.packageLevel, items };
+}
+
+function normalizeLooseFurnitureOptionsDraft(draft: LooseFurnitureOptionsDraft): LooseFurnitureOptions {
+  const items = {} as LooseFurnitureOptions["items"];
+
+  for (const item of looseFurnitureItemCatalog) {
+    const itemDraft = draft.items[item.key];
+    items[item.key] = {
+      isIncluded: itemDraft.isIncluded,
+      quantity: Math.max(1, parseEstimateInteger(itemDraft.quantity)),
+    };
+  }
+
+  return { packageLevel: draft.packageLevel, items };
+}
 
 const initialRooms: EstimateRoomDraft[] = [
   { id: "hallway", name: "Прихожая", type: "hallway", area: "6.5", doorCount: "1", windowCount: "0" },
@@ -537,54 +597,6 @@ function formatEstimateQuantity(value: number) {
     maximumFractionDigits: 1,
     minimumFractionDigits: 0,
   }).format(value);
-}
-
-function classifyEstimatePackage(pricePerSquareMeter: number) {
-  const safePricePerSquareMeter = Number.isFinite(pricePerSquareMeter) ? Math.max(0, pricePerSquareMeter) : 0;
-  const [packageC, packageB, packageA] = estimatePackageBenchmarks;
-
-  if (safePricePerSquareMeter <= 0) {
-    return {
-      referenceLabel: "Ориентир появится после заполнения",
-      referencePrice: 0,
-      nextLabel: packageC.label,
-      nextDelta: packageC.pricePerM2,
-    };
-  }
-
-  if (safePricePerSquareMeter < packageC.pricePerM2) {
-    return {
-      referenceLabel: packageC.label,
-      referencePrice: packageC.pricePerM2,
-      nextLabel: packageC.label,
-      nextDelta: packageC.pricePerM2 - safePricePerSquareMeter,
-    };
-  }
-
-  if (safePricePerSquareMeter < packageB.pricePerM2) {
-    return {
-      referenceLabel: packageC.label,
-      referencePrice: packageC.pricePerM2,
-      nextLabel: packageB.label,
-      nextDelta: packageB.pricePerM2 - safePricePerSquareMeter,
-    };
-  }
-
-  if (safePricePerSquareMeter < packageA.pricePerM2) {
-    return {
-      referenceLabel: packageB.label,
-      referencePrice: packageB.pricePerM2,
-      nextLabel: packageA.label,
-      nextDelta: packageA.pricePerM2 - safePricePerSquareMeter,
-    };
-  }
-
-  return {
-    referenceLabel: packageA.label,
-    referencePrice: packageA.pricePerM2,
-    nextLabel: "",
-    nextDelta: 0,
-  };
 }
 
 function createEstimateRoom(existingRooms: EstimateRoomDraft[]): EstimateRoomDraft {
@@ -714,21 +726,16 @@ export function PublicEstimate() {
     includeWardrobe: false,
     includeBathroomFurniture: false,
   });
-  const [appliancesOptions, setAppliancesOptions] = useState<AppliancesOptions>(() => createDefaultAppliancesOptions());
-  const [looseFurnitureOptions, setLooseFurnitureOptions] = useState<LooseFurnitureOptions>(() =>
-    createDefaultLooseFurnitureOptions(),
+  const [appliancesOptions, setAppliancesOptions] = useState<AppliancesOptionsDraft>(() =>
+    createDefaultAppliancesOptionsDraft(),
+  );
+  const [looseFurnitureOptions, setLooseFurnitureOptions] = useState<LooseFurnitureOptionsDraft>(() =>
+    createDefaultLooseFurnitureOptionsDraft(),
   );
   const [homeGoodsOptions, setHomeGoodsOptions] = useState<HomeGoodsOptions>(() => createDefaultHomeGoodsOptions());
-  const [isFlooringSpecExpanded, setIsFlooringSpecExpanded] = useState(false);
-  const [isWallsSpecExpanded, setIsWallsSpecExpanded] = useState(false);
-  const [isCeilingSpecExpanded, setIsCeilingSpecExpanded] = useState(false);
-  const [isElectricSpecExpanded, setIsElectricSpecExpanded] = useState(false);
-  const [isPlumbingSpecExpanded, setIsPlumbingSpecExpanded] = useState(false);
-  const [isDoorsSpecExpanded, setIsDoorsSpecExpanded] = useState(false);
-  const [isCompletionSpecExpanded, setIsCompletionSpecExpanded] = useState(false);
-  const [isAppliancesSpecExpanded, setIsAppliancesSpecExpanded] = useState(false);
-  const [isLooseFurnitureSpecExpanded, setIsLooseFurnitureSpecExpanded] = useState(false);
-  const [isHomeGoodsSpecExpanded, setIsHomeGoodsSpecExpanded] = useState(false);
+  const [specModal, setSpecModal] = useState<{ kind: "section" | "full"; sectionId?: EstimateSectionId } | null>(
+    null,
+  );
   const [isMobileVolumesExpanded, setIsMobileVolumesExpanded] = useState(false);
   const [activeEstimateSection, setActiveEstimateSection] = useState(ESTIMATE_INITIAL_SECTION_ID);
   const estimateRailScrollRef = useRef<HTMLElement>(null);
@@ -775,6 +782,7 @@ export function PublicEstimate() {
           roomName: room.name.trim() || "Помещение",
           area: roomInputs[index]?.area ?? 0,
           perimeter: roomGeometries[index]?.perimeter ?? 0,
+          plinthLength: roomGeometries[index]?.plinthLength ?? 0,
           coveringType,
           preparationType: flooringDraft.preparationType ?? getDefaultFlooringPreparation(room.type),
           layoutType: flooringDraft.layoutType ?? getDefaultFlooringLayout(coveringType),
@@ -885,10 +893,21 @@ export function PublicEstimate() {
       }),
     [completionOptions],
   );
-  const appliancesResult = useMemo(() => calculateAppliances(appliancesOptions), [appliancesOptions]);
-  const looseFurnitureResult = useMemo(
-    () => calculateLooseFurniture(looseFurnitureOptions),
+  const normalizedAppliancesOptions = useMemo(
+    () => normalizeAppliancesOptionsDraft(appliancesOptions),
+    [appliancesOptions],
+  );
+  const normalizedLooseFurnitureOptions = useMemo(
+    () => normalizeLooseFurnitureOptionsDraft(looseFurnitureOptions),
     [looseFurnitureOptions],
+  );
+  const appliancesResult = useMemo(
+    () => calculateAppliances(normalizedAppliancesOptions),
+    [normalizedAppliancesOptions],
+  );
+  const looseFurnitureResult = useMemo(
+    () => calculateLooseFurniture(normalizedLooseFurnitureOptions),
+    [normalizedLooseFurnitureOptions],
   );
   const homeGoodsResult = useMemo(
     () => calculateHomeGoods({ floorArea: totals.floorArea, options: homeGoodsOptions }),
@@ -1380,13 +1399,6 @@ export function PublicEstimate() {
     { label: "Расходники", value: formatMoney(flooringResult.consumablesTotal) },
     { label: "Итого", value: formatMoney(flooringResult.total), isStrong: true },
   ];
-  const flooringSpecItems = flooringResult.section.items;
-  const isFlooringSpecLong = flooringSpecItems.length > FLOORING_SPEC_COLLAPSED_LIMIT;
-  const visibleFlooringSpecItems =
-    isFlooringSpecLong && !isFlooringSpecExpanded
-      ? flooringSpecItems.slice(0, FLOORING_SPEC_COLLAPSED_LIMIT)
-      : flooringSpecItems;
-  const hiddenFlooringSpecCount = Math.max(0, flooringSpecItems.length - visibleFlooringSpecItems.length);
   const wallsSummaryItems = [
     { label: "Площадь стен", value: formatMeasurement(wallsResult.wallFinishArea, "м²") },
     { label: "Площадь материалов", value: formatMeasurement(wallsResult.purchaseArea, "м²") },
@@ -1395,13 +1407,6 @@ export function PublicEstimate() {
     { label: "Расходники", value: formatMoney(wallsResult.consumablesTotal) },
     { label: "Итого", value: formatMoney(wallsResult.total), isStrong: true },
   ];
-  const wallsSpecItems = wallsResult.section.items;
-  const isWallsSpecLong = wallsSpecItems.length > WALLS_SPEC_COLLAPSED_LIMIT;
-  const visibleWallsSpecItems =
-    isWallsSpecLong && !isWallsSpecExpanded
-      ? wallsSpecItems.slice(0, WALLS_SPEC_COLLAPSED_LIMIT)
-      : wallsSpecItems;
-  const hiddenWallsSpecCount = Math.max(0, wallsSpecItems.length - visibleWallsSpecItems.length);
   const ceilingSummaryItems = [
     { label: "Площадь потолков", value: formatMeasurement(ceilingResult.ceilingArea, "м²") },
     { label: "Точки света", value: `${ceilingResult.pointCount} шт.` },
@@ -1411,13 +1416,6 @@ export function PublicEstimate() {
     { label: "Расходники", value: formatMoney(ceilingResult.consumablesTotal) },
     { label: "Итого", value: formatMoney(ceilingResult.total), isStrong: true },
   ];
-  const ceilingSpecItems = ceilingResult.section.items;
-  const isCeilingSpecLong = ceilingSpecItems.length > CEILING_SPEC_COLLAPSED_LIMIT;
-  const visibleCeilingSpecItems =
-    isCeilingSpecLong && !isCeilingSpecExpanded
-      ? ceilingSpecItems.slice(0, CEILING_SPEC_COLLAPSED_LIMIT)
-      : ceilingSpecItems;
-  const hiddenCeilingSpecCount = Math.max(0, ceilingSpecItems.length - visibleCeilingSpecItems.length);
   const electricSummaryItems = [
     { label: "Розетки", value: `${electricResult.socketCount} шт.` },
     { label: "Световые выводы", value: `${electricResult.lightOutputCount} шт.` },
@@ -1430,13 +1428,6 @@ export function PublicEstimate() {
     { label: "Расходники", value: formatMoney(electricResult.consumablesTotal) },
     { label: "Итого", value: formatMoney(electricResult.total), isStrong: true },
   ];
-  const electricSpecItems = electricResult.section.items;
-  const isElectricSpecLong = electricSpecItems.length > ELECTRIC_SPEC_COLLAPSED_LIMIT;
-  const visibleElectricSpecItems =
-    isElectricSpecLong && !isElectricSpecExpanded
-      ? electricSpecItems.slice(0, ELECTRIC_SPEC_COLLAPSED_LIMIT)
-      : electricSpecItems;
-  const hiddenElectricSpecCount = Math.max(0, electricSpecItems.length - visibleElectricSpecItems.length);
   const plumbingCompositionItems = [
     { label: "Санузлов", value: `${plumbingResult.bathroomCount} шт.` },
     { label: "Кухня", value: plumbingResult.hasKitchen ? "да" : "нет" },
@@ -1455,13 +1446,6 @@ export function PublicEstimate() {
     { label: "Расходники", value: formatMoney(plumbingResult.consumablesTotal) },
     { label: "Итого", value: formatMoney(plumbingResult.total), isStrong: true },
   ];
-  const plumbingSpecItems = plumbingResult.section.items;
-  const isPlumbingSpecLong = plumbingSpecItems.length > PLUMBING_SPEC_COLLAPSED_LIMIT;
-  const visiblePlumbingSpecItems =
-    isPlumbingSpecLong && !isPlumbingSpecExpanded
-      ? plumbingSpecItems.slice(0, PLUMBING_SPEC_COLLAPSED_LIMIT)
-      : plumbingSpecItems;
-  const hiddenPlumbingSpecCount = Math.max(0, plumbingSpecItems.length - visiblePlumbingSpecItems.length);
   const doorCompositionItems = [
     { label: "Дверей", value: `${doorsResult.totalDoorCount} шт.` },
     { label: "Санузловых заверток", value: `${doorsResult.privacyLockCount} шт.` },
@@ -1480,26 +1464,12 @@ export function PublicEstimate() {
     { label: "Доп. расходы", value: formatMoney(doorsResult.consumablesTotal) },
     { label: "Итого", value: formatMoney(doorsResult.total), isStrong: true },
   ];
-  const doorSpecItems = doorsResult.section.items;
-  const isDoorsSpecLong = doorSpecItems.length > DOORS_SPEC_COLLAPSED_LIMIT;
-  const visibleDoorSpecItems =
-    isDoorsSpecLong && !isDoorsSpecExpanded
-      ? doorSpecItems.slice(0, DOORS_SPEC_COLLAPSED_LIMIT)
-      : doorSpecItems;
-  const hiddenDoorsSpecCount = Math.max(0, doorSpecItems.length - visibleDoorSpecItems.length);
   const completionSummaryItems = [
     { label: "Кухня", value: formatMoney(completionResult.kitchenTotal) },
     { label: "Мебель", value: formatMoney(completionResult.furnitureTotal) },
     { label: "Компонентов включено", value: `${completionResult.includedComponentCount} шт.` },
     { label: "Итого", value: formatMoney(completionResult.total), isStrong: true },
   ];
-  const completionSpecItems = completionResult.section.items;
-  const isCompletionSpecLong = completionSpecItems.length > COMPLETION_SPEC_COLLAPSED_LIMIT;
-  const visibleCompletionSpecItems =
-    isCompletionSpecLong && !isCompletionSpecExpanded
-      ? completionSpecItems.slice(0, COMPLETION_SPEC_COLLAPSED_LIMIT)
-      : completionSpecItems;
-  const hiddenCompletionSpecCount = Math.max(0, completionSpecItems.length - visibleCompletionSpecItems.length);
   const appliancesSummaryItems = [
     { label: "Пакет", value: appliancesResult.packageLabel },
     { label: "Позиции включены", value: `${appliancesResult.includedItemCount} шт.` },
@@ -1508,13 +1478,6 @@ export function PublicEstimate() {
     { label: "Стирка", value: formatMoney(appliancesResult.laundryTotal) },
     { label: "Итого", value: formatMoney(appliancesResult.total), isStrong: true },
   ];
-  const appliancesSpecItems = appliancesResult.section.items;
-  const isAppliancesSpecLong = appliancesSpecItems.length > APPLIANCES_SPEC_COLLAPSED_LIMIT;
-  const visibleAppliancesSpecItems =
-    isAppliancesSpecLong && !isAppliancesSpecExpanded
-      ? appliancesSpecItems.slice(0, APPLIANCES_SPEC_COLLAPSED_LIMIT)
-      : appliancesSpecItems;
-  const hiddenAppliancesSpecCount = Math.max(0, appliancesSpecItems.length - visibleAppliancesSpecItems.length);
   const looseFurnitureSummaryItems = [
     { label: "Пакет", value: looseFurnitureResult.packageLabel },
     { label: "Позиции включены", value: `${looseFurnitureResult.includedItemCount} шт.` },
@@ -1527,29 +1490,58 @@ export function PublicEstimate() {
     { label: looseFurnitureGroupLabels.hall, value: formatMoney(looseFurnitureResult.hallTotal) },
     { label: "Итого", value: formatMoney(looseFurnitureResult.total), isStrong: true },
   ];
-  const looseFurnitureSpecItems = looseFurnitureResult.section.items;
-  const isLooseFurnitureSpecLong = looseFurnitureSpecItems.length > LOOSE_FURNITURE_SPEC_COLLAPSED_LIMIT;
-  const visibleLooseFurnitureSpecItems =
-    isLooseFurnitureSpecLong && !isLooseFurnitureSpecExpanded
-      ? looseFurnitureSpecItems.slice(0, LOOSE_FURNITURE_SPEC_COLLAPSED_LIMIT)
-      : looseFurnitureSpecItems;
-  const hiddenLooseFurnitureSpecCount = Math.max(
-    0,
-    looseFurnitureSpecItems.length - visibleLooseFurnitureSpecItems.length,
-  );
   const homeGoodsSummaryItems = [
     { label: "Уборка", value: formatMoney(homeGoodsResult.cleaningTotal) },
     { label: "Товары для дома", value: formatMoney(homeGoodsResult.homeGoodsTotal) },
     { label: "Пакет", value: homeGoodsResult.packageLabel },
     { label: "Итого", value: formatMoney(homeGoodsResult.total), isStrong: true },
   ];
-  const homeGoodsSpecItems = homeGoodsResult.section.items;
-  const isHomeGoodsSpecLong = homeGoodsSpecItems.length > HOME_GOODS_SPEC_COLLAPSED_LIMIT;
-  const visibleHomeGoodsSpecItems =
-    isHomeGoodsSpecLong && !isHomeGoodsSpecExpanded
-      ? homeGoodsSpecItems.slice(0, HOME_GOODS_SPEC_COLLAPSED_LIMIT)
-      : homeGoodsSpecItems;
-  const hiddenHomeGoodsSpecCount = Math.max(0, homeGoodsSpecItems.length - visibleHomeGoodsSpecItems.length);
+  const allEstimateSections: EstimateSection[] = [
+    warmFloorResult.section,
+    flooringResult.section,
+    wallsResult.section,
+    ceilingResult.section,
+    electricResult.section,
+    plumbingResult.section,
+    doorsResult.section,
+    completionResult.section,
+    appliancesResult.section,
+    looseFurnitureResult.section,
+    homeGoodsResult.section,
+  ];
+  const specModalData = (() => {
+    if (!specModal) {
+      return null;
+    }
+
+    if (specModal.kind === "full") {
+      return {
+        title: "Полная спецификация",
+        subtitle: "Все разделы текущей сметы по позициям",
+        sections: estimateResult.sections,
+      };
+    }
+
+    const section = allEstimateSections.find((candidate) => candidate.id === specModal.sectionId);
+
+    if (!section) {
+      return null;
+    }
+
+    return { title: section.title, subtitle: section.description, sections: [section] };
+  })();
+
+  function openSectionSpec(sectionId: EstimateSectionId) {
+    setSpecModal({ kind: "section", sectionId });
+  }
+
+  function openFullSpec() {
+    setSpecModal({ kind: "full" });
+  }
+
+  function closeSpecModal() {
+    setSpecModal(null);
+  }
 
   function updateRoom(roomId: string, patch: Partial<EstimateRoomDraft>) {
     setRooms((currentRooms) =>
@@ -1672,7 +1664,7 @@ export function PublicEstimate() {
     }));
   }
 
-  function updateApplianceItem(key: ApplianceItemKey, patch: Partial<{ isIncluded: boolean; quantity: number }>) {
+  function updateApplianceItem(key: ApplianceItemKey, patch: Partial<{ isIncluded: boolean; quantity: string }>) {
     setAppliancesOptions((currentOptions) => ({
       ...currentOptions,
       items: {
@@ -1694,7 +1686,7 @@ export function PublicEstimate() {
 
   function updateLooseFurnitureItem(
     key: LooseFurnitureItemKey,
-    patch: Partial<{ isIncluded: boolean; quantity: number }>,
+    patch: Partial<{ isIncluded: boolean; quantity: string }>,
   ) {
     setLooseFurnitureOptions((currentOptions) => ({
       ...currentOptions,
@@ -1933,6 +1925,7 @@ export function PublicEstimate() {
                 <input
                   className="public-estimate-input"
                   value={objectMeta.address}
+                  {...estimateTextFieldProps}
                   onChange={(event) =>
                     setObjectMeta((current) => ({ ...current, address: event.target.value }))
                   }
@@ -1945,6 +1938,7 @@ export function PublicEstimate() {
                   className="public-estimate-input"
                   placeholder="Необязательно"
                   value={objectMeta.complexName}
+                  {...estimateTextFieldProps}
                   onChange={(event) =>
                     setObjectMeta((current) => ({ ...current, complexName: event.target.value }))
                   }
@@ -1956,6 +1950,7 @@ export function PublicEstimate() {
                 <input
                   className="public-estimate-input"
                   value={objectMeta.apartmentNumber}
+                  {...estimateTextFieldProps}
                   onChange={(event) =>
                     setObjectMeta((current) => ({ ...current, apartmentNumber: event.target.value }))
                   }
@@ -1968,6 +1963,7 @@ export function PublicEstimate() {
                   className="public-estimate-input"
                   placeholder="Телефон или имя + телефон"
                   value={objectMeta.contact}
+                  {...estimateTextFieldProps}
                   onChange={(event) =>
                     setObjectMeta((current) => ({ ...current, contact: event.target.value }))
                   }
@@ -2000,7 +1996,9 @@ export function PublicEstimate() {
                   className="public-estimate-input"
                   inputMode="decimal"
                   value={ceilingHeightInput}
-                  onChange={(event) => setCeilingHeightInput(event.target.value)}
+                  {...estimateNumericFieldProps}
+                  onChange={(event) => setCeilingHeightInput(sanitizeEstimateDecimalInput(event.target.value))}
+                  onBlur={(event) => setCeilingHeightInput(normalizeEstimateCeilingHeightOnBlur(event.target.value))}
                 />
               </label>
             </div>
@@ -2071,7 +2069,13 @@ export function PublicEstimate() {
                                 className="public-estimate-input"
                                 inputMode="decimal"
                                 value={roomDraft.area}
-                                onChange={(event) => updateRoom(room.id, { area: event.target.value })}
+                                {...estimateNumericFieldProps}
+                                onChange={(event) =>
+                                  updateRoom(room.id, { area: sanitizeEstimateDecimalInput(event.target.value) })
+                                }
+                                onBlur={(event) =>
+                                  updateRoom(room.id, { area: normalizeEstimateDecimalOnBlur(event.target.value) })
+                                }
                               />
                             </label>
 
@@ -2082,7 +2086,13 @@ export function PublicEstimate() {
                                 className="public-estimate-input"
                                 inputMode="numeric"
                                 value={roomDraft.doorCount}
-                                onChange={(event) => updateRoom(room.id, { doorCount: event.target.value })}
+                                {...estimateNumericFieldProps}
+                                onChange={(event) =>
+                                  updateRoom(room.id, { doorCount: sanitizeEstimateIntegerInput(event.target.value) })
+                                }
+                                onBlur={(event) =>
+                                  updateRoom(room.id, { doorCount: normalizeEstimateCountOnBlur(event.target.value) })
+                                }
                               />
                             </label>
 
@@ -2093,7 +2103,13 @@ export function PublicEstimate() {
                                 className="public-estimate-input"
                                 inputMode="numeric"
                                 value={roomDraft.windowCount}
-                                onChange={(event) => updateRoom(room.id, { windowCount: event.target.value })}
+                                {...estimateNumericFieldProps}
+                                onChange={(event) =>
+                                  updateRoom(room.id, { windowCount: sanitizeEstimateIntegerInput(event.target.value) })
+                                }
+                                onBlur={(event) =>
+                                  updateRoom(room.id, { windowCount: normalizeEstimateCountOnBlur(event.target.value) })
+                                }
                               />
                             </label>
                           </div>
@@ -2181,7 +2197,17 @@ export function PublicEstimate() {
                         inputMode="decimal"
                         value={warmFloorArea}
                         disabled={!isSelected}
-                        onChange={(event) => updateWarmFloorRoom(room.id, { warmFloorArea: event.target.value })}
+                        {...estimateNumericFieldProps}
+                        onChange={(event) =>
+                          updateWarmFloorRoom(room.id, {
+                            warmFloorArea: sanitizeEstimateDecimalInput(event.target.value),
+                          })
+                        }
+                        onBlur={(event) =>
+                          updateWarmFloorRoom(room.id, {
+                            warmFloorArea: normalizeEstimateDecimalOnBlur(event.target.value),
+                          })
+                        }
                       />
                     </label>
                   </article>
@@ -2199,24 +2225,21 @@ export function PublicEstimate() {
             </div>
 
             {warmFloorResult.section.items.length > 0 ? (
-              <div className="public-estimate-warm-floor-spec">
-                <div className="public-estimate-warm-floor-spec-head">
+              <div className="public-estimate-spec-actions">
+                <div className="public-estimate-spec-actions-head">
                   <p>Состав раздела</p>
                   <span>
                     {warmFloorModeLabel}; подключение: {warmFloorConnectionLabel}
                   </span>
                 </div>
-                <ul>
-                  {warmFloorResult.section.items.map((item) => (
-                    <li key={item.id}>
-                      <span className="public-estimate-warm-floor-line-title">{item.title}</span>
-                      <span className="public-estimate-warm-floor-line-meta">
-                        {formatEstimateQuantity(item.quantity)} {item.unit} × {formatMoney(item.unitPrice)}
-                      </span>
-                      <strong>{formatMoney(item.total)}</strong>
-                    </li>
-                  ))}
-                </ul>
+                <button
+                  className="public-estimate-spec-open"
+                  type="button"
+                  onClick={() => openSectionSpec("warm_floor")}
+                >
+                  Открыть спецификацию
+                  <span className="public-estimate-spec-open-count">{warmFloorResult.section.items.length} строк</span>
+                </button>
               </div>
             ) : (
               <p className="public-estimate-warm-floor-empty">Выберите хотя бы одно помещение, чтобы добавить тёплый пол в смету.</p>
@@ -2377,7 +2400,13 @@ export function PublicEstimate() {
                     inputMode="numeric"
                     value={flooringOptions.thresholdCount}
                     disabled={!flooringOptions.includeThresholds}
-                    onChange={(event) => updateFlooringOptions({ thresholdCount: event.target.value })}
+                    {...estimateNumericFieldProps}
+                    onChange={(event) =>
+                      updateFlooringOptions({ thresholdCount: sanitizeEstimateIntegerInput(event.target.value) })
+                    }
+                    onBlur={(event) =>
+                      updateFlooringOptions({ thresholdCount: normalizeEstimateCountOnBlur(event.target.value) })
+                    }
                   />
                 </label>
               </div>
@@ -2407,34 +2436,19 @@ export function PublicEstimate() {
             </div>
 
             {flooringResult.section.items.length > 0 ? (
-              <div className="public-estimate-flooring-spec">
-                <div className="public-estimate-warm-floor-spec-head">
+              <div className="public-estimate-spec-actions">
+                <div className="public-estimate-spec-actions-head">
                   <p>Состав раздела</p>
                   <span>Покрытия, подготовка, плинтус и расходники</span>
                 </div>
-                <ul>
-                  {visibleFlooringSpecItems.map((item) => (
-                    <li key={item.id}>
-                      <span className="public-estimate-warm-floor-line-title">{item.title}</span>
-                      <span className="public-estimate-warm-floor-line-meta">
-                        {formatEstimateQuantity(item.quantity)} {item.unit} × {formatMoney(item.unitPrice)}
-                      </span>
-                      <strong>{formatMoney(item.total)}</strong>
-                    </li>
-                  ))}
-                </ul>
-                {isFlooringSpecLong ? (
-                  <button
-                    className="public-estimate-spec-toggle"
-                    type="button"
-                    aria-expanded={isFlooringSpecExpanded}
-                    onClick={() => setIsFlooringSpecExpanded((currentValue) => !currentValue)}
-                  >
-                    {isFlooringSpecExpanded
-                      ? "Свернуть спецификацию"
-                      : `Показать всю спецификацию${hiddenFlooringSpecCount > 0 ? `: ещё ${hiddenFlooringSpecCount} строк` : ""}`}
-                  </button>
-                ) : null}
+                <button
+                  className="public-estimate-spec-open"
+                  type="button"
+                  onClick={() => openSectionSpec("flooring")}
+                >
+                  Открыть спецификацию
+                  <span className="public-estimate-spec-open-count">{flooringResult.section.items.length} строк</span>
+                </button>
               </div>
             ) : (
               <p className="public-estimate-warm-floor-empty">Включите хотя бы одно помещение, чтобы добавить полы в смету.</p>
@@ -2543,34 +2557,19 @@ export function PublicEstimate() {
             </div>
 
             {wallsResult.section.items.length > 0 ? (
-              <div className="public-estimate-walls-spec">
-                <div className="public-estimate-warm-floor-spec-head">
+              <div className="public-estimate-spec-actions">
+                <div className="public-estimate-spec-actions-head">
                   <p>Состав раздела</p>
                   <span>Покрытия, подготовка стен и расходники</span>
                 </div>
-                <ul>
-                  {visibleWallsSpecItems.map((item) => (
-                    <li key={item.id}>
-                      <span className="public-estimate-warm-floor-line-title">{item.title}</span>
-                      <span className="public-estimate-warm-floor-line-meta">
-                        {formatEstimateQuantity(item.quantity)} {item.unit} × {formatMoney(item.unitPrice)}
-                      </span>
-                      <strong>{formatMoney(item.total)}</strong>
-                    </li>
-                  ))}
-                </ul>
-                {isWallsSpecLong ? (
-                  <button
-                    className="public-estimate-spec-toggle"
-                    type="button"
-                    aria-expanded={isWallsSpecExpanded}
-                    onClick={() => setIsWallsSpecExpanded((currentValue) => !currentValue)}
-                  >
-                    {isWallsSpecExpanded
-                      ? "Свернуть спецификацию"
-                      : `Показать всю спецификацию${hiddenWallsSpecCount > 0 ? `: ещё ${hiddenWallsSpecCount} строк` : ""}`}
-                  </button>
-                ) : null}
+                <button
+                  className="public-estimate-spec-open"
+                  type="button"
+                  onClick={() => openSectionSpec("walls")}
+                >
+                  Открыть спецификацию
+                  <span className="public-estimate-spec-open-count">{wallsResult.section.items.length} строк</span>
+                </button>
               </div>
             ) : (
               <p className="public-estimate-warm-floor-empty">Включите хотя бы одно помещение, чтобы добавить стены в смету.</p>
@@ -2666,34 +2665,19 @@ export function PublicEstimate() {
             </div>
 
             {ceilingResult.section.items.length > 0 ? (
-              <div className="public-estimate-ceiling-spec">
-                <div className="public-estimate-warm-floor-spec-head">
+              <div className="public-estimate-spec-actions">
+                <div className="public-estimate-spec-actions-head">
                   <p>Состав раздела</p>
                   <span>ПВХ потолок, закладные, врезка и светильники GX53</span>
                 </div>
-                <ul>
-                  {visibleCeilingSpecItems.map((item) => (
-                    <li key={item.id}>
-                      <span className="public-estimate-warm-floor-line-title">{item.title}</span>
-                      <span className="public-estimate-warm-floor-line-meta">
-                        {formatEstimateQuantity(item.quantity)} {item.unit} × {formatMoney(item.unitPrice)}
-                      </span>
-                      <strong>{formatMoney(item.total)}</strong>
-                    </li>
-                  ))}
-                </ul>
-                {isCeilingSpecLong ? (
-                  <button
-                    className="public-estimate-spec-toggle"
-                    type="button"
-                    aria-expanded={isCeilingSpecExpanded}
-                    onClick={() => setIsCeilingSpecExpanded((currentValue) => !currentValue)}
-                  >
-                    {isCeilingSpecExpanded
-                      ? "Свернуть спецификацию"
-                      : `Показать всю спецификацию${hiddenCeilingSpecCount > 0 ? `: ещё ${hiddenCeilingSpecCount} строк` : ""}`}
-                  </button>
-                ) : null}
+                <button
+                  className="public-estimate-spec-open"
+                  type="button"
+                  onClick={() => openSectionSpec("ceiling")}
+                >
+                  Открыть спецификацию
+                  <span className="public-estimate-spec-open-count">{ceilingResult.section.items.length} строк</span>
+                </button>
               </div>
             ) : (
               <p className="public-estimate-warm-floor-empty">Включите хотя бы одно помещение, чтобы добавить потолки в смету.</p>
@@ -2809,34 +2793,19 @@ export function PublicEstimate() {
             </div>
 
             {electricResult.section.items.length > 0 ? (
-              <div className="public-estimate-electric-spec">
-                <div className="public-estimate-warm-floor-spec-head">
+              <div className="public-estimate-spec-actions">
+                <div className="public-estimate-spec-actions-head">
                   <p>Состав раздела</p>
                   <span>Розетки, выводы света, кухонные выводы и базовый щит</span>
                 </div>
-                <ul>
-                  {visibleElectricSpecItems.map((item) => (
-                    <li key={item.id}>
-                      <span className="public-estimate-warm-floor-line-title">{item.title}</span>
-                      <span className="public-estimate-warm-floor-line-meta">
-                        {formatEstimateQuantity(item.quantity)} {item.unit} × {formatMoney(item.unitPrice)}
-                      </span>
-                      <strong>{formatMoney(item.total)}</strong>
-                    </li>
-                  ))}
-                </ul>
-                {isElectricSpecLong ? (
-                  <button
-                    className="public-estimate-spec-toggle"
-                    type="button"
-                    aria-expanded={isElectricSpecExpanded}
-                    onClick={() => setIsElectricSpecExpanded((currentValue) => !currentValue)}
-                  >
-                    {isElectricSpecExpanded
-                      ? "Свернуть спецификацию"
-                      : `Показать всю спецификацию${hiddenElectricSpecCount > 0 ? `: ещё ${hiddenElectricSpecCount} строк` : ""}`}
-                  </button>
-                ) : null}
+                <button
+                  className="public-estimate-spec-open"
+                  type="button"
+                  onClick={() => openSectionSpec("electric")}
+                >
+                  Открыть спецификацию
+                  <span className="public-estimate-spec-open-count">{electricResult.section.items.length} строк</span>
+                </button>
               </div>
             ) : (
               <p className="public-estimate-warm-floor-empty">Включите хотя бы одно помещение, чтобы добавить электрику в смету.</p>
@@ -2985,34 +2954,19 @@ export function PublicEstimate() {
             </div>
 
             {plumbingResult.section.items.length > 0 ? (
-              <div className="public-estimate-plumbing-spec">
-                <div className="public-estimate-warm-floor-spec-head">
+              <div className="public-estimate-spec-actions">
+                <div className="public-estimate-spec-actions-head">
                   <p>Состав раздела</p>
                   <span>Санузел, кухня, выводы под технику и сантехнический узел</span>
                 </div>
-                <ul>
-                  {visiblePlumbingSpecItems.map((item) => (
-                    <li key={item.id}>
-                      <span className="public-estimate-warm-floor-line-title">{item.title}</span>
-                      <span className="public-estimate-warm-floor-line-meta">
-                        {formatEstimateQuantity(item.quantity)} {item.unit} × {formatMoney(item.unitPrice)}
-                      </span>
-                      <strong>{formatMoney(item.total)}</strong>
-                    </li>
-                  ))}
-                </ul>
-                {isPlumbingSpecLong ? (
-                  <button
-                    className="public-estimate-spec-toggle"
-                    type="button"
-                    aria-expanded={isPlumbingSpecExpanded}
-                    onClick={() => setIsPlumbingSpecExpanded((currentValue) => !currentValue)}
-                  >
-                    {isPlumbingSpecExpanded
-                      ? "Свернуть спецификацию"
-                      : `Показать всю спецификацию${hiddenPlumbingSpecCount > 0 ? `: ещё ${hiddenPlumbingSpecCount} строк` : ""}`}
-                  </button>
-                ) : null}
+                <button
+                  className="public-estimate-spec-open"
+                  type="button"
+                  onClick={() => openSectionSpec("plumbing")}
+                >
+                  Открыть спецификацию
+                  <span className="public-estimate-spec-open-count">{plumbingResult.section.items.length} строк</span>
+                </button>
               </div>
             ) : (
               <p className="public-estimate-warm-floor-empty">Добавьте санузел, кухню или вывод под технику, чтобы включить сантехнику в смету.</p>
@@ -3116,34 +3070,19 @@ export function PublicEstimate() {
             </div>
 
             {doorsResult.section.items.length > 0 ? (
-              <div className="public-estimate-doors-spec">
-                <div className="public-estimate-warm-floor-spec-head">
+              <div className="public-estimate-spec-actions">
+                <div className="public-estimate-spec-actions-head">
                   <p>Состав раздела</p>
                   <span>Дверные комплекты, фурнитура, логистика и монтаж</span>
                 </div>
-                <ul>
-                  {visibleDoorSpecItems.map((item) => (
-                    <li key={item.id}>
-                      <span className="public-estimate-warm-floor-line-title">{item.title}</span>
-                      <span className="public-estimate-warm-floor-line-meta">
-                        {formatEstimateQuantity(item.quantity)} {item.unit} × {formatMoney(item.unitPrice)}
-                      </span>
-                      <strong>{formatMoney(item.total)}</strong>
-                    </li>
-                  ))}
-                </ul>
-                {isDoorsSpecLong ? (
-                  <button
-                    className="public-estimate-spec-toggle"
-                    type="button"
-                    aria-expanded={isDoorsSpecExpanded}
-                    onClick={() => setIsDoorsSpecExpanded((currentValue) => !currentValue)}
-                  >
-                    {isDoorsSpecExpanded
-                      ? "Свернуть спецификацию"
-                      : `Показать всю спецификацию${hiddenDoorsSpecCount > 0 ? `: ещё ${hiddenDoorsSpecCount} строк` : ""}`}
-                  </button>
-                ) : null}
+                <button
+                  className="public-estimate-spec-open"
+                  type="button"
+                  onClick={() => openSectionSpec("doors")}
+                >
+                  Открыть спецификацию
+                  <span className="public-estimate-spec-open-count">{doorsResult.section.items.length} строк</span>
+                </button>
               </div>
             ) : (
               <p className="public-estimate-warm-floor-empty">Укажите двери в помещениях, чтобы добавить дверные комплекты в смету.</p>
@@ -3197,7 +3136,17 @@ export function PublicEstimate() {
                     min="0"
                     type="text"
                     value={completionOptions.kitchenLengthMeters}
-                    onChange={(event) => updateCompletionOptions({ kitchenLengthMeters: event.target.value })}
+                    {...estimateNumericFieldProps}
+                    onChange={(event) =>
+                      updateCompletionOptions({
+                        kitchenLengthMeters: sanitizeEstimateDecimalInput(event.target.value),
+                      })
+                    }
+                    onBlur={(event) =>
+                      updateCompletionOptions({
+                        kitchenLengthMeters: normalizeEstimateDecimalOnBlur(event.target.value),
+                      })
+                    }
                   />
                 </label>
 
@@ -3272,34 +3221,19 @@ export function PublicEstimate() {
             </div>
 
             {completionResult.section.items.length > 0 ? (
-              <div className="public-estimate-completion-spec">
-                <div className="public-estimate-warm-floor-spec-head">
+              <div className="public-estimate-spec-actions">
+                <div className="public-estimate-spec-actions-head">
                   <p>Состав раздела</p>
                   <span>Кухня, пеналы, гардеробная и мебель санузла</span>
                 </div>
-                <ul>
-                  {visibleCompletionSpecItems.map((item) => (
-                    <li key={item.id}>
-                      <span className="public-estimate-warm-floor-line-title">{item.title}</span>
-                      <span className="public-estimate-warm-floor-line-meta">
-                        {formatEstimateQuantity(item.quantity)} {item.unit} × {formatMoney(item.unitPrice)}
-                      </span>
-                      <strong>{formatMoney(item.total)}</strong>
-                    </li>
-                  ))}
-                </ul>
-                {isCompletionSpecLong ? (
-                  <button
-                    className="public-estimate-spec-toggle"
-                    type="button"
-                    aria-expanded={isCompletionSpecExpanded}
-                    onClick={() => setIsCompletionSpecExpanded((currentValue) => !currentValue)}
-                  >
-                    {isCompletionSpecExpanded
-                      ? "Свернуть спецификацию"
-                      : `Показать всю спецификацию${hiddenCompletionSpecCount > 0 ? `: ещё ${hiddenCompletionSpecCount} строк` : ""}`}
-                  </button>
-                ) : null}
+                <button
+                  className="public-estimate-spec-open"
+                  type="button"
+                  onClick={() => openSectionSpec("completion")}
+                >
+                  Открыть спецификацию
+                  <span className="public-estimate-spec-open-count">{completionResult.section.items.length} строк</span>
+                </button>
               </div>
             ) : (
               <p className="public-estimate-warm-floor-empty">Включите кухню, мебельные компоненты или технику, чтобы добавить комплектацию в смету.</p>
@@ -3361,7 +3295,7 @@ export function PublicEstimate() {
                 const isIncluded = itemDraft.isIncluded;
                 const quantity = itemDraft.quantity;
                 const unitPrice = getApplianceUnitPrice(catalogItem.key, appliancesOptions);
-                const lineTotal = isIncluded ? unitPrice * Math.max(1, quantity) : 0;
+                const lineTotal = isIncluded ? unitPrice * Math.max(1, parseEstimateInteger(quantity)) : 0;
 
                 return (
                   <article className="public-estimate-appliances-row" key={catalogItem.key}>
@@ -3408,13 +3342,17 @@ export function PublicEstimate() {
                         className="public-estimate-input"
                         disabled={!isIncluded}
                         inputMode="numeric"
-                        min="1"
-                        step="1"
-                        type="number"
+                        type="text"
                         value={quantity}
+                        {...estimateNumericFieldProps}
                         onChange={(event) =>
                           updateApplianceItem(catalogItem.key, {
-                            quantity: Math.max(1, Number.parseInt(event.target.value, 10) || 1),
+                            quantity: sanitizeEstimateIntegerInput(event.target.value),
+                          })
+                        }
+                        onBlur={(event) =>
+                          updateApplianceItem(catalogItem.key, {
+                            quantity: normalizeEstimateQuantityOnBlur(event.target.value),
                           })
                         }
                       />
@@ -3444,34 +3382,19 @@ export function PublicEstimate() {
             </div>
 
             {appliancesResult.section.items.length > 0 ? (
-              <div className="public-estimate-appliances-spec">
-                <div className="public-estimate-warm-floor-spec-head">
+              <div className="public-estimate-spec-actions">
+                <div className="public-estimate-spec-actions-head">
                   <p>Состав раздела</p>
                   <span>Бытовая техника по выбранному пакету</span>
                 </div>
-                <ul>
-                  {visibleAppliancesSpecItems.map((item) => (
-                    <li key={item.id}>
-                      <span className="public-estimate-warm-floor-line-title">{item.title}</span>
-                      <span className="public-estimate-warm-floor-line-meta">
-                        {formatEstimateQuantity(item.quantity)} {item.unit} × {formatMoney(item.unitPrice)}
-                      </span>
-                      <strong>{formatMoney(item.total)}</strong>
-                    </li>
-                  ))}
-                </ul>
-                {isAppliancesSpecLong ? (
-                  <button
-                    className="public-estimate-spec-toggle"
-                    type="button"
-                    aria-expanded={isAppliancesSpecExpanded}
-                    onClick={() => setIsAppliancesSpecExpanded((currentValue) => !currentValue)}
-                  >
-                    {isAppliancesSpecExpanded
-                      ? "Свернуть спецификацию"
-                      : `Показать всю спецификацию${hiddenAppliancesSpecCount > 0 ? `: ещё ${hiddenAppliancesSpecCount} строк` : ""}`}
-                  </button>
-                ) : null}
+                <button
+                  className="public-estimate-spec-open"
+                  type="button"
+                  onClick={() => openSectionSpec("appliances")}
+                >
+                  Открыть спецификацию
+                  <span className="public-estimate-spec-open-count">{appliancesResult.section.items.length} строк</span>
+                </button>
               </div>
             ) : (
               <p className="public-estimate-warm-floor-empty">
@@ -3541,7 +3464,7 @@ export function PublicEstimate() {
                 const isIncluded = itemDraft.isIncluded;
                 const quantity = itemDraft.quantity;
                 const unitPrice = getLooseFurnitureUnitPrice(catalogItem.key, looseFurnitureOptions);
-                const lineTotal = isIncluded ? unitPrice * Math.max(1, quantity) : 0;
+                const lineTotal = isIncluded ? unitPrice * Math.max(1, parseEstimateInteger(quantity)) : 0;
 
                 return (
                   <article className="public-estimate-loose-furniture-row" key={catalogItem.key}>
@@ -3572,13 +3495,17 @@ export function PublicEstimate() {
                         className="public-estimate-input"
                         disabled={!isIncluded}
                         inputMode="numeric"
-                        min="1"
-                        step="1"
-                        type="number"
+                        type="text"
                         value={quantity}
+                        {...estimateNumericFieldProps}
                         onChange={(event) =>
                           updateLooseFurnitureItem(catalogItem.key, {
-                            quantity: Math.max(1, Number.parseInt(event.target.value, 10) || 1),
+                            quantity: sanitizeEstimateIntegerInput(event.target.value),
+                          })
+                        }
+                        onBlur={(event) =>
+                          updateLooseFurnitureItem(catalogItem.key, {
+                            quantity: normalizeEstimateQuantityOnBlur(event.target.value),
                           })
                         }
                       />
@@ -3611,34 +3538,19 @@ export function PublicEstimate() {
             </div>
 
             {looseFurnitureResult.section.items.length > 0 ? (
-              <div className="public-estimate-loose-furniture-spec">
-                <div className="public-estimate-warm-floor-spec-head">
+              <div className="public-estimate-spec-actions">
+                <div className="public-estimate-spec-actions-head">
                   <p>Состав раздела</p>
                   <span>Свободная мебель по выбранному пакету</span>
                 </div>
-                <ul>
-                  {visibleLooseFurnitureSpecItems.map((item) => (
-                    <li key={item.id}>
-                      <span className="public-estimate-warm-floor-line-title">{item.title}</span>
-                      <span className="public-estimate-warm-floor-line-meta">
-                        {formatEstimateQuantity(item.quantity)} {item.unit} × {formatMoney(item.unitPrice)}
-                      </span>
-                      <strong>{formatMoney(item.total)}</strong>
-                    </li>
-                  ))}
-                </ul>
-                {isLooseFurnitureSpecLong ? (
-                  <button
-                    className="public-estimate-spec-toggle"
-                    type="button"
-                    aria-expanded={isLooseFurnitureSpecExpanded}
-                    onClick={() => setIsLooseFurnitureSpecExpanded((currentValue) => !currentValue)}
-                  >
-                    {isLooseFurnitureSpecExpanded
-                      ? "Свернуть спецификацию"
-                      : `Показать всю спецификацию${hiddenLooseFurnitureSpecCount > 0 ? `: ещё ${hiddenLooseFurnitureSpecCount} строк` : ""}`}
-                  </button>
-                ) : null}
+                <button
+                  className="public-estimate-spec-open"
+                  type="button"
+                  onClick={() => openSectionSpec("loose_furniture")}
+                >
+                  Открыть спецификацию
+                  <span className="public-estimate-spec-open-count">{looseFurnitureResult.section.items.length} строк</span>
+                </button>
               </div>
             ) : (
               <p className="public-estimate-warm-floor-empty">
@@ -3753,30 +3665,19 @@ export function PublicEstimate() {
             </div>
 
             {homeGoodsResult.section.items.length > 0 ? (
-              <div className="public-estimate-home-goods-spec">
-                <p>Спецификация раздела</p>
-                <ul>
-                  {visibleHomeGoodsSpecItems.map((item) => (
-                    <li key={item.id}>
-                      <span>
-                        {item.title} · {item.quantity} {item.unit} × {formatMoney(item.unitPrice)}
-                      </span>
-                      <strong>{formatMoney(item.total)}</strong>
-                    </li>
-                  ))}
-                </ul>
-                {isHomeGoodsSpecLong ? (
-                  <button
-                    className="public-estimate-spec-toggle"
-                    type="button"
-                    aria-expanded={isHomeGoodsSpecExpanded}
-                    onClick={() => setIsHomeGoodsSpecExpanded((currentValue) => !currentValue)}
-                  >
-                    {isHomeGoodsSpecExpanded
-                      ? "Свернуть спецификацию"
-                      : `Показать всю спецификацию${hiddenHomeGoodsSpecCount > 0 ? `: ещё ${hiddenHomeGoodsSpecCount} строк` : ""}`}
-                  </button>
-                ) : null}
+              <div className="public-estimate-spec-actions">
+                <div className="public-estimate-spec-actions-head">
+                  <p>Состав раздела</p>
+                  <span>Финишная уборка и комплект товаров для дома</span>
+                </div>
+                <button
+                  className="public-estimate-spec-open"
+                  type="button"
+                  onClick={() => openSectionSpec("home_goods")}
+                >
+                  Открыть спецификацию
+                  <span className="public-estimate-spec-open-count">{homeGoodsResult.section.items.length} строк</span>
+                </button>
               </div>
             ) : (
               <p className="public-estimate-warm-floor-empty">
@@ -3806,6 +3707,42 @@ export function PublicEstimate() {
                 </div>
               ))}
             </div>
+
+            {estimateResult.sections.length > 0 ? (
+              <div className="public-estimate-cost-sections" aria-label="Стоимость по разделам">
+                <div className="public-estimate-cost-sections-head" aria-hidden="true">
+                  <span>Раздел</span>
+                  <span>Сумма ₽</span>
+                </div>
+                <ul className="public-estimate-cost-sections-list">
+                  {estimateResult.sections.map((section) => (
+                    <li className="public-estimate-cost-sections-row" key={section.id}>
+                      <span>{section.title}</span>
+                      <strong>{formatMoney(section.totals.total)}</strong>
+                    </li>
+                  ))}
+                  <li className="public-estimate-cost-sections-row public-estimate-cost-sections-row-total">
+                    <span>Итого по разделам</span>
+                    <strong>{formatMoney(estimateResult.totals.total)}</strong>
+                  </li>
+                </ul>
+              </div>
+            ) : (
+              <p className="public-estimate-cost-empty">
+                Заполните геометрию и выберите разделы — разбивка по разделам появится здесь автоматически.
+              </p>
+            )}
+
+            {estimateResult.sections.length > 0 ? (
+              <button
+                className="public-estimate-spec-open public-estimate-spec-open-full"
+                type="button"
+                onClick={openFullSpec}
+              >
+                Полная спецификация
+                <span className="public-estimate-spec-open-count">все разделы</span>
+              </button>
+            ) : null}
 
             <p className="public-estimate-cost-note">
               Сейчас в смету включены тёплый пол, полы, стены, потолки, электрика, сантехника, двери, встроенная
@@ -3870,7 +3807,7 @@ export function PublicEstimate() {
             </div>
 
             <div className="public-estimate-passport-detail">
-              <span>Ориентир пакета</span>
+              <span>Ориентир пакета (по всей смете)</span>
               <strong>
                 {packageClassification.referencePrice > 0
                   ? `${packageClassification.referenceLabel}: ${formatMoney(packageClassification.referencePrice)}/м²`
@@ -3883,7 +3820,21 @@ export function PublicEstimate() {
               ) : (
                 <small>Верхний ориентир публичной модели</small>
               )}
+              <small className="public-estimate-passport-hint">
+                Это ориентир уровня всей сметы по ₽/м², а не выбранный вами пакет C / B / A в разделах
+                техники, мебели и комплектации.
+              </small>
             </div>
+
+            {estimateResult.sections.length > 0 ? (
+              <button
+                className="public-estimate-passport-action public-estimate-passport-spec"
+                type="button"
+                onClick={openFullSpec}
+              >
+                Полная спецификация
+              </button>
+            ) : null}
 
             <button className="public-estimate-passport-action" type="button" onClick={handlePrintEstimate}>
               Скачать PDF сметы
@@ -3924,6 +3875,17 @@ export function PublicEstimate() {
           ))}
         </dl>
       </section>
+
+      {specModalData ? (
+        <EstimateSpecOverlay
+          title={specModalData.title}
+          subtitle={specModalData.subtitle}
+          sections={specModalData.sections}
+          formatMoney={formatMoney}
+          formatQuantity={formatEstimateQuantity}
+          onClose={closeSpecModal}
+        />
+      ) : null}
     </main>
   );
 }

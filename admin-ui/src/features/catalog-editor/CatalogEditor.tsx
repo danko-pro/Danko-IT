@@ -115,6 +115,15 @@ function normalizeZone(raw: CatalogZone): CatalogZone {
   };
 }
 
+// Подмешиваем новые seed-кубики, которых ещё нет в localStorage пользователя,
+// НЕ затирая его правки по уже существующим id. Так новые работы/трубы появляются
+// без полного сброса. (Минус: ранее удалённый seed-кубик вернётся.)
+function mergeNewSeed(stored: CatalogItem[]): CatalogItem[] {
+  const ids = new Set(stored.map((item) => item.id));
+  const additions = PLUMBING_SEED.filter((seed) => !ids.has(seed.id)).map((seed) => ({ ...seed }));
+  return additions.length > 0 ? [...stored, ...additions] : stored;
+}
+
 function loadItems(): CatalogItem[] {
   try {
     const stored = window.localStorage.getItem(STORAGE_KEY);
@@ -122,7 +131,7 @@ function loadItems(): CatalogItem[] {
     const parsed = JSON.parse(stored);
     if (!Array.isArray(parsed)) return cloneSeed();
     const items = parsed.filter(isCatalogItem).map(normalizeItem);
-    return items.length > 0 ? items : cloneSeed();
+    return items.length > 0 ? mergeNewSeed(items) : cloneSeed();
   } catch {
     return cloneSeed();
   }
@@ -503,6 +512,13 @@ export function CatalogEditor() {
                 onChange={importJson}
               />
             </div>
+          </div>
+
+          <div className="ce-note">
+            <span className="ce-note-tag">Надбавки</span>
+            Накладные 10% и транспорт 5% применяются по решению и в суммы по умолчанию не входят.
+            Работы и материалы — отдельные кубики («монтаж точки» ≠ «монтаж прибора»). Тёплый пол /
+            отопление — отдельный модуль, не смешивать с сантехническими зонами.
           </div>
 
           {plumbingView === "zones" ? (

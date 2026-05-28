@@ -91,6 +91,17 @@ export const CATALOG_EDITOR_STYLES = `
 .ce-meta { margin-bottom: 12px; color: var(--ce-muted); font-size: 12px; }
 .ce-meta strong { color: var(--ce-text); }
 
+.ce-note {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  margin-bottom: 14px; padding: 10px 12px; border-radius: 9px;
+  background: rgba(76,141,255,.08); border: 1px solid rgba(76,141,255,.28);
+  color: var(--ce-muted); font-size: 12px; line-height: 1.5;
+}
+.ce-note-tag {
+  flex: none; padding: 2px 9px; border-radius: 999px; font-size: 11px; font-weight: 600;
+  background: var(--ce-accent); color: #fff;
+}
+
 .ce-table-wrap {
   border: 1px solid var(--ce-border); border-radius: 12px; overflow: auto; max-height: calc(100vh - 280px);
 }

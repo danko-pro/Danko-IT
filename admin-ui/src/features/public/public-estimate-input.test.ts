@@ -1,7 +1,8 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   ESTIMATE_CEILING_HEIGHT_MAX,
   ESTIMATE_CEILING_HEIGHT_MIN,
+  handleEstimateInputKeyDown,
   normalizeEstimateCeilingHeightOnBlur,
   normalizeEstimateCountOnBlur,
   normalizeEstimateDecimalOnBlur,
@@ -9,6 +10,19 @@ import {
   sanitizeEstimateDecimalInput,
   sanitizeEstimateIntegerInput,
 } from "./public-estimate-input";
+
+type KeyDownArg = Parameters<typeof handleEstimateInputKeyDown>[0];
+
+function makeKeyEvent(key: string) {
+  const preventDefault = vi.fn();
+  const blur = vi.fn();
+
+  return {
+    event: { key, preventDefault, currentTarget: { blur } } as unknown as KeyDownArg,
+    preventDefault,
+    blur,
+  };
+}
 
 describe("sanitizeEstimateDecimalInput", () => {
   it("отбрасывает буквы и оставляет цифры", () => {
@@ -76,5 +90,25 @@ describe("normalizeEstimateCeilingHeightOnBlur", () => {
 
   it("подставляет дефолт для пустого значения", () => {
     expect(normalizeEstimateCeilingHeightOnBlur("")).toBe("2.7");
+  });
+});
+
+describe("handleEstimateInputKeyDown", () => {
+  it("по Enter гасит submit и убирает фокус (что триггерит нормализацию onBlur)", () => {
+    const { event, preventDefault, blur } = makeKeyEvent("Enter");
+
+    handleEstimateInputKeyDown(event);
+
+    expect(preventDefault).toHaveBeenCalledTimes(1);
+    expect(blur).toHaveBeenCalledTimes(1);
+  });
+
+  it("не реагирует на другие клавиши", () => {
+    const { event, preventDefault, blur } = makeKeyEvent("a");
+
+    handleEstimateInputKeyDown(event);
+
+    expect(preventDefault).not.toHaveBeenCalled();
+    expect(blur).not.toHaveBeenCalled();
   });
 });

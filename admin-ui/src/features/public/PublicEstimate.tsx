@@ -48,13 +48,13 @@ import {
   type EstimateRoomType,
 } from "./public-estimate-geometry";
 import {
+  estimateNumericFieldProps,
   normalizeEstimateCeilingHeightOnBlur,
   normalizeEstimateCountOnBlur,
   normalizeEstimateDecimalOnBlur,
   normalizeEstimateQuantityOnBlur,
   sanitizeEstimateDecimalInput,
   sanitizeEstimateIntegerInput,
-  selectEstimateInputContent,
 } from "./public-estimate-input";
 import {
   calculateFlooring,
@@ -2035,7 +2035,7 @@ export function PublicEstimate() {
                   className="public-estimate-input"
                   inputMode="decimal"
                   value={ceilingHeightInput}
-                  onFocus={selectEstimateInputContent}
+                  {...estimateNumericFieldProps}
                   onChange={(event) => setCeilingHeightInput(sanitizeEstimateDecimalInput(event.target.value))}
                   onBlur={(event) => setCeilingHeightInput(normalizeEstimateCeilingHeightOnBlur(event.target.value))}
                 />
@@ -2108,7 +2108,7 @@ export function PublicEstimate() {
                                 className="public-estimate-input"
                                 inputMode="decimal"
                                 value={roomDraft.area}
-                                onFocus={selectEstimateInputContent}
+                                {...estimateNumericFieldProps}
                                 onChange={(event) =>
                                   updateRoom(room.id, { area: sanitizeEstimateDecimalInput(event.target.value) })
                                 }
@@ -2125,7 +2125,7 @@ export function PublicEstimate() {
                                 className="public-estimate-input"
                                 inputMode="numeric"
                                 value={roomDraft.doorCount}
-                                onFocus={selectEstimateInputContent}
+                                {...estimateNumericFieldProps}
                                 onChange={(event) =>
                                   updateRoom(room.id, { doorCount: sanitizeEstimateIntegerInput(event.target.value) })
                                 }
@@ -2142,7 +2142,7 @@ export function PublicEstimate() {
                                 className="public-estimate-input"
                                 inputMode="numeric"
                                 value={roomDraft.windowCount}
-                                onFocus={selectEstimateInputContent}
+                                {...estimateNumericFieldProps}
                                 onChange={(event) =>
                                   updateRoom(room.id, { windowCount: sanitizeEstimateIntegerInput(event.target.value) })
                                 }
@@ -2236,7 +2236,7 @@ export function PublicEstimate() {
                         inputMode="decimal"
                         value={warmFloorArea}
                         disabled={!isSelected}
-                        onFocus={selectEstimateInputContent}
+                        {...estimateNumericFieldProps}
                         onChange={(event) =>
                           updateWarmFloorRoom(room.id, {
                             warmFloorArea: sanitizeEstimateDecimalInput(event.target.value),
@@ -2442,7 +2442,7 @@ export function PublicEstimate() {
                     inputMode="numeric"
                     value={flooringOptions.thresholdCount}
                     disabled={!flooringOptions.includeThresholds}
-                    onFocus={selectEstimateInputContent}
+                    {...estimateNumericFieldProps}
                     onChange={(event) =>
                       updateFlooringOptions({ thresholdCount: sanitizeEstimateIntegerInput(event.target.value) })
                     }
@@ -3268,7 +3268,7 @@ export function PublicEstimate() {
                     min="0"
                     type="text"
                     value={completionOptions.kitchenLengthMeters}
-                    onFocus={selectEstimateInputContent}
+                    {...estimateNumericFieldProps}
                     onChange={(event) =>
                       updateCompletionOptions({
                         kitchenLengthMeters: sanitizeEstimateDecimalInput(event.target.value),
@@ -3491,7 +3491,7 @@ export function PublicEstimate() {
                         inputMode="numeric"
                         type="text"
                         value={quantity}
-                        onFocus={selectEstimateInputContent}
+                        {...estimateNumericFieldProps}
                         onChange={(event) =>
                           updateApplianceItem(catalogItem.key, {
                             quantity: sanitizeEstimateIntegerInput(event.target.value),
@@ -3659,7 +3659,7 @@ export function PublicEstimate() {
                         inputMode="numeric"
                         type="text"
                         value={quantity}
-                        onFocus={selectEstimateInputContent}
+                        {...estimateNumericFieldProps}
                         onChange={(event) =>
                           updateLooseFurnitureItem(catalogItem.key, {
                             quantity: sanitizeEstimateIntegerInput(event.target.value),

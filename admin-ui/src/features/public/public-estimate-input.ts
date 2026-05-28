@@ -1,3 +1,4 @@
+import type { FocusEvent, KeyboardEvent } from "react";
 import { parseEstimateDecimal, parseEstimateInteger } from "./public-estimate-geometry";
 
 /**
@@ -101,8 +102,30 @@ export function normalizeEstimateCeilingHeightOnBlur(value: string): string {
  * Выделяет всё содержимое поля при фокусе — пользователь сразу перепечатывает
  * значение одним кликом, без необходимости предварительно его очищать.
  */
-export function selectEstimateInputContent(
-  event: { currentTarget: { select: () => void } },
-): void {
+export function selectEstimateInputContent(event: FocusEvent<HTMLInputElement>): void {
   event.currentTarget.select();
 }
+
+/**
+ * Подтверждение значения по Enter: применяем нормализацию (через blur, который уже
+ * вызывает onBlur-обработчик поля) и убираем фокус, не отправляя форму. На мобильных
+ * этот же blur срабатывает при нажатии кнопки подтверждения клавиатуры (см.
+ * enterKeyHint="done" ниже).
+ */
+export function handleEstimateInputKeyDown(event: KeyboardEvent<HTMLInputElement>): void {
+  if (event.key === "Enter") {
+    event.preventDefault();
+    event.currentTarget.blur();
+  }
+}
+
+/**
+ * Общий набор пропсов для всех числовых полей калькулятора: выделение по фокусу,
+ * подтверждение по Enter и подсказка мобильной клавиатуре показать кнопку «Готово».
+ * Не включает onChange/onBlur/inputMode — они зависят от типа поля (десятичное/целое).
+ */
+export const estimateNumericFieldProps = {
+  onFocus: selectEstimateInputContent,
+  onKeyDown: handleEstimateInputKeyDown,
+  enterKeyHint: "done",
+} as const;

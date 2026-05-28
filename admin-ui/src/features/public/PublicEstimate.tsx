@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { calculateCeiling } from "./public-estimate-ceiling";
 import { calculateCompletion, type CompletionOptions } from "./public-estimate-completion";
 import {
@@ -71,6 +71,80 @@ const roomTypeOptions: Array<{ value: EstimateRoomType; label: string }> = [
   { value: "other", label: "Другое" },
 ];
 
+const GEOMETRY_STEP_HINT =
+  "Площадь, двери и окна по БТИ — периметр и стены пересчитаются автоматически.";
+
+const GEOMETRY_ROW_REMOVE_MS = 280;
+
+function getGeometryRowRemoveDelayMs(): number {
+  if (typeof window === "undefined") {
+    return GEOMETRY_ROW_REMOVE_MS;
+  }
+
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : GEOMETRY_ROW_REMOVE_MS;
+}
+
+function prefersReducedEstimateMotion(): boolean {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
+function inferRoomTypeFromName(name: string): EstimateRoomType | null {
+  const normalized = name.trim().toLocaleLowerCase("ru-RU");
+
+  if (!normalized) {
+    return null;
+  }
+
+  const matchedOption = roomTypeOptions.find((option) => option.label.toLocaleLowerCase("ru-RU") === normalized);
+
+  return matchedOption?.value ?? null;
+}
+
+const validEstimateRoomTypes = new Set<EstimateRoomType>(roomTypeOptions.map((option) => option.value));
+
+function normalizeEstimateRoomType(type: string | undefined | null): EstimateRoomType {
+  if (type && validEstimateRoomTypes.has(type as EstimateRoomType)) {
+    return type as EstimateRoomType;
+  }
+
+  return "other";
+}
+
+function normalizeEstimateRoomDraft(room: EstimateRoomDraft): EstimateRoomDraft {
+  const type = normalizeEstimateRoomType(room.type);
+  const inferredType = inferRoomTypeFromName(room.name);
+
+  return {
+    ...room,
+    type: inferredType ?? type,
+  };
+}
+
+const NEW_ROOM_DEFAULT_NAME = "Новое помещение";
+
+function buildNewRoomName(existingRooms: EstimateRoomDraft[]): string {
+  const usedNames = new Set(existingRooms.map((room) => room.name.trim().toLocaleLowerCase("ru-RU")));
+  const baseName = NEW_ROOM_DEFAULT_NAME;
+
+  if (!usedNames.has(baseName.toLocaleLowerCase("ru-RU"))) {
+    return baseName;
+  }
+
+  for (let suffix = 2; suffix < 1000; suffix += 1) {
+    const candidate = `${baseName} ${suffix}`;
+
+    if (!usedNames.has(candidate.toLocaleLowerCase("ru-RU"))) {
+      return candidate;
+    }
+  }
+
+  return `Помещение ${existingRooms.length + 1}`;
+}
+
 const flooringCoveringOptions: Array<{ value: FlooringCoveringType; label: string }> = [
   { value: "porcelain", label: "Керамогранит" },
   { value: "quartz_vinyl", label: "Кварцвинил" },
@@ -124,6 +198,250 @@ const estimatePackageBenchmarks = [
   { label: "Пакет B", pricePerM2: 52280 },
   { label: "Пакет A", pricePerM2: 75416 },
 ];
+
+type EstimateNavigationIcon =
+  | "object"
+  | "geometry"
+  | "warmFloor"
+  | "flooring"
+  | "walls"
+  | "ceiling"
+  | "electric"
+  | "plumbing"
+  | "doors"
+  | "completion"
+  | "appliances"
+  | "furniture"
+  | "cleaning"
+  | "total";
+
+const estimateNavigationItems: Array<{
+  id: string;
+  label: string;
+  icon: EstimateNavigationIcon;
+}> = [
+  { id: "estimate-object", label: "Объект", icon: "object" },
+  { id: "estimate-geometry", label: "Геометрия", icon: "geometry" },
+  { id: "estimate-warm-floor", label: "Тёплый пол", icon: "warmFloor" },
+  { id: "estimate-flooring", label: "Полы", icon: "flooring" },
+  { id: "estimate-walls", label: "Стены", icon: "walls" },
+  { id: "estimate-ceiling", label: "Потолки", icon: "ceiling" },
+  { id: "estimate-electric", label: "Электрика", icon: "electric" },
+  { id: "estimate-plumbing", label: "Сантехника", icon: "plumbing" },
+  { id: "estimate-doors", label: "Двери", icon: "doors" },
+  { id: "estimate-completion", label: "Комплектация", icon: "completion" },
+  { id: "estimate-appliances", label: "Техника", icon: "appliances" },
+  { id: "estimate-loose-furniture", label: "Мебель", icon: "furniture" },
+  { id: "estimate-home-goods", label: "Уборка и товары для дома", icon: "cleaning" },
+  { id: "estimate-costs", label: "Итог", icon: "total" },
+];
+
+const ESTIMATE_INITIAL_SECTION_ID = estimateNavigationItems[0]?.id ?? "estimate-object";
+const ESTIMATE_SCROLL_SPY_SECTION_IDS = estimateNavigationItems.map((item) => item.id);
+const ESTIMATE_PAGE_BOTTOM_THRESHOLD_PX = 96;
+const ESTIMATE_SCROLL_ACTIVATION_LINE_DESKTOP_PX = 96;
+const ESTIMATE_SCROLL_ACTIVATION_LINE_MOBILE_PX = 64;
+const ESTIMATE_MOBILE_BREAKPOINT_QUERY = "(max-width: 1180px)";
+
+function getEstimateScrollActivationLinePx(): number {
+  return window.matchMedia(ESTIMATE_MOBILE_BREAKPOINT_QUERY).matches
+    ? ESTIMATE_SCROLL_ACTIVATION_LINE_MOBILE_PX
+    : ESTIMATE_SCROLL_ACTIVATION_LINE_DESKTOP_PX;
+}
+const ESTIMATE_PROGRAMMATIC_SCROLL_MAX_MS = 3000;
+const ESTIMATE_PROGRAMMATIC_SCROLL_REDUCED_MOTION_MAX_MS = 150;
+const ESTIMATE_SCROLL_STABILIZE_FRAMES = 4;
+const ESTIMATE_SCROLL_STABILIZE_PX = 2;
+const ESTIMATE_USER_SCROLL_CANCEL_KEYS = new Set([
+  "ArrowUp",
+  "ArrowDown",
+  "PageUp",
+  "PageDown",
+  "Home",
+  "End",
+  " ",
+]);
+
+type EstimateNavigationScrollLock = {
+  targetSectionId: string;
+  cleanup: () => void;
+};
+
+function releaseEstimateNavigationScrollLock(
+  lockRef: { current: EstimateNavigationScrollLock | null },
+) {
+  const lock = lockRef.current;
+
+  if (!lock) {
+    return;
+  }
+
+  lock.cleanup();
+  lockRef.current = null;
+}
+
+function pickActiveEstimateSectionByScrollLine(
+  sections: HTMLElement[],
+  activationLinePx: number,
+): string {
+  let activeId = sections[0]?.id ?? ESTIMATE_INITIAL_SECTION_ID;
+
+  for (const section of sections) {
+    if (section.getBoundingClientRect().top <= activationLinePx) {
+      activeId = section.id;
+    }
+  }
+
+  return activeId;
+}
+
+function getEstimateStepIndex(sectionId: string): number {
+  return estimateNavigationItems.findIndex((item) => item.id === sectionId);
+}
+
+function formatEstimateStep(sectionId: string): string {
+  const index = getEstimateStepIndex(sectionId);
+
+  if (index < 0) {
+    return "";
+  }
+
+  return `Шаг ${String(index + 1).padStart(2, "0")}`;
+}
+
+function withActiveEstimateSection(sectionId: string, activeSectionId: string, className: string): string {
+  return activeSectionId === sectionId ? `${className} is-active` : className;
+}
+
+function EstimateNavigationIcon({ name }: { name: EstimateNavigationIcon }) {
+  const commonProps = {
+    viewBox: "0 0 24 24",
+    "aria-hidden": true,
+    focusable: false,
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: 1.75,
+    strokeLinecap: "round" as const,
+    strokeLinejoin: "round" as const,
+  };
+
+  switch (name) {
+    case "geometry":
+      return (
+        <svg {...commonProps}>
+          <rect x="4" y="4" width="16" height="16" rx="1.5" />
+          <path d="M4 20 20 4" />
+        </svg>
+      );
+    case "object":
+      return (
+        <svg {...commonProps}>
+          <path d="M3 21h18" />
+          <path d="M6 21V8l6-4 6 4v13" />
+          <path d="M10 21v-5h4v5" />
+        </svg>
+      );
+    case "warmFloor":
+      return (
+        <svg {...commonProps}>
+          <path d="M3 10c2.5-2 5-2 7.5 0s5 2 7.5 0 5-2 7.5 0" />
+          <path d="M3 15c2.5-2 5-2 7.5 0s5 2 7.5 0 5-2 7.5 0" />
+        </svg>
+      );
+    case "flooring":
+      return (
+        <svg {...commonProps}>
+          <path d="M12 3 2 8l10 5 10-5-10-5z" />
+          <path d="M2 13l10 5 10-5" />
+          <path d="M2 18l10 5 10-5" />
+        </svg>
+      );
+    case "walls":
+      return (
+        <svg {...commonProps}>
+          <rect x="3" y="3" width="18" height="18" rx="2" />
+          <path d="M12 3v18" />
+        </svg>
+      );
+    case "ceiling":
+      return (
+        <svg {...commonProps}>
+          <path d="M4 7h16" />
+          <path d="M6 11h12" />
+          <path d="M8 15h8" />
+        </svg>
+      );
+    case "electric":
+      return (
+        <svg {...commonProps}>
+          <path d="M13 2 3 14h8l-1 8 10-12h-8l1-8z" />
+        </svg>
+      );
+    case "plumbing":
+      return (
+        <svg {...commonProps}>
+          <path d="M12 3c3.5 3.5 5.5 6 5.5 9a5.5 5.5 0 1 1-11 0c0-3 2-5.5 5.5-9z" />
+        </svg>
+      );
+    case "doors":
+      return (
+        <svg {...commonProps}>
+          <path d="M4 20V6a2 2 0 0 1 2-2h8" />
+          <path d="M14 4h4a2 2 0 0 1 2 2v14" />
+          <path d="M2 20h20" />
+        </svg>
+      );
+    case "completion":
+      return (
+        <svg {...commonProps}>
+          <rect x="3" y="3" width="7" height="7" rx="1" />
+          <rect x="14" y="3" width="7" height="7" rx="1" />
+          <rect x="3" y="14" width="7" height="7" rx="1" />
+          <rect x="14" y="14" width="7" height="7" rx="1" />
+        </svg>
+      );
+    case "appliances":
+      return (
+        <svg {...commonProps}>
+          <rect x="5" y="2" width="14" height="20" rx="1.5" />
+          <path d="M5 10h14" />
+        </svg>
+      );
+    case "furniture":
+      return (
+        <svg {...commonProps}>
+          <path d="M19 9V7a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v2" />
+          <path d="M3 11v5a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-5" />
+          <path d="M5 18v2" />
+          <path d="M19 18v2" />
+        </svg>
+      );
+    case "cleaning":
+      return (
+        <svg {...commonProps}>
+          <path d="M12 3v4" />
+          <path d="m8 7 4-4 4 4" />
+          <path d="M8 7v3l-3 9h14l-3-9V7" />
+        </svg>
+      );
+    case "total":
+      return (
+        <svg {...commonProps}>
+          <rect x="4" y="2" width="16" height="20" rx="2" />
+          <path d="M8 7h8" />
+          <path d="M8 11h8" />
+          <path d="M8 15h5" />
+        </svg>
+      );
+  }
+}
+
+type EstimateObjectMeta = {
+  address: string;
+  complexName: string;
+  apartmentNumber: string;
+  contact: string;
+};
 
 type EstimateRoomDraft = Omit<EstimateRoomInput, "area" | "doorCount" | "windowCount"> & {
   area: string;
@@ -190,11 +508,13 @@ const initialRooms: EstimateRoomDraft[] = [
 ];
 
 function normalizeRoom(room: EstimateRoomDraft): EstimateRoomInput {
+  const normalizedDraft = normalizeEstimateRoomDraft(room);
+
   return {
-    ...room,
-    area: parseEstimateDecimal(room.area),
-    doorCount: parseEstimateDecimal(room.doorCount),
-    windowCount: parseEstimateDecimal(room.windowCount),
+    ...normalizedDraft,
+    area: parseEstimateDecimal(normalizedDraft.area),
+    doorCount: parseEstimateDecimal(normalizedDraft.doorCount),
+    windowCount: parseEstimateDecimal(normalizedDraft.windowCount),
   };
 }
 
@@ -225,72 +545,57 @@ function classifyEstimatePackage(pricePerSquareMeter: number) {
 
   if (safePricePerSquareMeter <= 0) {
     return {
-      statusLabel: "Расчёт не заполнен",
-      badgeLabel: "Без пакета",
       referenceLabel: "Ориентир появится после заполнения",
       referencePrice: 0,
       nextLabel: packageC.label,
       nextDelta: packageC.pricePerM2,
-      explanation: "Добавьте состав работ, чтобы увидеть ориентир по пакету.",
     };
   }
 
   if (safePricePerSquareMeter < packageC.pricePerM2) {
     return {
-      statusLabel: "Ниже пакета C",
-      badgeLabel: "Ниже C",
       referenceLabel: packageC.label,
       referencePrice: packageC.pricePerM2,
       nextLabel: packageC.label,
       nextDelta: packageC.pricePerM2 - safePricePerSquareMeter,
-      explanation: "По текущей цене расчёт ниже пакета C: состав ещё неполный.",
     };
   }
 
   if (safePricePerSquareMeter < packageB.pricePerM2) {
     return {
-      statusLabel: "Ближе к пакету C",
-      badgeLabel: packageC.label,
       referenceLabel: packageC.label,
       referencePrice: packageC.pricePerM2,
       nextLabel: packageB.label,
       nextDelta: packageB.pricePerM2 - safePricePerSquareMeter,
-      explanation: "По текущей цене расчёт ближе к пакету C.",
     };
   }
 
   if (safePricePerSquareMeter < packageA.pricePerM2) {
     return {
-      statusLabel: "Ближе к пакету B",
-      badgeLabel: packageB.label,
       referenceLabel: packageB.label,
       referencePrice: packageB.pricePerM2,
       nextLabel: packageA.label,
       nextDelta: packageA.pricePerM2 - safePricePerSquareMeter,
-      explanation: "По текущей цене расчёт ближе к пакету B.",
     };
   }
 
   return {
-    statusLabel: "Ближе к пакету A",
-    badgeLabel: packageA.label,
     referenceLabel: packageA.label,
     referencePrice: packageA.pricePerM2,
     nextLabel: "",
     nextDelta: 0,
-    explanation: "По текущей цене расчёт ближе к пакету A.",
   };
 }
 
-function createEstimateRoom(): EstimateRoomDraft {
-  return {
+function createEstimateRoom(existingRooms: EstimateRoomDraft[]): EstimateRoomDraft {
+  return normalizeEstimateRoomDraft({
     id: `room-${Date.now()}-${Math.random().toString(16).slice(2)}`,
-    name: "Новое помещение",
+    name: buildNewRoomName(existingRooms),
     type: "other",
-    area: "10",
+    area: "",
     doorCount: "1",
     windowCount: "0",
-  };
+  });
 }
 
 function getDefaultFlooringCovering(roomType: EstimateRoomType): FlooringCoveringType {
@@ -358,8 +663,14 @@ function getDefaultCeilingLightSettings(roomType: EstimateRoomType) {
 }
 
 export function PublicEstimate() {
+  const [objectMeta, setObjectMeta] = useState<EstimateObjectMeta>({
+    address: "",
+    complexName: "",
+    apartmentNumber: "",
+    contact: "",
+  });
   const [ceilingHeightInput, setCeilingHeightInput] = useState("2.7");
-  const [rooms, setRooms] = useState<EstimateRoomDraft[]>(initialRooms);
+  const [rooms, setRooms] = useState<EstimateRoomDraft[]>(() => initialRooms.map(normalizeEstimateRoomDraft));
   const [warmFloorMode, setWarmFloorMode] = useState<WarmFloorMode>("water");
   const [warmFloorRooms, setWarmFloorRooms] = useState<Record<string, WarmFloorRoomDraft>>({});
   const [flooringRooms, setFlooringRooms] = useState<Record<string, FlooringRoomDraft>>({});
@@ -418,6 +729,14 @@ export function PublicEstimate() {
   const [isAppliancesSpecExpanded, setIsAppliancesSpecExpanded] = useState(false);
   const [isLooseFurnitureSpecExpanded, setIsLooseFurnitureSpecExpanded] = useState(false);
   const [isHomeGoodsSpecExpanded, setIsHomeGoodsSpecExpanded] = useState(false);
+  const [isMobileVolumesExpanded, setIsMobileVolumesExpanded] = useState(false);
+  const [activeEstimateSection, setActiveEstimateSection] = useState(ESTIMATE_INITIAL_SECTION_ID);
+  const estimateRailScrollRef = useRef<HTMLElement>(null);
+  const navigationScrollTargetRef = useRef<EstimateNavigationScrollLock | null>(null);
+  const pendingAddedRoomIdRef = useRef<string | null>(null);
+  const geometryRemoveTimeoutsRef = useRef<Record<string, number>>({});
+  const [enteringRoomIds, setEnteringRoomIds] = useState<string[]>([]);
+  const [removingRoomIds, setRemovingRoomIds] = useState<string[]>([]);
 
   const ceilingHeight = useMemo(() => parseEstimateDecimal(ceilingHeightInput), [ceilingHeightInput]);
   const roomInputs = useMemo(() => rooms.map(normalizeRoom), [rooms]);
@@ -618,6 +937,9 @@ export function PublicEstimate() {
     { label: "Потолки", value: formatMeasurement(totals.ceilingArea, "м²") },
     { label: "Плинтус", value: formatMeasurement(totals.plinthLength, "м") },
   ];
+  const compactVolumeItems = summaryItems.filter((item) =>
+    ["Площадь пола", "Стены к отделке", "Потолки"].includes(item.label),
+  );
   const estimateTotalItems = [
     { label: "Работы", value: formatMoney(estimateResult.totals.works) },
     { label: "Материалы", value: formatMoney(estimateResult.totals.materials) },
@@ -627,54 +949,397 @@ export function PublicEstimate() {
     { label: "₽/м²", value: `${formatMoney(estimateResult.totals.pricePerSquareMeter)}/м²` },
   ];
   const packageClassification = classifyEstimatePackage(estimateResult.totals.pricePerSquareMeter);
-  const isKitchenCompletionIncluded =
-    completionOptions.includeKitchenBase ||
-    completionOptions.includeKitchenAppliancePenal ||
-    completionOptions.includeKitchenFridgePenal;
-  const arePenalsIncluded = completionOptions.includeKitchenAppliancePenal || completionOptions.includeKitchenFridgePenal;
-  const passportCompletionItems = [
-    {
-      isIncluded: isKitchenCompletionIncluded,
-      includedLabel: "Кухня: включена",
-      excludedLabel: "Кухня: не включена",
-    },
-    {
-      isIncluded: arePenalsIncluded,
-      includedLabel: "Пеналы: включены",
-      excludedLabel: "Пеналы: не включены",
-    },
-    {
-      isIncluded: completionOptions.includeWardrobe,
-      includedLabel: "Гардеробная: включена",
-      excludedLabel: "Гардеробная: не включена",
-    },
-    {
-      isIncluded: completionOptions.includeBathroomFurniture,
-      includedLabel: "Мебель санузла: включена",
-      excludedLabel: "Мебель санузла: не включена",
-    },
-  ];
-  const passportIncludedItems = [
-    "Ремонт",
-    "Инженерия",
-    "Двери",
-    ...passportCompletionItems
-      .filter((item) => item.isIncluded)
-      .map((item) => item.includedLabel),
-    ...(appliancesResult.total > 0 ? ["Бытовая техника"] : []),
-    ...(looseFurnitureResult.total > 0 ? ["Свободная мебель"] : []),
-    ...(homeGoodsOptions.includeCleaning ? ["Уборка"] : []),
-    ...(homeGoodsOptions.includeHomeGoods ? ["Товары для дома"] : []),
-  ];
-  const passportExcludedItems = [
-    ...passportCompletionItems
-      .filter((item) => !item.isIncluded)
-      .map((item) => item.excludedLabel),
-    ...(appliancesResult.total <= 0 ? ["Бытовая техника: не включена"] : []),
-    ...(looseFurnitureResult.total <= 0 ? ["Свободная мебель: не включена"] : []),
-    ...(!homeGoodsOptions.includeCleaning ? ["Уборка: не включена"] : []),
-    ...(!homeGoodsOptions.includeHomeGoods ? ["Товары для дома: не включены"] : []),
-  ];
+  const scrollToEstimateSection = useCallback((sectionId: string) => {
+    const section = document.getElementById(sectionId);
+
+    if (!section) {
+      return;
+    }
+
+    releaseEstimateNavigationScrollLock(navigationScrollTargetRef);
+
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const activationLinePx = getEstimateScrollActivationLinePx();
+    const targetTop = Math.max(0, section.getBoundingClientRect().top + window.scrollY - activationLinePx);
+
+    setActiveEstimateSection(sectionId);
+
+    const cleanups: Array<() => void> = [];
+    let released = false;
+
+    const releaseLock = () => {
+      if (released) {
+        return;
+      }
+
+      released = true;
+      cleanups.forEach((cleanup) => cleanup());
+
+      if (navigationScrollTargetRef.current?.targetSectionId === sectionId) {
+        navigationScrollTargetRef.current = null;
+      }
+    };
+
+    const cancelLockForUserScroll = () => {
+      releaseLock();
+    };
+
+    const handleUserScrollKeydown = (event: KeyboardEvent) => {
+      if (ESTIMATE_USER_SCROLL_CANCEL_KEYS.has(event.key)) {
+        cancelLockForUserScroll();
+      }
+    };
+
+    window.addEventListener("wheel", cancelLockForUserScroll, { passive: true });
+    window.addEventListener("touchstart", cancelLockForUserScroll, { passive: true });
+    window.addEventListener("keydown", handleUserScrollKeydown);
+    cleanups.push(() => {
+      window.removeEventListener("wheel", cancelLockForUserScroll);
+      window.removeEventListener("touchstart", cancelLockForUserScroll);
+      window.removeEventListener("keydown", handleUserScrollKeydown);
+    });
+
+    const onScrollEnd = () => {
+      releaseLock();
+    };
+
+    const scrollEndSupported = "onscrollend" in window;
+
+    if (scrollEndSupported) {
+      window.addEventListener("scrollend", onScrollEnd, { once: true });
+      cleanups.push(() => window.removeEventListener("scrollend", onScrollEnd));
+    } else {
+      let lastScrollY = window.scrollY;
+      let stableFrames = 0;
+      let stabilizeFrameId = 0;
+
+      const checkScrollStable = () => {
+        if (released) {
+          return;
+        }
+
+        const currentScrollY = window.scrollY;
+
+        if (Math.abs(currentScrollY - lastScrollY) <= ESTIMATE_SCROLL_STABILIZE_PX) {
+          stableFrames += 1;
+
+          if (stableFrames >= ESTIMATE_SCROLL_STABILIZE_FRAMES) {
+            releaseLock();
+            return;
+          }
+        } else {
+          stableFrames = 0;
+          lastScrollY = currentScrollY;
+        }
+
+        stabilizeFrameId = window.requestAnimationFrame(checkScrollStable);
+      };
+
+      stabilizeFrameId = window.requestAnimationFrame(checkScrollStable);
+      cleanups.push(() => {
+        if (stabilizeFrameId) {
+          window.cancelAnimationFrame(stabilizeFrameId);
+        }
+      });
+    }
+
+    const maxLockMs = prefersReducedMotion
+      ? ESTIMATE_PROGRAMMATIC_SCROLL_REDUCED_MOTION_MAX_MS
+      : ESTIMATE_PROGRAMMATIC_SCROLL_MAX_MS;
+    const timeoutId = window.setTimeout(releaseLock, maxLockMs);
+
+    cleanups.push(() => window.clearTimeout(timeoutId));
+
+    navigationScrollTargetRef.current = {
+      targetSectionId: sectionId,
+      cleanup: releaseLock,
+    };
+
+    window.scrollTo({
+      top: targetTop,
+      behavior: prefersReducedMotion ? "auto" : "smooth",
+    });
+
+    if (prefersReducedMotion) {
+      window.requestAnimationFrame(() => {
+        releaseLock();
+      });
+    }
+  }, []);
+
+  const isEstimatePageBottom = useCallback(() => {
+    return (
+      window.scrollY + window.innerHeight >=
+      document.documentElement.scrollHeight - ESTIMATE_PAGE_BOTTOM_THRESHOLD_PX
+    );
+  }, []);
+
+  useEffect(() => {
+    const sections = ESTIMATE_SCROLL_SPY_SECTION_IDS.map((sectionId) => document.getElementById(sectionId)).filter(
+      (section): section is HTMLElement => Boolean(section),
+    );
+
+    if (!sections.length) {
+      return;
+    }
+
+    let frameId = 0;
+
+    const updateActiveSection = () => {
+      const navigationScrollTarget = navigationScrollTargetRef.current;
+
+      if (navigationScrollTarget) {
+        setActiveEstimateSection((current) =>
+          current === navigationScrollTarget.targetSectionId
+            ? current
+            : navigationScrollTarget.targetSectionId,
+        );
+        return;
+      }
+
+      if (isEstimatePageBottom()) {
+        setActiveEstimateSection((current) => (current === "estimate-costs" ? current : "estimate-costs"));
+        return;
+      }
+
+      const nextSectionId = pickActiveEstimateSectionByScrollLine(
+        sections,
+        getEstimateScrollActivationLinePx(),
+      );
+
+      setActiveEstimateSection((current) => (current === nextSectionId ? current : nextSectionId));
+    };
+
+    const handleScroll = () => {
+      if (frameId) {
+        return;
+      }
+
+      frameId = window.requestAnimationFrame(() => {
+        frameId = 0;
+        updateActiveSection();
+      });
+    };
+
+    updateActiveSection();
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    window.addEventListener("resize", handleScroll, { passive: true });
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("resize", handleScroll);
+      releaseEstimateNavigationScrollLock(navigationScrollTargetRef);
+
+      if (frameId) {
+        window.cancelAnimationFrame(frameId);
+      }
+    };
+  }, [isEstimatePageBottom]);
+
+  useEffect(() => {
+    const railScroll = estimateRailScrollRef.current;
+
+    if (!railScroll) {
+      return;
+    }
+
+    const activeLink = railScroll.querySelector<HTMLAnchorElement>(`a[href="#${activeEstimateSection}"]`);
+
+    if (!activeLink) {
+      return;
+    }
+
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const scrollBehavior = prefersReducedMotion ? "auto" : "smooth";
+    const isHorizontalRail = window.matchMedia("(max-width: 1180px)").matches;
+
+    if (isHorizontalRail) {
+      activeLink.scrollIntoView({
+        behavior: scrollBehavior,
+        block: "nearest",
+        inline: "center",
+      });
+      return;
+    }
+
+    const railRect = railScroll.getBoundingClientRect();
+    const linkRect = activeLink.getBoundingClientRect();
+    const edgePadding = 10;
+
+    if (linkRect.top >= railRect.top + edgePadding && linkRect.bottom <= railRect.bottom - edgePadding) {
+      return;
+    }
+
+    const linkTop = linkRect.top - railRect.top + railScroll.scrollTop;
+    const targetTop = linkTop - (railScroll.clientHeight - activeLink.offsetHeight) / 2;
+
+    railScroll.scrollTo({
+      top: Math.max(0, targetTop),
+      behavior: scrollBehavior,
+    });
+  }, [activeEstimateSection]);
+
+  useEffect(() => {
+    return () => {
+      Object.values(geometryRemoveTimeoutsRef.current).forEach((timeoutId) => window.clearTimeout(timeoutId));
+    };
+  }, []);
+
+  useLayoutEffect(() => {
+    if (!enteringRoomIds.length) {
+      return;
+    }
+
+    if (prefersReducedEstimateMotion()) {
+      setEnteringRoomIds([]);
+      return;
+    }
+
+    let outerFrame = 0;
+    let innerFrame = 0;
+
+    outerFrame = window.requestAnimationFrame(() => {
+      innerFrame = window.requestAnimationFrame(() => {
+        setEnteringRoomIds([]);
+      });
+    });
+
+    return () => {
+      if (outerFrame) {
+        window.cancelAnimationFrame(outerFrame);
+      }
+
+      if (innerFrame) {
+        window.cancelAnimationFrame(innerFrame);
+      }
+    };
+  }, [enteringRoomIds]);
+
+  useEffect(() => {
+    const roomId = pendingAddedRoomIdRef.current;
+
+    if (!roomId) {
+      return;
+    }
+
+    const row = document.querySelector<HTMLElement>(`[data-estimate-room-id="${roomId}"]`);
+
+    if (!row) {
+      return;
+    }
+
+    pendingAddedRoomIdRef.current = null;
+
+    const nameInput = row.querySelector<HTMLInputElement>(".public-estimate-room-name input");
+    const prefersReducedMotion = prefersReducedEstimateMotion();
+
+    nameInput?.focus({ preventScroll: true });
+    nameInput?.select();
+    row.scrollIntoView({
+      block: prefersReducedMotion ? "nearest" : "center",
+      behavior: prefersReducedMotion ? "auto" : "smooth",
+    });
+  }, [rooms]);
+
+  useEffect(() => {
+    const railScroll = estimateRailScrollRef.current;
+
+    if (!railScroll) {
+      return;
+    }
+
+    const horizontalRailQuery = window.matchMedia("(max-width: 1180px)");
+    let dragPointerId: number | null = null;
+    let dragStartX = 0;
+    let dragStartScrollLeft = 0;
+    let dragMoved = false;
+    let suppressLinkClickUntil = 0;
+
+    const isHorizontalRail = () => horizontalRailQuery.matches;
+
+    const canScrollHorizontally = () => railScroll.scrollWidth > railScroll.clientWidth + 1;
+
+    const handleWheel = (event: WheelEvent) => {
+      if (!isHorizontalRail() || !canScrollHorizontally()) {
+        return;
+      }
+
+      const delta =
+        Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY;
+
+      if (delta === 0) {
+        return;
+      }
+
+      railScroll.scrollLeft += delta;
+      event.preventDefault();
+    };
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (!isHorizontalRail() || event.button !== 0 || !canScrollHorizontally()) {
+        return;
+      }
+
+      dragPointerId = event.pointerId;
+      dragStartX = event.clientX;
+      dragStartScrollLeft = railScroll.scrollLeft;
+      dragMoved = false;
+      railScroll.classList.add("is-dragging");
+    };
+
+    const handlePointerMove = (event: PointerEvent) => {
+      if (dragPointerId === null || event.pointerId !== dragPointerId) {
+        return;
+      }
+
+      const deltaX = event.clientX - dragStartX;
+
+      if (Math.abs(deltaX) > 4) {
+        dragMoved = true;
+      }
+
+      railScroll.scrollLeft = dragStartScrollLeft - deltaX;
+    };
+
+    const finishDrag = (event: PointerEvent) => {
+      if (dragPointerId === null || event.pointerId !== dragPointerId) {
+        return;
+      }
+
+      if (dragMoved) {
+        suppressLinkClickUntil = Date.now() + 300;
+      }
+
+      dragPointerId = null;
+      dragMoved = false;
+      railScroll.classList.remove("is-dragging");
+    };
+
+    const handleClickCapture = (event: MouseEvent) => {
+      if (Date.now() < suppressLinkClickUntil) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+    };
+
+    railScroll.addEventListener("wheel", handleWheel, { passive: false });
+    railScroll.addEventListener("pointerdown", handlePointerDown);
+    railScroll.addEventListener("pointermove", handlePointerMove);
+    railScroll.addEventListener("pointerup", finishDrag);
+    railScroll.addEventListener("pointercancel", finishDrag);
+    railScroll.addEventListener("click", handleClickCapture, true);
+
+    return () => {
+      railScroll.removeEventListener("wheel", handleWheel);
+      railScroll.removeEventListener("pointerdown", handlePointerDown);
+      railScroll.removeEventListener("pointermove", handlePointerMove);
+      railScroll.removeEventListener("pointerup", finishDrag);
+      railScroll.removeEventListener("pointercancel", finishDrag);
+      railScroll.removeEventListener("click", handleClickCapture, true);
+      railScroll.classList.remove("is-dragging");
+    };
+  }, []);
+
   const warmFloorModeLabel = warmFloorMode === "water" ? "Водяной" : "Электрический";
   const warmFloorConnectionLabel =
     warmFloorMode === "electric"
@@ -887,7 +1552,25 @@ export function PublicEstimate() {
   const hiddenHomeGoodsSpecCount = Math.max(0, homeGoodsSpecItems.length - visibleHomeGoodsSpecItems.length);
 
   function updateRoom(roomId: string, patch: Partial<EstimateRoomDraft>) {
-    setRooms((currentRooms) => currentRooms.map((room) => (room.id === roomId ? { ...room, ...patch } : room)));
+    setRooms((currentRooms) =>
+      currentRooms.map((room) => {
+        if (room.id !== roomId) {
+          return room;
+        }
+
+        const nextRoom = normalizeEstimateRoomDraft({ ...room, ...patch });
+
+        if ("name" in patch) {
+          const inferredType = inferRoomTypeFromName(nextRoom.name);
+
+          if (inferredType !== null) {
+            nextRoom.type = inferredType;
+          }
+        }
+
+        return nextRoom;
+      }),
+    );
   }
 
   function updateWarmFloorRoom(roomId: string, patch: WarmFloorRoomDraft) {
@@ -1036,12 +1719,18 @@ export function PublicEstimate() {
     window.print();
   }
 
-  function addRoom() {
-    setRooms((currentRooms) => [...currentRooms, createEstimateRoom()]);
+  function handlePrintVolumes() {
+    document.body.classList.add("public-estimate-print-volumes");
+
+    const cleanup = () => {
+      document.body.classList.remove("public-estimate-print-volumes");
+    };
+
+    window.addEventListener("afterprint", cleanup, { once: true });
+    window.print();
   }
 
-  function removeRoom(roomId: string) {
-    setRooms((currentRooms) => (currentRooms.length > 1 ? currentRooms.filter((room) => room.id !== roomId) : currentRooms));
+  function purgeRoomFromRelatedState(roomId: string) {
     setWarmFloorRooms((currentRooms) => {
       const nextRooms = { ...currentRooms };
 
@@ -1079,6 +1768,51 @@ export function PublicEstimate() {
     });
   }
 
+  function finalizeRoomRemove(roomId: string) {
+    setRooms((currentRooms) =>
+      currentRooms.length > 1 ? currentRooms.filter((room) => room.id !== roomId) : currentRooms,
+    );
+    purgeRoomFromRelatedState(roomId);
+    setRemovingRoomIds((current) => current.filter((id) => id !== roomId));
+    delete geometryRemoveTimeoutsRef.current[roomId];
+  }
+
+  function addRoom() {
+    let newRoomId = "";
+
+    setRooms((currentRooms) => {
+      const newRoom = createEstimateRoom(currentRooms);
+
+      newRoomId = newRoom.id;
+      pendingAddedRoomIdRef.current = newRoom.id;
+
+      return [...currentRooms, newRoom];
+    });
+
+    if (!prefersReducedEstimateMotion() && newRoomId) {
+      setEnteringRoomIds((current) => (current.includes(newRoomId) ? current : [...current, newRoomId]));
+    }
+  }
+
+  function removeRoom(roomId: string) {
+    if (rooms.length <= 1 || removingRoomIds.includes(roomId)) {
+      return;
+    }
+
+    const removeDelayMs = getGeometryRowRemoveDelayMs();
+
+    if (removeDelayMs === 0) {
+      finalizeRoomRemove(roomId);
+      return;
+    }
+
+    setRemovingRoomIds((current) => (current.includes(roomId) ? current : [...current, roomId]));
+
+    geometryRemoveTimeoutsRef.current[roomId] = window.setTimeout(() => {
+      finalizeRoomRemove(roomId);
+    }, removeDelayMs);
+  }
+
   return (
     <main className="public-landing public-estimate-page">
       <header className="public-estimate-header">
@@ -1094,40 +1828,172 @@ export function PublicEstimate() {
         </a>
       </header>
 
-      <section className="public-estimate" aria-labelledby="public-estimate-title">
+      <section className="public-estimate public-estimate-workbench" aria-labelledby="public-estimate-title">
+        <aside className="public-estimate-rail" aria-label="Навигация по разделам расчёта">
+          <div className="public-estimate-rail-head">
+            <span>Калькулятор</span>
+            <strong>Разделы расчёта</strong>
+          </div>
+
+          <nav className="public-estimate-rail-nav" aria-label="Разделы расчёта" ref={estimateRailScrollRef}>
+            <ol className="public-estimate-rail-list">
+              {estimateNavigationItems.map((item, index) => {
+                const isActive = activeEstimateSection === item.id;
+                const stepLabel = String(index + 1).padStart(2, "0");
+
+                return (
+                  <li className="public-estimate-rail-item" key={item.id}>
+                    <a
+                      className={`public-estimate-rail-link${isActive ? " is-active" : ""}`}
+                      href={`#${item.id}`}
+                      aria-current={isActive ? "location" : undefined}
+                      onClick={(event) => {
+                        event.preventDefault();
+                        scrollToEstimateSection(item.id);
+                      }}
+                    >
+                      <span className="public-estimate-rail-icon">
+                        <EstimateNavigationIcon name={item.icon} />
+                      </span>
+                      <span className="public-estimate-rail-copy">
+                        <span className="public-estimate-rail-step">{stepLabel}</span>
+                        <span className="public-estimate-rail-label">{item.label}</span>
+                      </span>
+                    </a>
+                  </li>
+                );
+              })}
+            </ol>
+          </nav>
+
+          <div className="public-estimate-geometry-compact" aria-label="Ключевые объёмы объекта">
+            <div className="public-estimate-geometry-compact-row">
+              {compactVolumeItems.map((item) => (
+                <div className="public-estimate-geometry-compact-metric" key={item.label}>
+                  <span>{item.label}</span>
+                  <strong>{item.value}</strong>
+                </div>
+              ))}
+              <button
+                className="public-estimate-geometry-compact-toggle"
+                type="button"
+                aria-expanded={isMobileVolumesExpanded}
+                onClick={() => setIsMobileVolumesExpanded((expanded) => !expanded)}
+              >
+                {isMobileVolumesExpanded ? "Свернуть" : "Все объёмы"}
+              </button>
+            </div>
+
+            {isMobileVolumesExpanded ? (
+              <dl className="public-estimate-geometry-compact-full">
+                {summaryItems.map((item) => (
+                  <div className="public-estimate-geometry-compact-item" key={item.label}>
+                    <dt>{item.label}</dt>
+                    <dd>{item.value}</dd>
+                  </div>
+                ))}
+              </dl>
+            ) : null}
+
+            <button
+              className="public-estimate-geometry-compact-print"
+              type="button"
+              onClick={handlePrintVolumes}
+            >
+              Скачать объёмы
+            </button>
+          </div>
+        </aside>
+
         <div className="public-estimate-card public-estimate-card-main">
           <div className="public-estimate-intro">
             <p className="public-section-kicker">Калькулятор ремонта</p>
             <h1 id="public-estimate-title">Расчёт стоимости ремонта</h1>
             <p className="public-estimate-subtitle">
-              Первый блок считает геометрию объекта по площадям помещений: пол, периметр, стены, проёмы, потолки и
-              плинтус.
+              Задайте помещения и параметры объекта — геометрия и итоги обновляются автоматически по мере заполнения
+              разделов.
             </p>
           </div>
 
-          <section className="public-estimate-summary" aria-labelledby="public-estimate-summary-title">
-            <div className="public-estimate-summary-head">
-              <p className="public-section-kicker">Объём объекта</p>
-              <h2 id="public-estimate-summary-title">Предварительная геометрия</h2>
+          <section
+            id="estimate-object"
+            className={withActiveEstimateSection("estimate-object", activeEstimateSection, "public-estimate-object")}
+            aria-labelledby="public-estimate-object-title"
+          >
+            <div className="public-estimate-object-head">
+              <div>
+                <span>{formatEstimateStep("estimate-object")}</span>
+                <h2 id="public-estimate-object-title">Объект</h2>
+              </div>
             </div>
 
-            <div className="public-estimate-summary-grid">
-              {summaryItems.map((item) => (
-                <div className="public-estimate-summary-card" key={item.label}>
-                  <span>{item.label}</span>
-                  <strong>{item.value}</strong>
-                </div>
-              ))}
+            <div className="public-estimate-object-form">
+              <label className="public-estimate-field">
+                <span>Адрес объекта</span>
+                <input
+                  className="public-estimate-input"
+                  value={objectMeta.address}
+                  onChange={(event) =>
+                    setObjectMeta((current) => ({ ...current, address: event.target.value }))
+                  }
+                />
+              </label>
+
+              <label className="public-estimate-field">
+                <span>Название ЖК</span>
+                <input
+                  className="public-estimate-input"
+                  placeholder="Необязательно"
+                  value={objectMeta.complexName}
+                  onChange={(event) =>
+                    setObjectMeta((current) => ({ ...current, complexName: event.target.value }))
+                  }
+                />
+              </label>
+
+              <label className="public-estimate-field">
+                <span>Номер квартиры</span>
+                <input
+                  className="public-estimate-input"
+                  value={objectMeta.apartmentNumber}
+                  onChange={(event) =>
+                    setObjectMeta((current) => ({ ...current, apartmentNumber: event.target.value }))
+                  }
+                />
+              </label>
+
+              <label className="public-estimate-field public-estimate-object-contact">
+                <span>Контакт</span>
+                <input
+                  className="public-estimate-input"
+                  placeholder="Телефон или имя + телефон"
+                  value={objectMeta.contact}
+                  onChange={(event) =>
+                    setObjectMeta((current) => ({ ...current, contact: event.target.value }))
+                  }
+                />
+              </label>
             </div>
           </section>
 
-          <section className="public-estimate-geometry" aria-labelledby="public-estimate-geometry-title">
+          <section
+            id="estimate-geometry"
+            className={withActiveEstimateSection(
+              "estimate-geometry",
+              activeEstimateSection,
+              "public-estimate-geometry",
+            )}
+            aria-labelledby="public-estimate-geometry-title"
+          >
             <div className="public-estimate-geometry-head">
-              <div>
-                <span>Шаг 01</span>
-                <h2 id="public-estimate-geometry-title">Объект и помещения</h2>
+              <span>{formatEstimateStep("estimate-geometry")}</span>
+              <div className="public-estimate-geometry-title-row">
+                <h2 id="public-estimate-geometry-title">Помещения и объём</h2>
+                <span className="public-estimate-geometry-hint">{GEOMETRY_STEP_HINT}</span>
               </div>
+            </div>
 
+            <div className="public-estimate-geometry-toolbar">
               <label className="public-estimate-field public-estimate-ceiling-field">
                 <span>Высота потолков, м</span>
                 <input
@@ -1142,10 +2008,9 @@ export function PublicEstimate() {
             <div className="public-estimate-room-header" aria-hidden="true">
               <span>№</span>
               <span>Помещение</span>
-              <span>Тип</span>
-              <span>Площадь</span>
-              <span>Двери</span>
-              <span>Окна</span>
+              <span className="public-estimate-room-header-metric">Площадь</span>
+              <span className="public-estimate-room-header-count">Двери</span>
+              <span className="public-estimate-room-header-count">Окна</span>
               <span>Стены к отделке</span>
               <span />
             </div>
@@ -1153,93 +2018,94 @@ export function PublicEstimate() {
             <div className="public-estimate-room-list" aria-label="Список помещений">
               {roomGeometries.map((room, index) => {
                 const roomDraft = rooms[index];
+                const isEntering = enteringRoomIds.includes(room.id);
+                const isRemoving = removingRoomIds.includes(room.id);
+                const rowShellClassName = [
+                  "public-estimate-geometry-row-shell",
+                  isEntering ? "is-entering" : "",
+                  isRemoving ? "is-removing" : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ");
 
                 return (
-                  <article className="public-estimate-room-row" key={room.id}>
-                    <div className="public-estimate-room-top">
-                      <div className="public-estimate-room-index" aria-hidden="true">
-                        {String(index + 1).padStart(2, "0")}
-                      </div>
-
-                      <label className="public-estimate-field public-estimate-room-name">
-                        <span className="public-estimate-mobile-label">Помещение</span>
-                        <input
-                          aria-label="Помещение"
-                          className="public-estimate-input"
-                          value={roomDraft.name}
-                          onChange={(event) => updateRoom(room.id, { name: event.target.value })}
-                        />
-                      </label>
-
-                      <button
-                        aria-label="Удалить помещение"
-                        className="public-estimate-row-remove"
-                        type="button"
-                        disabled={rooms.length <= 1}
-                        onClick={() => removeRoom(room.id)}
+                  <div className={rowShellClassName} key={room.id}>
+                    <div className="public-estimate-geometry-row-shell-inner">
+                      <article
+                        className="public-estimate-room-row public-estimate-geometry-row"
+                        data-estimate-room-id={room.id}
                       >
-                        ×
-                      </button>
+                        <div className="public-estimate-room-top">
+                          <div className="public-estimate-room-index" aria-hidden="true">
+                            {String(index + 1).padStart(2, "0")}
+                          </div>
+
+                          <label className="public-estimate-field public-estimate-room-name">
+                            <span className="public-estimate-mobile-label">Помещение</span>
+                            <input
+                              aria-label="Помещение"
+                              className="public-estimate-input"
+                              placeholder="Название по БТИ"
+                              value={roomDraft.name}
+                              onChange={(event) => updateRoom(room.id, { name: event.target.value })}
+                            />
+                          </label>
+
+                          <button
+                            aria-label="Удалить помещение"
+                            className="public-estimate-row-remove"
+                            type="button"
+                            disabled={rooms.length <= 1 || isRemoving}
+                            onClick={() => removeRoom(room.id)}
+                          >
+                            ×
+                          </button>
+                        </div>
+
+                        <div className="public-estimate-room-main">
+                          <div className="public-estimate-room-metrics">
+                            <label className="public-estimate-field public-estimate-room-area">
+                              <span className="public-estimate-mobile-label">Площадь</span>
+                              <input
+                                aria-label="Площадь помещения"
+                                className="public-estimate-input"
+                                inputMode="decimal"
+                                value={roomDraft.area}
+                                onChange={(event) => updateRoom(room.id, { area: event.target.value })}
+                              />
+                            </label>
+
+                            <label className="public-estimate-field public-estimate-room-doors">
+                              <span className="public-estimate-mobile-label">Двери</span>
+                              <input
+                                aria-label="Количество дверей"
+                                className="public-estimate-input"
+                                inputMode="numeric"
+                                value={roomDraft.doorCount}
+                                onChange={(event) => updateRoom(room.id, { doorCount: event.target.value })}
+                              />
+                            </label>
+
+                            <label className="public-estimate-field public-estimate-room-windows">
+                              <span className="public-estimate-mobile-label">Окна</span>
+                              <input
+                                aria-label="Количество окон"
+                                className="public-estimate-input"
+                                inputMode="numeric"
+                                value={roomDraft.windowCount}
+                                onChange={(event) => updateRoom(room.id, { windowCount: event.target.value })}
+                              />
+                            </label>
+                          </div>
+
+                          <div className="public-estimate-room-result">
+                            <span className="public-estimate-mobile-label">Стены к отделке</span>
+                            <strong>{formatMeasurement(room.finishWallArea, "м²")}</strong>
+                          </div>
+                        </div>
+                      </article>
                     </div>
-
-                    <div className="public-estimate-room-main">
-                      <label className="public-estimate-field public-estimate-room-type">
-                        <span className="public-estimate-mobile-label">Тип</span>
-                        <select
-                          aria-label="Тип помещения"
-                          className="public-estimate-select"
-                          value={roomDraft.type}
-                          onChange={(event) => updateRoom(room.id, { type: event.target.value as EstimateRoomType })}
-                        >
-                          {roomTypeOptions.map((option) => (
-                            <option key={option.value} value={option.value}>
-                              {option.label}
-                            </option>
-                          ))}
-                        </select>
-                      </label>
-
-                      <div className="public-estimate-room-metrics">
-                        <label className="public-estimate-field public-estimate-room-area">
-                          <span className="public-estimate-mobile-label">Площадь</span>
-                          <input
-                            aria-label="Площадь помещения"
-                            className="public-estimate-input"
-                            inputMode="decimal"
-                            value={roomDraft.area}
-                            onChange={(event) => updateRoom(room.id, { area: event.target.value })}
-                          />
-                        </label>
-
-                        <label className="public-estimate-field public-estimate-room-doors">
-                          <span className="public-estimate-mobile-label">Двери</span>
-                          <input
-                            aria-label="Количество дверей"
-                            className="public-estimate-input"
-                            inputMode="numeric"
-                            value={roomDraft.doorCount}
-                            onChange={(event) => updateRoom(room.id, { doorCount: event.target.value })}
-                          />
-                        </label>
-
-                        <label className="public-estimate-field public-estimate-room-windows">
-                          <span className="public-estimate-mobile-label">Окна</span>
-                          <input
-                            aria-label="Количество окон"
-                            className="public-estimate-input"
-                            inputMode="numeric"
-                            value={roomDraft.windowCount}
-                            onChange={(event) => updateRoom(room.id, { windowCount: event.target.value })}
-                          />
-                        </label>
-                      </div>
-
-                      <div className="public-estimate-room-result">
-                        <span className="public-estimate-mobile-label">Стены к отделке</span>
-                        <strong>{formatMeasurement(room.finishWallArea, "м²")}</strong>
-                      </div>
-                    </div>
-                  </article>
+                  </div>
                 );
               })}
             </div>
@@ -1248,16 +2114,21 @@ export function PublicEstimate() {
               <button className="public-estimate-small-action" type="button" onClick={addRoom}>
                 Добавить помещение
               </button>
-              <p>
-                Расчёт предварительный: используем площади по БТИ и коэффициент формы, без ручного замера каждой стены.
-              </p>
             </div>
           </section>
 
-          <section className="public-estimate-warm-floor" aria-labelledby="public-estimate-warm-floor-title">
+          <section
+            id="estimate-warm-floor"
+            className={withActiveEstimateSection(
+              "estimate-warm-floor",
+              activeEstimateSection,
+              "public-estimate-warm-floor",
+            )}
+            aria-labelledby="public-estimate-warm-floor-title"
+          >
             <div className="public-estimate-warm-floor-head">
               <div>
-                <span>Шаг 02</span>
+                <span>{formatEstimateStep("estimate-warm-floor")}</span>
                 <h2 id="public-estimate-warm-floor-title">Тёплый пол</h2>
                 <p>Выберите помещения, площадь зоны и тип системы. Раздел сразу попадает в итоговую смету.</p>
               </div>
@@ -1352,10 +2223,14 @@ export function PublicEstimate() {
             )}
           </section>
 
-          <section className="public-estimate-flooring" aria-labelledby="public-estimate-flooring-title">
+          <section
+            id="estimate-flooring"
+            className={withActiveEstimateSection("estimate-flooring", activeEstimateSection, "public-estimate-flooring")}
+            aria-labelledby="public-estimate-flooring-title"
+          >
             <div className="public-estimate-flooring-head">
               <div>
-                <span>Шаг 03</span>
+                <span>{formatEstimateStep("estimate-flooring")}</span>
                 <h2 id="public-estimate-flooring-title">Полы</h2>
                 <p>Выберите покрытие, подготовку и способ укладки по помещениям. Плинтус, порожки и демонтаж считаются отдельными строками.</p>
               </div>
@@ -1566,10 +2441,14 @@ export function PublicEstimate() {
             )}
           </section>
 
-          <section className="public-estimate-walls" aria-labelledby="public-estimate-walls-title">
+          <section
+            id="estimate-walls"
+            className={withActiveEstimateSection("estimate-walls", activeEstimateSection, "public-estimate-walls")}
+            aria-labelledby="public-estimate-walls-title"
+          >
             <div className="public-estimate-walls-head">
               <div>
-                <span>Шаг 04</span>
+                <span>{formatEstimateStep("estimate-walls")}</span>
                 <h2 id="public-estimate-walls-title">Стены</h2>
                 <p>Расчёт отделки стен по чистой площади из геометрии: покрытие, подготовка, материалы и расходники по каждому помещению.</p>
               </div>
@@ -1698,10 +2577,14 @@ export function PublicEstimate() {
             )}
           </section>
 
-          <section className="public-estimate-ceiling" aria-labelledby="public-estimate-ceiling-title">
+          <section
+            id="estimate-ceiling"
+            className={withActiveEstimateSection("estimate-ceiling", activeEstimateSection, "public-estimate-ceiling")}
+            aria-labelledby="public-estimate-ceiling-title"
+          >
             <div className="public-estimate-ceiling-head">
               <div>
-                <span>Шаг 05</span>
+                <span>{formatEstimateStep("estimate-ceiling")}</span>
                 <h2 id="public-estimate-ceiling-title">Потолки</h2>
                 <p>Первый срез потолков: ПВХ матовый / сатин и точечный свет с закладными, врезкой и светильниками GX53.</p>
               </div>
@@ -1817,10 +2700,14 @@ export function PublicEstimate() {
             )}
           </section>
 
-          <section className="public-estimate-electric" aria-labelledby="public-estimate-electric-title">
+          <section
+            id="estimate-electric"
+            className={withActiveEstimateSection("estimate-electric", activeEstimateSection, "public-estimate-electric")}
+            aria-labelledby="public-estimate-electric-title"
+          >
             <div className="public-estimate-electric-head">
               <div>
-                <span>Шаг 06</span>
+                <span>{formatEstimateStep("estimate-electric")}</span>
                 <h2 id="public-estimate-electric-title">Электрика</h2>
                 <p>Предварительный расчёт точек, кухонных выводов, света, выключателей и базового щита.</p>
               </div>
@@ -1956,10 +2843,14 @@ export function PublicEstimate() {
             )}
           </section>
 
-          <section className="public-estimate-plumbing" aria-labelledby="public-estimate-plumbing-title">
+          <section
+            id="estimate-plumbing"
+            className={withActiveEstimateSection("estimate-plumbing", activeEstimateSection, "public-estimate-plumbing")}
+            aria-labelledby="public-estimate-plumbing-title"
+          >
             <div className="public-estimate-plumbing-head">
               <div>
-                <span>Шаг 07</span>
+                <span>{formatEstimateStep("estimate-plumbing")}</span>
                 <h2 id="public-estimate-plumbing-title">Сантехника</h2>
                 <p>Предварительный расчёт санузла, кухни, выводов под технику и базового сантехнического узла.</p>
               </div>
@@ -2128,10 +3019,14 @@ export function PublicEstimate() {
             )}
           </section>
 
-          <section className="public-estimate-doors" aria-labelledby="public-estimate-doors-title">
+          <section
+            id="estimate-doors"
+            className={withActiveEstimateSection("estimate-doors", activeEstimateSection, "public-estimate-doors")}
+            aria-labelledby="public-estimate-doors-title"
+          >
             <div className="public-estimate-doors-head">
               <div>
-                <span>Шаг 08</span>
+                <span>{formatEstimateStep("estimate-doors")}</span>
                 <h2 id="public-estimate-doors-title">Двери</h2>
                 <p>Предварительный расчёт дверных комплектов, фурнитуры, доставки, подъёма и монтажа.</p>
               </div>
@@ -2255,10 +3150,18 @@ export function PublicEstimate() {
             )}
           </section>
 
-          <section className="public-estimate-completion" aria-labelledby="public-estimate-completion-title">
+          <section
+            id="estimate-completion"
+            className={withActiveEstimateSection(
+              "estimate-completion",
+              activeEstimateSection,
+              "public-estimate-completion",
+            )}
+            aria-labelledby="public-estimate-completion-title"
+          >
             <div className="public-estimate-completion-head">
               <div>
-                <span>Шаг 09</span>
+                <span>{formatEstimateStep("estimate-completion")}</span>
                 <h2 id="public-estimate-completion-title">Комплектация</h2>
                 <p>Кухня, пеналы, гардеробная и мебель санузла включаются отдельно.</p>
               </div>
@@ -2403,10 +3306,18 @@ export function PublicEstimate() {
             )}
           </section>
 
-          <section className="public-estimate-appliances" aria-labelledby="public-estimate-appliances-title">
+          <section
+            id="estimate-appliances"
+            className={withActiveEstimateSection(
+              "estimate-appliances",
+              activeEstimateSection,
+              "public-estimate-appliances",
+            )}
+            aria-labelledby="public-estimate-appliances-title"
+          >
             <div className="public-estimate-appliances-head">
               <div>
-                <span>Шаг 10</span>
+                <span>{formatEstimateStep("estimate-appliances")}</span>
                 <h2 id="public-estimate-appliances-title">Бытовая техника</h2>
                 <p>Техника выбирается по позициям, а уровень цены задаётся пакетом C / B / A.</p>
               </div>
@@ -2569,10 +3480,18 @@ export function PublicEstimate() {
             )}
           </section>
 
-          <section className="public-estimate-loose-furniture" aria-labelledby="public-estimate-loose-furniture-title">
+          <section
+            id="estimate-loose-furniture"
+            className={withActiveEstimateSection(
+              "estimate-loose-furniture",
+              activeEstimateSection,
+              "public-estimate-loose-furniture",
+            )}
+            aria-labelledby="public-estimate-loose-furniture-title"
+          >
             <div className="public-estimate-loose-furniture-head">
               <div>
-                <span>Шаг 11</span>
+                <span>{formatEstimateStep("estimate-loose-furniture")}</span>
                 <h2 id="public-estimate-loose-furniture-title">Свободная мебель</h2>
                 <p>Мебель выбирается по позициям, а уровень цены задаётся пакетом C / B / A.</p>
               </div>
@@ -2728,10 +3647,18 @@ export function PublicEstimate() {
             )}
           </section>
 
-          <section className="public-estimate-home-goods" aria-labelledby="public-estimate-home-goods-title">
+          <section
+            id="estimate-home-goods"
+            className={withActiveEstimateSection(
+              "estimate-home-goods",
+              activeEstimateSection,
+              "public-estimate-home-goods",
+            )}
+            aria-labelledby="public-estimate-home-goods-title"
+          >
             <div className="public-estimate-home-goods-head">
               <div>
-                <span>Шаг 12</span>
+                <span>{formatEstimateStep("estimate-home-goods")}</span>
                 <h2 id="public-estimate-home-goods-title">Уборка и товары для дома</h2>
                 <p>
                   Финишная уборка считается по площади пола, а комплект товаров для дома — фиксированным пакетом C / B /
@@ -2858,10 +3785,17 @@ export function PublicEstimate() {
             )}
           </section>
 
-          <section className="public-estimate-costs" aria-labelledby="public-estimate-costs-title">
+          <section
+            id="estimate-costs"
+            className={withActiveEstimateSection("estimate-costs", activeEstimateSection, "public-estimate-costs")}
+            aria-labelledby="public-estimate-costs-title"
+          >
             <div className="public-estimate-costs-head">
-              <p className="public-section-kicker">Итоговая смета</p>
-              <h2 id="public-estimate-costs-title">Стоимость по разделам</h2>
+              <div>
+                <span>{formatEstimateStep("estimate-costs")}</span>
+                <p className="public-section-kicker">Итоговая смета</p>
+                <h2 id="public-estimate-costs-title">Стоимость по разделам</h2>
+              </div>
             </div>
 
             <div className="public-estimate-cost-grid">
@@ -2890,70 +3824,105 @@ export function PublicEstimate() {
           </div>
         </div>
 
-        <aside className="public-estimate-card public-estimate-passport" aria-label="Паспорт расчёта">
-          <div className="public-estimate-passport-head">
-            <span>Паспорт расчёта</span>
-            <h2>Предварительная оценка по текущему составу</h2>
-          </div>
-
-          <div className="public-estimate-passport-package">
-            <span className="public-estimate-passport-badge">{packageClassification.badgeLabel}</span>
-            <div>
-              <p>Пакет</p>
-              <strong>{packageClassification.statusLabel}</strong>
+        <aside id="estimate-passport" className="public-estimate-passport-sidebar" aria-label="Паспорт сметы">
+          <section
+            id="estimate-passport-volumes"
+            className="public-estimate-card public-estimate-passport public-estimate-passport-volumes-panel"
+            aria-label="Объёмы объекта"
+          >
+            <div className="public-estimate-passport-volumes-head">
+              <span>Объём объекта</span>
             </div>
-            <small>{packageClassification.explanation}</small>
-          </div>
-
-          <div className="public-estimate-passport-metrics" aria-label="Итоги паспорта расчёта">
-            <div>
-              <span>Итого</span>
-              <strong>{formatMoney(estimateResult.totals.total)}</strong>
-            </div>
-            <div>
-              <span>₽/м²</span>
-              <strong>{formatMoney(estimateResult.totals.pricePerSquareMeter)}/м²</strong>
-            </div>
-          </div>
-
-          <div className="public-estimate-passport-detail">
-            <span>Ориентир пакета</span>
-            <strong>
-              {packageClassification.referencePrice > 0
-                ? `${packageClassification.referenceLabel}: ${formatMoney(packageClassification.referencePrice)}/м²`
-                : packageClassification.referenceLabel}
-            </strong>
-            {packageClassification.nextLabel ? (
-              <small>
-                До {packageClassification.nextLabel.replace("Пакет ", "")}: +{formatMoney(packageClassification.nextDelta)}/м²
-              </small>
-            ) : (
-              <small>Верхний ориентир публичной модели</small>
-            )}
-          </div>
-
-          <div className="public-estimate-passport-composition">
-            <p>Состав</p>
-            <div className="public-estimate-passport-chips" aria-label="Включённый состав">
-              {passportIncludedItems.map((item) => (
-                <span className="public-estimate-passport-chip public-estimate-passport-chip-included" key={item}>
-                  {item}
-                </span>
+            <dl className="public-estimate-passport-volumes-list">
+              {summaryItems.map((item) => (
+                <div className="public-estimate-passport-volumes-item" key={item.label}>
+                  <dt>{item.label}</dt>
+                  <dd>{item.value}</dd>
+                </div>
               ))}
-            </div>
-            <div className="public-estimate-passport-chips" aria-label="Пока не включено">
-              {passportExcludedItems.map((item) => (
-                <span className="public-estimate-passport-chip" key={item}>
-                  {item}
-                </span>
-              ))}
-            </div>
-          </div>
+            </dl>
+            <button
+              className="public-estimate-passport-volumes-action"
+              type="button"
+              onClick={handlePrintVolumes}
+            >
+              Скачать объёмы
+            </button>
+          </section>
 
-          <button className="public-estimate-passport-action" type="button" onClick={handlePrintEstimate}>
-            Скачать PDF сметы
-          </button>
+          <section
+            className="public-estimate-card public-estimate-passport public-estimate-passport-estimate-panel"
+            aria-label="Оценка по составу сметы"
+          >
+            <div className="public-estimate-passport-head">
+              <h2>Оценка по составу сметы</h2>
+            </div>
+
+            <div className="public-estimate-passport-metrics" aria-label="Итоги паспорта сметы">
+              <div>
+                <span>Итого</span>
+                <strong>{formatMoney(estimateResult.totals.total)}</strong>
+              </div>
+              <div>
+                <span>₽/м²</span>
+                <strong>{formatMoney(estimateResult.totals.pricePerSquareMeter)}/м²</strong>
+              </div>
+            </div>
+
+            <div className="public-estimate-passport-detail">
+              <span>Ориентир пакета</span>
+              <strong>
+                {packageClassification.referencePrice > 0
+                  ? `${packageClassification.referenceLabel}: ${formatMoney(packageClassification.referencePrice)}/м²`
+                  : packageClassification.referenceLabel}
+              </strong>
+              {packageClassification.nextLabel ? (
+                <small>
+                  До {packageClassification.nextLabel.replace("Пакет ", "")}: +{formatMoney(packageClassification.nextDelta)}/м²
+                </small>
+              ) : (
+                <small>Верхний ориентир публичной модели</small>
+              )}
+            </div>
+
+            <button className="public-estimate-passport-action" type="button" onClick={handlePrintEstimate}>
+              Скачать PDF сметы
+            </button>
+          </section>
         </aside>
+      </section>
+
+      <aside className="public-estimate-mobile-total" aria-label="Краткий итог сметы">
+        <div className="public-estimate-mobile-total-main">
+          <span>Итого</span>
+          <strong>{formatMoney(estimateResult.totals.total)}</strong>
+        </div>
+        <div className="public-estimate-mobile-total-rate">
+          <span>₽/м²</span>
+          <strong>{formatMoney(estimateResult.totals.pricePerSquareMeter)}/м²</strong>
+        </div>
+        <a
+          className="public-estimate-mobile-total-link"
+          href="#estimate-costs"
+          onClick={(event) => {
+            event.preventDefault();
+            scrollToEstimateSection("estimate-costs");
+          }}
+        >
+          Итог
+        </a>
+      </aside>
+
+      <section className="public-estimate-volumes-print" aria-hidden="true">
+        <h1>Объёмы объекта</h1>
+        <dl className="public-estimate-volumes-print-list">
+          {summaryItems.map((item) => (
+            <div className="public-estimate-volumes-print-item" key={item.label}>
+              <dt>{item.label}</dt>
+              <dd>{item.value}</dd>
+            </div>
+          ))}
+        </dl>
       </section>
     </main>
   );

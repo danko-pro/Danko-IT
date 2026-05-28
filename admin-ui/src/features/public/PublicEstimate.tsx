@@ -49,6 +49,7 @@ import {
 } from "./public-estimate-geometry";
 import {
   estimateNumericFieldProps,
+  estimateTextFieldProps,
   normalizeEstimateCeilingHeightOnBlur,
   normalizeEstimateCountOnBlur,
   normalizeEstimateDecimalOnBlur,
@@ -1968,6 +1969,7 @@ export function PublicEstimate() {
                 <input
                   className="public-estimate-input"
                   value={objectMeta.address}
+                  {...estimateTextFieldProps}
                   onChange={(event) =>
                     setObjectMeta((current) => ({ ...current, address: event.target.value }))
                   }
@@ -1980,6 +1982,7 @@ export function PublicEstimate() {
                   className="public-estimate-input"
                   placeholder="Необязательно"
                   value={objectMeta.complexName}
+                  {...estimateTextFieldProps}
                   onChange={(event) =>
                     setObjectMeta((current) => ({ ...current, complexName: event.target.value }))
                   }
@@ -1991,6 +1994,7 @@ export function PublicEstimate() {
                 <input
                   className="public-estimate-input"
                   value={objectMeta.apartmentNumber}
+                  {...estimateTextFieldProps}
                   onChange={(event) =>
                     setObjectMeta((current) => ({ ...current, apartmentNumber: event.target.value }))
                   }
@@ -2003,6 +2007,7 @@ export function PublicEstimate() {
                   className="public-estimate-input"
                   placeholder="Телефон или имя + телефон"
                   value={objectMeta.contact}
+                  {...estimateTextFieldProps}
                   onChange={(event) =>
                     setObjectMeta((current) => ({ ...current, contact: event.target.value }))
                   }

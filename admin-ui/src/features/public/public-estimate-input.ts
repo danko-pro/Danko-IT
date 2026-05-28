@@ -129,3 +129,15 @@ export const estimateNumericFieldProps = {
   onKeyDown: handleEstimateInputKeyDown,
   enterKeyHint: "done",
 } as const;
+
+/**
+ * Общий набор пропсов для однострочных ТЕКСТОВЫХ полей (например, метаданные объекта
+ * в Шаге 01: адрес, ЖК, номер квартиры, контакт). Без числовой нормализации и без
+ * выделения по фокусу — только подтверждение по Enter и кнопка «Готово» на мобильной
+ * клавиатуре, закрывающая её. НЕ использовать для textarea — там Enter — это перенос
+ * строки.
+ */
+export const estimateTextFieldProps = {
+  onKeyDown: handleEstimateInputKeyDown,
+  enterKeyHint: "done",
+} as const;

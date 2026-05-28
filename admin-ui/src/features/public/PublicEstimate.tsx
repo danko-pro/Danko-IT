@@ -67,7 +67,16 @@ import {
 import { calculateEstimateTotals, type EstimateSection, type EstimateSectionId } from "./public-estimate-model";
 import { classifyEstimatePackage } from "./public-estimate-package";
 import { EstimateSpecOverlay } from "./EstimateSpecOverlay";
-import { calculatePlumbing, type PlumbingOptions } from "./public-estimate-plumbing";
+import {
+  buildScenarioSection,
+  calculatePlumbing,
+  getShowerAreaItems,
+  showerAreaScenario,
+  sumScenarioItems,
+  toiletRelocationScenario,
+  type PlumbingOptions,
+  type ShowerAreaVariant,
+} from "./public-estimate-plumbing";
 import { calculateWarmFloor, type WarmFloorMode } from "./public-estimate-warm-floor";
 import {
   calculateWalls,
@@ -710,6 +719,9 @@ export function PublicEstimate() {
     includeWasherOutput: true,
     includeWaterNode: true,
     includeLeakProtection: false,
+    includeToiletRelocation: false,
+    includeShowerArea: false,
+    showerAreaVariant: "tiled-tray",
   });
   const [doorOptions, setDoorOptions] = useState<DoorOptions>({
     packageType: "invisible_19000",
@@ -733,9 +745,12 @@ export function PublicEstimate() {
     createDefaultLooseFurnitureOptionsDraft(),
   );
   const [homeGoodsOptions, setHomeGoodsOptions] = useState<HomeGoodsOptions>(() => createDefaultHomeGoodsOptions());
-  const [specModal, setSpecModal] = useState<{ kind: "section" | "full"; sectionId?: EstimateSectionId } | null>(
-    null,
-  );
+  const [specModal, setSpecModal] = useState<
+    | { kind: "section"; sectionId: EstimateSectionId }
+    | { kind: "full" }
+    | { kind: "scenario"; scenarioId: "scenario-toilet-relocation" | "scenario-shower-area" }
+    | null
+  >(null);
   const [isMobileVolumesExpanded, setIsMobileVolumesExpanded] = useState(false);
   const [activeEstimateSection, setActiveEstimateSection] = useState(ESTIMATE_INITIAL_SECTION_ID);
   const estimateRailScrollRef = useRef<HTMLElement>(null);
@@ -1446,6 +1461,9 @@ export function PublicEstimate() {
     { label: "Расходники", value: formatMoney(plumbingResult.consumablesTotal) },
     { label: "Итого", value: formatMoney(plumbingResult.total), isStrong: true },
   ];
+  const toiletRelocationTotal = sumScenarioItems(toiletRelocationScenario.items);
+  const showerAreaTotal = sumScenarioItems(getShowerAreaItems(plumbingOptions.showerAreaVariant));
+  const showerAreaConflictsWithBath = plumbingOptions.includeShowerArea && plumbingOptions.includeBath;
   const doorCompositionItems = [
     { label: "Дверей", value: `${doorsResult.totalDoorCount} шт.` },
     { label: "Санузловых заверток", value: `${doorsResult.privacyLockCount} шт.` },
@@ -1522,6 +1540,28 @@ export function PublicEstimate() {
       };
     }
 
+    if (specModal.kind === "scenario") {
+      if (specModal.scenarioId === "scenario-toilet-relocation") {
+        const scenarioSection = buildScenarioSection(
+          "scenario-toilet-relocation",
+          toiletRelocationScenario.publicTitle,
+          toiletRelocationScenario.publicDescription,
+          toiletRelocationScenario.items,
+        );
+
+        return { title: scenarioSection.title, subtitle: scenarioSection.description, sections: [scenarioSection] };
+      }
+
+      const showerSection = buildScenarioSection(
+        "scenario-shower-area",
+        `${showerAreaScenario.publicTitle} — ${showerAreaScenario.variants[plumbingOptions.showerAreaVariant].label}`,
+        showerAreaScenario.publicDescription,
+        getShowerAreaItems(plumbingOptions.showerAreaVariant),
+      );
+
+      return { title: showerSection.title, subtitle: showerSection.description, sections: [showerSection] };
+    }
+
     const section = allEstimateSections.find((candidate) => candidate.id === specModal.sectionId);
 
     if (!section) {
@@ -1537,6 +1577,10 @@ export function PublicEstimate() {
 
   function openFullSpec() {
     setSpecModal({ kind: "full" });
+  }
+
+  function openScenarioSpec(scenarioId: "scenario-toilet-relocation" | "scenario-shower-area") {
+    setSpecModal({ kind: "scenario", scenarioId });
   }
 
   function closeSpecModal() {
@@ -1640,6 +1684,30 @@ export function PublicEstimate() {
     setPlumbingOptions((currentOptions) => ({
       ...currentOptions,
       ...patch,
+    }));
+  }
+
+  function toggleShowerArea(nextChecked: boolean) {
+    setPlumbingOptions((currentOptions) => ({
+      ...currentOptions,
+      includeShowerArea: nextChecked,
+      // Душевая зона устанавливается вместо ванны — взаимоисключение.
+      includeBath: nextChecked ? false : currentOptions.includeBath,
+    }));
+  }
+
+  function toggleBath(nextChecked: boolean) {
+    setPlumbingOptions((currentOptions) => ({
+      ...currentOptions,
+      includeBath: nextChecked,
+      includeShowerArea: nextChecked ? false : currentOptions.includeShowerArea,
+    }));
+  }
+
+  function setShowerAreaVariant(variant: ShowerAreaVariant) {
+    setPlumbingOptions((currentOptions) => ({
+      ...currentOptions,
+      showerAreaVariant: variant,
     }));
   }
 
@@ -2851,7 +2919,7 @@ export function PublicEstimate() {
                 <input
                   type="checkbox"
                   checked={plumbingOptions.includeBath}
-                  onChange={(event) => updatePlumbingOptions({ includeBath: event.target.checked })}
+                  onChange={(event) => toggleBath(event.target.checked)}
                 />
                 <span>
                   <strong>Ванна со смесителем</strong>
@@ -2942,6 +3010,99 @@ export function PublicEstimate() {
                   <small>датчики и перекрытие воды, опционально</small>
                 </span>
               </label>
+            </div>
+
+            <div className="public-estimate-plumbing-scenarios" aria-label="Сценарии сантехники">
+              <div className="public-estimate-plumbing-scenarios-head">
+                <p>Сценарии</p>
+                <span>Готовые решения по составу позиций — выключены по умолчанию</span>
+              </div>
+
+              <div className="public-estimate-plumbing-scenario-card">
+                <label className="public-estimate-plumbing-scenario-toggle">
+                  <input
+                    type="checkbox"
+                    checked={plumbingOptions.includeToiletRelocation}
+                    onChange={(event) => updatePlumbingOptions({ includeToiletRelocation: event.target.checked })}
+                  />
+                  <span>
+                    <strong>{toiletRelocationScenario.publicTitle}</strong>
+                    <small>{toiletRelocationScenario.publicDescription}</small>
+                  </span>
+                  <strong className="public-estimate-plumbing-scenario-price">{formatMoney(toiletRelocationTotal)}</strong>
+                </label>
+                <div className="public-estimate-plumbing-scenario-foot">
+                  <button
+                    className="public-estimate-spec-open public-estimate-plumbing-scenario-spec-button"
+                    type="button"
+                    onClick={() => openScenarioSpec("scenario-toilet-relocation")}
+                  >
+                    Состав
+                    <span className="public-estimate-spec-open-count">{toiletRelocationScenario.items.length} позиции</span>
+                  </button>
+                </div>
+                <ul className="public-estimate-plumbing-scenario-warnings">
+                  {toiletRelocationScenario.warnings.map((warning) => (
+                    <li key={warning}>{warning}</li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="public-estimate-plumbing-scenario-card">
+                <label className="public-estimate-plumbing-scenario-toggle">
+                  <input
+                    type="checkbox"
+                    checked={plumbingOptions.includeShowerArea}
+                    onChange={(event) => toggleShowerArea(event.target.checked)}
+                  />
+                  <span>
+                    <strong>{showerAreaScenario.publicTitle}</strong>
+                    <small>{showerAreaScenario.publicDescription}</small>
+                  </span>
+                  <strong className="public-estimate-plumbing-scenario-price">{formatMoney(showerAreaTotal)}</strong>
+                </label>
+
+                <div className="public-estimate-plumbing-scenario-variants" role="group" aria-label="Вариант душевой зоны">
+                  {(["tiled-tray", "enclosure"] as ShowerAreaVariant[]).map((variant) => {
+                    const variantDefinition = showerAreaScenario.variants[variant];
+                    const isActive = plumbingOptions.showerAreaVariant === variant;
+
+                    return (
+                      <button
+                        key={variant}
+                        type="button"
+                        className={isActive ? "is-active" : undefined}
+                        aria-pressed={isActive}
+                        onClick={() => setShowerAreaVariant(variant)}
+                      >
+                        <strong>{variantDefinition.label}</strong>
+                        <small>{variantDefinition.hint}</small>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div className="public-estimate-plumbing-scenario-foot">
+                  <button
+                    className="public-estimate-spec-open public-estimate-plumbing-scenario-spec-button"
+                    type="button"
+                    onClick={() => openScenarioSpec("scenario-shower-area")}
+                  >
+                    Состав
+                    <span className="public-estimate-spec-open-count">
+                      {getShowerAreaItems(plumbingOptions.showerAreaVariant).length} позиции
+                    </span>
+                  </button>
+                </div>
+                <ul className="public-estimate-plumbing-scenario-warnings">
+                  {showerAreaScenario.warnings.map((warning) => (
+                    <li key={warning}>{warning}</li>
+                  ))}
+                  {showerAreaConflictsWithBath ? (
+                    <li>Ванна отключена: душевая зона устанавливается вместо ванны.</li>
+                  ) : null}
+                </ul>
+              </div>
             </div>
 
             <div className="public-estimate-plumbing-summary" aria-label="Итоги по сантехнике">

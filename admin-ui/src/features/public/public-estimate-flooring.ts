@@ -18,6 +18,11 @@ export type FlooringRoomInput = {
   roomName: string;
   area: number;
   perimeter: number;
+  /**
+   * Длина плинтуса по геометрии (периметр за вычетом дверных проёмов ~0.9 м).
+   * Если не передана, используется как запасной вариант полный периметр помещения.
+   */
+  plinthLength?: number;
   coveringType: FlooringCoveringType;
   preparationType: FlooringPreparationType;
   layoutType: FlooringLayoutType;
@@ -33,6 +38,7 @@ export type FlooringOptions = {
 };
 
 export type FlooringRoomResult = FlooringRoomInput & {
+  plinthLength: number;
   totalWastePercent: number;
   purchaseArea: number;
   laborWithFactor: number;
@@ -234,6 +240,11 @@ function createLineItem(
 function createRoomResult(room: FlooringRoomInput): FlooringRoomResult {
   const area = room.isIncluded ? safeNumber(room.area) : 0;
   const perimeter = room.isIncluded ? safeNumber(room.perimeter) : 0;
+  // Длину плинтуса берём из геометрии (периметр минус дверные проёмы); если она
+  // не передана — откатываемся на полный периметр, но не превышаем его.
+  const plinthLength = room.isIncluded
+    ? Math.min(perimeter, safeNumber(room.plinthLength ?? perimeter))
+    : 0;
   const covering = flooringCoveringRates[room.coveringType];
   const preparation = flooringPreparationRates[room.preparationType];
   const layout = flooringLayoutRates[room.layoutType];
@@ -256,6 +267,7 @@ function createRoomResult(room: FlooringRoomInput): FlooringRoomResult {
     ...room,
     area,
     perimeter,
+    plinthLength,
     totalWastePercent,
     purchaseArea,
     laborWithFactor,
@@ -289,7 +301,7 @@ export function calculateFlooring(rooms: FlooringRoomInput[], options: FlooringO
   const includedRooms = roomResults.filter((room) => room.isIncluded && room.area > 0);
   const flooringArea = includedRooms.reduce((total, room) => total + room.area, 0);
   const purchaseArea = includedRooms.reduce((total, room) => total + room.purchaseArea, 0);
-  const plinthLength = includedRooms.reduce((total, room) => total + room.perimeter, 0);
+  const plinthLength = includedRooms.reduce((total, room) => total + room.plinthLength, 0);
   const items: EstimateLineItem[] = [];
 
   includedRooms.forEach((room) => {

@@ -48,6 +48,17 @@ export function parseEstimateDecimal(value: string) {
   return Number.isFinite(parsed) ? Math.max(0, parsed) : 0;
 }
 
+export function parseEstimateInteger(value: string) {
+  const digitsOnly = value.replace(/[^\d]/g, "");
+
+  if (digitsOnly.length === 0) {
+    return 0;
+  }
+
+  const parsed = Number.parseInt(digitsOnly, 10);
+  return Number.isFinite(parsed) ? Math.max(0, parsed) : 0;
+}
+
 export function calculateEstimateRoomGeometry(
   room: EstimateRoomInput,
   ceilingHeight: number,

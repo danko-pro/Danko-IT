@@ -6233,10 +6233,6 @@
     gap var(--public-motion-smooth) var(--ui-motion-ease-soft);
 }
 
-.public-estimate-plumbing-sink-zone-row {
-  display: contents;
-}
-
 .public-estimate-plumbing-sink-zone-expand-content {
   display: flex;
   flex-wrap: wrap;
@@ -9703,14 +9699,6 @@ html:has(.public-estimate-page) {
     border-bottom: 0;
   }
 
-  .public-estimate-plumbing-options {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .public-estimate-plumbing-option-zone-wide {
-    grid-column: auto;
-  }
-
   .public-estimate-plumbing-scenario-toggle {
     grid-template-columns: auto minmax(0, 1fr);
   }
@@ -9732,15 +9720,6 @@ html:has(.public-estimate-page) {
 
   .public-estimate-plumbing-sink-zone-active {
     align-items: center;
-  }
-
-  .public-estimate-plumbing-sink-zone-row {
-    display: flex;
-    flex: 1 1 auto;
-    flex-wrap: nowrap;
-    align-items: center;
-    gap: 0.28rem;
-    min-width: 0;
   }
 
   .public-estimate-plumbing-sink-zone .public-estimate-option-expand-shell {

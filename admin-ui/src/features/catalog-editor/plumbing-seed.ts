@@ -79,6 +79,22 @@ function row(
 }
 
 // 59 атомарных позиций "Сан v1" (разделы C.1–C.7 документа).
+/** Σ works + materials + equipment + consumables × coefficient — как в catalog-editor и публичном калькуляторе. */
+export function catalogItemUnitPrice(item: CatalogItem): number {
+  return Math.round((item.works + item.materials + item.equipment + item.consumables) * item.coefficient);
+}
+
+const PLUMBING_CATALOG_BY_ID = new Map<string, CatalogItem>();
+
+export function getPlumbingCatalogItem(id: string): CatalogItem | undefined {
+  if (PLUMBING_CATALOG_BY_ID.size === 0) {
+    for (const item of PLUMBING_SEED) {
+      PLUMBING_CATALOG_BY_ID.set(item.id, item);
+    }
+  }
+  return PLUMBING_CATALOG_BY_ID.get(id);
+}
+
 export const PLUMBING_SEED: CatalogItem[] = [
   // C.1. Санузел
   row("sink", "Раковина", "sink; выводы ХВС/ГВС/канализация", "шт", 6500, 3500, 1500, 0, "Санузел", "Сан v1"),
@@ -140,6 +156,7 @@ export const PLUMBING_SEED: CatalogItem[] = [
     "Кухня",
     "вручную",
   ),
+  // equipment=0 → в публичной spec строка скрыта (filterClientSpecLines); задать цену здесь или через экспорт JSON из catalog-editor
   row(
     "kitchen-sink-bowl-c",
     "Мойка кухонная — пакет C",

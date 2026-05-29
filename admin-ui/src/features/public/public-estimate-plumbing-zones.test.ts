@@ -12,13 +12,13 @@ describe("calculateKitchenSinkZone", () => {
   it("считает базу, пакет B и резерв 6,4% по эталону catalog-editor", () => {
     const result = calculateKitchenSinkZone("b");
 
-    expect(result.baseTotal).toBe(24600);
+    expect(result.baseTotal).toBe(24612);
     expect(result.packageTotal).toBe(16300);
-    expect(result.subtotal).toBe(40900);
+    expect(result.subtotal).toBe(40912);
     expect(result.riskAmount).toBe(2618);
-    expect(result.total).toBe(43518);
+    expect(result.total).toBe(43530);
     expect(result.sectionItem.id).toBe("kitchen-sink-zone");
-    expect(result.sectionItem.total).toBe(43518);
+    expect(result.sectionItem.total).toBe(43530);
     expect(result.specItems).toHaveLength(12);
   });
 
@@ -28,8 +28,8 @@ describe("calculateKitchenSinkZone", () => {
 
     expect(packageC).toBeLessThan(getKitchenSinkZonePackageTotal("b"));
     expect(packageA).toBeGreaterThan(getKitchenSinkZonePackageTotal("b"));
-    expect(packageC).toBe(38410);
-    expect(packageA).toBe(54902);
+    expect(packageC).toBe(38423);
+    expect(packageA).toBe(54915);
   });
 });
 
@@ -39,9 +39,10 @@ describe("getKitchenSinkZoneSpecItems", () => {
 
     expect(specItems).toHaveLength(12);
     expect(specItems.some((item) => item.title.toLowerCase().includes("резерв"))).toBe(false);
+    // Мойки C/B/A: equipment=0 в plumbing-seed — скрыты filterClientSpecLines до задания цены
     expect(specItems.some((item) => item.title.startsWith("Мойка кухонная"))).toBe(false);
-    expect(sumKitchenSinkZoneSpecLines(specItems)).toBe(40900);
-    expect(getKitchenSinkZonePackageTotal("b")).toBe(43518);
+    expect(sumKitchenSinkZoneSpecLines(specItems)).toBe(40912);
+    expect(getKitchenSinkZonePackageTotal("b")).toBe(43530);
     expect(specItems.some((item) => item.title === "Смеситель кухонный — пакет B")).toBe(true);
     expect(specItems.some((item) => item.title === "Штробление под трубу")).toBe(true);
   });
@@ -73,7 +74,7 @@ describe("expandPlumbingSectionForSpec", () => {
     expect(expanded.items.some((item) => item.title.startsWith("Мойка кухонная"))).toBe(false);
     expect(expanded.totals.total).toBe(result.total);
     expect(sumKitchenSinkZoneSpecLines(expanded.items.filter((item) => item.id.startsWith("kitchen-sink-zone-")))).toBe(
-      40900,
+      40912,
     );
   });
 });
@@ -96,7 +97,7 @@ describe("calculatePlumbing kitchen sink zone", () => {
       },
     );
 
-    expect(result.total).toBe(43518);
+    expect(result.total).toBe(43530);
     expect(result.section.items.some((item) => item.id === "kitchen-sink-zone")).toBe(true);
     expect(result.section.items.some((item) => item.id === "kitchen-sink-works")).toBe(false);
     expect(result.coldWaterPoints).toBe(1);

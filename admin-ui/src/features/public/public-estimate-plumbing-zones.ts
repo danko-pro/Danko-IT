@@ -1,18 +1,33 @@
+import {
+  catalogItemUnitPrice,
+  DEFAULT_ZONE_RISK_PERCENT,
+  getPlumbingCatalogItem,
+  ZONES_SEED,
+  type ZoneCompositionRow,
+} from "../catalog-editor/plumbing-seed";
 import type { EstimateCostCategory, EstimateLineItem, EstimateSection } from "./public-estimate-model";
 
-/** Синхронизировано с catalog-editor/plumbing-seed.ts → zone-kitchen-sink (коммиты до c77e827). */
+/** Состав и цены зоны мойки — из catalog-editor/plumbing-seed.ts (ZONES_SEED + PLUMBING_SEED). */
 export type PlumbingPackageLevel = "c" | "b" | "a";
 
-export const KITCHEN_SINK_ZONE_RISK_PERCENT = 6.4;
+const KITCHEN_SINK_ZONE_SEED = ZONES_SEED.find((zone) => zone.id === "zone-kitchen-sink");
+if (!KITCHEN_SINK_ZONE_SEED) {
+  throw new Error("zone-kitchen-sink missing from ZONES_SEED");
+}
+
+export const KITCHEN_SINK_ZONE_RISK_PERCENT = KITCHEN_SINK_ZONE_SEED.riskPercent ?? DEFAULT_ZONE_RISK_PERCENT;
 
 export const KITCHEN_SINK_ZONE_DISCLAIMER =
   "Ориентировочный расчёт труб и штробления без проекта. Точный метраж и трассу уточняем по планировке.";
 
-export const kitchenSinkPackageLabels: Record<PlumbingPackageLevel, string> = {
-  c: "Пакет C",
-  b: "Пакет B",
-  a: "Пакет A",
-};
+const PACKAGE_LEVELS: PlumbingPackageLevel[] = ["c", "b", "a"];
+
+export const kitchenSinkPackageLabels: Record<PlumbingPackageLevel, string> = Object.fromEntries(
+  PACKAGE_LEVELS.map((level) => {
+    const variant = KITCHEN_SINK_ZONE_SEED.priceClassVariants?.find((v) => v.id === level);
+    return [level, variant?.label ?? `Пакет ${level.toUpperCase()}`];
+  }),
+) as Record<PlumbingPackageLevel, string>;
 
 type ZoneAtom = {
   id: string;
@@ -23,92 +38,33 @@ type ZoneAtom = {
   category: EstimateCostCategory;
 };
 
-/** Базовый состав зоны мойки — атомы из plumbing-seed / ZONES_SEED. */
-const KITCHEN_SINK_ZONE_BASE: ZoneAtom[] = [
-  { id: "work-water-point", title: "Монтаж точки ХВС/ГВС", unit: "шт", publicPrice: 3500, quantity: 1, category: "works" },
-  { id: "work-sewer-point", title: "Монтаж точки канализации", unit: "шт", publicPrice: 2500, quantity: 1, category: "works" },
-  {
-    id: "work-sink-mixer-siphon-connect",
-    title: "Подключение смесителя и сифона мойки",
-    unit: "шт",
-    publicPrice: 1500,
-    quantity: 1,
-    category: "works",
-  },
-  {
-    id: "kitchen-sink-siphon",
-    title: "Сифон для кухонной мойки",
-    unit: "шт",
-    publicPrice: 4500,
-    quantity: 1,
-    category: "materials",
-  },
-  {
-    id: "pipe-sewer-50",
-    title: "Труба канализационная 50 мм",
-    unit: "м.п.",
-    publicPrice: 155,
-    quantity: 3.5,
-    category: "materials",
-  },
-  { id: "pipe-ppr-d20", title: "Труба PPR d20", unit: "м.п.", publicPrice: 115, quantity: 20, category: "materials" },
-  {
-    id: "ppr-d20-outlet",
-    title: "Выход / подключение PPR d20",
-    unit: "шт",
-    publicPrice: 121.28,
-    quantity: 12,
-    category: "materials",
-  },
-  {
-    id: "ppr-d20-fitting",
-    title: "Фитинг / поворот PPR d20",
-    unit: "шт",
-    publicPrice: 10.05,
-    quantity: 12,
-    category: "materials",
-  },
-  {
-    id: "pipe-clamp-ppr-d20",
-    title: "Крепёж трубы (хомут) PPR d20",
-    unit: "шт",
-    publicPrice: 77.52,
-    quantity: 30,
-    category: "materials",
-  },
-  {
-    id: "pipe-clamp-sewer",
-    title: "Крепёж трубы (хомут) канализация",
-    unit: "шт",
-    publicPrice: 86.64,
-    quantity: 5.25,
-    category: "materials",
-  },
-  {
-    id: "work-groove-pipe",
-    title: "Штробление под трубу",
-    unit: "м.п.",
-    publicPrice: 900,
-    quantity: 6,
-    category: "works",
-  },
-];
+function compositionToZoneAtom(row: ZoneCompositionRow): ZoneAtom {
+  const item = getPlumbingCatalogItem(row.atomicItemId);
+  if (!item) {
+    throw new Error(`PLUMBING_SEED: нет позиции ${row.atomicItemId}`);
+  }
+  const rowCoef = row.coefficient ?? 1;
+  return {
+    id: item.id,
+    title: item.publicTitle,
+    unit: item.unit,
+    publicPrice: catalogItemUnitPrice(item),
+    quantity: row.quantity * rowCoef,
+    category: item.category,
+  };
+}
 
-const KITCHEN_SINK_ZONE_PACKAGES: Record<PlumbingPackageLevel, ZoneAtom[]> = {
-  c: [
-    { id: "kitchen-faucet-c", title: "Смеситель кухонный — пакет C", unit: "шт", publicPrice: 11500, quantity: 1, category: "equipment" },
-    // equipment: 0 в plumbing-seed — «требует уточнения»; не показываем в клиентской spec, пока нет цены
-    { id: "kitchen-sink-bowl-c", title: "Мойка кухонная — пакет C", unit: "шт", publicPrice: 0, quantity: 1, category: "equipment" },
-  ],
-  b: [
-    { id: "kitchen-faucet-b", title: "Смеситель кухонный — пакет B", unit: "шт", publicPrice: 16300, quantity: 1, category: "equipment" },
-    { id: "kitchen-sink-bowl-b", title: "Мойка кухонная — пакет B", unit: "шт", publicPrice: 0, quantity: 1, category: "equipment" },
-  ],
-  a: [
-    { id: "kitchen-faucet-a", title: "Смеситель кухонный — пакет A", unit: "шт", publicPrice: 27000, quantity: 1, category: "equipment" },
-    { id: "kitchen-sink-bowl-a", title: "Мойка кухонная — пакет A", unit: "шт", publicPrice: 0, quantity: 1, category: "equipment" },
-  ],
-};
+const KITCHEN_SINK_ZONE_BASE: ZoneAtom[] = KITCHEN_SINK_ZONE_SEED.items.map(compositionToZoneAtom);
+
+const KITCHEN_SINK_ZONE_PACKAGES: Record<PlumbingPackageLevel, ZoneAtom[]> = Object.fromEntries(
+  PACKAGE_LEVELS.map((level) => {
+    const variant = KITCHEN_SINK_ZONE_SEED.priceClassVariants?.find((v) => v.id === level);
+    if (!variant) {
+      throw new Error(`zone-kitchen-sink: нет пакета ${level}`);
+    }
+    return [level, variant.items.map(compositionToZoneAtom)];
+  }),
+) as Record<PlumbingPackageLevel, ZoneAtom[]>;
 
 /** Строки с total=0 — placeholder без публичной цены; не выводим клиенту в спецификации. */
 export function filterClientSpecLines(items: EstimateLineItem[]): EstimateLineItem[] {

@@ -124,6 +124,32 @@ function mergeNewSeed(stored: CatalogItem[]): CatalogItem[] {
   return additions.length > 0 ? [...stored, ...additions] : stored;
 }
 
+// Подмешивает отсутствующие seed-зоны и обновляет демо-зону «Зона мойки»,
+// если в localStorage ещё legacy-состав с kitchen-sink.
+function mergeZonesSeed(stored: CatalogZone[]): CatalogZone[] {
+  const byId = new Map(stored.map((zone) => [zone.id, zone]));
+  let result = [...stored];
+
+  for (const seedZone of ZONES_SEED) {
+    const existing = byId.get(seedZone.id);
+    if (!existing) {
+      result.push({ ...seedZone, items: seedZone.items.map((row) => ({ ...row })) });
+      continue;
+    }
+    if (
+      seedZone.id === "zone-kitchen-sink" &&
+      existing.items.some((row) => row.atomicItemId === "kitchen-sink")
+    ) {
+      result = result.map((zone) =>
+        zone.id === seedZone.id
+          ? { ...seedZone, items: seedZone.items.map((row) => ({ ...row })) }
+          : zone,
+      );
+    }
+  }
+  return result;
+}
+
 function loadItems(): CatalogItem[] {
   try {
     const stored = window.localStorage.getItem(STORAGE_KEY);
@@ -143,7 +169,8 @@ function loadZones(): CatalogZone[] {
     if (!stored) return cloneZonesSeed();
     const parsed = JSON.parse(stored);
     if (!Array.isArray(parsed)) return cloneZonesSeed();
-    return parsed.filter(isCatalogZone).map(normalizeZone);
+    const zones = parsed.filter(isCatalogZone).map(normalizeZone);
+    return zones.length > 0 ? mergeZonesSeed(zones) : cloneZonesSeed();
   } catch {
     return cloneZonesSeed();
   }
@@ -159,6 +186,20 @@ function itemUnitPrice(item: CatalogItem): number {
 
 function formatMoney(value: number): string {
   return value.toLocaleString("ru-RU");
+}
+
+function compositionQtyHint(atomicItemId: string, quantity: number, unit?: CatalogUnit): string | null {
+  if (unit !== "м.п." || quantity <= 1) return null;
+  if (atomicItemId === "pipe-sewer-50" && quantity === 3.5) {
+    return "3,5 м — ориентир на канализацию к мойке";
+  }
+  if (atomicItemId === "pipe-ppr-d20" && quantity === 20) {
+    return "20 м = 10 м × 2 точки (ХВС+ГВС)";
+  }
+  if (atomicItemId === "pipe-ppr-d20") {
+    return `${quantity} м — правило: 10 м на водяную точку`;
+  }
+  return null;
 }
 
 function makeNewItemId(existing: CatalogItem[]): string {
@@ -514,6 +555,12 @@ export function CatalogEditor() {
             </div>
           </div>
 
+          <div className="ce-note ce-note-warn">
+            <span className="ce-note-tag">Трубы</span>
+            Без проекта расчёт труб ориентировочный, с запасом на повороты и углы. PPR d20: 10 м.п. на
+            одну водяную точку (пара ХВС+ГВС = ×2). Канализация 50 мм к мойке: коэффициент 3,5 м.п.
+          </div>
+
           <div className="ce-note">
             <span className="ce-note-tag">Надбавки</span>
             Накладные 10% и транспорт 5% применяются по решению и в суммы по умолчанию не входят.
@@ -735,6 +782,7 @@ function ZoneCard(props: ZoneCardProps) {
               ) : (
                 zone.items.map((row) => {
                   const item = itemsById.get(row.atomicItemId);
+                  const qtyHint = compositionQtyHint(row.atomicItemId, row.quantity, item?.unit);
                   return (
                     <tr key={row.atomicItemId} className={item ? "" : "ce-row-missing"}>
                       <td className="ce-col-id ce-mono ce-readonly">{row.atomicItemId}</td>
@@ -746,11 +794,13 @@ function ZoneCard(props: ZoneCardProps) {
                           className="ce-cell-input ce-num"
                           type="number"
                           min={0}
+                          step={item?.unit === "м.п." ? "0.1" : "1"}
                           value={row.quantity}
                           onChange={(event) =>
                             props.onUpdateZoneRow(zone.id, row.atomicItemId, "quantity", event.target.value)
                           }
                         />
+                        {qtyHint && <span className="ce-qty-hint">{qtyHint}</span>}
                       </td>
                       <td>
                         <input

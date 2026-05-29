@@ -101,6 +101,15 @@ export const CATALOG_EDITOR_STYLES = `
   flex: none; padding: 2px 9px; border-radius: 999px; font-size: 11px; font-weight: 600;
   background: var(--ce-accent); color: #fff;
 }
+.ce-note-warn {
+  background: rgba(255, 180, 50, .08); border-color: rgba(255, 180, 50, .35);
+}
+.ce-note-warn .ce-note-tag { background: #e6a020; color: #1a1200; }
+
+.ce-qty-hint {
+  display: block; margin-top: 2px; padding: 0 4px;
+  font-size: 10px; line-height: 1.3; color: var(--ce-muted); white-space: normal;
+}
 
 .ce-table-wrap {
   border: 1px solid var(--ce-border); border-radius: 12px; overflow: auto; max-height: calc(100vh - 280px);

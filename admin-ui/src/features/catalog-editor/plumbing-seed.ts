@@ -7,7 +7,7 @@ export type CatalogCategory = "works" | "materials" | "equipment" | "consumables
 
 export type CatalogUnit = "шт" | "м.п." | "м²" | "комплект" | "усл.";
 
-export type CatalogSource = "Сан v1" | "код" | "вручную" | "Смета работ" | "Бауцентр/Cosmoplast";
+export type CatalogSource = "Сан v1" | "код" | "вручную" | "Смета работ" | "Бауцентр/Cosmoplast" | "Санта-Сервис";
 
 export type CatalogGroup =
   | "Санузел"
@@ -107,7 +107,7 @@ export const PLUMBING_SEED: CatalogItem[] = [
   row("bathroom-mirror", "Зеркало в санузле", "bathroomMirror", "шт", 1500, 500, 300, 15000, "Санузел", "Сан v1"),
 
   // C.2. Кухня
-  row("kitchen-sink", "Кухонная мойка", "kitchenSink; выводы под мойку", "шт", 6500, 3500, 1500, 0, "Кухня", "код"),
+  row("kitchen-sink", "Кухонная мойка", "kitchenSink; legacy / не использовать в зонах — разбит на атомы (точки + трубы + работы)", "шт", 6500, 3500, 1500, 0, "Кухня", "код"),
   row("kitchen-sink-siphon", "Сифон для кухонной мойки", "kitchenSinkSiphon", "шт", 1500, 2500, 500, 0, "Кухня", "код"),
   row("kitchen-siphon-dishwasher", "Сифон кухонный с отводом под ПММ", "kitchenSiphonDishwasher", "шт", 1800, 3000, 500, 0, "Кухня", "Сан v1"),
   row("disposer-output", "Вывод под измельчитель", "disposerOutput", "шт", 2500, 2000, 500, 0, "Кухня", "Сан v1"),
@@ -187,6 +187,8 @@ export const PLUMBING_SEED: CatalogItem[] = [
   // === Кубики-МАТЕРИАЛЫ (трубы): materials=цена, остальное 0. Цены подтверждены пользователем. ===
   row("pipe-sewer-110", "Труба канализационная 110 мм", "материал; Бауцентр/Cosmoplast", "м.п.", 0, 240, 0, 0, "Трассы / подготовка", "Бауцентр/Cosmoplast"),
   row("pipe-sewer-50", "Труба канализационная 50 мм", "материал; Бауцентр/Cosmoplast", "м.п.", 0, 155, 0, 0, "Трассы / подготовка", "Бауцентр/Cosmoplast"),
+  row("pipe-ppr-d20", "Труба PPR d20", "материал; VALFEX; 10 м.п. на водяную точку (ХВС+ГВС = ×2); Санта-Сервис", "м.п.", 0, 115, 0, 0, "Трассы / подготовка", "Санта-Сервис"),
+  row("kit-ppr-d20-40m", "Комплект PPR d20 (~40 м + фитинги)", "типовой комплект на квартиру, остаётся 2–3 трубы; Санта-Сервис", "комплект", 0, 4836.87, 0, 0, "Узел", "Санта-Сервис"),
 ];
 
 export const CATALOG_GROUPS: CatalogGroup[] = [
@@ -241,11 +243,15 @@ export const ZONES_SEED: CatalogZone[] = [
     id: "zone-kitchen-sink",
     subgroup: "Кухня",
     title: "Зона мойки",
-    description: "Сборка «материал + работа»: выводы и сифон (Сан v1) + работа по подключению.",
+    description:
+      "Атомарная сборка: точки ХВС/ГВС и канализации, подключение, сифон, трубы (PPR 20 м = 10 м × 2 точки; канализация 50 мм 3,5 м.п.). Смеситель кухонный — цена пока не задана, не включён.",
     items: [
-      { atomicItemId: "kitchen-sink", quantity: 1 },
-      { atomicItemId: "kitchen-sink-siphon", quantity: 1 },
+      { atomicItemId: "work-water-point", quantity: 1 },
+      { atomicItemId: "work-sewer-point", quantity: 1 },
       { atomicItemId: "work-sink-mixer-siphon-connect", quantity: 1 },
+      { atomicItemId: "kitchen-sink-siphon", quantity: 1 },
+      { atomicItemId: "pipe-sewer-50", quantity: 3.5 },
+      { atomicItemId: "pipe-ppr-d20", quantity: 20 },
     ],
   },
   {
@@ -271,4 +277,5 @@ export const CATALOG_SOURCES: CatalogSource[] = [
   "вручную",
   "Смета работ",
   "Бауцентр/Cosmoplast",
+  "Санта-Сервис",
 ];

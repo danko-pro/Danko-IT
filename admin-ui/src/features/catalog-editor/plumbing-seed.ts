@@ -176,6 +176,42 @@ export const PLUMBING_SEED: CatalogItem[] = [
     "Кухня",
     "вручную",
   ),
+  row(
+    "dishwasher-45-package-c",
+    "ПММ 45 см — пакет C",
+    "dishwasher45PackageC; требует уточнения — цена оборудования",
+    "шт",
+    0,
+    0,
+    0,
+    0,
+    "Кухня",
+    "вручную",
+  ),
+  row(
+    "dishwasher-45-package-b",
+    "ПММ 45 см — пакет B",
+    "dishwasher45PackageB; требует уточнения — цена оборудования",
+    "шт",
+    0,
+    0,
+    0,
+    0,
+    "Кухня",
+    "вручную",
+  ),
+  row(
+    "dishwasher-60-package-a",
+    "ПММ 60 см — пакет A",
+    "dishwasher60PackageA; требует уточнения — цена оборудования",
+    "шт",
+    0,
+    0,
+    0,
+    0,
+    "Кухня",
+    "вручную",
+  ),
 
   // C.3. Тех. зона
   row("dishwasher-output", "Выводы для ПМ машины", "dishwasherOutput", "шт", 5500, 3000, 1000, 0, "Тех. зона", "код"),
@@ -324,6 +360,19 @@ export const ZONE_GROOVE_METERS_DEFAULT = 6;
 /** Штробление для зоны мойки — алиас на общий ориентир. */
 export const SINK_ZONE_GROOVE_METERS = ZONE_GROOVE_METERS_DEFAULT;
 
+/**
+ * Зона ПММ — стартовые допущения без проекта (зафиксировано 2026-05-29):
+ * - 1 точка ХВС (ПММ на холодную воду; ГВС не считаем)
+ * - 1 точка канализации + подключение посудомойки (work-dishwasher-connect)
+ * - PPR d20: 10 м.п. (= 10 м × 1 водяная точка), выходы/фитинги по 6 шт
+ * - Канализация 50 мм: 2 м.п. (короче чем у мойки 3,5 м)
+ * - Штробление: 4 м.п. (ориентир 4–6 м, взяли нижнюю границу)
+ * - Пакеты C/B/A: 45 / 45 / 60 см — цены оборудования placeholder (требует уточнения)
+ */
+export const DISHWASHER_ZONE_PPR_METERS = 10;
+export const DISHWASHER_ZONE_SEWER_METERS = 2;
+export const DISHWASHER_ZONE_GROOVE_METERS = 4;
+
 /** Резерв на неопределённость по зоне (трасса, комплектующие без проекта). */
 export const DEFAULT_ZONE_RISK_PERCENT = 6.4;
 
@@ -436,6 +485,44 @@ export const ZONES_SEED: CatalogZone[] = [
       { atomicItemId: "pipe-clamp-ppr-d20", quantity: pipeClampQty(20) },
       { atomicItemId: "pipe-clamp-sewer", quantity: pipeClampQty(3.5) },
       { atomicItemId: "work-groove-pipe", quantity: SINK_ZONE_GROOVE_METERS },
+    ],
+  },
+  {
+    id: "zone-kitchen-dishwasher",
+    subgroup: "Кухня",
+    title: "Зона ПММ",
+    description:
+      "База: точка ХВС и канализации, подключение ПММ, штробление 4 м.п. (ориентир без проекта), трубы (PPR 10 м = 10 м × 1 точка ХВС; выходы и фитинги по 6 шт; канализация 50 мм 2 м.п.; крепёж 1,5 шт/м.п.). Пакет — встраиваемая ПММ 45/60 см (переключатель ниже). Оборудование — placeholder, требует уточнения.",
+    riskPercent: DEFAULT_ZONE_RISK_PERCENT,
+    activePriceClassId: "b",
+    priceClassVariants: [
+      {
+        id: "c",
+        label: "Пакет C",
+        items: [{ atomicItemId: "dishwasher-45-package-c", quantity: 1 }],
+      },
+      {
+        id: "b",
+        label: "Пакет B",
+        items: [{ atomicItemId: "dishwasher-45-package-b", quantity: 1 }],
+      },
+      {
+        id: "a",
+        label: "Пакет A",
+        items: [{ atomicItemId: "dishwasher-60-package-a", quantity: 1 }],
+      },
+    ],
+    items: [
+      { atomicItemId: "work-water-point", quantity: 1 },
+      { atomicItemId: "work-sewer-point", quantity: 1 },
+      { atomicItemId: "work-dishwasher-connect", quantity: 1 },
+      { atomicItemId: "pipe-sewer-50", quantity: DISHWASHER_ZONE_SEWER_METERS },
+      { atomicItemId: "pipe-ppr-d20", quantity: DISHWASHER_ZONE_PPR_METERS },
+      { atomicItemId: "ppr-d20-outlet", quantity: WATER_POINT_FITTINGS_QTY },
+      { atomicItemId: "ppr-d20-fitting", quantity: WATER_POINT_FITTINGS_QTY },
+      { atomicItemId: "pipe-clamp-ppr-d20", quantity: pipeClampQty(DISHWASHER_ZONE_PPR_METERS) },
+      { atomicItemId: "pipe-clamp-sewer", quantity: pipeClampQty(DISHWASHER_ZONE_SEWER_METERS) },
+      { atomicItemId: "work-groove-pipe", quantity: DISHWASHER_ZONE_GROOVE_METERS },
     ],
   },
   {

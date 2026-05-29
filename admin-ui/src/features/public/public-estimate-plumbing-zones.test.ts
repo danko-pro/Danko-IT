@@ -19,7 +19,7 @@ describe("calculateKitchenSinkZone", () => {
     expect(result.total).toBe(43518);
     expect(result.sectionItem.id).toBe("kitchen-sink-zone");
     expect(result.sectionItem.total).toBe(43518);
-    expect(result.specItems).toHaveLength(13);
+    expect(result.specItems).toHaveLength(12);
   });
 
   it("даёт разные итоги для пакетов C и A", () => {
@@ -37,8 +37,9 @@ describe("getKitchenSinkZoneSpecItems", () => {
   it("возвращает полный состав без строки резерва 6,4%", () => {
     const specItems = getKitchenSinkZoneSpecItems("b");
 
-    expect(specItems).toHaveLength(13);
+    expect(specItems).toHaveLength(12);
     expect(specItems.some((item) => item.title.toLowerCase().includes("резерв"))).toBe(false);
+    expect(specItems.some((item) => item.title.startsWith("Мойка кухонная"))).toBe(false);
     expect(sumKitchenSinkZoneSpecLines(specItems)).toBe(40900);
     expect(getKitchenSinkZonePackageTotal("b")).toBe(43518);
     expect(specItems.some((item) => item.title === "Смеситель кухонный — пакет B")).toBe(true);
@@ -68,7 +69,8 @@ describe("expandPlumbingSectionForSpec", () => {
 
     expect(expanded.specIntro).toContain("без проекта");
     expect(expanded.items.some((item) => item.title.toLowerCase().includes("резерв"))).toBe(false);
-    expect(expanded.items.filter((item) => item.id.startsWith("kitchen-sink-zone-"))).toHaveLength(13);
+    expect(expanded.items.filter((item) => item.id.startsWith("kitchen-sink-zone-"))).toHaveLength(12);
+    expect(expanded.items.some((item) => item.title.startsWith("Мойка кухонная"))).toBe(false);
     expect(expanded.totals.total).toBe(result.total);
     expect(sumKitchenSinkZoneSpecLines(expanded.items.filter((item) => item.id.startsWith("kitchen-sink-zone-")))).toBe(
       40900,

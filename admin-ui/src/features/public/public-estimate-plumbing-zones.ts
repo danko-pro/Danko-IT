@@ -97,6 +97,7 @@ const KITCHEN_SINK_ZONE_BASE: ZoneAtom[] = [
 const KITCHEN_SINK_ZONE_PACKAGES: Record<PlumbingPackageLevel, ZoneAtom[]> = {
   c: [
     { id: "kitchen-faucet-c", title: "Смеситель кухонный — пакет C", unit: "шт", publicPrice: 11500, quantity: 1, category: "equipment" },
+    // equipment: 0 в plumbing-seed — «требует уточнения»; не показываем в клиентской spec, пока нет цены
     { id: "kitchen-sink-bowl-c", title: "Мойка кухонная — пакет C", unit: "шт", publicPrice: 0, quantity: 1, category: "equipment" },
   ],
   b: [
@@ -108,6 +109,11 @@ const KITCHEN_SINK_ZONE_PACKAGES: Record<PlumbingPackageLevel, ZoneAtom[]> = {
     { id: "kitchen-sink-bowl-a", title: "Мойка кухонная — пакет A", unit: "шт", publicPrice: 0, quantity: 1, category: "equipment" },
   ],
 };
+
+/** Строки с total=0 — placeholder без публичной цены; не выводим клиенту в спецификации. */
+export function filterClientSpecLines(items: EstimateLineItem[]): EstimateLineItem[] {
+  return items.filter((item) => item.total > 0);
+}
 
 function atomLineTotal(atom: ZoneAtom): number {
   return Math.round(atom.publicPrice * atom.quantity);
@@ -132,7 +138,8 @@ function zoneAtomToLineItem(atom: ZoneAtom): EstimateLineItem {
 }
 
 export function getKitchenSinkZoneSpecItems(packageLevel: PlumbingPackageLevel): EstimateLineItem[] {
-  return [...KITCHEN_SINK_ZONE_BASE, ...KITCHEN_SINK_ZONE_PACKAGES[packageLevel]].map(zoneAtomToLineItem);
+  const lines = [...KITCHEN_SINK_ZONE_BASE, ...KITCHEN_SINK_ZONE_PACKAGES[packageLevel]].map(zoneAtomToLineItem);
+  return filterClientSpecLines(lines);
 }
 
 function computeKitchenSinkZoneTotals(packageLevel: PlumbingPackageLevel) {

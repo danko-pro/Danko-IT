@@ -456,6 +456,31 @@ function EstimateNavigationIcon({ name }: { name: EstimateNavigationIcon }) {
   }
 }
 
+function KitchenSinkZoneIcon() {
+  const commonProps = {
+    viewBox: "0 0 24 24",
+    "aria-hidden": true,
+    focusable: false,
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: 1.75,
+    strokeLinecap: "round" as const,
+    strokeLinejoin: "round" as const,
+  };
+
+  return (
+    <svg {...commonProps}>
+      <path d="M3 9h18" />
+      <path d="M5 9v1.5a7 7 0 0 0 14 0V9" />
+      <path d="M12 3v3.5" />
+      <path d="M9.5 6.5h5" />
+      <path d="M12 6.5v2.25" />
+      <circle cx="12" cy="14.25" r="1.1" />
+      <path d="M8 18h8" />
+    </svg>
+  );
+}
+
 type EstimateObjectMeta = {
   address: string;
   complexName: string;
@@ -2957,27 +2982,24 @@ export function PublicEstimate() {
               </label>
 
               <article className="public-estimate-plumbing-sink-zone" aria-label="Зона мойки">
-                <label className="public-estimate-plumbing-option-zone public-estimate-plumbing-sink-zone-enable">
+                <label className="public-estimate-plumbing-sink-zone-head">
+                  <span className="public-estimate-plumbing-sink-zone-icon">
+                    <KitchenSinkZoneIcon />
+                  </span>
+                  <span className="public-estimate-plumbing-sink-zone-title">
+                    <strong>Зона мойки</strong>
+                    <small>точки, трубы, сифон, смеситель + мойка</small>
+                  </span>
                   <input
                     type="checkbox"
                     checked={plumbingOptions.includeKitchenSink}
                     onChange={(event) => updatePlumbingOptions({ includeKitchenSink: event.target.checked })}
                   />
-                  <span>
-                    <strong>Зона мойки</strong>
-                    <small>кухня: точки, трубы, штробление, сифон и комплект смеситель + мойка</small>
-                  </span>
                 </label>
 
                 {plumbingResult.hasKitchen && plumbingOptions.includeKitchenSink ? (
-                  <>
-                    <div className="public-estimate-plumbing-sink-zone-package">
-                      <div className="public-estimate-plumbing-sink-zone-package-copy">
-                        <span>Комплектация</span>
-                        <small>
-                          Смеситель и мойка по пакету C / B / A. {KITCHEN_SINK_ZONE_DISCLAIMER}
-                        </small>
-                      </div>
+                  <div className="public-estimate-plumbing-sink-zone-body">
+                    <div className="public-estimate-plumbing-sink-zone-row">
                       <div
                         className="public-estimate-toggle-group public-estimate-plumbing-sink-zone-toggle"
                         role="group"
@@ -2992,20 +3014,21 @@ export function PublicEstimate() {
                                 : undefined
                             }
                             type="button"
+                            aria-label={kitchenSinkPackageLabels[level]}
                             aria-pressed={plumbingOptions.kitchenSinkPackageLevel === level}
+                            title={kitchenSinkPackageLabels[level]}
                             onClick={() => updatePlumbingOptions({ kitchenSinkPackageLevel: level })}
                           >
-                            {kitchenSinkPackageLabels[level]}
+                            {level.toUpperCase()}
                           </button>
                         ))}
                       </div>
+                      <div className="public-estimate-plumbing-sink-zone-total" aria-label="Итог зоны мойки">
+                        <strong>{formatMoney(getKitchenSinkZonePackageTotal(plumbingOptions.kitchenSinkPackageLevel))}</strong>
+                      </div>
                     </div>
-
-                    <div className="public-estimate-plumbing-sink-zone-total" aria-label="Итог зоны мойки">
-                      <span>Итого зона мойки</span>
-                      <strong>{formatMoney(getKitchenSinkZonePackageTotal(plumbingOptions.kitchenSinkPackageLevel))}</strong>
-                    </div>
-                  </>
+                    <p className="public-estimate-plumbing-sink-zone-disclaimer">{KITCHEN_SINK_ZONE_DISCLAIMER}</p>
+                  </div>
                 ) : null}
               </article>
 

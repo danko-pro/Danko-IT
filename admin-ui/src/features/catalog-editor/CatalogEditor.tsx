@@ -53,6 +53,73 @@ const SECTION_TABS: SectionTab[] = [
   { id: "cleaning", label: "Уборка", ready: false },
 ];
 
+/** Миграция economy/standard/comfort → пакеты c/b/a (как packageLevel в Danko). */
+const LEGACY_ATOMIC_ITEM_ID_MAP: Record<string, string> = {
+  "kitchen-faucet-economy": "kitchen-faucet-c",
+  "kitchen-faucet-standard": "kitchen-faucet-b",
+  "kitchen-faucet-comfort": "kitchen-faucet-a",
+  "kitchen-sink-bowl-economy": "kitchen-sink-bowl-c",
+  "kitchen-sink-bowl-standard": "kitchen-sink-bowl-b",
+  "kitchen-sink-bowl-comfort": "kitchen-sink-bowl-a",
+};
+
+const LEGACY_PRICE_CLASS_ID_MAP: Record<string, string> = {
+  economy: "c",
+  standard: "b",
+  comfort: "a",
+};
+
+const PACKAGE_LABELS: Record<string, string> = {
+  c: "Пакет C",
+  b: "Пакет B",
+  a: "Пакет A",
+};
+
+function migrateAtomicItemId(id: string): string {
+  return LEGACY_ATOMIC_ITEM_ID_MAP[id] ?? id;
+}
+
+function migrateLegacyAtomicItems(stored: CatalogItem[]): CatalogItem[] {
+  const byId = new Map<string, CatalogItem>();
+  for (const item of stored) {
+    const id = migrateAtomicItemId(item.id);
+    if (!byId.has(id)) {
+      byId.set(id, id === item.id ? item : { ...item, id });
+    }
+  }
+  return [...byId.values()];
+}
+
+function migrateLegacyZonePackages(zone: CatalogZone): CatalogZone {
+  const items = zone.items.map((row) => ({
+    ...row,
+    atomicItemId: migrateAtomicItemId(row.atomicItemId),
+  }));
+
+  if (!zone.priceClassVariants?.length) {
+    return { ...zone, items };
+  }
+
+  const activePriceClassId =
+    zone.activePriceClassId != null
+      ? (LEGACY_PRICE_CLASS_ID_MAP[zone.activePriceClassId] ?? zone.activePriceClassId)
+      : undefined;
+
+  const priceClassVariants = zone.priceClassVariants.map((variant) => {
+    const id = LEGACY_PRICE_CLASS_ID_MAP[variant.id] ?? variant.id;
+    return {
+      id,
+      label: PACKAGE_LABELS[id] ?? variant.label,
+      items: variant.items.map((row) => ({
+        ...row,
+        atomicItemId: migrateAtomicItemId(row.atomicItemId),
+      })),
+    };
+  });
+
+  return { ...zone, items, priceClassVariants, activePriceClassId };
+}
+
 function cloneSeed(): CatalogItem[] {
   return PLUMBING_SEED.map((item) => ({ ...item }));
 }
@@ -192,9 +259,10 @@ function normalizeZone(raw: CatalogZone): CatalogZone {
 // НЕ затирая его правки по уже существующим id. Так новые работы/трубы появляются
 // без полного сброса. (Минус: ранее удалённый seed-кубик вернётся.)
 function mergeNewSeed(stored: CatalogItem[]): CatalogItem[] {
-  const ids = new Set(stored.map((item) => item.id));
+  const migrated = migrateLegacyAtomicItems(stored);
+  const ids = new Set(migrated.map((item) => item.id));
   const additions = PLUMBING_SEED.filter((seed) => !ids.has(seed.id)).map((seed) => ({ ...seed }));
-  return additions.length > 0 ? [...stored, ...additions] : stored;
+  return additions.length > 0 ? [...migrated, ...additions] : migrated;
 }
 
 // Подмешивает отсутствующие seed-зоны, riskPercent, классы комплектации
@@ -202,10 +270,11 @@ function mergeNewSeed(stored: CatalogItem[]): CatalogItem[] {
 function mergeZonesSeed(stored: CatalogZone[]): CatalogZone[] {
   const byId = new Map(stored.map((zone) => [zone.id, zone]));
   let result = stored.map((zone) => {
+    const migrated = migrateLegacyZonePackages(zone);
     const withRisk =
-      zone.riskPercent != null && Number.isFinite(zone.riskPercent)
-        ? zone
-        : { ...zone, riskPercent: DEFAULT_ZONE_RISK_PERCENT };
+      migrated.riskPercent != null && Number.isFinite(migrated.riskPercent)
+        ? migrated
+        : { ...migrated, riskPercent: DEFAULT_ZONE_RISK_PERCENT };
     return withRisk;
   });
 
@@ -1009,7 +1078,7 @@ function ZoneCard(props: ZoneCardProps) {
 
           {zone.priceClassVariants && zone.priceClassVariants.length > 0 && (
             <div className="ce-price-classes">
-              <span className="ce-price-classes-label">Класс комплектации:</span>
+              <span className="ce-price-classes-label">Пакет:</span>
               <div className="ce-price-class-tabs">
                 {zone.priceClassVariants.map((variant) => (
                   <button

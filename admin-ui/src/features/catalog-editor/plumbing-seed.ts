@@ -235,6 +235,18 @@ export const PLUMBING_SEED: CatalogItem[] = [
   row("work-washer-install-connect", "Установка и подключение стиральной машины", "работа", "шт", 1500, 0, 0, 0, "Работы · Канализация", "Смета работ"),
 
   // Трассы / подготовка (работы)
+  row(
+    "work-groove-pipe",
+    "Штробление под трубу",
+    "работа; штробление под прокладку труб",
+    "м.п.",
+    900,
+    0,
+    0,
+    0,
+    "Трассы / подготовка",
+    "Смета работ",
+  ),
   row("work-wall-chase", "Штробление стены", "работа", "м.п.", 900, 0, 0, 0, "Трассы / подготовка", "Смета работ"),
   row("work-floor-opening", "Вскрытие пола", "работа", "м.п.", 600, 0, 0, 0, "Трассы / подготовка", "Смета работ"),
   row("work-slab-glue-mount", "Монтаж плиты на клей", "работа", "шт", 900, 0, 0, 0, "Трассы / подготовка", "Смета работ"),
@@ -305,6 +317,12 @@ export const WATER_POINT_FITTINGS_QTY = 6;
 
 /** Крепёж (хомут) на погонный метр трубы — PPR d20 и канализация (50/110 мм). */
 export const PIPE_CLAMP_PER_METER = 1.5;
+
+/** Ориентир штробления под трубы для зоны без проекта (не 1:1 с метражом труб). */
+export const ZONE_GROOVE_METERS_DEFAULT = 6;
+
+/** Штробление для зоны мойки — алиас на общий ориентир. */
+export const SINK_ZONE_GROOVE_METERS = ZONE_GROOVE_METERS_DEFAULT;
 
 /** Резерв на неопределённость по зоне (трасса, комплектующие без проекта). */
 export const DEFAULT_ZONE_RISK_PERCENT = 6.4;
@@ -377,7 +395,7 @@ export const ZONES_SEED: CatalogZone[] = [
     subgroup: "Кухня",
     title: "Зона мойки",
     description:
-      "База: точки ХВС/ГВС и канализации, подключение, сифон, трубы (PPR 20 м = 10 м × 2 точки; выходы и фитинги по 12 шт = 6×2; канализация 50 мм 3,5 м.п.; крепёж 1,5 шт/м.п.). Пакет комплектации — смеситель + мойка (переключатель ниже).",
+      "База: точки ХВС/ГВС и канализации, подключение, сифон, штробление 6 м.п. (ориентир без проекта), трубы (PPR 20 м = 10 м × 2 точки; выходы и фитинги по 12 шт = 6×2; канализация 50 мм 3,5 м.п.; крепёж 1,5 шт/м.п.). Пакет комплектации — смеситель + мойка (переключатель ниже).",
     riskPercent: DEFAULT_ZONE_RISK_PERCENT,
     activePriceClassId: "b",
     priceClassVariants: [
@@ -417,6 +435,7 @@ export const ZONES_SEED: CatalogZone[] = [
       { atomicItemId: "ppr-d20-fitting", quantity: WATER_POINT_FITTINGS_QTY * 2 },
       { atomicItemId: "pipe-clamp-ppr-d20", quantity: pipeClampQty(20) },
       { atomicItemId: "pipe-clamp-sewer", quantity: pipeClampQty(3.5) },
+      { atomicItemId: "work-groove-pipe", quantity: SINK_ZONE_GROOVE_METERS },
     ],
   },
   {

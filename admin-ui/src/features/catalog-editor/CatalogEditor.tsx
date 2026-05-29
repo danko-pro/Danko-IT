@@ -7,6 +7,7 @@ import {
   DEFAULT_ZONE_RISK_PERCENT,
   PLUMBING_SEED,
   PIPE_CLAMP_PER_METER,
+  SINK_ZONE_GROOVE_METERS,
   WATER_POINT_FITTINGS_QTY,
   ZONES_SEED,
   ZONE_SUBGROUPS,
@@ -74,6 +75,8 @@ const PACKAGE_LABELS: Record<string, string> = {
   b: "Пакет B",
   a: "Пакет A",
 };
+
+const SINK_ZONE_GROOVE_ITEM_ID = "work-groove-pipe";
 
 function migrateAtomicItemId(id: string): string {
   return LEGACY_ATOMIC_ITEM_ID_MAP[id] ?? id;
@@ -291,8 +294,11 @@ function mergeZonesSeed(stored: CatalogZone[]): CatalogZone[] {
     if (seedZone.id === "zone-kitchen-sink") {
       const hasLegacyKitchenSink = existing.items.some((row) => row.atomicItemId === "kitchen-sink");
       const missingSeedRows = seedZone.items.some(
-        (seedRow) => !existing.items.some((ex) => ex.atomicItemId === seedRow.atomicItemId),
+        (seedRow) =>
+          seedRow.atomicItemId !== SINK_ZONE_GROOVE_ITEM_ID &&
+          !existing.items.some((ex) => ex.atomicItemId === seedRow.atomicItemId),
       );
+      const missingGrooveRow = !existing.items.some((row) => row.atomicItemId === SINK_ZONE_GROOVE_ITEM_ID);
       const missingPriceClasses = !existing.priceClassVariants?.length && !!seedZone.priceClassVariants?.length;
       if (hasLegacyKitchenSink || missingSeedRows || missingPriceClasses) {
         result = result.map((zone) =>
@@ -306,6 +312,15 @@ function mergeZonesSeed(stored: CatalogZone[]): CatalogZone[] {
               }
             : zone,
         );
+      } else if (missingGrooveRow) {
+        const grooveRow = seedZone.items.find((row) => row.atomicItemId === SINK_ZONE_GROOVE_ITEM_ID);
+        if (grooveRow) {
+          result = result.map((zone) =>
+            zone.id === seedZone.id
+              ? { ...zone, items: [...zone.items, { ...grooveRow }] }
+              : zone,
+          );
+        }
       }
     }
   }
@@ -380,6 +395,12 @@ function compositionQtyHint(atomicItemId: string, quantity: number, unit?: Catal
   }
   if (atomicItemId === "pipe-clamp-sewer" && quantity === 3.5 * PIPE_CLAMP_PER_METER) {
     return `5,25 = 3,5 м × ${PIPE_CLAMP_PER_METER}`;
+  }
+  if (atomicItemId === SINK_ZONE_GROOVE_ITEM_ID && quantity === SINK_ZONE_GROOVE_METERS) {
+    return `${SINK_ZONE_GROOVE_METERS} м — ориентир для зоны мойки без проекта`;
+  }
+  if (atomicItemId === SINK_ZONE_GROOVE_ITEM_ID && unit === "м.п." && quantity > 0) {
+    return `${quantity} м — ориентир штробления без проекта (не 1:1 с трубами)`;
   }
   if (
     (atomicItemId === "pipe-clamp-ppr-d20" || atomicItemId === "pipe-clamp-sewer") &&
@@ -803,7 +824,8 @@ export function CatalogEditor() {
             Без проекта расчёт труб, фитингов и крепежа ориентировочный, с запасом на повороты и углы.
             PPR d20: 10 м.п. на водяную точку (пара ХВС+ГВС = ×2); выходы и фитинги — по 6 шт. на точку.
             Крепёж — 1,5 шт. на м.п. трубы (PPR d20 и канализация 50/110 мм). Канализация 50 мм к
-            мойке: коэффициент 3,5 м.п.
+            мойке: коэффициент 3,5 м.п. Штробление под трубу: ориентир {SINK_ZONE_GROOVE_METERS} м.п.
+            для зоны мойки без проекта (фиксированный коэффициент, не 1:1 с метражом труб).
           </div>
 
           <div className="ce-note">

@@ -411,7 +411,7 @@ class SqlAlchemyPlumbingRepository(SqlAlchemyEstimateRepository):
         value = result.scalar_one_or_none()
         return int(value) if value is not None else None
 
-    async def _visible_catalog_item_id(self, session, item_id: Any) -> int | None:
+    async def _visible_plumbing_catalog_item_id(self, session, item_id: Any) -> int | None:
         if item_id in (None, ""):
             return None
         result = await session.execute(
@@ -435,7 +435,7 @@ class SqlAlchemyPlumbingRepository(SqlAlchemyEstimateRepository):
         inserted: list[dict[str, Any]] = []
         for index, row in enumerate(rows, start=1):
             values = {
-                "atomic_item_id": await self._visible_catalog_item_id(session, row.get("atomic_item_id")),
+                "atomic_item_id": await self._visible_plumbing_catalog_item_id(session, row.get("atomic_item_id")),
                 "atomic_source_code": str(row["atomic_source_code"]),
                 "quantity": float(row.get("quantity") or 0),
                 "coefficient": float(row.get("coefficient") or 1),

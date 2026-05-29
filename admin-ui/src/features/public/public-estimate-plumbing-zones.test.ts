@@ -1,12 +1,33 @@
 import { describe, expect, it } from "vitest";
 import {
+  calculateDishwasherZone,
   calculateKitchenSinkZone,
+  calculateKitchenSinkZoneTotal,
   expandPlumbingSectionForSpec,
   getKitchenSinkZonePackageTotal,
   getKitchenSinkZoneSpecItems,
+  isSinkZoneContaminantLine,
+  KITCHEN_SINK_ZONE_BASE_ATOMIC_IDS,
+  KITCHEN_SINK_ZONE_PACKAGE_ATOMIC_IDS,
   sumKitchenSinkZoneSpecLines,
 } from "./public-estimate-plumbing-zones";
 import { calculatePlumbing } from "./public-estimate-plumbing";
+
+const KITCHEN_ROOM = [{ roomId: "kitchen", roomName: "Кухня", roomType: "kitchen" as const, area: 12 }];
+
+const PLUMBING_SINK_ONLY_OPTIONS = {
+  includeBathroomSet: false,
+  includeBath: false,
+  includeHygienicShower: false,
+  includeElectricTowelRail: false,
+  includeKitchenSink: true,
+  kitchenSinkPackageLevel: "c" as const,
+  includeDishwasherOutput: false,
+  dishwasherPackageLevel: "b" as const,
+  includeWasherOutput: false,
+  includeWaterNode: false,
+  includeLeakProtection: false,
+};
 
 describe("calculateKitchenSinkZone", () => {
   it("считает базу, пакет B и резерв 6,4% по эталону catalog-editor", () => {
@@ -40,11 +61,12 @@ describe("calculateKitchenSinkZone", () => {
     expect(result.subtotal).toBe(37112);
     expect(result.riskAmount).toBe(2375);
     expect(result.total).toBe(39487);
+    expect(calculateKitchenSinkZoneTotal("c")).toBe(result.total);
   });
 });
 
 describe("getKitchenSinkZoneSpecItems", () => {
-  it("возвращает полный состав без строки резерва 6,4%", () => {
+  it("возвращает 11 базовых атомов + 2 позиции пакета B без строки резерва", () => {
     const specItems = getKitchenSinkZoneSpecItems("b");
 
     expect(specItems).toHaveLength(13);
@@ -64,41 +86,51 @@ describe("getKitchenSinkZoneSpecItems", () => {
     expect(sink?.note).toBe("уточняется");
   });
 
-  it("для пакета C показывает смеситель и мойку с ценами из seed", () => {
+  it("пакет C: мойка 6500, смеситель 6000, без ПММ/dishwasher", () => {
     const specItems = getKitchenSinkZoneSpecItems("c");
     const faucet = specItems.find((item) => item.title === "Смеситель для мойки — C");
     const sink = specItems.find((item) => item.title === "Кухонная мойка — C");
 
+    expect(specItems).toHaveLength(13);
     expect(faucet).toBeDefined();
     expect(faucet?.total).toBe(6000);
     expect(faucet?.note).toBeUndefined();
     expect(sink).toBeDefined();
     expect(sink?.total).toBe(6500);
     expect(sink?.note).toBeUndefined();
+
+    const dishwasherPattern = /пмм|посудом|dishwasher/i;
+    expect(specItems.some((item) => dishwasherPattern.test(item.title))).toBe(false);
+    expect(specItems.some((item) => item.id.includes("dishwasher"))).toBe(false);
+    expect(specItems.every((item) => !isSinkZoneContaminantLine(item))).toBe(true);
+
     expect(sumKitchenSinkZoneSpecLines(specItems)).toBe(37112);
-    expect(getKitchenSinkZonePackageTotal("c")).toBe(39487);
+    expect(calculateKitchenSinkZoneTotal("c")).toBe(39487);
+  });
+
+  it("состав spec совпадает с seed zone-kitchen-sink", () => {
+    const specItems = getKitchenSinkZoneSpecItems("c");
+    const atomIds = specItems.map((item) => item.id.replace(/^kitchen-sink-zone-/, ""));
+
+    expect(atomIds).toEqual([
+      ...KITCHEN_SINK_ZONE_BASE_ATOMIC_IDS,
+      ...KITCHEN_SINK_ZONE_PACKAGE_ATOMIC_IDS.c,
+    ]);
   });
 });
 
 describe("expandPlumbingSectionForSpec", () => {
-  it("подставляет атомы и disclaimer, сохраняя итог раздела с резервом", () => {
-    const result = calculatePlumbing(
-      [{ roomId: "kitchen", roomName: "Кухня", roomType: "kitchen", area: 12 }],
-      {
-        includeBathroomSet: false,
-        includeBath: false,
-        includeHygienicShower: false,
-        includeElectricTowelRail: false,
-        includeKitchenSink: true,
-        kitchenSinkPackageLevel: "b",
-        includeDishwasherOutput: false,
-        includeWasherOutput: false,
-        includeWaterNode: false,
-        includeLeakProtection: false,
-      },
-    );
+  it("подставляет атомы мойки и disclaimer, сохраняя итог раздела с резервом", () => {
+    const result = calculatePlumbing(KITCHEN_ROOM, {
+      ...PLUMBING_SINK_ONLY_OPTIONS,
+      kitchenSinkPackageLevel: "b",
+    });
 
-    const expanded = expandPlumbingSectionForSpec(result.section, "b", true);
+    const expanded = expandPlumbingSectionForSpec(result.section, {
+      kitchenSinkPackageLevel: "b",
+      includeKitchenSink: true,
+      includeDishwasher: false,
+    });
 
     expect(expanded.specIntro).toContain("без проекта");
     expect(expanded.items.some((item) => item.title.toLowerCase().includes("резерв"))).toBe(false);
@@ -109,25 +141,36 @@ describe("expandPlumbingSectionForSpec", () => {
       40912,
     );
   });
+
+  it("не смешивает legacy dishwasher-output с spec зоны мойки", () => {
+    const result = calculatePlumbing(KITCHEN_ROOM, {
+      ...PLUMBING_SINK_ONLY_OPTIONS,
+      includeDishwasherOutput: true,
+    });
+
+    const expanded = expandPlumbingSectionForSpec(result.section, {
+      kitchenSinkPackageLevel: "c",
+      includeKitchenSink: true,
+      dishwasherPackageLevel: "b",
+      includeDishwasher: true,
+    });
+
+    const sinkLines = expanded.items.filter((item) => item.id.startsWith("kitchen-sink-zone-"));
+    const dishwasherPattern = /пмм|посудом|dishwasher/i;
+
+    expect(sinkLines).toHaveLength(13);
+    expect(sinkLines.some((item) => dishwasherPattern.test(item.title))).toBe(false);
+    expect(expanded.items.some((item) => item.id.startsWith("dishwasher-output"))).toBe(false);
+    expect(expanded.items.some((item) => item.id.startsWith("kitchen-dishwasher-zone-"))).toBe(true);
+  });
 });
 
 describe("calculatePlumbing kitchen sink zone", () => {
   it("добавляет зону мойки вместо legacy-позиций кухонной мойки", () => {
-    const result = calculatePlumbing(
-      [{ roomId: "kitchen", roomName: "Кухня", roomType: "kitchen", area: 12 }],
-      {
-        includeBathroomSet: false,
-        includeBath: false,
-        includeHygienicShower: false,
-        includeElectricTowelRail: false,
-        includeKitchenSink: true,
-        kitchenSinkPackageLevel: "b",
-        includeDishwasherOutput: false,
-        includeWasherOutput: false,
-        includeWaterNode: false,
-        includeLeakProtection: false,
-      },
-    );
+    const result = calculatePlumbing(KITCHEN_ROOM, {
+      ...PLUMBING_SINK_ONLY_OPTIONS,
+      kitchenSinkPackageLevel: "b",
+    });
 
     expect(result.total).toBe(43530);
     expect(result.section.items.some((item) => item.id === "kitchen-sink-zone")).toBe(true);
@@ -135,5 +178,16 @@ describe("calculatePlumbing kitchen sink zone", () => {
     expect(result.coldWaterPoints).toBe(1);
     expect(result.hotWaterPoints).toBe(1);
     expect(result.sewerPoints).toBe(1);
+  });
+
+  it("добавляет зону ПММ из seed вместо legacy dishwasher-output", () => {
+    const result = calculatePlumbing(KITCHEN_ROOM, {
+      ...PLUMBING_SINK_ONLY_OPTIONS,
+      includeDishwasherOutput: true,
+    });
+
+    expect(result.section.items.some((item) => item.id === "kitchen-dishwasher-zone")).toBe(true);
+    expect(result.section.items.some((item) => item.id.startsWith("dishwasher-output"))).toBe(false);
+    expect(calculateDishwasherZone("b").total).toBeGreaterThan(0);
   });
 });

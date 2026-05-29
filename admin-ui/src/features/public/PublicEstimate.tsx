@@ -747,6 +747,7 @@ export function PublicEstimate() {
     includeKitchenSink: true,
     kitchenSinkPackageLevel: "b",
     includeDishwasherOutput: true,
+    dishwasherPackageLevel: "b",
     includeWasherOutput: true,
     includeWaterNode: true,
     includeLeakProtection: false,
@@ -1564,11 +1565,12 @@ export function PublicEstimate() {
         return section;
       }
 
-      return expandPlumbingSectionForSpec(
-        section,
-        plumbingOptions.kitchenSinkPackageLevel,
-        plumbingResult.hasKitchen && plumbingOptions.includeKitchenSink,
-      );
+      return expandPlumbingSectionForSpec(section, {
+        kitchenSinkPackageLevel: plumbingOptions.kitchenSinkPackageLevel,
+        includeKitchenSink: plumbingResult.hasKitchen && plumbingOptions.includeKitchenSink,
+        dishwasherPackageLevel: plumbingOptions.dishwasherPackageLevel,
+        includeDishwasher: plumbingResult.hasKitchen && plumbingOptions.includeDishwasherOutput,
+      });
     });
   }
 

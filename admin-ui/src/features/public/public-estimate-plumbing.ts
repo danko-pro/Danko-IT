@@ -6,16 +6,24 @@ import {
   type EstimateSection,
 } from "./public-estimate-model";
 import {
+  calculateDishwasherZone,
   calculateKitchenSinkZone,
   type PlumbingPackageLevel,
 } from "./public-estimate-plumbing-zones";
 
 export type { PlumbingPackageLevel } from "./public-estimate-plumbing-zones";
 export {
+  calculateDishwasherZone,
   calculateKitchenSinkZone,
+  calculateKitchenSinkZoneTotal,
+  dishwasherPackageLabels,
   expandPlumbingSectionForSpec,
+  getDishwasherZonePackageTotal,
+  getDishwasherZoneSpecItems,
   getKitchenSinkZonePackageTotal,
   getKitchenSinkZoneSpecItems,
+  isKitchenSinkZoneSpecLine,
+  isSinkZoneContaminantLine,
   kitchenSinkPackageLabels,
   KITCHEN_SINK_ZONE_DISCLAIMER,
 } from "./public-estimate-plumbing-zones";
@@ -37,6 +45,7 @@ export type PlumbingOptions = {
   includeKitchenSink: boolean;
   kitchenSinkPackageLevel: PlumbingPackageLevel;
   includeDishwasherOutput: boolean;
+  dishwasherPackageLevel: PlumbingPackageLevel;
   includeWasherOutput: boolean;
   includeWaterNode: boolean;
   includeLeakProtection: boolean;
@@ -637,7 +646,11 @@ export function calculatePlumbing(rooms: PlumbingRoomInput[], options: PlumbingO
   }
 
   if (hasKitchen && options.includeDishwasherOutput) {
-    addPlumbingPosition(items, points, "dishwasher-output", "Выводы для ПМ машины", 1, plumbingRates.dishwasherOutput);
+    const dishwasherZone = calculateDishwasherZone(options.dishwasherPackageLevel);
+    items.push(dishwasherZone.sectionItem);
+    points.coldWaterPoints += 1;
+    points.sewerPoints += 1;
+    points.fixtureCount += 1;
   }
 
   if (options.includeWasherOutput) {

@@ -62,6 +62,9 @@ const LEGACY_ATOMIC_ITEM_ID_MAP: Record<string, string> = {
   "kitchen-sink-bowl-economy": "kitchen-sink-bowl-c",
   "kitchen-sink-bowl-standard": "kitchen-sink-bowl-b",
   "kitchen-sink-bowl-comfort": "kitchen-sink-bowl-a",
+  /** Локальные id из catalog-editor → канонические seed-id (сброс и public spec). */
+  "new-item-89": "kitchen-faucet-c",
+  moyka: "kitchen-sink-bowl-c",
 };
 
 const LEGACY_PRICE_CLASS_ID_MAP: Record<string, string> = {

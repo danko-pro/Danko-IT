@@ -28,8 +28,18 @@ describe("calculateKitchenSinkZone", () => {
 
     expect(packageC).toBeLessThan(getKitchenSinkZonePackageTotal("b"));
     expect(packageA).toBeGreaterThan(getKitchenSinkZonePackageTotal("b"));
-    expect(packageC).toBe(38423);
+    expect(packageC).toBe(39487);
     expect(packageA).toBe(54915);
+  });
+
+  it("пакет C: subtotal 37112 (база 24612 + смеситель 6000 + мойка 6500)", () => {
+    const result = calculateKitchenSinkZone("c");
+
+    expect(result.baseTotal).toBe(24612);
+    expect(result.packageTotal).toBe(12500);
+    expect(result.subtotal).toBe(37112);
+    expect(result.riskAmount).toBe(2375);
+    expect(result.total).toBe(39487);
   });
 });
 
@@ -52,6 +62,21 @@ describe("getKitchenSinkZoneSpecItems", () => {
     expect(sink).toBeDefined();
     expect(sink?.total).toBe(0);
     expect(sink?.note).toBe("уточняется");
+  });
+
+  it("для пакета C показывает смеситель и мойку с ценами из seed", () => {
+    const specItems = getKitchenSinkZoneSpecItems("c");
+    const faucet = specItems.find((item) => item.title === "Смеситель для мойки — C");
+    const sink = specItems.find((item) => item.title === "Кухонная мойка — C");
+
+    expect(faucet).toBeDefined();
+    expect(faucet?.total).toBe(6000);
+    expect(faucet?.note).toBeUndefined();
+    expect(sink).toBeDefined();
+    expect(sink?.total).toBe(6500);
+    expect(sink?.note).toBeUndefined();
+    expect(sumKitchenSinkZoneSpecLines(specItems)).toBe(37112);
+    expect(getKitchenSinkZonePackageTotal("c")).toBe(39487);
   });
 });
 

@@ -10,6 +10,7 @@ PROJECT_METHODS = {
     "create_project_advance",
     "delete_project_advance",
     "list_project_ledger_entries",
+    "list_project_ledger_entries_for_projects",
     "get_project_ledger_entry",
     "create_project_ledger_entry",
     "update_project_ledger_entry",

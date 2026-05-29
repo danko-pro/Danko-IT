@@ -210,4 +210,38 @@ select.ce-cell-input { appearance: none; cursor: pointer; }
 .ce-row-missing td { background: rgba(255,93,93,.08); color: var(--ce-danger); }
 .ce-zone-add { margin-top: 8px; }
 .ce-zone-pick { width: 100%; max-width: 520px; cursor: pointer; }
+
+.ce-price-classes {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  margin-bottom: 8px; padding: 8px 10px; border-radius: 8px;
+  background: var(--ce-panel); border: 1px solid var(--ce-border);
+}
+.ce-price-classes-label { font-size: 12px; color: var(--ce-muted); font-weight: 600; }
+.ce-price-class-tabs { display: inline-flex; gap: 4px; flex-wrap: wrap; }
+.ce-price-class-tab {
+  padding: 5px 12px; border-radius: 6px; cursor: pointer;
+  background: transparent; border: 1px solid var(--ce-border); color: var(--ce-muted); font-size: 12px;
+}
+.ce-price-class-tab:hover { border-color: var(--ce-accent); color: var(--ce-text); }
+.ce-price-class-tab.is-active { background: var(--ce-accent); border-color: var(--ce-accent); color: #fff; font-weight: 600; }
+
+.ce-zone-risk-field { margin-bottom: 8px; }
+.ce-zone-risk-label {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 12px; color: var(--ce-muted);
+}
+.ce-zone-risk-input { width: 72px; text-align: right; }
+
+.ce-variant-separator td {
+  padding: 8px 10px !important; font-size: 11px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: .04em;
+  color: var(--ce-accent); background: rgba(76,141,255,.06) !important;
+  border-top: 1px solid rgba(76,141,255,.25);
+}
+
+.ce-zone-summary-row td { padding: 6px 10px !important; border-top: 1px solid var(--ce-border); }
+.ce-zone-summary-label { text-align: right !important; font-weight: 600; color: var(--ce-muted); }
+.ce-zone-summary-risk td { color: var(--ce-muted); font-style: italic; }
+.ce-zone-summary-total td { background: rgba(54,211,153,.06); }
+.ce-zone-summary-total .ce-zone-summary-label { color: var(--ce-text); }
 `;

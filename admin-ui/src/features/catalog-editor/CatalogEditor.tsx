@@ -4,6 +4,7 @@ import {
   CATALOG_GROUPS,
   CATALOG_SOURCES,
   CATALOG_UNITS,
+  DEFAULT_ZONE_RISK_PERCENT,
   PLUMBING_SEED,
   PIPE_CLAMP_PER_METER,
   WATER_POINT_FITTINGS_QTY,
@@ -16,6 +17,8 @@ import {
   type CatalogSource,
   type CatalogUnit,
   type CatalogZone,
+  type ZoneCompositionRow,
+  type ZonePriceClassVariant,
   type ZoneSubgroup,
 } from "./plumbing-seed";
 import { CATALOG_EDITOR_STYLES } from "./styles";
@@ -55,7 +58,36 @@ function cloneSeed(): CatalogItem[] {
 }
 
 function cloneZonesSeed(): CatalogZone[] {
-  return ZONES_SEED.map((zone) => ({ ...zone, items: zone.items.map((row) => ({ ...row })) }));
+  return ZONES_SEED.map((zone) => ({
+    ...zone,
+    items: zone.items.map((row) => ({ ...row })),
+    priceClassVariants: zone.priceClassVariants?.map((variant) => ({
+      ...variant,
+      items: variant.items.map((row) => ({ ...row })),
+    })),
+  }));
+}
+
+function cloneVariantItems(variants: ZonePriceClassVariant[] | undefined): ZonePriceClassVariant[] | undefined {
+  return variants?.map((variant) => ({
+    ...variant,
+    items: variant.items.map((row) => ({ ...row })),
+  }));
+}
+
+function zoneRiskPercent(zone: CatalogZone): number {
+  return zone.riskPercent ?? DEFAULT_ZONE_RISK_PERCENT;
+}
+
+function activePriceClassVariant(zone: CatalogZone): ZonePriceClassVariant | undefined {
+  if (!zone.priceClassVariants?.length) return undefined;
+  const activeId = zone.activePriceClassId ?? zone.priceClassVariants[0].id;
+  return zone.priceClassVariants.find((variant) => variant.id === activeId) ?? zone.priceClassVariants[0];
+}
+
+function zoneCompositionRows(zone: CatalogZone): ZoneCompositionRow[] {
+  const variant = activePriceClassVariant(zone);
+  return variant ? [...zone.items, ...variant.items] : zone.items;
 }
 
 function isCatalogItem(value: unknown): value is CatalogItem {
@@ -94,6 +126,33 @@ function isCatalogZone(value: unknown): value is CatalogZone {
   return typeof candidate.id === "string" && typeof candidate.title === "string" && Array.isArray(candidate.items);
 }
 
+function normalizePriceClassVariants(raw: unknown): ZonePriceClassVariant[] | undefined {
+  if (!Array.isArray(raw)) return undefined;
+  const variants = raw
+    .filter((entry) => entry && typeof entry === "object" && typeof (entry as { id?: unknown }).id === "string")
+    .map((entry) => {
+      const variant = entry as ZonePriceClassVariant;
+      const items = Array.isArray(variant.items)
+        ? variant.items
+            .filter((row) => row && typeof row.atomicItemId === "string")
+            .map((row) => ({
+              atomicItemId: row.atomicItemId,
+              quantity: Number.isFinite(row.quantity) && row.quantity > 0 ? row.quantity : 1,
+              coefficient:
+                row.coefficient != null && Number.isFinite(row.coefficient) && row.coefficient > 0
+                  ? row.coefficient
+                  : undefined,
+            }))
+        : [];
+      return {
+        id: variant.id,
+        label: typeof variant.label === "string" ? variant.label : variant.id,
+        items,
+      };
+    });
+  return variants.length > 0 ? variants : undefined;
+}
+
 function normalizeZone(raw: CatalogZone): CatalogZone {
   const subgroup = ZONE_SUBGROUPS.includes(raw.subgroup) ? raw.subgroup : "Доп.";
   const items = Array.isArray(raw.items)
@@ -108,12 +167,24 @@ function normalizeZone(raw: CatalogZone): CatalogZone {
               : undefined,
         }))
     : [];
+  const priceClassVariants = normalizePriceClassVariants(raw.priceClassVariants);
+  const riskPercent =
+    raw.riskPercent != null && Number.isFinite(raw.riskPercent) && raw.riskPercent >= 0
+      ? raw.riskPercent
+      : undefined;
   return {
     id: raw.id,
     subgroup,
     title: raw.title ?? "Новая зона",
     description: typeof raw.description === "string" ? raw.description : undefined,
     items,
+    riskPercent,
+    priceClassVariants,
+    activePriceClassId:
+      typeof raw.activePriceClassId === "string" &&
+      priceClassVariants?.some((variant) => variant.id === raw.activePriceClassId)
+        ? raw.activePriceClassId
+        : priceClassVariants?.[0]?.id,
   };
 }
 
@@ -126,16 +197,26 @@ function mergeNewSeed(stored: CatalogItem[]): CatalogItem[] {
   return additions.length > 0 ? [...stored, ...additions] : stored;
 }
 
-// Подмешивает отсутствующие seed-зоны и обновляет демо-зону «Зона мойки»,
-// если в localStorage ещё legacy-состав с kitchen-sink.
+// Подмешивает отсутствующие seed-зоны, riskPercent, классы комплектации
+// и обновляет демо-зону «Зона мойки», если в localStorage ещё legacy-состав.
 function mergeZonesSeed(stored: CatalogZone[]): CatalogZone[] {
   const byId = new Map(stored.map((zone) => [zone.id, zone]));
-  let result = [...stored];
+  let result = stored.map((zone) => {
+    const withRisk =
+      zone.riskPercent != null && Number.isFinite(zone.riskPercent)
+        ? zone
+        : { ...zone, riskPercent: DEFAULT_ZONE_RISK_PERCENT };
+    return withRisk;
+  });
 
   for (const seedZone of ZONES_SEED) {
     const existing = byId.get(seedZone.id);
     if (!existing) {
-      result.push({ ...seedZone, items: seedZone.items.map((row) => ({ ...row })) });
+      result.push({
+        ...seedZone,
+        items: seedZone.items.map((row) => ({ ...row })),
+        priceClassVariants: cloneVariantItems(seedZone.priceClassVariants),
+      });
       continue;
     }
     if (seedZone.id === "zone-kitchen-sink") {
@@ -143,10 +224,17 @@ function mergeZonesSeed(stored: CatalogZone[]): CatalogZone[] {
       const missingSeedRows = seedZone.items.some(
         (seedRow) => !existing.items.some((ex) => ex.atomicItemId === seedRow.atomicItemId),
       );
-      if (hasLegacyKitchenSink || missingSeedRows) {
+      const missingPriceClasses = !existing.priceClassVariants?.length && !!seedZone.priceClassVariants?.length;
+      if (hasLegacyKitchenSink || missingSeedRows || missingPriceClasses) {
         result = result.map((zone) =>
           zone.id === seedZone.id
-            ? { ...seedZone, items: seedZone.items.map((row) => ({ ...row })) }
+            ? {
+                ...seedZone,
+                items: seedZone.items.map((row) => ({ ...row })),
+                priceClassVariants: cloneVariantItems(seedZone.priceClassVariants),
+                riskPercent: zone.riskPercent ?? DEFAULT_ZONE_RISK_PERCENT,
+                activePriceClassId: zone.activePriceClassId ?? seedZone.activePriceClassId,
+              }
             : zone,
         );
       }
@@ -309,12 +397,20 @@ export function CatalogEditor() {
     return Math.round(itemUnitPrice(item) * row.quantity * (row.coefficient ?? 1));
   }
 
-  function zoneTotal(zone: CatalogZone): number {
-    return zone.items.reduce((sum, row) => sum + zoneRowTotal(row), 0);
+  function zoneSubtotal(zone: CatalogZone): number {
+    return zoneCompositionRows(zone).reduce((sum, row) => sum + zoneRowTotal(row), 0);
+  }
+
+  function zoneRiskAmount(zone: CatalogZone): number {
+    return Math.round((zoneSubtotal(zone) * zoneRiskPercent(zone)) / 100);
+  }
+
+  function zoneGrandTotal(zone: CatalogZone): number {
+    return zoneSubtotal(zone) + zoneRiskAmount(zone);
   }
 
   const sectionTotal = useMemo(
-    () => zones.reduce((sum, zone) => sum + zoneTotal(zone), 0),
+    () => zones.reduce((sum, zone) => sum + zoneGrandTotal(zone), 0),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [zones, itemsById],
   );
@@ -373,6 +469,7 @@ export function CatalogEditor() {
         title: "Новая зона",
         description: "",
         items: [],
+        riskPercent: DEFAULT_ZONE_RISK_PERCENT,
       };
       return [...prev, zone];
     });
@@ -410,21 +507,43 @@ export function CatalogEditor() {
     atomicItemId: string,
     field: "quantity" | "coefficient",
     value: string,
+    scope: "base" | "variant" = "base",
   ) {
     const parsed = value === "" ? (field === "coefficient" ? undefined : 0) : Number(value.replace(",", "."));
     if (parsed !== undefined && !Number.isFinite(parsed)) return;
     setZones((prev) =>
-      prev.map((zone) =>
-        zone.id !== zoneId
-          ? zone
-          : {
-              ...zone,
-              items: zone.items.map((row) =>
-                row.atomicItemId === atomicItemId ? { ...row, [field]: parsed } : row,
-              ),
-            },
-      ),
+      prev.map((zone) => {
+        if (zone.id !== zoneId) return zone;
+        if (scope === "variant" && zone.priceClassVariants?.length) {
+          const activeId = zone.activePriceClassId ?? zone.priceClassVariants[0].id;
+          return {
+            ...zone,
+            priceClassVariants: zone.priceClassVariants.map((variant) =>
+              variant.id !== activeId
+                ? variant
+                : {
+                    ...variant,
+                    items: variant.items.map((row) =>
+                      row.atomicItemId === atomicItemId ? { ...row, [field]: parsed } : row,
+                    ),
+                  },
+            ),
+          };
+        }
+        return {
+          ...zone,
+          items: zone.items.map((row) =>
+            row.atomicItemId === atomicItemId ? { ...row, [field]: parsed } : row,
+          ),
+        };
+      }),
     );
+  }
+
+  function updateZoneRiskPercent(zoneId: string, value: string) {
+    const parsed = value === "" ? DEFAULT_ZONE_RISK_PERCENT : Number(value.replace(",", "."));
+    if (!Number.isFinite(parsed) || parsed < 0) return;
+    updateZone(zoneId, { riskPercent: parsed });
   }
 
   function removeZoneRow(zoneId: string, atomicItemId: string) {
@@ -598,8 +717,9 @@ export function CatalogEditor() {
           <div className="ce-note">
             <span className="ce-note-tag">Надбавки</span>
             Накладные 10% и транспорт 5% применяются по решению и в суммы по умолчанию не входят.
-            Работы и материалы — отдельные кубики («монтаж точки» ≠ «монтаж прибора»). Тёплый пол /
-            отопление — отдельный модуль, не смешивать с сантехническими зонами.
+            6,4% — резерв на отклонения по трассе и комплектующим (без проекта), отдельной строкой на
+            уровне зоны. Работы и материалы — отдельные кубики («монтаж точки» ≠ «монтаж прибора»).
+            Тёплый пол / отопление — отдельный модуль, не смешивать с сантехническими зонами.
           </div>
 
           {plumbingView === "zones" ? (
@@ -610,12 +730,16 @@ export function CatalogEditor() {
               collapsedSubgroups={collapsedSubgroups}
               collapsedZones={collapsedZones}
               sectionTotal={sectionTotal}
-              zoneTotal={zoneTotal}
+              zoneSubtotal={zoneSubtotal}
+              zoneRiskAmount={zoneRiskAmount}
+              zoneGrandTotal={zoneGrandTotal}
+              zoneRiskPercent={zoneRiskPercent}
               zoneRowTotal={zoneRowTotal}
               onToggleSubgroup={toggleSubgroup}
               onToggleZone={toggleZone}
               onAddZone={addZone}
               onUpdateZone={updateZone}
+              onUpdateZoneRiskPercent={updateZoneRiskPercent}
               onRemoveZone={removeZone}
               onAddZoneRow={addZoneRow}
               onUpdateZoneRow={updateZoneRow}
@@ -651,31 +775,41 @@ type ZonesViewProps = {
   collapsedSubgroups: Set<string>;
   collapsedZones: Set<string>;
   sectionTotal: number;
-  zoneTotal: (zone: CatalogZone) => number;
+  zoneSubtotal: (zone: CatalogZone) => number;
+  zoneRiskAmount: (zone: CatalogZone) => number;
+  zoneGrandTotal: (zone: CatalogZone) => number;
+  zoneRiskPercent: (zone: CatalogZone) => number;
   zoneRowTotal: (row: { atomicItemId: string; quantity: number; coefficient?: number }) => number;
   onToggleSubgroup: (subgroup: string) => void;
   onToggleZone: (zoneId: string) => void;
   onAddZone: (subgroup: ZoneSubgroup) => void;
   onUpdateZone: (id: string, patch: Partial<CatalogZone>) => void;
+  onUpdateZoneRiskPercent: (zoneId: string, value: string) => void;
   onRemoveZone: (id: string, title: string) => void;
   onAddZoneRow: (zoneId: string, atomicItemId: string) => void;
-  onUpdateZoneRow: (zoneId: string, atomicItemId: string, field: "quantity" | "coefficient", value: string) => void;
+  onUpdateZoneRow: (
+    zoneId: string,
+    atomicItemId: string,
+    field: "quantity" | "coefficient",
+    value: string,
+    scope?: "base" | "variant",
+  ) => void;
   onRemoveZoneRow: (zoneId: string, atomicItemId: string) => void;
 };
 
 function ZonesView(props: ZonesViewProps) {
-  const { zones, itemsById, library, zoneTotal, zoneRowTotal } = props;
+  const { zones, itemsById, library, zoneGrandTotal, zoneRowTotal } = props;
 
   return (
     <div className="ce-zones">
       <div className="ce-meta">
         Подгрупп: <strong>{ZONE_SUBGROUPS.length}</strong> · Зон: <strong>{zones.length}</strong> · Итог раздела
-        «Сантехника»: <strong>{formatMoney(props.sectionTotal)} ₽</strong>
+        «Сантехника» (с резервом): <strong>{formatMoney(props.sectionTotal)} ₽</strong>
       </div>
 
       {ZONE_SUBGROUPS.map((subgroup) => {
         const subgroupZones = zones.filter((zone) => zone.subgroup === subgroup);
-        const subgroupTotal = subgroupZones.reduce((sum, zone) => sum + zoneTotal(zone), 0);
+        const subgroupTotal = subgroupZones.reduce((sum, zone) => sum + zoneGrandTotal(zone), 0);
         const collapsed = props.collapsedSubgroups.has(subgroup);
         return (
           <section key={subgroup} className="ce-subgroup">
@@ -710,10 +844,14 @@ function ZonesView(props: ZonesViewProps) {
                       collapsed={props.collapsedZones.has(zone.id)}
                       itemsById={itemsById}
                       library={library}
-                      total={zoneTotal(zone)}
+                      subtotal={props.zoneSubtotal(zone)}
+                      riskAmount={props.zoneRiskAmount(zone)}
+                      grandTotal={props.zoneGrandTotal(zone)}
+                      riskPercent={props.zoneRiskPercent(zone)}
                       zoneRowTotal={zoneRowTotal}
                       onToggle={() => props.onToggleZone(zone.id)}
                       onUpdateZone={props.onUpdateZone}
+                      onUpdateZoneRiskPercent={props.onUpdateZoneRiskPercent}
                       onRemoveZone={props.onRemoveZone}
                       onAddZoneRow={props.onAddZoneRow}
                       onUpdateZoneRow={props.onUpdateZoneRow}
@@ -735,19 +873,93 @@ type ZoneCardProps = {
   collapsed: boolean;
   itemsById: Map<string, CatalogItem>;
   library: CatalogItem[];
-  total: number;
+  subtotal: number;
+  riskAmount: number;
+  grandTotal: number;
+  riskPercent: number;
   zoneRowTotal: (row: { atomicItemId: string; quantity: number; coefficient?: number }) => number;
   onToggle: () => void;
   onUpdateZone: (id: string, patch: Partial<CatalogZone>) => void;
+  onUpdateZoneRiskPercent: (zoneId: string, value: string) => void;
   onRemoveZone: (id: string, title: string) => void;
   onAddZoneRow: (zoneId: string, atomicItemId: string) => void;
-  onUpdateZoneRow: (zoneId: string, atomicItemId: string, field: "quantity" | "coefficient", value: string) => void;
+  onUpdateZoneRow: (
+    zoneId: string,
+    atomicItemId: string,
+    field: "quantity" | "coefficient",
+    value: string,
+    scope?: "base" | "variant",
+  ) => void;
   onRemoveZoneRow: (zoneId: string, atomicItemId: string) => void;
 };
 
+function ZoneCompositionTable(props: {
+  rows: ZoneCompositionRow[];
+  zoneId: string;
+  scope: "base" | "variant";
+  itemsById: Map<string, CatalogItem>;
+  zoneRowTotal: ZoneCardProps["zoneRowTotal"];
+  onUpdateZoneRow: ZoneCardProps["onUpdateZoneRow"];
+  onRemoveZoneRow: ZoneCardProps["onRemoveZoneRow"];
+  removable?: boolean;
+}) {
+  const { rows, zoneId, scope, itemsById, zoneRowTotal, onUpdateZoneRow, onRemoveZoneRow, removable = true } =
+    props;
+
+  return rows.map((row) => {
+    const item = itemsById.get(row.atomicItemId);
+    const qtyHint = compositionQtyHint(row.atomicItemId, row.quantity, item?.unit);
+    return (
+      <tr key={`${scope}-${row.atomicItemId}`} className={item ? "" : "ce-row-missing"}>
+        <td className="ce-col-id ce-mono ce-readonly">{row.atomicItemId}</td>
+        <td className="ce-readonly">{item ? item.publicTitle : "⚠ позиция не найдена в библиотеке"}</td>
+        <td className="ce-readonly">{item ? item.unit : "—"}</td>
+        <td className="ce-num ce-readonly">{item ? formatMoney(itemUnitPrice(item)) : "0"}</td>
+        <td>
+          <input
+            className="ce-cell-input ce-num"
+            type="number"
+            min={0}
+            step={item?.unit === "м.п." ? "0.1" : item?.unit === "шт" ? "0.01" : "1"}
+            value={row.quantity}
+            onChange={(event) => onUpdateZoneRow(zoneId, row.atomicItemId, "quantity", event.target.value, scope)}
+          />
+          {qtyHint && <span className="ce-qty-hint">{qtyHint}</span>}
+        </td>
+        <td>
+          <input
+            className="ce-cell-input ce-num"
+            type="number"
+            step="0.01"
+            placeholder="1"
+            value={row.coefficient ?? ""}
+            onChange={(event) =>
+              onUpdateZoneRow(zoneId, row.atomicItemId, "coefficient", event.target.value, scope)
+            }
+          />
+        </td>
+        <td className="ce-num ce-readonly ce-total-cell">{formatMoney(zoneRowTotal(row))}</td>
+        <td className="ce-col-actions">
+          {removable && (
+            <button
+              type="button"
+              className="ce-row-delete"
+              title="Убрать из состава"
+              onClick={() => onRemoveZoneRow(zoneId, row.atomicItemId)}
+            >
+              ✕
+            </button>
+          )}
+        </td>
+      </tr>
+    );
+  });
+}
+
 function ZoneCard(props: ZoneCardProps) {
-  const { zone, itemsById, library, total } = props;
+  const { zone, itemsById, library, subtotal, riskAmount, grandTotal, riskPercent } = props;
   const [pickValue, setPickValue] = useState("");
+  const activeVariant = activePriceClassVariant(zone);
 
   function handlePick(value: string) {
     if (!value) return;
@@ -772,8 +984,10 @@ function ZoneCard(props: ZoneCardProps) {
           onChange={(event) => props.onUpdateZone(zone.id, { title: event.target.value })}
           placeholder="Название зоны"
         />
-        <span className="ce-zone-count">{zone.items.length} поз.</span>
-        <span className="ce-zone-total">{formatMoney(total)} ₽</span>
+        <span className="ce-zone-count">{zoneCompositionRows(zone).length} поз.</span>
+        <span className="ce-zone-total" title="Итого с резервом">
+          {formatMoney(grandTotal)} ₽
+        </span>
         <button
           type="button"
           className="ce-row-delete"
@@ -793,6 +1007,40 @@ function ZoneCard(props: ZoneCardProps) {
             placeholder="Описание зоны (опционально)"
           />
 
+          {zone.priceClassVariants && zone.priceClassVariants.length > 0 && (
+            <div className="ce-price-classes">
+              <span className="ce-price-classes-label">Класс комплектации:</span>
+              <div className="ce-price-class-tabs">
+                {zone.priceClassVariants.map((variant) => (
+                  <button
+                    key={variant.id}
+                    type="button"
+                    className={`ce-price-class-tab${
+                      (zone.activePriceClassId ?? zone.priceClassVariants![0].id) === variant.id ? " is-active" : ""
+                    }`}
+                    onClick={() => props.onUpdateZone(zone.id, { activePriceClassId: variant.id })}
+                  >
+                    {variant.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="ce-zone-risk-field">
+            <label className="ce-zone-risk-label">
+              Резерв на неопределённость, %
+              <input
+                className="ce-input ce-zone-risk-input"
+                type="number"
+                min={0}
+                step="0.1"
+                value={zone.riskPercent ?? DEFAULT_ZONE_RISK_PERCENT}
+                onChange={(event) => props.onUpdateZoneRiskPercent(zone.id, event.target.value)}
+              />
+            </label>
+          </div>
+
           <table className="ce-table ce-zone-table">
             <thead>
               <tr>
@@ -807,62 +1055,65 @@ function ZoneCard(props: ZoneCardProps) {
               </tr>
             </thead>
             <tbody>
-              {zone.items.length === 0 ? (
+              {zone.items.length === 0 && !activeVariant?.items.length ? (
                 <tr>
                   <td colSpan={8} className="ce-empty">
                     Состав пуст. Добавьте позицию из библиотеки ниже.
                   </td>
                 </tr>
               ) : (
-                zone.items.map((row) => {
-                  const item = itemsById.get(row.atomicItemId);
-                  const qtyHint = compositionQtyHint(row.atomicItemId, row.quantity, item?.unit);
-                  return (
-                    <tr key={row.atomicItemId} className={item ? "" : "ce-row-missing"}>
-                      <td className="ce-col-id ce-mono ce-readonly">{row.atomicItemId}</td>
-                      <td className="ce-readonly">{item ? item.publicTitle : "⚠ позиция не найдена в библиотеке"}</td>
-                      <td className="ce-readonly">{item ? item.unit : "—"}</td>
-                      <td className="ce-num ce-readonly">{item ? formatMoney(itemUnitPrice(item)) : "0"}</td>
-                      <td>
-                        <input
-                          className="ce-cell-input ce-num"
-                          type="number"
-                          min={0}
-                          step={item?.unit === "м.п." ? "0.1" : item?.unit === "шт" ? "0.01" : "1"}
-                          value={row.quantity}
-                          onChange={(event) =>
-                            props.onUpdateZoneRow(zone.id, row.atomicItemId, "quantity", event.target.value)
-                          }
-                        />
-                        {qtyHint && <span className="ce-qty-hint">{qtyHint}</span>}
-                      </td>
-                      <td>
-                        <input
-                          className="ce-cell-input ce-num"
-                          type="number"
-                          step="0.01"
-                          placeholder="1"
-                          value={row.coefficient ?? ""}
-                          onChange={(event) =>
-                            props.onUpdateZoneRow(zone.id, row.atomicItemId, "coefficient", event.target.value)
-                          }
-                        />
-                      </td>
-                      <td className="ce-num ce-readonly ce-total-cell">{formatMoney(props.zoneRowTotal(row))}</td>
-                      <td className="ce-col-actions">
-                        <button
-                          type="button"
-                          className="ce-row-delete"
-                          title="Убрать из состава"
-                          onClick={() => props.onRemoveZoneRow(zone.id, row.atomicItemId)}
-                        >
-                          ✕
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })
+                <>
+                  <ZoneCompositionTable
+                    rows={zone.items}
+                    zoneId={zone.id}
+                    scope="base"
+                    itemsById={itemsById}
+                    zoneRowTotal={props.zoneRowTotal}
+                    onUpdateZoneRow={props.onUpdateZoneRow}
+                    onRemoveZoneRow={props.onRemoveZoneRow}
+                  />
+                  {activeVariant && activeVariant.items.length > 0 && (
+                    <>
+                      <tr className="ce-variant-separator">
+                        <td colSpan={8}>
+                          Класс «{activeVariant.label}»: смеситель и мойка
+                        </td>
+                      </tr>
+                      <ZoneCompositionTable
+                        rows={activeVariant.items}
+                        zoneId={zone.id}
+                        scope="variant"
+                        itemsById={itemsById}
+                        zoneRowTotal={props.zoneRowTotal}
+                        onUpdateZoneRow={props.onUpdateZoneRow}
+                        onRemoveZoneRow={props.onRemoveZoneRow}
+                        removable={false}
+                      />
+                    </>
+                  )}
+                </>
               )}
+              <tr className="ce-zone-summary-row">
+                <td colSpan={6} className="ce-readonly ce-zone-summary-label">
+                  Subtotal (атомы)
+                </td>
+                <td className="ce-num ce-readonly">{formatMoney(subtotal)}</td>
+                <td />
+              </tr>
+              <tr className="ce-zone-summary-row ce-zone-summary-risk">
+                <td colSpan={6} className="ce-readonly ce-zone-summary-label">
+                  Резерв на неопределённость ({riskPercent}%)
+                </td>
+                <td className="ce-num ce-readonly">{formatMoney(riskAmount)}</td>
+                <td />
+              </tr>
+              <tr className="ce-zone-summary-row ce-zone-summary-total">
+                <td colSpan={6} className="ce-readonly ce-zone-summary-label">
+                  Итого зоны
+                </td>
+                <td className="ce-num ce-readonly ce-total-cell">{formatMoney(grandTotal)}</td>
+                <td />
+              </tr>
             </tbody>
           </table>
 

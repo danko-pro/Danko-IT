@@ -115,6 +115,67 @@ export const PLUMBING_SEED: CatalogItem[] = [
   row("drinking-water-filter", "Фильтр питьевой воды / вывод", "drinkingWaterFilter; очистка воды", "шт", 3500, 2500, 800, 13000, "Кухня", "Сан v1"),
   row("dishwasher-outputs-alt", "Выводы под посудомоечную машину", "dishwasherOutputsAlt", "шт", 6500, 3500, 1500, 0, "Кухня", "Сан v1"),
   row("drain-clamp-filter", "Дренажный хомут / подключение фильтра к канализации", "drainClampFilter", "шт", 1200, 1200, 300, 0, "Кухня", "Сан v1"),
+  row(
+    "kitchen-faucet-economy",
+    "Смеситель кухонный — эконом",
+    "kitchenFaucetEconomy; требует уточнения",
+    "шт",
+    2000,
+    1000,
+    500,
+    8000,
+    "Кухня",
+    "вручную",
+  ),
+  row("kitchen-faucet-standard", "Смеситель кухонный — стандарт", "kitchenFaucetStandard", "шт", 2500, 1300, 500, 12000, "Кухня", "код"),
+  row(
+    "kitchen-faucet-comfort",
+    "Смеситель кухонный — комфорт",
+    "kitchenFaucetComfort; требует уточнения",
+    "шт",
+    3000,
+    1500,
+    500,
+    22000,
+    "Кухня",
+    "вручную",
+  ),
+  row(
+    "kitchen-sink-bowl-economy",
+    "Мойка кухонная — эконом",
+    "kitchenSinkBowlEconomy; требует уточнения",
+    "шт",
+    0,
+    0,
+    0,
+    0,
+    "Кухня",
+    "вручную",
+  ),
+  row(
+    "kitchen-sink-bowl-standard",
+    "Мойка кухонная — стандарт",
+    "kitchenSinkBowlStandard; требует уточнения",
+    "шт",
+    0,
+    0,
+    0,
+    0,
+    "Кухня",
+    "вручную",
+  ),
+  row(
+    "kitchen-sink-bowl-comfort",
+    "Мойка кухонная — комфорт",
+    "kitchenSinkBowlComfort; требует уточнения",
+    "шт",
+    0,
+    0,
+    0,
+    0,
+    "Кухня",
+    "вручную",
+  ),
 
   // C.3. Тех. зона
   row("dishwasher-output", "Выводы для ПМ машины", "dishwasherOutput", "шт", 5500, 3000, 1000, 0, "Тех. зона", "код"),
@@ -245,6 +306,9 @@ export const WATER_POINT_FITTINGS_QTY = 6;
 /** Крепёж (хомут) на погонный метр трубы — PPR d20 и канализация (50/110 мм). */
 export const PIPE_CLAMP_PER_METER = 1.5;
 
+/** Резерв на неопределённость по зоне (трасса, комплектующие без проекта). */
+export const DEFAULT_ZONE_RISK_PERCENT = 6.4;
+
 export function pipeClampQty(pipeMeters: number): number {
   return pipeMeters * PIPE_CLAMP_PER_METER;
 }
@@ -275,12 +339,23 @@ export type ZoneCompositionRow = {
   coefficient?: number;
 };
 
+export type ZonePriceClassVariant = {
+  id: string;
+  label: string;
+  items: ZoneCompositionRow[];
+};
+
 export type CatalogZone = {
   id: string;
   subgroup: ZoneSubgroup;
   title: string;
   description?: string;
   items: ZoneCompositionRow[];
+  /** Резерв на неопределённость, % от subtotal зоны. */
+  riskPercent?: number;
+  /** Варианты комплектации (смеситель + мойка и т.п.) — переключаются в UI. */
+  priceClassVariants?: ZonePriceClassVariant[];
+  activePriceClassId?: string;
 };
 
 // Фиксированный список подгрупп для иерархии зон.
@@ -302,7 +377,35 @@ export const ZONES_SEED: CatalogZone[] = [
     subgroup: "Кухня",
     title: "Зона мойки",
     description:
-      "Атомарная сборка: точки ХВС/ГВС и канализации, подключение, сифон, трубы (PPR 20 м = 10 м × 2 точки; выходы и фитинги по 12 шт = 6×2; канализация 50 мм 3,5 м.п.; крепёж 1,5 шт/м.п.). Смеситель кухонный — цена пока не задана, не включён.",
+      "База: точки ХВС/ГВС и канализации, подключение, сифон, трубы (PPR 20 м = 10 м × 2 точки; выходы и фитинги по 12 шт = 6×2; канализация 50 мм 3,5 м.п.; крепёж 1,5 шт/м.п.). Класс комплектации — смеситель + мойка (переключатель ниже).",
+    riskPercent: DEFAULT_ZONE_RISK_PERCENT,
+    activePriceClassId: "standard",
+    priceClassVariants: [
+      {
+        id: "economy",
+        label: "Эконом",
+        items: [
+          { atomicItemId: "kitchen-faucet-economy", quantity: 1 },
+          { atomicItemId: "kitchen-sink-bowl-economy", quantity: 1 },
+        ],
+      },
+      {
+        id: "standard",
+        label: "Стандарт",
+        items: [
+          { atomicItemId: "kitchen-faucet-standard", quantity: 1 },
+          { atomicItemId: "kitchen-sink-bowl-standard", quantity: 1 },
+        ],
+      },
+      {
+        id: "comfort",
+        label: "Комфорт",
+        items: [
+          { atomicItemId: "kitchen-faucet-comfort", quantity: 1 },
+          { atomicItemId: "kitchen-sink-bowl-comfort", quantity: 1 },
+        ],
+      },
+    ],
     items: [
       { atomicItemId: "work-water-point", quantity: 1 },
       { atomicItemId: "work-sewer-point", quantity: 1 },
@@ -321,6 +424,7 @@ export const ZONES_SEED: CatalogZone[] = [
     subgroup: "Санузел",
     title: "Зона умывальника",
     description: "Тумба с раковиной, смеситель и сифон.",
+    riskPercent: DEFAULT_ZONE_RISK_PERCENT,
     items: [
       { atomicItemId: "vanity-sink-set", quantity: 1 },
       { atomicItemId: "sink-faucet", quantity: 1 },

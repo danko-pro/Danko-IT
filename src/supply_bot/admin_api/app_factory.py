@@ -27,6 +27,7 @@ from supply_bot.storage_auth import SqlAlchemyUserAuthRepository
 from supply_bot.storage_auth.tables import app_users
 from supply_bot.storage_catalog import SqlAlchemyCatalogRepository
 from supply_bot.storage_dashboard import SqlAlchemyDashboardReadModel
+from supply_bot.storage_estimates.plumbing_seed import ensure_global_plumbing_defaults
 from supply_bot.storage_estimates.runtime_repository import SqlAlchemyEstimateRuntimeRepository
 from supply_bot.storage_notifications import SqlAlchemyTelegramNotificationRepository
 from supply_bot.storage_projects import SqlAlchemyProjectWorkspaceRepository
@@ -242,6 +243,8 @@ def _build_admin_lifespan(
         await storage.initialize()
         if database_runtime.backend == "sqlite":
             await _claim_legacy_estimate_runtime_owner(database_runtime, owner_id=system_project_owner_id)
+        # Глобальные дефолты каталога сантехники (owner_user_id = NULL) — идемпотентный seed (A5).
+        await ensure_global_plumbing_defaults(database_runtime.session_factory)
         await storage.ensure_runtime_settings(
             delivery_start=settings.default_delivery_start.strftime("%H:%M"),
             delivery_end=settings.default_delivery_end.strftime("%H:%M"),

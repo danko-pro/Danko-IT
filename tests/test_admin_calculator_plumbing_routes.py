@@ -162,11 +162,14 @@ class AdminCalculatorPlumbingRouteTests(AdminProjectsRouteCase):
                 self.assertEqual(faucet.status_code, 200)
                 faucet_id = int(faucet.json()["id"])
 
-                # CREATE зона
+                # CREATE зона.
+                # Код намеренно отличается от глобальных seed-дефолтов (A5), которые засеваются
+                # в lifespan: иначе в снапшоте окажутся две зоны с кодом zone-kitchen-sink.
+                zone_code = "zone-roundtrip-test"
                 create_zone = client.post(
                     "/api/calculator/plumbing/zones",
                     json={
-                        "zone_code": "zone-kitchen-sink",
+                        "zone_code": zone_code,
                         "subgroup": "Кухня",
                         "title": "Зона мойки",
                         "risk_percent": 6.4,
@@ -249,7 +252,7 @@ class AdminCalculatorPlumbingRouteTests(AdminProjectsRouteCase):
                 self.assertIn("version", preview_payload)
                 self.assertIn("items", preview_payload)
                 self.assertIn("zones", preview_payload)
-                preview_zone = next(z for z in preview_payload["zones"] if z["code"] == "zone-kitchen-sink")
+                preview_zone = next(z for z in preview_payload["zones"] if z["code"] == zone_code)
                 self.assertIn("riskPercent", preview_zone)
                 self.assertEqual(preview_zone["riskPercent"], 7.0)
                 preview_package = next(p for p in preview_zone["packages"] if p["code"] == "b")

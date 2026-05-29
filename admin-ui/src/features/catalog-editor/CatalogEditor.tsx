@@ -625,6 +625,29 @@ export function CatalogEditor() {
     );
   }
 
+  function replaceZoneVariantRow(zoneId: string, oldAtomicItemId: string, newAtomicItemId: string) {
+    if (!newAtomicItemId || oldAtomicItemId === newAtomicItemId) return;
+    setZones((prev) =>
+      prev.map((zone) => {
+        if (zone.id !== zoneId || !zone.priceClassVariants?.length) return zone;
+        const activeId = zone.activePriceClassId ?? zone.priceClassVariants[0].id;
+        return {
+          ...zone,
+          priceClassVariants: zone.priceClassVariants.map((variant) =>
+            variant.id !== activeId
+              ? variant
+              : {
+                  ...variant,
+                  items: variant.items.map((row) =>
+                    row.atomicItemId === oldAtomicItemId ? { ...row, atomicItemId: newAtomicItemId } : row,
+                  ),
+                },
+          ),
+        };
+      }),
+    );
+  }
+
   function toggleSubgroup(subgroup: string) {
     setCollapsedSubgroups((prev) => {
       const next = new Set(prev);
@@ -813,6 +836,7 @@ export function CatalogEditor() {
               onAddZoneRow={addZoneRow}
               onUpdateZoneRow={updateZoneRow}
               onRemoveZoneRow={removeZoneRow}
+              onReplaceZoneVariantRow={replaceZoneVariantRow}
             />
           ) : (
             <LibraryView
@@ -864,7 +888,21 @@ type ZonesViewProps = {
     scope?: "base" | "variant",
   ) => void;
   onRemoveZoneRow: (zoneId: string, atomicItemId: string) => void;
+  onReplaceZoneVariantRow: (zoneId: string, oldAtomicItemId: string, newAtomicItemId: string) => void;
 };
+
+function variantReplacementCandidates(library: CatalogItem[], atomicItemId: string): CatalogItem[] {
+  const isFaucet = atomicItemId.includes("faucet");
+  const isSink = atomicItemId.includes("sink");
+  const kitchen = library.filter((item) => item.group === "Кухня");
+  if (isFaucet) {
+    return kitchen.filter((item) => item.id.includes("faucet") || item.publicTitle.toLowerCase().includes("смеситель"));
+  }
+  if (isSink) {
+    return kitchen.filter((item) => item.id.includes("sink") || item.publicTitle.toLowerCase().includes("мойк"));
+  }
+  return kitchen.length > 0 ? kitchen : library;
+}
 
 function ZonesView(props: ZonesViewProps) {
   const { zones, itemsById, library, zoneGrandTotal, zoneRowTotal } = props;
@@ -925,6 +963,7 @@ function ZonesView(props: ZonesViewProps) {
                       onAddZoneRow={props.onAddZoneRow}
                       onUpdateZoneRow={props.onUpdateZoneRow}
                       onRemoveZoneRow={props.onRemoveZoneRow}
+                      onReplaceZoneVariantRow={props.onReplaceZoneVariantRow}
                     />
                   ))
                 )}
@@ -960,6 +999,7 @@ type ZoneCardProps = {
     scope?: "base" | "variant",
   ) => void;
   onRemoveZoneRow: (zoneId: string, atomicItemId: string) => void;
+  onReplaceZoneVariantRow: (zoneId: string, oldAtomicItemId: string, newAtomicItemId: string) => void;
 };
 
 function ZoneCompositionTable(props: {
@@ -967,13 +1007,25 @@ function ZoneCompositionTable(props: {
   zoneId: string;
   scope: "base" | "variant";
   itemsById: Map<string, CatalogItem>;
+  library: CatalogItem[];
   zoneRowTotal: ZoneCardProps["zoneRowTotal"];
   onUpdateZoneRow: ZoneCardProps["onUpdateZoneRow"];
   onRemoveZoneRow: ZoneCardProps["onRemoveZoneRow"];
+  onReplaceZoneVariantRow: ZoneCardProps["onReplaceZoneVariantRow"];
   removable?: boolean;
 }) {
-  const { rows, zoneId, scope, itemsById, zoneRowTotal, onUpdateZoneRow, onRemoveZoneRow, removable = true } =
-    props;
+  const {
+    rows,
+    zoneId,
+    scope,
+    itemsById,
+    library,
+    zoneRowTotal,
+    onUpdateZoneRow,
+    onRemoveZoneRow,
+    onReplaceZoneVariantRow,
+    removable = true,
+  } = props;
 
   return rows.map((row) => {
     const item = itemsById.get(row.atomicItemId);
@@ -981,7 +1033,24 @@ function ZoneCompositionTable(props: {
     return (
       <tr key={`${scope}-${row.atomicItemId}`} className={item ? "" : "ce-row-missing"}>
         <td className="ce-col-id ce-mono ce-readonly">{row.atomicItemId}</td>
-        <td className="ce-readonly">{item ? item.publicTitle : "⚠ позиция не найдена в библиотеке"}</td>
+        <td>
+          {scope === "variant" ? (
+            <select
+              className="ce-cell-input"
+              value={row.atomicItemId}
+              title="Заменить позицию в пакете"
+              onChange={(event) => onReplaceZoneVariantRow(zoneId, row.atomicItemId, event.target.value)}
+            >
+              {variantReplacementCandidates(library, row.atomicItemId).map((candidate) => (
+                <option key={candidate.id} value={candidate.id}>
+                  {candidate.publicTitle} — {formatMoney(itemUnitPrice(candidate))} ₽/{candidate.unit}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <span className="ce-readonly">{item ? item.publicTitle : "⚠ позиция не найдена в библиотеке"}</span>
+          )}
+        </td>
         <td className="ce-readonly">{item ? item.unit : "—"}</td>
         <td className="ce-num ce-readonly">{item ? formatMoney(itemUnitPrice(item)) : "0"}</td>
         <td>
@@ -1137,15 +1206,17 @@ function ZoneCard(props: ZoneCardProps) {
                     zoneId={zone.id}
                     scope="base"
                     itemsById={itemsById}
+                    library={library}
                     zoneRowTotal={props.zoneRowTotal}
                     onUpdateZoneRow={props.onUpdateZoneRow}
                     onRemoveZoneRow={props.onRemoveZoneRow}
+                    onReplaceZoneVariantRow={props.onReplaceZoneVariantRow}
                   />
                   {activeVariant && activeVariant.items.length > 0 && (
                     <>
                       <tr className="ce-variant-separator">
                         <td colSpan={8}>
-                          Класс «{activeVariant.label}»: смеситель и мойка
+                          {activeVariant.label}: смеситель и мойка — выберите другую позицию в списке или измените кол-во
                         </td>
                       </tr>
                       <ZoneCompositionTable
@@ -1153,9 +1224,11 @@ function ZoneCard(props: ZoneCardProps) {
                         zoneId={zone.id}
                         scope="variant"
                         itemsById={itemsById}
+                        library={library}
                         zoneRowTotal={props.zoneRowTotal}
                         onUpdateZoneRow={props.onUpdateZoneRow}
                         onRemoveZoneRow={props.onRemoveZoneRow}
+                        onReplaceZoneVariantRow={props.onReplaceZoneVariantRow}
                         removable={false}
                       />
                     </>

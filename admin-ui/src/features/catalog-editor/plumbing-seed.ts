@@ -213,10 +213,41 @@ export const PLUMBING_SEED: CatalogItem[] = [
     "Санта-Сервис",
   ),
   row("kit-ppr-d20-40m", "Комплект PPR d20 (~40 м + фитинги)", "типовой комплект на квартиру, остаётся 2–3 трубы; Санта-Сервис", "комплект", 0, 4836.87, 0, 0, "Узел", "Санта-Сервис"),
+  row(
+    "pipe-clamp-ppr-d20",
+    "Крепёж трубы (хомут) PPR d20",
+    "материал; Хомут металл 20-24; 1,5 шт. на м.п. трубы; УТ-1107/1108/1109",
+    "шт",
+    0,
+    77.52,
+    0,
+    0,
+    "Трассы / подготовка",
+    "Санта-Сервис",
+  ),
+  row(
+    "pipe-clamp-sewer",
+    "Крепёж трубы (хомут) канализация",
+    "материал; Хомут металл 32-37 (50/110 мм); 1,5 шт. на м.п. трубы; УТ-1107/1108/1109",
+    "шт",
+    0,
+    86.64,
+    0,
+    0,
+    "Трассы / подготовка",
+    "Санта-Сервис",
+  ),
 ];
 
 /** Выходы и фитинги PPR d20 на одну водяную точку (ХВС или ГВС). */
 export const WATER_POINT_FITTINGS_QTY = 6;
+
+/** Крепёж (хомут) на погонный метр трубы — PPR d20 и канализация (50/110 мм). */
+export const PIPE_CLAMP_PER_METER = 1.5;
+
+export function pipeClampQty(pipeMeters: number): number {
+  return pipeMeters * PIPE_CLAMP_PER_METER;
+}
 
 export const CATALOG_GROUPS: CatalogGroup[] = [
   "Санузел",
@@ -271,7 +302,7 @@ export const ZONES_SEED: CatalogZone[] = [
     subgroup: "Кухня",
     title: "Зона мойки",
     description:
-      "Атомарная сборка: точки ХВС/ГВС и канализации, подключение, сифон, трубы (PPR 20 м = 10 м × 2 точки; выходы и фитинги по 12 шт = 6×2; канализация 50 мм 3,5 м.п.). Смеситель кухонный — цена пока не задана, не включён.",
+      "Атомарная сборка: точки ХВС/ГВС и канализации, подключение, сифон, трубы (PPR 20 м = 10 м × 2 точки; выходы и фитинги по 12 шт = 6×2; канализация 50 мм 3,5 м.п.; крепёж 1,5 шт/м.п.). Смеситель кухонный — цена пока не задана, не включён.",
     items: [
       { atomicItemId: "work-water-point", quantity: 1 },
       { atomicItemId: "work-sewer-point", quantity: 1 },
@@ -281,6 +312,8 @@ export const ZONES_SEED: CatalogZone[] = [
       { atomicItemId: "pipe-ppr-d20", quantity: 20 },
       { atomicItemId: "ppr-d20-outlet", quantity: WATER_POINT_FITTINGS_QTY * 2 },
       { atomicItemId: "ppr-d20-fitting", quantity: WATER_POINT_FITTINGS_QTY * 2 },
+      { atomicItemId: "pipe-clamp-ppr-d20", quantity: pipeClampQty(20) },
+      { atomicItemId: "pipe-clamp-sewer", quantity: pipeClampQty(3.5) },
     ],
   },
   {

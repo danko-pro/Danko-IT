@@ -5,6 +5,7 @@ import {
   CATALOG_SOURCES,
   CATALOG_UNITS,
   PLUMBING_SEED,
+  PIPE_CLAMP_PER_METER,
   WATER_POINT_FITTINGS_QTY,
   ZONES_SEED,
   ZONE_SUBGROUPS,
@@ -216,6 +217,19 @@ function compositionQtyHint(atomicItemId: string, quantity: number, unit?: Catal
     quantity > 1
   ) {
     return `${quantity} шт — правило: ${WATER_POINT_FITTINGS_QTY} на водяную точку`;
+  }
+  if (atomicItemId === "pipe-clamp-ppr-d20" && quantity === 20 * PIPE_CLAMP_PER_METER) {
+    return `30 = 20 м × ${PIPE_CLAMP_PER_METER}`;
+  }
+  if (atomicItemId === "pipe-clamp-sewer" && quantity === 3.5 * PIPE_CLAMP_PER_METER) {
+    return `5,25 = 3,5 м × ${PIPE_CLAMP_PER_METER}`;
+  }
+  if (
+    (atomicItemId === "pipe-clamp-ppr-d20" || atomicItemId === "pipe-clamp-sewer") &&
+    unit === "шт" &&
+    quantity > 0
+  ) {
+    return `${quantity} шт — правило: ${PIPE_CLAMP_PER_METER} на м.п. трубы`;
   }
   return null;
 }
@@ -575,9 +589,10 @@ export function CatalogEditor() {
 
           <div className="ce-note ce-note-warn">
             <span className="ce-note-tag">Трубы</span>
-            Без проекта расчёт труб и фитингов ориентировочный, с запасом на повороты и углы. PPR d20:
-            10 м.п. на водяную точку (пара ХВС+ГВС = ×2); выходы и фитинги — по 6 шт. на точку.
-            Канализация 50 мм к мойке: коэффициент 3,5 м.п.
+            Без проекта расчёт труб, фитингов и крепежа ориентировочный, с запасом на повороты и углы.
+            PPR d20: 10 м.п. на водяную точку (пара ХВС+ГВС = ×2); выходы и фитинги — по 6 шт. на точку.
+            Крепёж — 1,5 шт. на м.п. трубы (PPR d20 и канализация 50/110 мм). Канализация 50 мм к
+            мойке: коэффициент 3,5 м.п.
           </div>
 
           <div className="ce-note">
@@ -813,7 +828,7 @@ function ZoneCard(props: ZoneCardProps) {
                           className="ce-cell-input ce-num"
                           type="number"
                           min={0}
-                          step={item?.unit === "м.п." ? "0.1" : "1"}
+                          step={item?.unit === "м.п." ? "0.1" : item?.unit === "шт" ? "0.01" : "1"}
                           value={row.quantity}
                           onChange={(event) =>
                             props.onUpdateZoneRow(zone.id, row.atomicItemId, "quantity", event.target.value)

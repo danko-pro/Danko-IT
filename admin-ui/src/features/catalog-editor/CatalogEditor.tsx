@@ -1,15 +1,13 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
   CATALOG_CATEGORIES,
   CATALOG_GROUPS,
   CATALOG_SOURCES,
   CATALOG_UNITS,
   DEFAULT_ZONE_RISK_PERCENT,
-  PLUMBING_SEED,
   PIPE_CLAMP_PER_METER,
   SINK_ZONE_GROOVE_METERS,
   WATER_POINT_FITTINGS_QTY,
-  ZONES_SEED,
   ZONE_SUBGROUPS,
   ZONE_SUBGROUP_LABELS,
   type CatalogCategory,
@@ -22,10 +20,9 @@ import {
   type ZonePriceClassVariant,
   type ZoneSubgroup,
 } from "./plumbing-seed";
+import { usePlumbingCatalog } from "./api/client";
+import type { PlumbingSnapshotPreview } from "./api/types";
 import { CATALOG_EDITOR_STYLES } from "./styles";
-
-const STORAGE_KEY = "danko-catalog-plumbing";
-const ZONES_KEY = "danko-catalog-plumbing-zones";
 
 const CATEGORY_LABELS: Record<CatalogCategory, string> = {
   works: "Работа",
@@ -54,99 +51,7 @@ const SECTION_TABS: SectionTab[] = [
   { id: "cleaning", label: "Уборка", ready: false },
 ];
 
-/** Миграция economy/standard/comfort → пакеты c/b/a (как packageLevel в Danko). */
-const LEGACY_ATOMIC_ITEM_ID_MAP: Record<string, string> = {
-  "kitchen-faucet-economy": "kitchen-faucet-c",
-  "kitchen-faucet-standard": "kitchen-faucet-b",
-  "kitchen-faucet-comfort": "kitchen-faucet-a",
-  "kitchen-sink-bowl-economy": "kitchen-sink-bowl-c",
-  "kitchen-sink-bowl-standard": "kitchen-sink-bowl-b",
-  "kitchen-sink-bowl-comfort": "kitchen-sink-bowl-a",
-  /** Локальные id из catalog-editor → канонические seed-id (сброс и public spec). */
-  "new-item-89": "kitchen-faucet-c",
-  moyka: "kitchen-sink-bowl-c",
-};
-
-const LEGACY_PRICE_CLASS_ID_MAP: Record<string, string> = {
-  economy: "c",
-  standard: "b",
-  comfort: "a",
-};
-
-const PACKAGE_LABELS: Record<string, string> = {
-  c: "Пакет C",
-  b: "Пакет B",
-  a: "Пакет A",
-};
-
 const SINK_ZONE_GROOVE_ITEM_ID = "work-groove-pipe";
-
-function migrateAtomicItemId(id: string): string {
-  return LEGACY_ATOMIC_ITEM_ID_MAP[id] ?? id;
-}
-
-function migrateLegacyAtomicItems(stored: CatalogItem[]): CatalogItem[] {
-  const byId = new Map<string, CatalogItem>();
-  for (const item of stored) {
-    const id = migrateAtomicItemId(item.id);
-    if (!byId.has(id)) {
-      byId.set(id, id === item.id ? item : { ...item, id });
-    }
-  }
-  return [...byId.values()];
-}
-
-function migrateLegacyZonePackages(zone: CatalogZone): CatalogZone {
-  const items = zone.items.map((row) => ({
-    ...row,
-    atomicItemId: migrateAtomicItemId(row.atomicItemId),
-  }));
-
-  if (!zone.priceClassVariants?.length) {
-    return { ...zone, items };
-  }
-
-  const activePriceClassId =
-    zone.activePriceClassId != null
-      ? (LEGACY_PRICE_CLASS_ID_MAP[zone.activePriceClassId] ?? zone.activePriceClassId)
-      : undefined;
-
-  const priceClassVariants = zone.priceClassVariants.map((variant) => {
-    const id = LEGACY_PRICE_CLASS_ID_MAP[variant.id] ?? variant.id;
-    return {
-      id,
-      label: PACKAGE_LABELS[id] ?? variant.label,
-      items: variant.items.map((row) => ({
-        ...row,
-        atomicItemId: migrateAtomicItemId(row.atomicItemId),
-      })),
-    };
-  });
-
-  return { ...zone, items, priceClassVariants, activePriceClassId };
-}
-
-function cloneSeed(): CatalogItem[] {
-  return PLUMBING_SEED.map((item) => ({ ...item }));
-}
-
-function cloneZonesSeed(): CatalogZone[] {
-  return ZONES_SEED.map((zone) => ({
-    ...zone,
-    items: zone.items.map((row) => ({ ...row })),
-    priceClassVariants: zone.priceClassVariants?.map((variant) => ({
-      ...variant,
-      items: variant.items.map((row) => ({ ...row })),
-    })),
-  }));
-}
-
-function cloneVariantItems(variants: ZonePriceClassVariant[] | undefined): ZonePriceClassVariant[] | undefined {
-  return variants?.map((variant) => ({
-    ...variant,
-    items: variant.items.map((row) => ({ ...row })),
-  }));
-}
 
 function zoneRiskPercent(zone: CatalogZone): number {
   return zone.riskPercent ?? DEFAULT_ZONE_RISK_PERCENT;
@@ -261,101 +166,6 @@ function normalizeZone(raw: CatalogZone): CatalogZone {
   };
 }
 
-// Подмешиваем новые seed-кубики, которых ещё нет в localStorage пользователя,
-// НЕ затирая его правки по уже существующим id. Так новые работы/трубы появляются
-// без полного сброса. (Минус: ранее удалённый seed-кубик вернётся.)
-function mergeNewSeed(stored: CatalogItem[]): CatalogItem[] {
-  const migrated = migrateLegacyAtomicItems(stored);
-  const ids = new Set(migrated.map((item) => item.id));
-  const additions = PLUMBING_SEED.filter((seed) => !ids.has(seed.id)).map((seed) => ({ ...seed }));
-  return additions.length > 0 ? [...migrated, ...additions] : migrated;
-}
-
-// Подмешивает отсутствующие seed-зоны, riskPercent, классы комплектации
-// и обновляет демо-зону «Зона мойки», если в localStorage ещё legacy-состав.
-function mergeZonesSeed(stored: CatalogZone[]): CatalogZone[] {
-  const byId = new Map(stored.map((zone) => [zone.id, zone]));
-  let result = stored.map((zone) => {
-    const migrated = migrateLegacyZonePackages(zone);
-    const withRisk =
-      migrated.riskPercent != null && Number.isFinite(migrated.riskPercent)
-        ? migrated
-        : { ...migrated, riskPercent: DEFAULT_ZONE_RISK_PERCENT };
-    return withRisk;
-  });
-
-  for (const seedZone of ZONES_SEED) {
-    const existing = byId.get(seedZone.id);
-    if (!existing) {
-      result.push({
-        ...seedZone,
-        items: seedZone.items.map((row) => ({ ...row })),
-        priceClassVariants: cloneVariantItems(seedZone.priceClassVariants),
-      });
-      continue;
-    }
-    if (seedZone.id === "zone-kitchen-sink") {
-      const hasLegacyKitchenSink = existing.items.some((row) => row.atomicItemId === "kitchen-sink");
-      const missingSeedRows = seedZone.items.some(
-        (seedRow) =>
-          seedRow.atomicItemId !== SINK_ZONE_GROOVE_ITEM_ID &&
-          !existing.items.some((ex) => ex.atomicItemId === seedRow.atomicItemId),
-      );
-      const missingGrooveRow = !existing.items.some((row) => row.atomicItemId === SINK_ZONE_GROOVE_ITEM_ID);
-      const missingPriceClasses = !existing.priceClassVariants?.length && !!seedZone.priceClassVariants?.length;
-      if (hasLegacyKitchenSink || missingSeedRows || missingPriceClasses) {
-        result = result.map((zone) =>
-          zone.id === seedZone.id
-            ? {
-                ...seedZone,
-                items: seedZone.items.map((row) => ({ ...row })),
-                priceClassVariants: cloneVariantItems(seedZone.priceClassVariants),
-                riskPercent: zone.riskPercent ?? DEFAULT_ZONE_RISK_PERCENT,
-                activePriceClassId: zone.activePriceClassId ?? seedZone.activePriceClassId,
-              }
-            : zone,
-        );
-      } else if (missingGrooveRow) {
-        const grooveRow = seedZone.items.find((row) => row.atomicItemId === SINK_ZONE_GROOVE_ITEM_ID);
-        if (grooveRow) {
-          result = result.map((zone) =>
-            zone.id === seedZone.id
-              ? { ...zone, items: [...zone.items, { ...grooveRow }] }
-              : zone,
-          );
-        }
-      }
-    }
-  }
-  return result;
-}
-
-function loadItems(): CatalogItem[] {
-  try {
-    const stored = window.localStorage.getItem(STORAGE_KEY);
-    if (!stored) return cloneSeed();
-    const parsed = JSON.parse(stored);
-    if (!Array.isArray(parsed)) return cloneSeed();
-    const items = parsed.filter(isCatalogItem).map(normalizeItem);
-    return items.length > 0 ? mergeNewSeed(items) : cloneSeed();
-  } catch {
-    return cloneSeed();
-  }
-}
-
-function loadZones(): CatalogZone[] {
-  try {
-    const stored = window.localStorage.getItem(ZONES_KEY);
-    if (!stored) return cloneZonesSeed();
-    const parsed = JSON.parse(stored);
-    if (!Array.isArray(parsed)) return cloneZonesSeed();
-    const zones = parsed.filter(isCatalogZone).map(normalizeZone);
-    return zones.length > 0 ? mergeZonesSeed(zones) : cloneZonesSeed();
-  } catch {
-    return cloneZonesSeed();
-  }
-}
-
 function baseSum(item: CatalogItem): number {
   return item.works + item.materials + item.equipment + item.consumables;
 }
@@ -438,26 +248,16 @@ function makeNewZoneId(existing: CatalogZone[]): string {
 }
 
 export function CatalogEditor() {
-  const [items, setItems] = useState<CatalogItem[]>(() => loadItems());
-  const [zones, setZones] = useState<CatalogZone[]>(() => loadZones());
+  const catalog = usePlumbingCatalog();
+  const { items, zones, setItems, setZones, loading, saving, error, savedAt } = catalog;
   const [activeTab, setActiveTab] = useState<string>("plumbing");
   const [plumbingView, setPlumbingView] = useState<"zones" | "library">("zones");
   const [search, setSearch] = useState("");
   const [groupFilter, setGroupFilter] = useState<"all" | CatalogGroup>("all");
-  const [savedAt, setSavedAt] = useState<string>("");
   const [collapsedSubgroups, setCollapsedSubgroups] = useState<Set<string>>(new Set());
   const [collapsedZones, setCollapsedZones] = useState<Set<string>>(new Set());
+  const [showPreview, setShowPreview] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-
-  useEffect(() => {
-    try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
-      window.localStorage.setItem(ZONES_KEY, JSON.stringify(zones));
-      setSavedAt(new Date().toLocaleTimeString("ru-RU"));
-    } catch {
-      setSavedAt("ошибка сохранения");
-    }
-  }, [items, zones]);
 
   const itemsById = useMemo(() => {
     const map = new Map<string, CatalogItem>();
@@ -690,11 +490,18 @@ export function CatalogEditor() {
     });
   }
 
-  // --- Сброс / экспорт / импорт (библиотека + зоны единым объектом) ---
-  function resetToSeed() {
-    if (!window.confirm("Сбросить библиотеку и зоны к «Сан v1»? Все локальные изменения будут потеряны.")) return;
-    setItems(cloneSeed());
-    setZones(cloneZonesSeed());
+  // --- Обновление из БД / экспорт / импорт (библиотека + зоны единым объектом) ---
+  function reloadFromDb() {
+    if (!window.confirm("Перечитать каталог из базы данных? Несохранённые правки будут отброшены.")) return;
+    void catalog.reload();
+  }
+
+  function togglePreview() {
+    const next = !showPreview;
+    setShowPreview(next);
+    if (next) {
+      void catalog.loadPreview();
+    }
   }
 
   function exportJson() {
@@ -754,15 +561,27 @@ export function CatalogEditor() {
           <span className="ce-kicker">Danko BuildTech · внутренний инструмент</span>
           <h1>Редактор каталога расценок</h1>
           <p>
-            Локальная рабочая копия. Данные хранятся только в этом браузере (localStorage), на сервер
-            ничего не отправляется. Не публичная страница.
+            Каталог сантехники хранится в базе данных и редактируется через REST API
+            (<code>/api/calculator/plumbing/*</code>) за авторизацией. Изменения сохраняются
+            автоматически по сети.
           </p>
         </div>
         <div className="ce-save-status">
           <span className="ce-dot" aria-hidden="true" />
-          Автосохранение{savedAt ? ` · ${savedAt}` : ""}
+          {loading
+            ? "Загрузка из БД…"
+            : saving
+              ? "Сохранение…"
+              : `Сохранено в БД${savedAt ? ` · ${savedAt}` : ""}`}
         </div>
       </header>
+
+      {error ? (
+        <div className="ce-note ce-note-warn" role="alert">
+          <span className="ce-note-tag">Ошибка</span>
+          {error}
+        </div>
+      ) : null}
 
       <nav className="ce-tabs" aria-label="Разделы каталога">
         {SECTION_TABS.map((tab) => (
@@ -803,14 +622,26 @@ export function CatalogEditor() {
               </button>
             </div>
             <div className="ce-toolbar-group">
-              <button type="button" className="ce-btn" onClick={exportJson}>
+              <button
+                type="button"
+                className={`ce-btn${showPreview ? " ce-btn-primary" : ""}`}
+                onClick={togglePreview}
+              >
+                Превью публичной цены
+              </button>
+              <button type="button" className="ce-btn" onClick={exportJson} title="Резервная копия текущего каталога">
                 Экспорт JSON
               </button>
-              <button type="button" className="ce-btn" onClick={() => fileInputRef.current?.click()}>
+              <button
+                type="button"
+                className="ce-btn"
+                onClick={() => fileInputRef.current?.click()}
+                title="Загрузить каталог из файла в рабочую копию (сохранится в БД)"
+              >
                 Импорт JSON
               </button>
-              <button type="button" className="ce-btn ce-btn-danger" onClick={resetToSeed}>
-                Сбросить к Сан v1
+              <button type="button" className="ce-btn ce-btn-danger" onClick={reloadFromDb}>
+                Обновить из БД
               </button>
               <input
                 ref={fileInputRef}
@@ -821,6 +652,15 @@ export function CatalogEditor() {
               />
             </div>
           </div>
+
+          {showPreview ? (
+            <PreviewPanel
+              preview={catalog.preview}
+              loading={catalog.previewLoading}
+              error={catalog.previewError}
+              onRefresh={() => void catalog.loadPreview()}
+            />
+          ) : null}
 
           <div className="ce-note ce-note-warn">
             <span className="ce-note-tag">Трубы</span>
@@ -1525,6 +1365,83 @@ function LibraryView(props: LibraryViewProps) {
         </table>
       </div>
     </>
+  );
+}
+
+// =================== Превью публичной цены (snapshot/preview) ===================
+
+type PreviewPanelProps = {
+  preview: PlumbingSnapshotPreview | null;
+  loading: boolean;
+  error: string | null;
+  onRefresh: () => void;
+};
+
+function PreviewPanel(props: PreviewPanelProps) {
+  const { preview, loading, error } = props;
+  return (
+    <section className="ce-preview">
+      <header className="ce-preview-head">
+        <div>
+          <strong>Превью публичной цены</strong>
+          <span className="ce-preview-hint">
+            Итог зоны/пакета уже с запечённым резервом — как в публичном снапшоте (источник — БД).
+          </span>
+        </div>
+        <button type="button" className="ce-btn ce-btn-sm" onClick={props.onRefresh} disabled={loading}>
+          {loading ? "Считаю…" : "Обновить превью"}
+        </button>
+      </header>
+
+      {error ? (
+        <div className="ce-note ce-note-warn" role="alert">
+          <span className="ce-note-tag">Ошибка</span>
+          {error}
+        </div>
+      ) : null}
+
+      {!preview && !loading && !error ? (
+        <div className="ce-empty">Нажмите «Обновить превью», чтобы получить публичные суммы из БД.</div>
+      ) : null}
+
+      {preview ? (
+        <div className="ce-preview-body">
+          <div className="ce-meta">
+            Версия снапшота: <strong>{preview.version}</strong> · Зон: <strong>{preview.zones.length}</strong> ·
+            Позиций: <strong>{preview.items.length}</strong>
+          </div>
+          <table className="ce-table">
+            <thead>
+              <tr>
+                <th className="ce-col-title">Зона</th>
+                <th className="ce-col-select">Подгруппа</th>
+                <th className="ce-col-num">Резерв %</th>
+                <th className="ce-col-num">Пакет</th>
+                <th className="ce-col-num ce-col-total">Публичный итог ₽</th>
+              </tr>
+            </thead>
+            <tbody>
+              {preview.zones.map((zone) => {
+                const activeRow = zone.packages.find((pkg) => pkg.code === zone.activePackage);
+                return (
+                  <tr key={zone.code}>
+                    <td>{zone.title}</td>
+                    <td className="ce-readonly">{zone.subgroup}</td>
+                    <td className="ce-num ce-readonly">{zone.riskPercent}</td>
+                    <td className="ce-num ce-readonly">
+                      {zone.activePackage ? zone.activePackage.toUpperCase() : "—"}
+                    </td>
+                    <td className="ce-num ce-readonly ce-total-cell">
+                      {formatMoney(activeRow ? activeRow.total : zone.total)} ₽
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      ) : null}
+    </section>
   );
 }
 

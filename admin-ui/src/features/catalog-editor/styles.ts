@@ -244,4 +244,17 @@ select.ce-cell-input { appearance: none; cursor: pointer; }
 .ce-zone-summary-risk td { color: var(--ce-muted); font-style: italic; }
 .ce-zone-summary-total td { background: rgba(54,211,153,.06); }
 .ce-zone-summary-total .ce-zone-summary-label { color: var(--ce-text); }
+
+/* --- Превью публичной цены --- */
+.ce-preview {
+  margin-bottom: 16px; padding: 14px 16px;
+  border: 1px solid rgba(54,211,153,.35); border-radius: 12px;
+  background: rgba(54,211,153,.05);
+}
+.ce-preview-head {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+  margin-bottom: 12px;
+}
+.ce-preview-hint { display: block; margin-top: 4px; color: var(--ce-muted); font-size: 12px; }
+.ce-preview-body { margin-top: 8px; }
 `;

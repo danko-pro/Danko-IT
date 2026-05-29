@@ -156,7 +156,7 @@ export const PLUMBING_SEED: CatalogItem[] = [
     "Кухня",
     "вручную",
   ),
-  // equipment=0 → в публичной spec строка скрыта (filterClientSpecLines); задать цену здесь или через экспорт JSON из catalog-editor
+  // Цена 0 → в публичной spec строка «уточняется»; задать цену здесь или через экспорт JSON из catalog-editor
   row(
     "kitchen-sink-bowl-c",
     "Мойка кухонная — пакет C",

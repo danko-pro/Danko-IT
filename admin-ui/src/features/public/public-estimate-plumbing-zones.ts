@@ -66,9 +66,19 @@ const KITCHEN_SINK_ZONE_PACKAGES: Record<PlumbingPackageLevel, ZoneAtom[]> = Obj
   }),
 ) as Record<PlumbingPackageLevel, ZoneAtom[]>;
 
-/** Строки с total=0 — placeholder без публичной цены; не выводим клиенту в спецификации. */
+/** Строки с total=0 — placeholder без публичной цены; не выводим в spec базового состава. */
 export function filterClientSpecLines(items: EstimateLineItem[]): EstimateLineItem[] {
   return items.filter((item) => item.total > 0);
+}
+
+/** Позиции активного пакета (смеситель + мойка) — всегда в spec, как в catalog-editor. */
+function packageCompositionSpecLines(packageLevel: PlumbingPackageLevel): EstimateLineItem[] {
+  return KITCHEN_SINK_ZONE_PACKAGES[packageLevel].map(zoneAtomToLineItem).map((line) => {
+    if (line.total > 0) {
+      return line;
+    }
+    return { ...line, note: "уточняется" };
+  });
 }
 
 function atomLineTotal(atom: ZoneAtom): number {
@@ -94,8 +104,8 @@ function zoneAtomToLineItem(atom: ZoneAtom): EstimateLineItem {
 }
 
 export function getKitchenSinkZoneSpecItems(packageLevel: PlumbingPackageLevel): EstimateLineItem[] {
-  const lines = [...KITCHEN_SINK_ZONE_BASE, ...KITCHEN_SINK_ZONE_PACKAGES[packageLevel]].map(zoneAtomToLineItem);
-  return filterClientSpecLines(lines);
+  const baseLines = filterClientSpecLines(KITCHEN_SINK_ZONE_BASE.map(zoneAtomToLineItem));
+  return [...baseLines, ...packageCompositionSpecLines(packageLevel)];
 }
 
 function computeKitchenSinkZoneTotals(packageLevel: PlumbingPackageLevel) {

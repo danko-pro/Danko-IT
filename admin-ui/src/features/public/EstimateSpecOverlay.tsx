@@ -150,15 +150,23 @@ export function EstimateSpecOverlay({
                   <p className="public-estimate-spec-modal-intro">{section.specIntro}</p>
                 ) : null}
                 <ul className="public-estimate-spec-modal-list">
-                  {section.items.map((item) => (
-                    <li key={item.id}>
-                      <span className="public-estimate-spec-modal-line-title">{item.title}</span>
-                      <span className="public-estimate-spec-modal-line-meta">
-                        {formatQuantity(item.quantity)} {item.unit} × {formatMoney(item.unitPrice)}
-                      </span>
-                      <strong>{formatMoney(item.total)}</strong>
-                    </li>
-                  ))}
+                  {section.items.map((item) => {
+                    const pricePending = item.note === "уточняется";
+                    return (
+                      <li key={item.id}>
+                        <span className="public-estimate-spec-modal-line-title">{item.title}</span>
+                        <span className="public-estimate-spec-modal-line-meta">
+                          {formatQuantity(item.quantity)} {item.unit}
+                          {pricePending ? (
+                            <> · уточняется</>
+                          ) : (
+                            <> × {formatMoney(item.unitPrice)}</>
+                          )}
+                        </span>
+                        <strong>{pricePending ? "—" : formatMoney(item.total)}</strong>
+                      </li>
+                    );
+                  })}
                 </ul>
               </div>
             ))

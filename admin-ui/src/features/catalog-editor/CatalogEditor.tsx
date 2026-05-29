@@ -5,6 +5,7 @@ import {
   CATALOG_SOURCES,
   CATALOG_UNITS,
   PLUMBING_SEED,
+  WATER_POINT_FITTINGS_QTY,
   ZONES_SEED,
   ZONE_SUBGROUPS,
   ZONE_SUBGROUP_LABELS,
@@ -136,15 +137,18 @@ function mergeZonesSeed(stored: CatalogZone[]): CatalogZone[] {
       result.push({ ...seedZone, items: seedZone.items.map((row) => ({ ...row })) });
       continue;
     }
-    if (
-      seedZone.id === "zone-kitchen-sink" &&
-      existing.items.some((row) => row.atomicItemId === "kitchen-sink")
-    ) {
-      result = result.map((zone) =>
-        zone.id === seedZone.id
-          ? { ...seedZone, items: seedZone.items.map((row) => ({ ...row })) }
-          : zone,
+    if (seedZone.id === "zone-kitchen-sink") {
+      const hasLegacyKitchenSink = existing.items.some((row) => row.atomicItemId === "kitchen-sink");
+      const missingSeedRows = seedZone.items.some(
+        (seedRow) => !existing.items.some((ex) => ex.atomicItemId === seedRow.atomicItemId),
       );
+      if (hasLegacyKitchenSink || missingSeedRows) {
+        result = result.map((zone) =>
+          zone.id === seedZone.id
+            ? { ...seedZone, items: seedZone.items.map((row) => ({ ...row })) }
+            : zone,
+        );
+      }
     }
   }
   return result;
@@ -189,15 +193,29 @@ function formatMoney(value: number): string {
 }
 
 function compositionQtyHint(atomicItemId: string, quantity: number, unit?: CatalogUnit): string | null {
-  if (unit !== "м.п." || quantity <= 1) return null;
+  const twoPointFittingsQty = WATER_POINT_FITTINGS_QTY * 2;
+
   if (atomicItemId === "pipe-sewer-50" && quantity === 3.5) {
     return "3,5 м — ориентир на канализацию к мойке";
   }
   if (atomicItemId === "pipe-ppr-d20" && quantity === 20) {
     return "20 м = 10 м × 2 точки (ХВС+ГВС)";
   }
-  if (atomicItemId === "pipe-ppr-d20") {
+  if (atomicItemId === "pipe-ppr-d20" && unit === "м.п." && quantity > 1) {
     return `${quantity} м — правило: 10 м на водяную точку`;
+  }
+  if (atomicItemId === "ppr-d20-outlet" && quantity === twoPointFittingsQty) {
+    return `12 = ${WATER_POINT_FITTINGS_QTY}×2 точки (ХВС+ГВС)`;
+  }
+  if (atomicItemId === "ppr-d20-fitting" && quantity === twoPointFittingsQty) {
+    return `12 = ${WATER_POINT_FITTINGS_QTY}×2 точки (ХВС+ГВС)`;
+  }
+  if (
+    (atomicItemId === "ppr-d20-outlet" || atomicItemId === "ppr-d20-fitting") &&
+    unit === "шт" &&
+    quantity > 1
+  ) {
+    return `${quantity} шт — правило: ${WATER_POINT_FITTINGS_QTY} на водяную точку`;
   }
   return null;
 }
@@ -557,8 +575,9 @@ export function CatalogEditor() {
 
           <div className="ce-note ce-note-warn">
             <span className="ce-note-tag">Трубы</span>
-            Без проекта расчёт труб ориентировочный, с запасом на повороты и углы. PPR d20: 10 м.п. на
-            одну водяную точку (пара ХВС+ГВС = ×2). Канализация 50 мм к мойке: коэффициент 3,5 м.п.
+            Без проекта расчёт труб и фитингов ориентировочный, с запасом на повороты и углы. PPR d20:
+            10 м.п. на водяную точку (пара ХВС+ГВС = ×2); выходы и фитинги — по 6 шт. на точку.
+            Канализация 50 мм к мойке: коэффициент 3,5 м.п.
           </div>
 
           <div className="ce-note">

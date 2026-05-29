@@ -310,6 +310,66 @@ class SqlAlchemyPlumbingRepositoryTest(unittest.IsolatedAsyncioTestCase):
             )
         )
 
+    async def test_audit_records_on_create_update_delete(self) -> None:
+        owner_1 = self.repository.for_owner(1)
+        owner_2 = self.repository.for_owner(2)
+
+        item_id = await owner_1.create_plumbing_catalog_item(
+            source_code="work-water-point",
+            public_title="Точка ХВС/ГВС",
+            category="works",
+            unit="шт",
+            work_price=3500,
+        )
+        await owner_1.update_plumbing_catalog_item(item_id, work_price=3700)
+        await owner_1.delete_plumbing_catalog_item(item_id)
+
+        audit = await owner_1.list_plumbing_catalog_audit(entity_type="item", entity_id=item_id)
+        self.assertEqual([row["action"] for row in audit], ["create", "update", "delete"])
+        self.assertTrue(all(row["changed_by_user_id"] == 1 for row in audit))
+
+        create_row = audit[0]
+        self.assertEqual(create_row["diff"]["source_code"], "work-water-point")
+        self.assertEqual(create_row["diff"]["work_price"], 3500)
+        self.assertEqual(audit[1]["diff"], {"work_price": 3700})
+        self.assertEqual(audit[2]["diff"], {"is_active": 0})
+
+        # аудит owner-scoped: чужой владелец не видит чужие записи
+        self.assertEqual(await owner_2.list_plumbing_catalog_audit(entity_type="item"), [])
+
+    async def test_audit_records_on_zone_and_composition_changes(self) -> None:
+        owner_1 = self.repository.for_owner(1)
+
+        zone_id = await owner_1.create_plumbing_zone(
+            zone_code="zone-kitchen-sink",
+            subgroup="Кухня",
+            title="Зона мойки",
+        )
+        await owner_1.update_plumbing_zone(zone_id, title="Зона мойки (изм.)")
+        await owner_1.replace_plumbing_zone_items(
+            zone_id,
+            [{"atomic_source_code": "work-water-point", "quantity": 2}],
+        )
+        await owner_1.replace_plumbing_zone_packages(
+            zone_id,
+            [{"package_code": "b", "label": "Пакет B", "items": []}],
+        )
+
+        zone_audit = await owner_1.list_plumbing_catalog_audit(entity_type="zone", entity_id=zone_id)
+        self.assertEqual([row["action"] for row in zone_audit], ["create", "update"])
+        self.assertEqual(zone_audit[0]["diff"]["zone_code"], "zone-kitchen-sink")
+        self.assertEqual(zone_audit[1]["diff"], {"title": "Зона мойки (изм.)"})
+
+        item_audit = await owner_1.list_plumbing_catalog_audit(entity_type="zone_item", entity_id=zone_id)
+        self.assertEqual(len(item_audit), 1)
+        self.assertEqual(item_audit[0]["action"], "update")
+        self.assertEqual(item_audit[0]["diff"]["items"][0]["atomic_source_code"], "work-water-point")
+        self.assertEqual(item_audit[0]["diff"]["items"][0]["quantity"], 2)
+
+        package_audit = await owner_1.list_plumbing_catalog_audit(entity_type="package", entity_id=zone_id)
+        self.assertEqual(len(package_audit), 1)
+        self.assertEqual(package_audit[0]["diff"]["packages"][0]["package_code"], "b")
+
 
 if __name__ == "__main__":
     unittest.main()

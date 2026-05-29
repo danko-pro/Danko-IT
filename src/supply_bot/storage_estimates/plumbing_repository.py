@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from typing import Any
 
 from sqlalchemy import delete, func, insert, select, update
@@ -11,6 +12,7 @@ from supply_bot.storage_estimates.repository import (
     _rows_to_dicts,
 )
 from supply_bot.storage_estimates.tables import (
+    estimate_plumbing_catalog_audit,
     estimate_plumbing_catalog_items,
     estimate_plumbing_zone_items,
     estimate_plumbing_zone_package_items,
@@ -73,35 +75,39 @@ class SqlAlchemyPlumbingRepository(SqlAlchemyEstimateRepository):
         is_active: bool = True,
         sort_order: int = 100,
     ) -> int:
+        payload = {
+            "source_code": source_code,
+            "public_title": public_title,
+            "technical_title": technical_title,
+            "category": category,
+            "unit": unit,
+            "work_price": work_price,
+            "material_price": material_price,
+            "equipment_price": equipment_price,
+            "consumables_price": consumables_price,
+            "coefficient": coefficient,
+            "catalog_group": catalog_group,
+            "source": source,
+            "note": note,
+            "is_active": _bool_int(is_active),
+            "sort_order": sort_order,
+        }
         async with self._session_factory() as session:
             async with session.begin():
                 result = await session.execute(
                     insert(estimate_plumbing_catalog_items).values(
                         owner_user_id=self._catalog_write_owner_value(),
-                        source_code=source_code,
-                        public_title=public_title,
-                        technical_title=technical_title,
-                        category=category,
-                        unit=unit,
-                        work_price=work_price,
-                        material_price=material_price,
-                        equipment_price=equipment_price,
-                        consumables_price=consumables_price,
-                        coefficient=coefficient,
-                        catalog_group=catalog_group,
-                        source=source,
-                        note=note,
-                        is_active=_bool_int(is_active),
-                        sort_order=sort_order,
+                        **payload,
                     )
                 )
-                return int(result.inserted_primary_key[0])
+                item_id = int(result.inserted_primary_key[0])
+                await self._record_audit(session, "item", item_id, "create", payload)
+                return item_id
 
     async def update_plumbing_catalog_item(self, item_id: int, **updates: Any) -> bool:
         values = self._catalog_item_update_values(updates)
         if not values:
             return False
-        values["updated_at"] = func.current_timestamp()
         async with self._session_factory() as session:
             async with session.begin():
                 result = await session.execute(
@@ -110,9 +116,12 @@ class SqlAlchemyPlumbingRepository(SqlAlchemyEstimateRepository):
                         self._owner_clause(estimate_plumbing_catalog_items),
                         estimate_plumbing_catalog_items.c.id == item_id,
                     )
-                    .values(**values)
+                    .values(**values, updated_at=func.current_timestamp())
                 )
-                return bool(result.rowcount)
+                if not result.rowcount:
+                    return False
+                await self._record_audit(session, "item", item_id, "update", values)
+                return True
 
     async def delete_plumbing_catalog_item(self, item_id: int) -> bool:
         async with self._session_factory() as session:
@@ -126,7 +135,10 @@ class SqlAlchemyPlumbingRepository(SqlAlchemyEstimateRepository):
                     )
                     .values(is_active=0, updated_at=func.current_timestamp())
                 )
-                return bool(result.rowcount)
+                if not result.rowcount:
+                    return False
+                await self._record_audit(session, "item", item_id, "delete", {"is_active": 0})
+                return True
 
     # --- Зоны (estimate_plumbing_zones) ---
 
@@ -170,29 +182,33 @@ class SqlAlchemyPlumbingRepository(SqlAlchemyEstimateRepository):
         is_active: bool = True,
         sort_order: int = 100,
     ) -> int:
+        payload = {
+            "zone_code": zone_code,
+            "subgroup": subgroup,
+            "title": title,
+            "description": description,
+            "disclaimer": disclaimer,
+            "risk_percent": risk_percent,
+            "active_package_code": active_package_code,
+            "is_active": _bool_int(is_active),
+            "sort_order": sort_order,
+        }
         async with self._session_factory() as session:
             async with session.begin():
                 result = await session.execute(
                     insert(estimate_plumbing_zones).values(
                         owner_user_id=self._catalog_write_owner_value(),
-                        zone_code=zone_code,
-                        subgroup=subgroup,
-                        title=title,
-                        description=description,
-                        disclaimer=disclaimer,
-                        risk_percent=risk_percent,
-                        active_package_code=active_package_code,
-                        is_active=_bool_int(is_active),
-                        sort_order=sort_order,
+                        **payload,
                     )
                 )
-                return int(result.inserted_primary_key[0])
+                zone_id = int(result.inserted_primary_key[0])
+                await self._record_audit(session, "zone", zone_id, "create", payload)
+                return zone_id
 
     async def update_plumbing_zone(self, zone_id: int, **updates: Any) -> bool:
         values = self._zone_update_values(updates)
         if not values:
             return False
-        values["updated_at"] = func.current_timestamp()
         async with self._session_factory() as session:
             async with session.begin():
                 result = await session.execute(
@@ -201,9 +217,12 @@ class SqlAlchemyPlumbingRepository(SqlAlchemyEstimateRepository):
                         self._owner_clause(estimate_plumbing_zones),
                         estimate_plumbing_zones.c.id == zone_id,
                     )
-                    .values(**values)
+                    .values(**values, updated_at=func.current_timestamp())
                 )
-                return bool(result.rowcount)
+                if not result.rowcount:
+                    return False
+                await self._record_audit(session, "zone", zone_id, "update", values)
+                return True
 
     async def delete_plumbing_zone(self, zone_id: int) -> bool:
         async with self._session_factory() as session:
@@ -217,7 +236,10 @@ class SqlAlchemyPlumbingRepository(SqlAlchemyEstimateRepository):
                     )
                     .values(is_active=0, updated_at=func.current_timestamp())
                 )
-                return bool(result.rowcount)
+                if not result.rowcount:
+                    return False
+                await self._record_audit(session, "zone", zone_id, "delete", {"is_active": 0})
+                return True
 
     # --- Состав зоны (база, estimate_plumbing_zone_items) ---
 
@@ -249,11 +271,18 @@ class SqlAlchemyPlumbingRepository(SqlAlchemyEstimateRepository):
                         estimate_plumbing_zone_items.c.zone_id == zone_id,
                     )
                 )
-                await self._insert_composition_rows(
+                inserted = await self._insert_composition_rows(
                     session,
                     estimate_plumbing_zone_items,
                     items,
                     extra_values={"zone_id": zone_id},
+                )
+                await self._record_audit(
+                    session,
+                    "zone_item",
+                    zone_id,
+                    "update",
+                    {"items": inserted},
                 )
                 return True
 
@@ -311,23 +340,33 @@ class SqlAlchemyPlumbingRepository(SqlAlchemyEstimateRepository):
                         estimate_plumbing_zone_packages.c.zone_id == zone_id,
                     )
                 )
+                audit_packages: list[dict[str, Any]] = []
                 for package_index, package in enumerate(packages, start=1):
+                    package_code = str(package["package_code"])
                     package_result = await session.execute(
                         insert(estimate_plumbing_zone_packages).values(
                             owner_user_id=owner_value,
                             zone_id=zone_id,
-                            package_code=str(package["package_code"]),
+                            package_code=package_code,
                             label=package.get("label"),
                             sort_order=int(package.get("sort_order") or package_index * 10),
                         )
                     )
                     package_id = int(package_result.inserted_primary_key[0])
-                    await self._insert_composition_rows(
+                    inserted = await self._insert_composition_rows(
                         session,
                         estimate_plumbing_zone_package_items,
                         package.get("items") or [],
                         extra_values={"zone_id": zone_id, "package_id": package_id},
                     )
+                    audit_packages.append({"package_code": package_code, "items": inserted})
+                await self._record_audit(
+                    session,
+                    "package",
+                    zone_id,
+                    "update",
+                    {"packages": audit_packages},
+                )
                 return True
 
     # --- Внутренние помощники ---
@@ -391,18 +430,62 @@ class SqlAlchemyPlumbingRepository(SqlAlchemyEstimateRepository):
         rows: list[dict[str, Any]],
         *,
         extra_values: dict[str, Any],
-    ) -> None:
+    ) -> list[dict[str, Any]]:
         owner_value = self._catalog_write_owner_value()
+        inserted: list[dict[str, Any]] = []
         for index, row in enumerate(rows, start=1):
-            source_code = str(row["atomic_source_code"])
-            await session.execute(
-                insert(table).values(
-                    owner_user_id=owner_value,
-                    atomic_item_id=await self._visible_catalog_item_id(session, row.get("atomic_item_id")),
-                    atomic_source_code=source_code,
-                    quantity=float(row.get("quantity") or 0),
-                    coefficient=float(row.get("coefficient") or 1),
-                    sort_order=int(row.get("sort_order") or index * 10),
-                    **extra_values,
+            values = {
+                "atomic_item_id": await self._visible_catalog_item_id(session, row.get("atomic_item_id")),
+                "atomic_source_code": str(row["atomic_source_code"]),
+                "quantity": float(row.get("quantity") or 0),
+                "coefficient": float(row.get("coefficient") or 1),
+                "sort_order": int(row.get("sort_order") or index * 10),
+            }
+            await session.execute(insert(table).values(owner_user_id=owner_value, **values, **extra_values))
+            inserted.append(values)
+        return inserted
+
+    # --- Аудит изменений (estimate_plumbing_catalog_audit) ---
+
+    async def _record_audit(
+        self,
+        session,
+        entity_type: str,
+        entity_id: int | None,
+        action: str,
+        diff: dict[str, Any],
+    ) -> None:
+        await session.execute(
+            insert(estimate_plumbing_catalog_audit).values(
+                owner_user_id=self._owner_user_id,
+                entity_type=entity_type,
+                entity_id=entity_id,
+                action=action,
+                changed_by_user_id=self._owner_user_id,
+                diff_json=json.dumps(diff, ensure_ascii=False, sort_keys=True),
+            )
+        )
+
+    async def list_plumbing_catalog_audit(
+        self,
+        *,
+        entity_type: str | None = None,
+        entity_id: int | None = None,
+    ) -> list[dict[str, Any]]:
+        async with self._session_factory() as session:
+            conditions = [self._owner_clause(estimate_plumbing_catalog_audit)]
+            if entity_type is not None:
+                conditions.append(estimate_plumbing_catalog_audit.c.entity_type == entity_type)
+            if entity_id is not None:
+                conditions.append(estimate_plumbing_catalog_audit.c.entity_id == entity_id)
+            result = await session.execute(
+                select(*(column for column in estimate_plumbing_catalog_audit.c if column.name != "owner_user_id"))
+                .where(*conditions)
+                .order_by(
+                    estimate_plumbing_catalog_audit.c.id,
                 )
             )
+            rows = _rows_to_dicts(result.fetchall())
+        for row in rows:
+            row["diff"] = json.loads(row["diff_json"]) if row.get("diff_json") else None
+        return rows

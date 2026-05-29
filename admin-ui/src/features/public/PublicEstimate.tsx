@@ -70,6 +70,7 @@ import { EstimateSpecOverlay } from "./EstimateSpecOverlay";
 import {
   buildScenarioSection,
   calculatePlumbing,
+  expandPlumbingSectionForSpec,
   getShowerAreaItems,
   kitchenSinkPackageLabels,
   KITCHEN_SINK_ZONE_DISCLAIMER,
@@ -1557,6 +1558,20 @@ export function PublicEstimate() {
     looseFurnitureResult.section,
     homeGoodsResult.section,
   ];
+  function mapSectionsForSpec(sections: EstimateSection[]) {
+    return sections.map((section) => {
+      if (section.id !== "plumbing") {
+        return section;
+      }
+
+      return expandPlumbingSectionForSpec(
+        section,
+        plumbingOptions.kitchenSinkPackageLevel,
+        plumbingResult.hasKitchen && plumbingOptions.includeKitchenSink,
+      );
+    });
+  }
+
   const specModalData = (() => {
     if (!specModal) {
       return null;
@@ -1566,7 +1581,7 @@ export function PublicEstimate() {
       return {
         title: "Полная спецификация",
         subtitle: "Все разделы текущей сметы по позициям",
-        sections: estimateResult.sections,
+        sections: mapSectionsForSpec(estimateResult.sections),
       };
     }
 
@@ -1598,7 +1613,11 @@ export function PublicEstimate() {
       return null;
     }
 
-    return { title: section.title, subtitle: section.description, sections: [section] };
+    return {
+      title: section.title,
+      subtitle: section.description,
+      sections: mapSectionsForSpec([section]),
+    };
   })();
 
   function openSectionSpec(sectionId: EstimateSectionId) {
@@ -2981,25 +3000,29 @@ export function PublicEstimate() {
                 </span>
               </label>
 
-              <article className="public-estimate-plumbing-sink-zone" aria-label="Зона мойки">
-                <label className="public-estimate-plumbing-sink-zone-head">
-                  <span className="public-estimate-plumbing-sink-zone-icon">
-                    <KitchenSinkZoneIcon />
-                  </span>
-                  <span className="public-estimate-plumbing-sink-zone-title">
-                    <strong>Зона мойки</strong>
-                    <small>точки, трубы, сифон, смеситель + мойка</small>
-                  </span>
-                  <input
-                    type="checkbox"
-                    checked={plumbingOptions.includeKitchenSink}
-                    onChange={(event) => updatePlumbingOptions({ includeKitchenSink: event.target.checked })}
-                  />
-                </label>
+              <article
+                className={`public-estimate-plumbing-sink-zone${
+                  plumbingResult.hasKitchen && plumbingOptions.includeKitchenSink
+                    ? " public-estimate-plumbing-sink-zone-active"
+                    : ""
+                }`}
+                aria-label="Зона мойки"
+              >
+                <div className="public-estimate-plumbing-sink-zone-row">
+                  <label className="public-estimate-plumbing-sink-zone-head">
+                    <span className="public-estimate-plumbing-sink-zone-icon">
+                      <KitchenSinkZoneIcon />
+                    </span>
+                    <strong className="public-estimate-plumbing-sink-zone-label">Зона мойки</strong>
+                    <input
+                      type="checkbox"
+                      checked={plumbingOptions.includeKitchenSink}
+                      onChange={(event) => updatePlumbingOptions({ includeKitchenSink: event.target.checked })}
+                    />
+                  </label>
 
-                {plumbingResult.hasKitchen && plumbingOptions.includeKitchenSink ? (
-                  <div className="public-estimate-plumbing-sink-zone-body">
-                    <div className="public-estimate-plumbing-sink-zone-row">
+                  {plumbingResult.hasKitchen && plumbingOptions.includeKitchenSink ? (
+                    <>
                       <div
                         className="public-estimate-toggle-group public-estimate-plumbing-sink-zone-toggle"
                         role="group"
@@ -3026,10 +3049,9 @@ export function PublicEstimate() {
                       <div className="public-estimate-plumbing-sink-zone-total" aria-label="Итог зоны мойки">
                         <strong>{formatMoney(getKitchenSinkZonePackageTotal(plumbingOptions.kitchenSinkPackageLevel))}</strong>
                       </div>
-                    </div>
-                    <p className="public-estimate-plumbing-sink-zone-disclaimer">{KITCHEN_SINK_ZONE_DISCLAIMER}</p>
-                  </div>
-                ) : null}
+                    </>
+                  ) : null}
+                </div>
               </article>
 
               <label className="public-estimate-plumbing-option-zone">

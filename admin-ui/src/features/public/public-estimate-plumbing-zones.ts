@@ -1,4 +1,4 @@
-import type { EstimateCostCategory, EstimateLineItem } from "./public-estimate-model";
+import type { EstimateCostCategory, EstimateLineItem, EstimateSection } from "./public-estimate-model";
 
 /** Синхронизировано с catalog-editor/plumbing-seed.ts → zone-kitchen-sink (коммиты до c77e827). */
 export type PlumbingPackageLevel = "c" | "b" | "a";
@@ -94,10 +94,7 @@ const KITCHEN_SINK_ZONE_BASE: ZoneAtom[] = [
   },
 ];
 
-const KITCHEN_SINK_ZONE_PACKAGES: Record<
-  PlumbingPackageLevel,
-  ZoneAtom[]
-> = {
+const KITCHEN_SINK_ZONE_PACKAGES: Record<PlumbingPackageLevel, ZoneAtom[]> = {
   c: [
     { id: "kitchen-faucet-c", title: "Смеситель кухонный — пакет C", unit: "шт", publicPrice: 11500, quantity: 1, category: "equipment" },
     { id: "kitchen-sink-bowl-c", title: "Мойка кухонная — пакет C", unit: "шт", publicPrice: 0, quantity: 1, category: "equipment" },
@@ -120,8 +117,50 @@ function atomsSubtotal(atoms: ZoneAtom[]): number {
   return atoms.reduce((sum, atom) => sum + atomLineTotal(atom), 0);
 }
 
-const KITCHEN_SINK_ZONE_BASE_NOTE =
-  "Точки ХВС/ГВС и канализации, подключение, сифон, PPR 20 м, канал 50 мм 3,5 м.п., крепёж, штробление 6 м.п.";
+function zoneAtomToLineItem(atom: ZoneAtom): EstimateLineItem {
+  return {
+    id: `kitchen-sink-zone-${atom.id}`,
+    sectionId: "plumbing",
+    title: atom.title,
+    category: atom.category,
+    quantity: atom.quantity,
+    unit: atom.unit,
+    unitPrice: atom.publicPrice,
+    total: atomLineTotal(atom),
+    isIncluded: true,
+  };
+}
+
+export function getKitchenSinkZoneSpecItems(packageLevel: PlumbingPackageLevel): EstimateLineItem[] {
+  return [...KITCHEN_SINK_ZONE_BASE, ...KITCHEN_SINK_ZONE_PACKAGES[packageLevel]].map(zoneAtomToLineItem);
+}
+
+function computeKitchenSinkZoneTotals(packageLevel: PlumbingPackageLevel) {
+  const packageAtoms = KITCHEN_SINK_ZONE_PACKAGES[packageLevel];
+  const baseTotal = atomsSubtotal(KITCHEN_SINK_ZONE_BASE);
+  const packageTotal = atomsSubtotal(packageAtoms);
+  const subtotal = baseTotal + packageTotal;
+  const riskAmount = Math.round((subtotal * KITCHEN_SINK_ZONE_RISK_PERCENT) / 100);
+  const total = subtotal + riskAmount;
+
+  return { baseTotal, packageTotal, subtotal, riskAmount, total };
+}
+
+export function getKitchenSinkZoneSectionItem(packageLevel: PlumbingPackageLevel): EstimateLineItem {
+  const { total } = computeKitchenSinkZoneTotals(packageLevel);
+
+  return {
+    id: "kitchen-sink-zone",
+    sectionId: "plumbing",
+    title: "Зона мойки",
+    category: "works",
+    quantity: 1,
+    unit: "комплект",
+    unitPrice: total,
+    total,
+    isIncluded: true,
+  };
+}
 
 export type KitchenSinkZoneResult = {
   packageLevel: PlumbingPackageLevel;
@@ -130,66 +169,62 @@ export type KitchenSinkZoneResult = {
   subtotal: number;
   riskAmount: number;
   total: number;
-  items: EstimateLineItem[];
+  sectionItem: EstimateLineItem;
+  specItems: EstimateLineItem[];
 };
 
 export function calculateKitchenSinkZone(packageLevel: PlumbingPackageLevel): KitchenSinkZoneResult {
-  const packageAtoms = KITCHEN_SINK_ZONE_PACKAGES[packageLevel];
-  const baseTotal = atomsSubtotal(KITCHEN_SINK_ZONE_BASE);
-  const packageTotal = atomsSubtotal(packageAtoms);
-  const subtotal = baseTotal + packageTotal;
-  const riskAmount = Math.round((subtotal * KITCHEN_SINK_ZONE_RISK_PERCENT) / 100);
-  const total = subtotal + riskAmount;
-
-  const items: EstimateLineItem[] = [
-    {
-      id: "kitchen-sink-zone-summary-base",
-      sectionId: "plumbing",
-      title: "Зона мойки — базовый состав",
-      category: "works",
-      quantity: 1,
-      unit: "комплект",
-      unitPrice: baseTotal,
-      total: baseTotal,
-      isIncluded: true,
-      note: KITCHEN_SINK_ZONE_BASE_NOTE,
-    },
-    {
-      id: "kitchen-sink-zone-summary-package",
-      sectionId: "plumbing",
-      title: `Зона мойки — ${kitchenSinkPackageLabels[packageLevel]} (смеситель + мойка)`,
-      category: "equipment",
-      quantity: 1,
-      unit: "комплект",
-      unitPrice: packageTotal,
-      total: packageTotal,
-      isIncluded: true,
-    },
-    {
-      id: "kitchen-sink-zone-summary-risk",
-      sectionId: "plumbing",
-      title: `Зона мойки — резерв ${KITCHEN_SINK_ZONE_RISK_PERCENT}%`,
-      category: "works",
-      quantity: 1,
-      unit: "усл.",
-      unitPrice: riskAmount,
-      total: riskAmount,
-      isIncluded: true,
-      note: KITCHEN_SINK_ZONE_DISCLAIMER,
-    },
-  ];
+  const totals = computeKitchenSinkZoneTotals(packageLevel);
 
   return {
     packageLevel,
-    baseTotal,
-    packageTotal,
-    subtotal,
-    riskAmount,
-    total,
-    items,
+    ...totals,
+    sectionItem: getKitchenSinkZoneSectionItem(packageLevel),
+    specItems: getKitchenSinkZoneSpecItems(packageLevel),
   };
 }
 
 export function getKitchenSinkZonePackageTotal(packageLevel: PlumbingPackageLevel): number {
   return calculateKitchenSinkZone(packageLevel).total;
+}
+
+const KITCHEN_SINK_ZONE_ITEM_ID_PREFIX = "kitchen-sink-zone";
+
+function isKitchenSinkZoneLine(item: EstimateLineItem): boolean {
+  return item.id === KITCHEN_SINK_ZONE_ITEM_ID_PREFIX || item.id.startsWith(`${KITCHEN_SINK_ZONE_ITEM_ID_PREFIX}-`);
+}
+
+export type EstimateSpecSection = EstimateSection & {
+  specIntro?: string;
+};
+
+/** Разворачивает зону мойки в атомы для клиентской спецификации (без строки резерва). */
+export function expandPlumbingSectionForSpec(
+  section: EstimateSection,
+  packageLevel: PlumbingPackageLevel,
+  includeKitchenSink: boolean,
+): EstimateSpecSection {
+  if (!includeKitchenSink) {
+    return section;
+  }
+
+  const zoneIndex = section.items.findIndex(isKitchenSinkZoneLine);
+
+  if (zoneIndex < 0) {
+    return section;
+  }
+
+  const specItems = getKitchenSinkZoneSpecItems(packageLevel);
+  const before = section.items.slice(0, zoneIndex);
+  const after = section.items.slice(zoneIndex + 1).filter((item) => !isKitchenSinkZoneLine(item));
+
+  return {
+    ...section,
+    specIntro: KITCHEN_SINK_ZONE_DISCLAIMER,
+    items: [...before, ...specItems, ...after],
+  };
+}
+
+export function sumKitchenSinkZoneSpecLines(specItems: EstimateLineItem[]): number {
+  return specItems.reduce((sum, item) => sum + (item.isIncluded ? item.total : 0), 0);
 }

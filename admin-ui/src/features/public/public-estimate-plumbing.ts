@@ -13,7 +13,9 @@ import {
 export type { PlumbingPackageLevel } from "./public-estimate-plumbing-zones";
 export {
   calculateKitchenSinkZone,
+  expandPlumbingSectionForSpec,
   getKitchenSinkZonePackageTotal,
+  getKitchenSinkZoneSpecItems,
   kitchenSinkPackageLabels,
   KITCHEN_SINK_ZONE_DISCLAIMER,
 } from "./public-estimate-plumbing-zones";
@@ -627,7 +629,7 @@ export function calculatePlumbing(rooms: PlumbingRoomInput[], options: PlumbingO
 
   if (hasKitchen && options.includeKitchenSink) {
     const sinkZone = calculateKitchenSinkZone(options.kitchenSinkPackageLevel);
-    items.push(...sinkZone.items);
+    items.push(sinkZone.sectionItem);
     points.coldWaterPoints += 1;
     points.hotWaterPoints += 1;
     points.sewerPoints += 1;

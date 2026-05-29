@@ -1,11 +1,12 @@
 import { useEffect, useId, useRef } from "react";
 import { createPortal } from "react-dom";
 import type { EstimateSection } from "./public-estimate-model";
+import type { EstimateSpecSection } from "./public-estimate-plumbing-zones";
 
 type EstimateSpecOverlayProps = {
   title: string;
   subtitle?: string;
-  sections: EstimateSection[];
+  sections: EstimateSpecSection[];
   formatMoney: (value: number) => string;
   formatQuantity: (value: number) => string;
   onClose: () => void;
@@ -144,6 +145,9 @@ export function EstimateSpecOverlay({
                     <h3>{section.title}</h3>
                     <strong>{formatMoney(section.totals.total)}</strong>
                   </div>
+                ) : null}
+                {section.specIntro ? (
+                  <p className="public-estimate-spec-modal-intro">{section.specIntro}</p>
                 ) : null}
                 <ul className="public-estimate-spec-modal-list">
                   {section.items.map((item) => (

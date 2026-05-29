@@ -5,6 +5,18 @@ import {
   type EstimateLineItem,
   type EstimateSection,
 } from "./public-estimate-model";
+import {
+  calculateKitchenSinkZone,
+  type PlumbingPackageLevel,
+} from "./public-estimate-plumbing-zones";
+
+export type { PlumbingPackageLevel } from "./public-estimate-plumbing-zones";
+export {
+  calculateKitchenSinkZone,
+  getKitchenSinkZonePackageTotal,
+  kitchenSinkPackageLabels,
+  KITCHEN_SINK_ZONE_DISCLAIMER,
+} from "./public-estimate-plumbing-zones";
 
 export type PlumbingRoomInput = {
   roomId: string;
@@ -21,6 +33,7 @@ export type PlumbingOptions = {
   includeHygienicShower: boolean;
   includeElectricTowelRail: boolean;
   includeKitchenSink: boolean;
+  kitchenSinkPackageLevel: PlumbingPackageLevel;
   includeDishwasherOutput: boolean;
   includeWasherOutput: boolean;
   includeWaterNode: boolean;
@@ -613,8 +626,12 @@ export function calculatePlumbing(rooms: PlumbingRoomInput[], options: PlumbingO
   }
 
   if (hasKitchen && options.includeKitchenSink) {
-    addPlumbingPosition(items, points, "kitchen-sink", "Кухонная мойка", 1, plumbingRates.kitchenSink);
-    addPlumbingPosition(items, points, "kitchen-sink-siphon", "Сифон для кухонной мойки", 1, plumbingRates.kitchenSinkSiphon);
+    const sinkZone = calculateKitchenSinkZone(options.kitchenSinkPackageLevel);
+    items.push(...sinkZone.items);
+    points.coldWaterPoints += 1;
+    points.hotWaterPoints += 1;
+    points.sewerPoints += 1;
+    points.fixtureCount += 1;
   }
 
   if (hasKitchen && options.includeDishwasherOutput) {

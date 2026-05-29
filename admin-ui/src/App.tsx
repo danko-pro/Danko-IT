@@ -4,9 +4,6 @@ import { PublicLanding } from "./features/public/PublicLanding";
 import { PublicPrivacy } from "./features/public/PublicPrivacy";
 
 const AdminApp = lazy(() => import("./AdminApp"));
-// Локальный внутренний редактор каталога (НЕ для прода; ветка не мёржится).
-// Грузим лениво, чтобы не попадал в публичный бандл при обычном использовании.
-const CatalogEditor = lazy(() => import("./features/catalog-editor/CatalogEditor"));
 
 function normalizePathname(pathname: string) {
   const normalizedPathname = pathname.replace(/\/+$/, "");
@@ -45,10 +42,12 @@ export default function App() {
     return <PublicEstimate />;
   }
 
+  // Редактор каталога монтируется внутри AdminApp за auth-gate (require_admin_session),
+  // публичного доступа без авторизации больше нет. Lazy-загрузка сохранена.
   if (isCatalogEditor(pathname)) {
     return (
       <Suspense fallback={<div className="public-admin-loading" aria-hidden="true" />}>
-        <CatalogEditor />
+        <AdminApp catalogEditor />
       </Suspense>
     );
   }

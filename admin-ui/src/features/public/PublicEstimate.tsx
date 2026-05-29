@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { calculateCeiling } from "./public-estimate-ceiling";
 import { calculateCompletion, type CompletionOptions } from "./public-estimate-completion";
 import {
@@ -68,20 +68,18 @@ import { calculateEstimateTotals, type EstimateSection, type EstimateSectionId }
 import { classifyEstimatePackage } from "./public-estimate-package";
 import { EstimateSpecOverlay } from "./EstimateSpecOverlay";
 import {
-  buildScenarioSection,
   calculatePlumbing,
+  dishwasherPackageLabels,
   expandPlumbingSectionForSpec,
-  getShowerAreaItems,
+  getDishwasherZonePackageTotal,
+  getInstallRelocationZoneTotal,
+  getKitchenSinkZonePackageTotal,
+  getShowerZonePackageTotal,
   kitchenSinkPackageLabels,
-  KITCHEN_SINK_ZONE_DISCLAIMER,
-  showerAreaScenario,
-  sumScenarioItems,
-  toiletRelocationScenario,
+  showerPackageLabels,
   type PlumbingOptions,
   type PlumbingPackageLevel,
-  type ShowerAreaVariant,
 } from "./public-estimate-plumbing";
-import { getKitchenSinkZonePackageTotal } from "./public-estimate-plumbing-zones";
 import { calculateWarmFloor, type WarmFloorMode } from "./public-estimate-warm-floor";
 import {
   calculateWalls,
@@ -482,6 +480,167 @@ function KitchenSinkZoneIcon() {
   );
 }
 
+function DishwasherZoneIcon() {
+  const commonProps = {
+    viewBox: "0 0 24 24",
+    "aria-hidden": true,
+    focusable: false,
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: 1.75,
+    strokeLinecap: "round" as const,
+    strokeLinejoin: "round" as const,
+  };
+
+  return (
+    <svg {...commonProps}>
+      <rect x="4" y="3" width="16" height="18" rx="2" />
+      <path d="M4 10h16" />
+      <circle cx="8" cy="6.5" r="0.75" fill="currentColor" stroke="none" />
+      <circle cx="11" cy="6.5" r="0.75" fill="currentColor" stroke="none" />
+      <path d="M8 14h8" />
+      <path d="M8 17h5" />
+    </svg>
+  );
+}
+
+function ShowerZoneIcon() {
+  const commonProps = {
+    viewBox: "0 0 24 24",
+    "aria-hidden": true,
+    focusable: false,
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: 1.75,
+    strokeLinecap: "round" as const,
+    strokeLinejoin: "round" as const,
+  };
+
+  return (
+    <svg {...commonProps}>
+      <path d="M12 3v3" />
+      <path d="M8.5 6h7" />
+      <path d="M10 6v1.5a2 2 0 0 0 4 0V6" />
+      <path d="M7 12c0 2.8 2.2 5 5 5s5-2.2 5-5" />
+      <path d="M9.5 14.5v2" />
+      <path d="M12 15v2.5" />
+      <path d="M14.5 14.5v2" />
+    </svg>
+  );
+}
+
+function InstallRelocationZoneIcon() {
+  const commonProps = {
+    viewBox: "0 0 24 24",
+    "aria-hidden": true,
+    focusable: false,
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: 1.75,
+    strokeLinecap: "round" as const,
+    strokeLinejoin: "round" as const,
+  };
+
+  return (
+    <svg {...commonProps}>
+      <rect x="5" y="4" width="14" height="16" rx="2" />
+      <path d="M9 8h6" />
+      <path d="M12 12v5" />
+      <path d="M9.5 15.5 12 18l2.5-2.5" />
+    </svg>
+  );
+}
+
+type PlumbingZoneCardProps = {
+  ariaLabel: string;
+  checked: boolean;
+  onCheckedChange: (checked: boolean) => void;
+  active: boolean;
+  icon: ReactNode;
+  label: string;
+  total: number;
+  packageLevel?: PlumbingPackageLevel;
+  packageLabels?: Record<PlumbingPackageLevel, string>;
+  onPackageLevelChange?: (level: PlumbingPackageLevel) => void;
+  totalAriaLabel: string;
+  packageGroupAriaLabel?: string;
+};
+
+function PlumbingZoneCard({
+  ariaLabel,
+  checked,
+  onCheckedChange,
+  active,
+  icon,
+  label,
+  total,
+  packageLevel,
+  packageLabels,
+  onPackageLevelChange,
+  totalAriaLabel,
+  packageGroupAriaLabel,
+}: PlumbingZoneCardProps) {
+  const hasPackages = packageLevel != null && packageLabels != null && onPackageLevelChange != null;
+
+  return (
+    <label
+      className={`public-estimate-plumbing-option-zone public-estimate-plumbing-sink-zone${
+        active ? " public-estimate-plumbing-sink-zone-active" : ""
+      }`}
+      aria-label={ariaLabel}
+    >
+      <input type="checkbox" checked={checked} onChange={(event) => onCheckedChange(event.target.checked)} />
+      <span className="public-estimate-plumbing-sink-zone-icon" aria-hidden="true">
+        {icon}
+      </span>
+      <strong className="public-estimate-plumbing-sink-zone-label">{label}</strong>
+      <div
+        className={`public-estimate-option-expand-shell public-estimate-plumbing-sink-zone-expand${
+          active ? " is-expanded" : ""
+        }`}
+        aria-hidden={!active}
+      >
+        <div className="public-estimate-option-expand-shell-inner">
+          <div className="public-estimate-plumbing-sink-zone-expand-content">
+            {hasPackages ? (
+              <div
+                className="public-estimate-plumbing-sink-zone-toggle"
+                role="group"
+                aria-label={packageGroupAriaLabel}
+                onClick={(event) => event.stopPropagation()}
+                onKeyDown={(event) => event.stopPropagation()}
+              >
+                {(["c", "b", "a"] as PlumbingPackageLevel[]).map((level) => (
+                  <button
+                    key={level}
+                    className={packageLevel === level ? "public-estimate-toggle-active" : undefined}
+                    type="button"
+                    aria-label={packageLabels[level]}
+                    aria-pressed={packageLevel === level}
+                    title={packageLabels[level]}
+                    tabIndex={active ? undefined : -1}
+                    onClick={(event) => {
+                      event.preventDefault();
+                      onPackageLevelChange(level);
+                    }}
+                  >
+                    {level.toUpperCase()}
+                  </button>
+                ))}
+              </div>
+            ) : null}
+            <span className="public-estimate-plumbing-sink-zone-total" aria-label={totalAriaLabel}>
+              <strong key={hasPackages ? packageLevel : "fixed"} className="public-estimate-option-value-fade">
+                {formatMoney(total)}
+              </strong>
+            </span>
+          </div>
+        </div>
+      </div>
+    </label>
+  );
+}
+
 type EstimateObjectMeta = {
   address: string;
   complexName: string;
@@ -748,12 +907,12 @@ export function PublicEstimate() {
     kitchenSinkPackageLevel: "b",
     includeDishwasherOutput: true,
     dishwasherPackageLevel: "b",
+    includeShowerZone: false,
+    showerPackageLevel: "b",
+    includeInstallRelocation: false,
     includeWasherOutput: true,
     includeWaterNode: true,
     includeLeakProtection: false,
-    includeToiletRelocation: false,
-    includeShowerArea: false,
-    showerAreaVariant: "tiled-tray",
   });
   const [doorOptions, setDoorOptions] = useState<DoorOptions>({
     packageType: "invisible_19000",
@@ -777,12 +936,9 @@ export function PublicEstimate() {
     createDefaultLooseFurnitureOptionsDraft(),
   );
   const [homeGoodsOptions, setHomeGoodsOptions] = useState<HomeGoodsOptions>(() => createDefaultHomeGoodsOptions());
-  const [specModal, setSpecModal] = useState<
-    | { kind: "section"; sectionId: EstimateSectionId }
-    | { kind: "full" }
-    | { kind: "scenario"; scenarioId: "scenario-toilet-relocation" | "scenario-shower-area" }
-    | null
-  >(null);
+  const [specModal, setSpecModal] = useState<{ kind: "section" | "full"; sectionId?: EstimateSectionId } | null>(
+    null,
+  );
   const [isMobileVolumesExpanded, setIsMobileVolumesExpanded] = useState(false);
   const [activeEstimateSection, setActiveEstimateSection] = useState(ESTIMATE_INITIAL_SECTION_ID);
   const estimateRailScrollRef = useRef<HTMLElement>(null);
@@ -1493,9 +1649,6 @@ export function PublicEstimate() {
     { label: "Расходники", value: formatMoney(plumbingResult.consumablesTotal) },
     { label: "Итого", value: formatMoney(plumbingResult.total), isStrong: true },
   ];
-  const toiletRelocationTotal = sumScenarioItems(toiletRelocationScenario.items);
-  const showerAreaTotal = sumScenarioItems(getShowerAreaItems(plumbingOptions.showerAreaVariant));
-  const showerAreaConflictsWithBath = plumbingOptions.includeShowerArea && plumbingOptions.includeBath;
   const doorCompositionItems = [
     { label: "Дверей", value: `${doorsResult.totalDoorCount} шт.` },
     { label: "Санузловых заверток", value: `${doorsResult.privacyLockCount} шт.` },
@@ -1570,6 +1723,9 @@ export function PublicEstimate() {
         includeKitchenSink: plumbingResult.hasKitchen && plumbingOptions.includeKitchenSink,
         dishwasherPackageLevel: plumbingOptions.dishwasherPackageLevel,
         includeDishwasher: plumbingResult.hasKitchen && plumbingOptions.includeDishwasherOutput,
+        showerPackageLevel: plumbingOptions.showerPackageLevel,
+        includeShower: plumbingResult.bathroomCount > 0 && plumbingOptions.includeShowerZone,
+        includeInstallRelocation: plumbingResult.bathroomCount > 0 && plumbingOptions.includeInstallRelocation,
       });
     });
   }
@@ -1585,28 +1741,6 @@ export function PublicEstimate() {
         subtitle: "Все разделы текущей сметы по позициям",
         sections: mapSectionsForSpec(estimateResult.sections),
       };
-    }
-
-    if (specModal.kind === "scenario") {
-      if (specModal.scenarioId === "scenario-toilet-relocation") {
-        const scenarioSection = buildScenarioSection(
-          "scenario-toilet-relocation",
-          toiletRelocationScenario.publicTitle,
-          toiletRelocationScenario.publicDescription,
-          toiletRelocationScenario.items,
-        );
-
-        return { title: scenarioSection.title, subtitle: scenarioSection.description, sections: [scenarioSection] };
-      }
-
-      const showerSection = buildScenarioSection(
-        "scenario-shower-area",
-        `${showerAreaScenario.publicTitle} — ${showerAreaScenario.variants[plumbingOptions.showerAreaVariant].label}`,
-        showerAreaScenario.publicDescription,
-        getShowerAreaItems(plumbingOptions.showerAreaVariant),
-      );
-
-      return { title: showerSection.title, subtitle: showerSection.description, sections: [showerSection] };
     }
 
     const section = allEstimateSections.find((candidate) => candidate.id === specModal.sectionId);
@@ -1628,10 +1762,6 @@ export function PublicEstimate() {
 
   function openFullSpec() {
     setSpecModal({ kind: "full" });
-  }
-
-  function openScenarioSpec(scenarioId: "scenario-toilet-relocation" | "scenario-shower-area") {
-    setSpecModal({ kind: "scenario", scenarioId });
   }
 
   function closeSpecModal() {
@@ -1735,30 +1865,6 @@ export function PublicEstimate() {
     setPlumbingOptions((currentOptions) => ({
       ...currentOptions,
       ...patch,
-    }));
-  }
-
-  function toggleShowerArea(nextChecked: boolean) {
-    setPlumbingOptions((currentOptions) => ({
-      ...currentOptions,
-      includeShowerArea: nextChecked,
-      // Душевая зона устанавливается вместо ванны — взаимоисключение.
-      includeBath: nextChecked ? false : currentOptions.includeBath,
-    }));
-  }
-
-  function toggleBath(nextChecked: boolean) {
-    setPlumbingOptions((currentOptions) => ({
-      ...currentOptions,
-      includeBath: nextChecked,
-      includeShowerArea: nextChecked ? false : currentOptions.includeShowerArea,
-    }));
-  }
-
-  function setShowerAreaVariant(variant: ShowerAreaVariant) {
-    setPlumbingOptions((currentOptions) => ({
-      ...currentOptions,
-      showerAreaVariant: variant,
     }));
   }
 
@@ -2970,7 +3076,7 @@ export function PublicEstimate() {
                 <input
                   type="checkbox"
                   checked={plumbingOptions.includeBath}
-                  onChange={(event) => toggleBath(event.target.checked)}
+                  onChange={(event) => updatePlumbingOptions({ includeBath: event.target.checked })}
                 />
                 <span>
                   <strong>Ванна со смесителем</strong>
@@ -3002,86 +3108,61 @@ export function PublicEstimate() {
                 </span>
               </label>
 
-              <label
-                className={`public-estimate-plumbing-option-zone public-estimate-plumbing-sink-zone${
-                  plumbingResult.hasKitchen && plumbingOptions.includeKitchenSink
-                    ? " public-estimate-plumbing-sink-zone-active"
-                    : ""
-                }`}
-                aria-label="Зона мойки"
-              >
-                <input
-                  type="checkbox"
-                  checked={plumbingOptions.includeKitchenSink}
-                  onChange={(event) => updatePlumbingOptions({ includeKitchenSink: event.target.checked })}
-                />
-                <span className="public-estimate-plumbing-sink-zone-icon" aria-hidden="true">
-                  <KitchenSinkZoneIcon />
-                </span>
-                <strong className="public-estimate-plumbing-sink-zone-label">Зона мойки</strong>
-                <div
-                  className={`public-estimate-option-expand-shell public-estimate-plumbing-sink-zone-expand${
-                    plumbingResult.hasKitchen && plumbingOptions.includeKitchenSink ? " is-expanded" : ""
-                  }`}
-                  aria-hidden={!(plumbingResult.hasKitchen && plumbingOptions.includeKitchenSink)}
-                >
-                  <div className="public-estimate-option-expand-shell-inner">
-                    <div className="public-estimate-plumbing-sink-zone-expand-content">
-                      <div
-                        className="public-estimate-plumbing-sink-zone-toggle"
-                        role="group"
-                        aria-label="Пакет зоны мойки"
-                        onClick={(event) => event.stopPropagation()}
-                        onKeyDown={(event) => event.stopPropagation()}
-                      >
-                        {(["c", "b", "a"] as PlumbingPackageLevel[]).map((level) => (
-                          <button
-                            key={level}
-                            className={
-                              plumbingOptions.kitchenSinkPackageLevel === level
-                                ? "public-estimate-toggle-active"
-                                : undefined
-                            }
-                            type="button"
-                            aria-label={kitchenSinkPackageLabels[level]}
-                            aria-pressed={plumbingOptions.kitchenSinkPackageLevel === level}
-                            title={kitchenSinkPackageLabels[level]}
-                            tabIndex={
-                              plumbingResult.hasKitchen && plumbingOptions.includeKitchenSink ? undefined : -1
-                            }
-                            onClick={(event) => {
-                              event.preventDefault();
-                              updatePlumbingOptions({ kitchenSinkPackageLevel: level });
-                            }}
-                          >
-                            {level.toUpperCase()}
-                          </button>
-                        ))}
-                      </div>
-                      <span className="public-estimate-plumbing-sink-zone-total" aria-label="Итог зоны мойки">
-                        <strong
-                          key={plumbingOptions.kitchenSinkPackageLevel}
-                          className="public-estimate-option-value-fade"
-                        >
-                          {formatMoney(getKitchenSinkZonePackageTotal(plumbingOptions.kitchenSinkPackageLevel))}
-                        </strong>
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </label>
+              <PlumbingZoneCard
+                ariaLabel="Зона мойки"
+                checked={plumbingOptions.includeKitchenSink}
+                onCheckedChange={(checked) => updatePlumbingOptions({ includeKitchenSink: checked })}
+                active={plumbingResult.hasKitchen && plumbingOptions.includeKitchenSink}
+                icon={<KitchenSinkZoneIcon />}
+                label="Зона мойки"
+                packageLevel={plumbingOptions.kitchenSinkPackageLevel}
+                packageLabels={kitchenSinkPackageLabels}
+                onPackageLevelChange={(level) => updatePlumbingOptions({ kitchenSinkPackageLevel: level })}
+                total={getKitchenSinkZonePackageTotal(plumbingOptions.kitchenSinkPackageLevel)}
+                totalAriaLabel="Итог зоны мойки"
+                packageGroupAriaLabel="Пакет зоны мойки"
+              />
 
-              <label className="public-estimate-plumbing-option-zone">
-                <input
-                  type="checkbox"
-                  checked={plumbingOptions.includeDishwasherOutput}
-                  onChange={(event) => updatePlumbingOptions({ includeDishwasherOutput: event.target.checked })}
-                />
-                <span>
-                  <strong>Вывод под ПММ</strong>
-                  <small>холодная вода, горячая вода и канализация</small>
-                </span>
-              </label>
+              <PlumbingZoneCard
+                ariaLabel="Зона ПММ"
+                checked={plumbingOptions.includeDishwasherOutput}
+                onCheckedChange={(checked) => updatePlumbingOptions({ includeDishwasherOutput: checked })}
+                active={plumbingResult.hasKitchen && plumbingOptions.includeDishwasherOutput}
+                icon={<DishwasherZoneIcon />}
+                label="Зона ПММ"
+                packageLevel={plumbingOptions.dishwasherPackageLevel}
+                packageLabels={dishwasherPackageLabels}
+                onPackageLevelChange={(level) => updatePlumbingOptions({ dishwasherPackageLevel: level })}
+                total={getDishwasherZonePackageTotal(plumbingOptions.dishwasherPackageLevel)}
+                totalAriaLabel="Итог зоны ПММ"
+                packageGroupAriaLabel="Пакет зоны ПММ"
+              />
+
+              <PlumbingZoneCard
+                ariaLabel="Душевая зона"
+                checked={plumbingOptions.includeShowerZone}
+                onCheckedChange={(checked) => updatePlumbingOptions({ includeShowerZone: checked })}
+                active={plumbingResult.bathroomCount > 0 && plumbingOptions.includeShowerZone}
+                icon={<ShowerZoneIcon />}
+                label="Душевая зона"
+                packageLevel={plumbingOptions.showerPackageLevel}
+                packageLabels={showerPackageLabels}
+                onPackageLevelChange={(level) => updatePlumbingOptions({ showerPackageLevel: level })}
+                total={getShowerZonePackageTotal(plumbingOptions.showerPackageLevel)}
+                totalAriaLabel="Итог душевой зоны"
+                packageGroupAriaLabel="Пакет душевой зоны"
+              />
+
+              <PlumbingZoneCard
+                ariaLabel="Перенос инсталляции"
+                checked={plumbingOptions.includeInstallRelocation}
+                onCheckedChange={(checked) => updatePlumbingOptions({ includeInstallRelocation: checked })}
+                active={plumbingResult.bathroomCount > 0 && plumbingOptions.includeInstallRelocation}
+                icon={<InstallRelocationZoneIcon />}
+                label="Перенос инсталляции"
+                total={getInstallRelocationZoneTotal()}
+                totalAriaLabel="Итог переноса инсталляции"
+              />
 
               <label className="public-estimate-plumbing-option-zone">
                 <input
@@ -3118,99 +3199,6 @@ export function PublicEstimate() {
                   <small>датчики и перекрытие воды, опционально</small>
                 </span>
               </label>
-            </div>
-
-            <div className="public-estimate-plumbing-scenarios" aria-label="Сценарии сантехники">
-              <div className="public-estimate-plumbing-scenarios-head">
-                <p>Сценарии</p>
-                <span>Готовые решения по составу позиций — выключены по умолчанию</span>
-              </div>
-
-              <div className="public-estimate-plumbing-scenario-card">
-                <label className="public-estimate-plumbing-scenario-toggle">
-                  <input
-                    type="checkbox"
-                    checked={plumbingOptions.includeToiletRelocation}
-                    onChange={(event) => updatePlumbingOptions({ includeToiletRelocation: event.target.checked })}
-                  />
-                  <span>
-                    <strong>{toiletRelocationScenario.publicTitle}</strong>
-                    <small>{toiletRelocationScenario.publicDescription}</small>
-                  </span>
-                  <strong className="public-estimate-plumbing-scenario-price">{formatMoney(toiletRelocationTotal)}</strong>
-                </label>
-                <div className="public-estimate-plumbing-scenario-foot">
-                  <button
-                    className="public-estimate-spec-open public-estimate-plumbing-scenario-spec-button"
-                    type="button"
-                    onClick={() => openScenarioSpec("scenario-toilet-relocation")}
-                  >
-                    Состав
-                    <span className="public-estimate-spec-open-count">{toiletRelocationScenario.items.length} позиции</span>
-                  </button>
-                </div>
-                <ul className="public-estimate-plumbing-scenario-warnings">
-                  {toiletRelocationScenario.warnings.map((warning) => (
-                    <li key={warning}>{warning}</li>
-                  ))}
-                </ul>
-              </div>
-
-              <div className="public-estimate-plumbing-scenario-card">
-                <label className="public-estimate-plumbing-scenario-toggle">
-                  <input
-                    type="checkbox"
-                    checked={plumbingOptions.includeShowerArea}
-                    onChange={(event) => toggleShowerArea(event.target.checked)}
-                  />
-                  <span>
-                    <strong>{showerAreaScenario.publicTitle}</strong>
-                    <small>{showerAreaScenario.publicDescription}</small>
-                  </span>
-                  <strong className="public-estimate-plumbing-scenario-price">{formatMoney(showerAreaTotal)}</strong>
-                </label>
-
-                <div className="public-estimate-plumbing-scenario-variants" role="group" aria-label="Вариант душевой зоны">
-                  {(["tiled-tray", "enclosure"] as ShowerAreaVariant[]).map((variant) => {
-                    const variantDefinition = showerAreaScenario.variants[variant];
-                    const isActive = plumbingOptions.showerAreaVariant === variant;
-
-                    return (
-                      <button
-                        key={variant}
-                        type="button"
-                        className={isActive ? "is-active" : undefined}
-                        aria-pressed={isActive}
-                        onClick={() => setShowerAreaVariant(variant)}
-                      >
-                        <strong>{variantDefinition.label}</strong>
-                        <small>{variantDefinition.hint}</small>
-                      </button>
-                    );
-                  })}
-                </div>
-
-                <div className="public-estimate-plumbing-scenario-foot">
-                  <button
-                    className="public-estimate-spec-open public-estimate-plumbing-scenario-spec-button"
-                    type="button"
-                    onClick={() => openScenarioSpec("scenario-shower-area")}
-                  >
-                    Состав
-                    <span className="public-estimate-spec-open-count">
-                      {getShowerAreaItems(plumbingOptions.showerAreaVariant).length} позиции
-                    </span>
-                  </button>
-                </div>
-                <ul className="public-estimate-plumbing-scenario-warnings">
-                  {showerAreaScenario.warnings.map((warning) => (
-                    <li key={warning}>{warning}</li>
-                  ))}
-                  {showerAreaConflictsWithBath ? (
-                    <li>Ванна отключена: душевая зона устанавливается вместо ванны.</li>
-                  ) : null}
-                </ul>
-              </div>
             </div>
 
             <div className="public-estimate-plumbing-summary" aria-label="Итоги по сантехнике">

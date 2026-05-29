@@ -377,6 +377,27 @@ export const ZONE_GROOVE_METERS_DEFAULT = 6;
 export const SINK_ZONE_GROOVE_METERS = ZONE_GROOVE_METERS_DEFAULT;
 
 /**
+ * Душевая зона — стартовые допущения без проекта (зафиксировано 2026-05-29):
+ * - 2 точки ХВС/ГВС (душ + возможный гигиенический вывод в комплекте)
+ * - 1 точка канализации + трап
+ * - PPR d20: 20 м.п., канализация 50 мм 3 м.п., штробление 6 м.п.
+ * - Пакеты C/B/A: кабина / уголок+стойка / скрытый смеситель+перегородка
+ */
+export const SHOWER_ZONE_PPR_METERS = 20;
+export const SHOWER_ZONE_SEWER_METERS = 3;
+export const SHOWER_ZONE_GROOVE_METERS = ZONE_GROOVE_METERS_DEFAULT;
+
+/**
+ * Перенос инсталляции — стартовые допущения без проекта (зафиксировано 2026-05-29):
+ * - черновой и чистовой монтаж инсталляции, новая точка ХВС и канализации
+ * - PPR d20: 15 м.п., канализация 110 мм 2 м.п., штробление 8 м.п.
+ * - оборудование (унитаз/инсталляция) не входит — только работы и трассы
+ */
+export const INSTALL_RELOCATION_PPR_METERS = 15;
+export const INSTALL_RELOCATION_SEWER_METERS = 2;
+export const INSTALL_RELOCATION_GROOVE_METERS = 8;
+
+/**
  * Зона ПММ — стартовые допущения без проекта (зафиксировано 2026-05-29):
  * - 1 точка ХВС (ПММ на холодную воду; ГВС не считаем)
  * - 1 точка канализации + подключение посудомойки (work-dishwasher-connect)
@@ -545,12 +566,91 @@ export const ZONES_SEED: CatalogZone[] = [
     id: "zone-bathroom-vanity",
     subgroup: "Санузел",
     title: "Зона умывальника",
-    description: "Тумба с раковиной, смеситель и сифон.",
+    description:
+      "База: точки ХВС/ГВС и канализации, монтаж тумбы, штробление 6 м.п. (ориентир без проекта), трубы. Комплектация — тумба, смеситель, сифон (фаза 2: пакеты C/B/A).",
     riskPercent: DEFAULT_ZONE_RISK_PERCENT,
     items: [
+      { atomicItemId: "work-water-point", quantity: 1 },
+      { atomicItemId: "work-sewer-point", quantity: 1 },
+      { atomicItemId: "work-vanity-sink-faucet-install", quantity: 1 },
+      { atomicItemId: "vanity-sink-siphon", quantity: 1 },
+      { atomicItemId: "pipe-sewer-50", quantity: 3.5 },
+      { atomicItemId: "pipe-ppr-d20", quantity: 20 },
+      { atomicItemId: "ppr-d20-outlet", quantity: WATER_POINT_FITTINGS_QTY * 2 },
+      { atomicItemId: "ppr-d20-fitting", quantity: WATER_POINT_FITTINGS_QTY * 2 },
+      { atomicItemId: "pipe-clamp-ppr-d20", quantity: pipeClampQty(20) },
+      { atomicItemId: "pipe-clamp-sewer", quantity: pipeClampQty(3.5) },
+      { atomicItemId: "work-groove-pipe", quantity: ZONE_GROOVE_METERS_DEFAULT },
       { atomicItemId: "vanity-sink-set", quantity: 1 },
       { atomicItemId: "sink-faucet", quantity: 1 },
-      { atomicItemId: "vanity-sink-siphon", quantity: 1 },
+    ],
+  },
+  {
+    id: "zone-bathroom-shower",
+    subgroup: "Санузел",
+    title: "Душевая зона",
+    description:
+      "База: выводы под душ, точки ХВС/ГВС и канализации, трап, монтаж смесителя, штробление 6 м.п., трубы (PPR 20 м; канализация 50 мм 3 м.п.). Пакет — тип душевого комплекта (переключатель ниже).",
+    riskPercent: DEFAULT_ZONE_RISK_PERCENT,
+    activePriceClassId: "b",
+    priceClassVariants: [
+      {
+        id: "c",
+        label: "Пакет C",
+        items: [{ atomicItemId: "shower-cabin", quantity: 1 }],
+      },
+      {
+        id: "b",
+        label: "Пакет B",
+        items: [
+          { atomicItemId: "shower-enclosure-glass", quantity: 1 },
+          { atomicItemId: "shower-mixer-rail", quantity: 1 },
+        ],
+      },
+      {
+        id: "a",
+        label: "Пакет A",
+        items: [
+          { atomicItemId: "shower-mixer-concealed", quantity: 1 },
+          { atomicItemId: "shower-partition-fixed", quantity: 1 },
+        ],
+      },
+    ],
+    items: [
+      { atomicItemId: "shower-outputs", quantity: 1 },
+      { atomicItemId: "work-water-point", quantity: 2 },
+      { atomicItemId: "work-sewer-point", quantity: 1 },
+      { atomicItemId: "work-shower-mixer-install", quantity: 1 },
+      { atomicItemId: "shower-drain-trap", quantity: 1 },
+      { atomicItemId: "pipe-sewer-50", quantity: SHOWER_ZONE_SEWER_METERS },
+      { atomicItemId: "pipe-ppr-d20", quantity: SHOWER_ZONE_PPR_METERS },
+      { atomicItemId: "ppr-d20-outlet", quantity: WATER_POINT_FITTINGS_QTY * 2 },
+      { atomicItemId: "ppr-d20-fitting", quantity: WATER_POINT_FITTINGS_QTY * 2 },
+      { atomicItemId: "pipe-clamp-ppr-d20", quantity: pipeClampQty(SHOWER_ZONE_PPR_METERS) },
+      { atomicItemId: "pipe-clamp-sewer", quantity: pipeClampQty(SHOWER_ZONE_SEWER_METERS) },
+      { atomicItemId: "work-groove-pipe", quantity: SHOWER_ZONE_GROOVE_METERS },
+    ],
+  },
+  {
+    id: "zone-bathroom-install-relocation",
+    subgroup: "Санузел",
+    title: "Перенос инсталляции",
+    description:
+      "Работы и трассы переноса подвесного унитаза: черновой и чистовой монтаж инсталляции, точки ХВС/канализации, фановый отвод, штробление 8 м.п., трубы (PPR 15 м; канализация 110 мм 2 м.п.). Оборудование унитаза/инсталляции — отдельно или в комплекте санузла.",
+    riskPercent: DEFAULT_ZONE_RISK_PERCENT,
+    items: [
+      { atomicItemId: "work-install-frame-rough", quantity: 1 },
+      { atomicItemId: "work-wall-toilet-finish", quantity: 1 },
+      { atomicItemId: "work-water-point", quantity: 1 },
+      { atomicItemId: "work-sewer-point", quantity: 1 },
+      { atomicItemId: "fan-outlet-cuff-install", quantity: 1 },
+      { atomicItemId: "pipe-sewer-110", quantity: INSTALL_RELOCATION_SEWER_METERS },
+      { atomicItemId: "pipe-ppr-d20", quantity: INSTALL_RELOCATION_PPR_METERS },
+      { atomicItemId: "ppr-d20-outlet", quantity: WATER_POINT_FITTINGS_QTY },
+      { atomicItemId: "ppr-d20-fitting", quantity: WATER_POINT_FITTINGS_QTY },
+      { atomicItemId: "pipe-clamp-ppr-d20", quantity: pipeClampQty(INSTALL_RELOCATION_PPR_METERS) },
+      { atomicItemId: "pipe-clamp-sewer", quantity: pipeClampQty(INSTALL_RELOCATION_SEWER_METERS) },
+      { atomicItemId: "work-groove-pipe", quantity: INSTALL_RELOCATION_GROOVE_METERS },
     ],
   },
 ];

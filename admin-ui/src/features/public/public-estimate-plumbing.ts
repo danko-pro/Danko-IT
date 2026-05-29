@@ -7,25 +7,42 @@ import {
 } from "./public-estimate-model";
 import {
   calculateDishwasherZone,
+  calculateInstallRelocationZone,
   calculateKitchenSinkZone,
+  calculateShowerZone,
+  PLUMBING_ZONE_IDS,
   type PlumbingPackageLevel,
 } from "./public-estimate-plumbing-zones";
 
 export type { PlumbingPackageLevel } from "./public-estimate-plumbing-zones";
 export {
+  BATHROOM_INSTALL_RELOCATION_ZONE_DISCLAIMER,
+  BATHROOM_SHOWER_ZONE_DISCLAIMER,
   calculateDishwasherZone,
+  calculateInstallRelocationZone,
   calculateKitchenSinkZone,
   calculateKitchenSinkZoneTotal,
+  calculateShowerZone,
+  calculateZone,
+  calculateZoneTotal,
   dishwasherPackageLabels,
   expandPlumbingSectionForSpec,
   getDishwasherZonePackageTotal,
   getDishwasherZoneSpecItems,
+  getInstallRelocationZoneTotal,
   getKitchenSinkZonePackageTotal,
   getKitchenSinkZoneSpecItems,
+  getShowerZonePackageTotal,
+  getShowerZoneSpecItems,
+  getZonePackageLabels,
+  getZoneSpecItems,
   isKitchenSinkZoneSpecLine,
+  isPlumbingZoneSpecLine,
   isSinkZoneContaminantLine,
   kitchenSinkPackageLabels,
   KITCHEN_SINK_ZONE_DISCLAIMER,
+  PLUMBING_ZONE_IDS,
+  showerPackageLabels,
 } from "./public-estimate-plumbing-zones";
 
 export type PlumbingRoomInput = {
@@ -34,8 +51,6 @@ export type PlumbingRoomInput = {
   roomType: EstimateRoomType;
   area: number;
 };
-
-export type ShowerAreaVariant = "tiled-tray" | "enclosure";
 
 export type PlumbingOptions = {
   includeBathroomSet: boolean;
@@ -46,12 +61,12 @@ export type PlumbingOptions = {
   kitchenSinkPackageLevel: PlumbingPackageLevel;
   includeDishwasherOutput: boolean;
   dishwasherPackageLevel: PlumbingPackageLevel;
+  includeShowerZone: boolean;
+  showerPackageLevel: PlumbingPackageLevel;
+  includeInstallRelocation: boolean;
   includeWasherOutput: boolean;
   includeWaterNode: boolean;
   includeLeakProtection: boolean;
-  includeToiletRelocation: boolean;
-  includeShowerArea: boolean;
-  showerAreaVariant: ShowerAreaVariant;
 };
 
 export type PlumbingComposition = {
@@ -394,83 +409,6 @@ export function plumbingRateTotal(rate: PlumbingRate): number {
   return rate.works + rate.materials + rate.equipment + rate.consumables;
 }
 
-/**
- * Сценарий — агрегатор-ссылка на атомарные позиции. Он НЕ хранит свою цену:
- * итог = Σ(rate атомарной позиции × quantity). Состав каждой позиции по 4 категориям
- * (works/materials/equipment/consumables) разворачивается через addRateLines.
- */
-export type PlumbingScenarioItemRef = {
-  id: string;
-  title: string;
-  rateKey: PlumbingRateKey;
-  defaultQuantity: number;
-};
-
-export type PlumbingScenarioId = "scenario-toilet-relocation" | "scenario-shower-area";
-
-export const toiletRelocationScenario = {
-  id: "scenario-toilet-relocation" as const,
-  publicTitle: "Перенос унитаза / инсталляции",
-  publicDescription:
-    "Переносим точки воды и канализации под новое место инсталляции и подключаем фановый отвод. Саму инсталляцию повторно не считаем — она в базовом санузле.",
-  items: [
-    { id: "extra-water-point", title: "Дополнительная точка ХВС / ГВС", rateKey: "extraWaterPoint", defaultQuantity: 1 },
-    { id: "extra-sewer-point", title: "Дополнительная точка канализации", rateKey: "extraSewerPoint", defaultQuantity: 1 },
-    { id: "toilet-fan-outlet", title: "Фановый отвод / манжета для инсталляции", rateKey: "toiletFanOutlet", defaultQuantity: 1 },
-  ] satisfies PlumbingScenarioItemRef[],
-  warnings: [
-    "Возможен насос при недостаточном уклоне — считается отдельно (нет в Сан v1).",
-    "Перенос трубы по метражу будет добавлен позже (ожидает ставку ₽/м.п.).",
-  ],
-} as const;
-
-export const showerAreaScenario = {
-  id: "scenario-shower-area" as const,
-  publicTitle: "Душевая зона",
-  publicDescription:
-    "Душевая зона под ключ: трап, перегородка или ограждение, смеситель и подключение. Устанавливается вместо ванны.",
-  conflictsWith: "includeBath" as const,
-  variants: {
-    "tiled-tray": {
-      id: "tiled-tray" as const,
-      label: "С поддоном из плитки",
-      hint: "поддон из плитки, стационарная перегородка, скрытый смеситель",
-      items: [
-        { id: "shower-tray-tiled", title: "Душевой поддон из плитки с трапом", rateKey: "tiledShowerTray", defaultQuantity: 1 },
-        { id: "shower-partition", title: "Душевая перегородка стационарная", rateKey: "showerPartition", defaultQuantity: 1 },
-        { id: "shower-mixer-concealed", title: "Душевой смеситель / скрытый монтаж", rateKey: "concealedShowerMixer", defaultQuantity: 1 },
-        { id: "shower-drain", title: "Душевой трап", rateKey: "showerDrain", defaultQuantity: 1 },
-      ] satisfies PlumbingScenarioItemRef[],
-    },
-    enclosure: {
-      id: "enclosure" as const,
-      label: "Душевой уголок",
-      hint: "стеклянное ограждение, душевая стойка, трап",
-      items: [
-        { id: "shower-enclosure", title: "Душевой уголок / стеклянное ограждение", rateKey: "showerEnclosure", defaultQuantity: 1 },
-        { id: "shower-mixer-rail", title: "Душевой смеситель / душевая стойка", rateKey: "showerStackMixer", defaultQuantity: 1 },
-        { id: "shower-drain", title: "Душевой трап", rateKey: "showerDrain", defaultQuantity: 1 },
-      ] satisfies PlumbingScenarioItemRef[],
-    },
-  },
-  warnings: [
-    "Душевая зона устанавливается вместо ванны.",
-    "Гидроизоляция по площади учтена в работах позиций (отдельной ставки ₽/м² в Сан v1 нет).",
-  ],
-} as const;
-
-export function getShowerAreaItems(variant: ShowerAreaVariant): readonly PlumbingScenarioItemRef[] {
-  return showerAreaScenario.variants[variant].items;
-}
-
-/** Итог сценария = Σ(rate позиции × количество). Сценарий собственной цены не хранит. */
-export function sumScenarioItems(items: readonly PlumbingScenarioItemRef[]): number {
-  return items.reduce(
-    (sum, item) => sum + plumbingRateTotal(plumbingRates[item.rateKey]) * item.defaultQuantity,
-    0,
-  );
-}
-
 function safeNumber(value: number) {
   return Number.isFinite(value) ? Math.max(0, value) : 0;
 }
@@ -544,54 +482,6 @@ function addPlumbingPosition(
   addRateLines(items, id, title, quantity, rate);
 }
 
-/**
- * Собирает строки сметы из атомарных позиций сценария. Сценарий = сумма атомарных
- * позиций × количество; формулы не дублируются — переиспользуется addPlumbingPosition.
- */
-function addScenarioPositions(
-  items: EstimateLineItem[],
-  points: PlumbingComposition,
-  scenarioId: PlumbingScenarioId,
-  scenarioItems: readonly PlumbingScenarioItemRef[],
-) {
-  for (const item of scenarioItems) {
-    addPlumbingPosition(
-      items,
-      points,
-      `${scenarioId}-${item.id}`,
-      item.title,
-      item.defaultQuantity,
-      plumbingRates[item.rateKey],
-    );
-  }
-}
-
-/**
- * Отдельная секция со строками только одного сценария — для показа состава
- * в окне спецификации (EstimateSpecOverlay). Точки тут не учитываем, нужны только строки.
- */
-export function buildScenarioSection(
-  scenarioId: PlumbingScenarioId,
-  title: string,
-  description: string,
-  scenarioItems: readonly PlumbingScenarioItemRef[],
-): EstimateSection {
-  const items: EstimateLineItem[] = [];
-  const scratchPoints: PlumbingComposition = {
-    bathroomCount: 0,
-    hasKitchen: false,
-    hasPlumbingRooms: false,
-    coldWaterPoints: 0,
-    hotWaterPoints: 0,
-    sewerPoints: 0,
-    fixtureCount: 0,
-  };
-
-  addScenarioPositions(items, scratchPoints, scenarioId, scenarioItems);
-
-  return createEstimateSection("plumbing", title, items, description);
-}
-
 export function calculatePlumbing(rooms: PlumbingRoomInput[], options: PlumbingOptions): PlumbingCalculationResult {
   const includedRooms = rooms.filter((room) => safeNumber(room.area) > 0);
   const bathroomCount = includedRooms.filter((room) => room.roomType === "bathroom").length;
@@ -615,7 +505,7 @@ export function calculatePlumbing(rooms: PlumbingRoomInput[], options: PlumbingO
     addPlumbingPosition(items, points, "wall-hung-toilet", "Инсталляция / унитаз", bathroomCount, plumbingRates.wallHungToilet);
   }
 
-  if (options.includeBath) {
+  if (options.includeBath && !options.includeShowerZone) {
     addPlumbingPosition(items, points, "acrylic-bath", "Акриловая ванна", bathroomCount, plumbingRates.acrylicBath);
     addPlumbingPosition(items, points, "bath-siphon", "Сифон для ванны", bathroomCount, plumbingRates.bathSiphon);
     addPlumbingPosition(items, points, "bath-mixer", "Смеситель для ванны с лейкой", bathroomCount, plumbingRates.bathMixer);
@@ -653,6 +543,23 @@ export function calculatePlumbing(rooms: PlumbingRoomInput[], options: PlumbingO
     points.fixtureCount += 1;
   }
 
+  if (bathroomCount > 0 && options.includeShowerZone) {
+    const showerZone = calculateShowerZone(options.showerPackageLevel);
+    items.push(showerZone.sectionItem);
+    points.coldWaterPoints += 2;
+    points.hotWaterPoints += 2;
+    points.sewerPoints += 1;
+    points.fixtureCount += 1;
+  }
+
+  if (bathroomCount > 0 && options.includeInstallRelocation) {
+    const installZone = calculateInstallRelocationZone();
+    items.push(installZone.sectionItem);
+    points.coldWaterPoints += 1;
+    points.sewerPoints += 1;
+    points.fixtureCount += 1;
+  }
+
   if (options.includeWasherOutput) {
     addPlumbingPosition(
       items,
@@ -679,14 +586,6 @@ export function calculatePlumbing(rooms: PlumbingRoomInput[], options: PlumbingO
     if (options.includeLeakProtection) {
       addPlumbingPosition(items, points, "leak-protection", "Система защиты от протечек", 1, plumbingRates.leakProtection);
     }
-  }
-
-  if (options.includeToiletRelocation) {
-    addScenarioPositions(items, points, "scenario-toilet-relocation", toiletRelocationScenario.items);
-  }
-
-  if (options.includeShowerArea) {
-    addScenarioPositions(items, points, "scenario-shower-area", getShowerAreaItems(options.showerAreaVariant));
   }
 
   const section = createEstimateSection(

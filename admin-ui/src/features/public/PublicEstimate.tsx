@@ -3017,41 +3017,56 @@ export function PublicEstimate() {
                   <KitchenSinkZoneIcon />
                 </span>
                 <strong className="public-estimate-plumbing-sink-zone-label">Зона мойки</strong>
-                {plumbingResult.hasKitchen && plumbingOptions.includeKitchenSink ? (
-                  <>
-                    <div
-                      className="public-estimate-plumbing-sink-zone-toggle"
-                      role="group"
-                      aria-label="Пакет зоны мойки"
-                      onClick={(event) => event.stopPropagation()}
-                      onKeyDown={(event) => event.stopPropagation()}
-                    >
-                      {(["c", "b", "a"] as PlumbingPackageLevel[]).map((level) => (
-                        <button
-                          key={level}
-                          className={
-                            plumbingOptions.kitchenSinkPackageLevel === level
-                              ? "public-estimate-toggle-active"
-                              : undefined
-                          }
-                          type="button"
-                          aria-label={kitchenSinkPackageLabels[level]}
-                          aria-pressed={plumbingOptions.kitchenSinkPackageLevel === level}
-                          title={kitchenSinkPackageLabels[level]}
-                          onClick={(event) => {
-                            event.preventDefault();
-                            updatePlumbingOptions({ kitchenSinkPackageLevel: level });
-                          }}
+                <div
+                  className={`public-estimate-option-expand-shell public-estimate-plumbing-sink-zone-expand${
+                    plumbingResult.hasKitchen && plumbingOptions.includeKitchenSink ? " is-expanded" : ""
+                  }`}
+                  aria-hidden={!(plumbingResult.hasKitchen && plumbingOptions.includeKitchenSink)}
+                >
+                  <div className="public-estimate-option-expand-shell-inner">
+                    <div className="public-estimate-plumbing-sink-zone-expand-content">
+                      <div
+                        className="public-estimate-plumbing-sink-zone-toggle"
+                        role="group"
+                        aria-label="Пакет зоны мойки"
+                        onClick={(event) => event.stopPropagation()}
+                        onKeyDown={(event) => event.stopPropagation()}
+                      >
+                        {(["c", "b", "a"] as PlumbingPackageLevel[]).map((level) => (
+                          <button
+                            key={level}
+                            className={
+                              plumbingOptions.kitchenSinkPackageLevel === level
+                                ? "public-estimate-toggle-active"
+                                : undefined
+                            }
+                            type="button"
+                            aria-label={kitchenSinkPackageLabels[level]}
+                            aria-pressed={plumbingOptions.kitchenSinkPackageLevel === level}
+                            title={kitchenSinkPackageLabels[level]}
+                            tabIndex={
+                              plumbingResult.hasKitchen && plumbingOptions.includeKitchenSink ? undefined : -1
+                            }
+                            onClick={(event) => {
+                              event.preventDefault();
+                              updatePlumbingOptions({ kitchenSinkPackageLevel: level });
+                            }}
+                          >
+                            {level.toUpperCase()}
+                          </button>
+                        ))}
+                      </div>
+                      <span className="public-estimate-plumbing-sink-zone-total" aria-label="Итог зоны мойки">
+                        <strong
+                          key={plumbingOptions.kitchenSinkPackageLevel}
+                          className="public-estimate-option-value-fade"
                         >
-                          {level.toUpperCase()}
-                        </button>
-                      ))}
+                          {formatMoney(getKitchenSinkZonePackageTotal(plumbingOptions.kitchenSinkPackageLevel))}
+                        </strong>
+                      </span>
                     </div>
-                    <span className="public-estimate-plumbing-sink-zone-total" aria-label="Итог зоны мойки">
-                      <strong>{formatMoney(getKitchenSinkZonePackageTotal(plumbingOptions.kitchenSinkPackageLevel))}</strong>
-                    </span>
-                  </>
-                ) : null}
+                  </div>
+                </div>
               </label>
 
               <label className="public-estimate-plumbing-option-zone">

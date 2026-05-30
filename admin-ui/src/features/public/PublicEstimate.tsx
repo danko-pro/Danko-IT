@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { calculateCeiling } from "./public-estimate-ceiling";
 import { calculateCompletion, type CompletionOptions } from "./public-estimate-completion";
 import {
@@ -57,7 +57,6 @@ import {
   kitchenSinkPackageLabels,
   showerPackageLabels,
   type PlumbingOptions,
-  type PlumbingPackageLevel,
 } from "./public-estimate-plumbing";
 import { calculateWarmFloor, type WarmFloorMode } from "./public-estimate-warm-floor";
 import { calculateWalls } from "./public-estimate-walls";
@@ -120,7 +119,7 @@ import { EstimateSpecModal } from "./components/estimate/EstimateSpecModal";
 import { CostsSection } from "./sections/costs/CostsSection";
 import { DoorsSection } from "./sections/doors/DoorsSection";
 import { ElectricSection } from "./sections/electric/ElectricSection";
-import { PlumbingSection, type PlumbingZoneCardProps } from "./sections/plumbing/PlumbingSection";
+import { PlumbingSection } from "./sections/plumbing/PlumbingSection";
 import { WallsSection } from "./sections/walls/WallsSection";
 
 function getGeometryRowRemoveDelayMs(): number {
@@ -212,81 +211,6 @@ function formatEstimateStep(sectionId: string): string {
 
 function withActiveEstimateSection(sectionId: string, activeSectionId: string, className: string): string {
   return activeSectionId === sectionId ? `${className} is-active` : className;
-}
-
-function PlumbingZoneCard({
-  ariaLabel,
-  checked,
-  onCheckedChange,
-  active,
-  icon,
-  label,
-  total,
-  packageLevel,
-  packageLabels,
-  onPackageLevelChange,
-  totalAriaLabel,
-  packageGroupAriaLabel,
-}: PlumbingZoneCardProps) {
-  const hasPackages = packageLevel != null && packageLabels != null && onPackageLevelChange != null;
-
-  return (
-    <label
-      className={`public-estimate-plumbing-option-zone public-estimate-plumbing-sink-zone${
-        active ? " public-estimate-plumbing-sink-zone-active" : ""
-      }`}
-      aria-label={ariaLabel}
-    >
-      <input type="checkbox" checked={checked} onChange={(event) => onCheckedChange(event.target.checked)} />
-      <span className="public-estimate-plumbing-sink-zone-icon" aria-hidden="true">
-        {icon}
-      </span>
-      <strong className="public-estimate-plumbing-sink-zone-label">{label}</strong>
-      <div
-        className={`public-estimate-option-expand-shell public-estimate-plumbing-sink-zone-expand${
-          active ? " is-expanded" : ""
-        }`}
-        aria-hidden={!active}
-      >
-        <div className="public-estimate-option-expand-shell-inner">
-          <div className="public-estimate-plumbing-sink-zone-expand-content">
-            {hasPackages ? (
-              <div
-                className="public-estimate-plumbing-sink-zone-toggle"
-                role="group"
-                aria-label={packageGroupAriaLabel}
-                onClick={(event) => event.stopPropagation()}
-                onKeyDown={(event) => event.stopPropagation()}
-              >
-                {(["c", "b", "a"] as PlumbingPackageLevel[]).map((level) => (
-                  <button
-                    key={level}
-                    className={packageLevel === level ? "public-estimate-toggle-active" : undefined}
-                    type="button"
-                    aria-label={packageLabels[level]}
-                    aria-pressed={packageLevel === level}
-                    title={packageLabels[level]}
-                    tabIndex={active ? undefined : -1}
-                    onClick={(event) => {
-                      event.preventDefault();
-                      onPackageLevelChange(level);
-                    }}
-                  >
-                    {level.toUpperCase()}
-                  </button>
-                ))}
-              </div>
-            ) : null}
-            <span className="public-estimate-plumbing-sink-zone-total" aria-label={totalAriaLabel}>
-              <strong key={hasPackages ? packageLevel : "fixed"} className="public-estimate-option-value-fade">
-                {formatMoney(total)}
-              </strong>
-            </span>
-          </div>
-        </div>
-      </div>
-    </label>
-  );
 }
 
 function createDefaultAppliancesOptionsDraft(): AppliancesOptionsDraft {
@@ -1674,7 +1598,6 @@ export function PublicEstimate() {
             getDishwasherZonePackageTotal={getDishwasherZonePackageTotal}
             getShowerZonePackageTotal={getShowerZonePackageTotal}
             getInstallRelocationZoneTotal={getInstallRelocationZoneTotal}
-            ZoneCard={PlumbingZoneCard}
             onIncludeBathroomSetChange={(checked) => updatePlumbingOptions({ includeBathroomSet: checked })}
             onIncludeBathChange={(checked) => updatePlumbingOptions({ includeBath: checked })}
             onIncludeHygienicShowerChange={(checked) => updatePlumbingOptions({ includeHygienicShower: checked })}

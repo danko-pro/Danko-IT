@@ -1,6 +1,6 @@
-import type { ComponentType, ReactNode } from "react";
 import type { PlumbingCalculationResult, PlumbingOptions } from "../../public-estimate-plumbing";
 import type { PlumbingPackageLevel } from "../../public-estimate-plumbing-zones";
+import { PlumbingZoneCard } from "./PlumbingZoneCard";
 
 export type PlumbingCompositionItem = {
   label: string;
@@ -11,21 +11,6 @@ export type PlumbingSummaryItem = {
   label: string;
   value: string;
   isStrong?: boolean;
-};
-
-export type PlumbingZoneCardProps = {
-  ariaLabel: string;
-  checked: boolean;
-  onCheckedChange: (checked: boolean) => void;
-  active: boolean;
-  icon: ReactNode;
-  label: string;
-  total: number;
-  packageLevel?: PlumbingPackageLevel;
-  packageLabels?: Record<PlumbingPackageLevel, string>;
-  onPackageLevelChange?: (level: PlumbingPackageLevel) => void;
-  totalAriaLabel: string;
-  packageGroupAriaLabel?: string;
 };
 
 export type PlumbingSectionProps = {
@@ -42,7 +27,6 @@ export type PlumbingSectionProps = {
   getDishwasherZonePackageTotal: (level: PlumbingPackageLevel) => number;
   getShowerZonePackageTotal: (level: PlumbingPackageLevel) => number;
   getInstallRelocationZoneTotal: () => number;
-  ZoneCard: ComponentType<PlumbingZoneCardProps>;
   onIncludeBathroomSetChange: (checked: boolean) => void;
   onIncludeBathChange: (checked: boolean) => void;
   onIncludeHygienicShowerChange: (checked: boolean) => void;
@@ -170,7 +154,6 @@ export function PlumbingSection({
   getDishwasherZonePackageTotal,
   getShowerZonePackageTotal,
   getInstallRelocationZoneTotal,
-  ZoneCard,
   onIncludeBathroomSetChange,
   onIncludeBathChange,
   onIncludeHygienicShowerChange,
@@ -255,7 +238,7 @@ export function PlumbingSection({
           </span>
         </label>
 
-        <ZoneCard
+        <PlumbingZoneCard
           ariaLabel="Зона мойки"
           checked={plumbingOptions.includeKitchenSink}
           onCheckedChange={onIncludeKitchenSinkChange}
@@ -270,7 +253,7 @@ export function PlumbingSection({
           packageGroupAriaLabel="Пакет зоны мойки"
         />
 
-        <ZoneCard
+        <PlumbingZoneCard
           ariaLabel="Зона ПММ"
           checked={plumbingOptions.includeDishwasherOutput}
           onCheckedChange={onIncludeDishwasherOutputChange}
@@ -285,7 +268,7 @@ export function PlumbingSection({
           packageGroupAriaLabel="Пакет зоны ПММ"
         />
 
-        <ZoneCard
+        <PlumbingZoneCard
           ariaLabel="Душевая зона"
           checked={plumbingOptions.includeShowerZone}
           onCheckedChange={onIncludeShowerZoneChange}
@@ -300,7 +283,7 @@ export function PlumbingSection({
           packageGroupAriaLabel="Пакет душевой зоны"
         />
 
-        <ZoneCard
+        <PlumbingZoneCard
           ariaLabel="Перенос инсталляции"
           checked={plumbingOptions.includeInstallRelocation}
           onCheckedChange={onIncludeInstallRelocationChange}

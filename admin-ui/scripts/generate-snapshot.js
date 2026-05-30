@@ -5,7 +5,7 @@
  * ПУБЛИЧНЫЙ whitelist-снапшот из ГЛОБАЛЬНОГО каталога (owner=NULL) с уже запечённым
  * резервом, и записывает его в src/features/public/generated/plumbing.snapshot.json.
  *
- * Запуск выполняет Node нативно (стрипит типы): `node scripts/generate-snapshot.ts`.
+ * Запуск выполняет обычный Node: `node scripts/generate-snapshot.js`.
  */
 import { spawnSync } from "node:child_process";
 import { mkdirSync } from "node:fs";

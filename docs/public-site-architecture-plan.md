@@ -447,7 +447,7 @@ flowchart LR
   - Файлы: backend + добавить путь в `PUBLIC_ADMIN_API_PATHS` (`app_factory.py:37`), rate-limit как у `/api/public/leads`.
   - **Проверка:** `pytest tests/test_public_plumbing_snapshot_whitelist.py` — JSON не содержит `technical_title`, `*_price` (разбивка), `coefficient`, `source`, `note`, `risk_percent`.
   - **Критерий:** whitelist-тест зелёный; **Откат:** revert.
-- **Шаг A7.2 — генератор снапшота** `admin-ui/scripts/generate-snapshot.ts` → `admin-ui/src/features/public/generated/plumbing.snapshot.json`; шаг `prebuild` в `package.json`.
+- **Шаг A7.2 — генератор снапшота** `admin-ui/scripts/generate-snapshot.js` → `admin-ui/src/features/public/generated/plumbing.snapshot.json`; шаг `prebuild` в `package.json`.
   - **Проверка:** `npm run prebuild` создаёт/обновляет файл; `npm run build` зелёный со встроенным снапшотом.
   - **Критерий:** снапшот генерируется и встраивается; **Откат:** revert.
 - **DoD A7:** публичный снапшот собирается на backend (резерв запечён, whitelist), генерируется на сборке, встраивается в бандл.
@@ -684,7 +684,7 @@ flowchart LR
 
 Зависит от: A3/A7 · Размер: — (описан в A7/A11)
 
-- Snapshot-генерация (`generate-snapshot.ts`, `prebuild`) и CI-парити — единый механизм для калькулятора и (по Q7/Q8) для витрины/портфолио лендинга. Реализация — в A7 и A11.
+- Snapshot-генерация (`generate-snapshot.js`, `prebuild`) и CI-парити — единый механизм для калькулятора и (по Q7/Q8) для витрины/портфолио лендинга. Реализация — в A7 и A11.
 
 #### Этап C5 — Сайтовый no-leak gate
 

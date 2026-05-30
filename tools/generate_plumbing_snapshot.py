@@ -6,7 +6,7 @@
 Резерв (6.4 %) уже запечён в итоги, internal-поля (riskPercent, разбивка цен,
 coefficient, source, note, technical_title) в payload не уходят.
 
-Запуск (из ``admin-ui`` через ``scripts/generate-snapshot.ts`` на prebuild):
+Запуск (из ``admin-ui`` через ``scripts/generate-snapshot.js`` на prebuild):
 
     python ../tools/generate_plumbing_snapshot.py --output <path-to>/plumbing.snapshot.json
 

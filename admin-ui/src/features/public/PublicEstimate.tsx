@@ -86,6 +86,13 @@ import {
   type WallsCoveringType,
   type WallsPreparationType,
 } from "./public-estimate-walls";
+import { formatEstimateQuantity, formatMeasurement, formatMoney } from "./estimate/format";
+import {
+  ESTIMATE_INITIAL_SECTION_ID,
+  ESTIMATE_SCROLL_SPY_SECTION_IDS,
+  estimateNavigationItems,
+} from "./sections/registry";
+import type { EstimateNavigationIcon } from "./sections/types";
 
 const roomTypeOptions: Array<{ value: EstimateRoomType; label: string }> = [
   { value: "living_room", label: "Комната" },
@@ -218,45 +225,6 @@ const doorPackageOptions: Array<{ value: DoorPackageType; label: string }> = [
   { value: "invisible_20350", label: "INVISIBLE 3 / 20 350" },
 ];
 
-type EstimateNavigationIcon =
-  | "object"
-  | "geometry"
-  | "warmFloor"
-  | "flooring"
-  | "walls"
-  | "ceiling"
-  | "electric"
-  | "plumbing"
-  | "doors"
-  | "completion"
-  | "appliances"
-  | "furniture"
-  | "cleaning"
-  | "total";
-
-const estimateNavigationItems: Array<{
-  id: string;
-  label: string;
-  icon: EstimateNavigationIcon;
-}> = [
-  { id: "estimate-object", label: "Объект", icon: "object" },
-  { id: "estimate-geometry", label: "Геометрия", icon: "geometry" },
-  { id: "estimate-warm-floor", label: "Тёплый пол", icon: "warmFloor" },
-  { id: "estimate-flooring", label: "Полы", icon: "flooring" },
-  { id: "estimate-walls", label: "Стены", icon: "walls" },
-  { id: "estimate-ceiling", label: "Потолки", icon: "ceiling" },
-  { id: "estimate-electric", label: "Электрика", icon: "electric" },
-  { id: "estimate-plumbing", label: "Сантехника", icon: "plumbing" },
-  { id: "estimate-doors", label: "Двери", icon: "doors" },
-  { id: "estimate-completion", label: "Комплектация", icon: "completion" },
-  { id: "estimate-appliances", label: "Техника", icon: "appliances" },
-  { id: "estimate-loose-furniture", label: "Мебель", icon: "furniture" },
-  { id: "estimate-home-goods", label: "Уборка и товары для дома", icon: "cleaning" },
-  { id: "estimate-costs", label: "Итог", icon: "total" },
-];
-
-const ESTIMATE_INITIAL_SECTION_ID = estimateNavigationItems[0]?.id ?? "estimate-object";
-const ESTIMATE_SCROLL_SPY_SECTION_IDS = estimateNavigationItems.map((item) => item.id);
 const ESTIMATE_PAGE_BOTTOM_THRESHOLD_PX = 96;
 const ESTIMATE_SCROLL_ACTIVATION_LINE_DESKTOP_PX = 96;
 const ESTIMATE_SCROLL_ACTIVATION_LINE_MOBILE_PX = 64;
@@ -774,27 +742,6 @@ function normalizeRoom(room: EstimateRoomDraft): EstimateRoomInput {
     doorCount: parseEstimateDecimal(normalizedDraft.doorCount),
     windowCount: parseEstimateDecimal(normalizedDraft.windowCount),
   };
-}
-
-function formatMeasurement(value: number, unit: "м" | "м²" | "м.п.") {
-  return `${new Intl.NumberFormat("ru-RU", {
-    maximumFractionDigits: 1,
-    minimumFractionDigits: 0,
-  }).format(value)} ${unit}`;
-}
-
-function formatMoney(value: number) {
-  return `${new Intl.NumberFormat("ru-RU", {
-    maximumFractionDigits: 0,
-    minimumFractionDigits: 0,
-  }).format(value)} ₽`;
-}
-
-function formatEstimateQuantity(value: number) {
-  return new Intl.NumberFormat("ru-RU", {
-    maximumFractionDigits: 1,
-    minimumFractionDigits: 0,
-  }).format(value);
 }
 
 function createEstimateRoom(existingRooms: EstimateRoomDraft[]): EstimateRoomDraft {

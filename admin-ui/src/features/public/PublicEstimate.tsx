@@ -1638,15 +1638,13 @@ export function PublicEstimate() {
     { label: "ГВС", value: `${plumbingResult.hotWaterPoints} точ.` },
     { label: "Канализация", value: `${plumbingResult.sewerPoints} точ.` },
   ];
+  // A8.2: разбивка по категориям (Работы/Материалы/Оборудование/Расходники) удалена из публичного
+  // UI сантехники — зоны снапшота отдают единый запечённый итог без разложения себестоимости (whitelist).
   const plumbingSummaryItems = [
     { label: "ХВС точки", value: `${plumbingResult.coldWaterPoints} точ.` },
     { label: "ГВС точки", value: `${plumbingResult.hotWaterPoints} точ.` },
     { label: "Канализация", value: `${plumbingResult.sewerPoints} точ.` },
     { label: "Приборы", value: `${plumbingResult.fixtureCount} шт.` },
-    { label: "Работы", value: formatMoney(plumbingResult.worksTotal) },
-    { label: "Материалы", value: formatMoney(plumbingResult.materialsTotal) },
-    { label: "Оборудование", value: formatMoney(plumbingResult.equipmentTotal) },
-    { label: "Расходники", value: formatMoney(plumbingResult.consumablesTotal) },
     { label: "Итого", value: formatMoney(plumbingResult.total), isStrong: true },
   ];
   const doorCompositionItems = [
@@ -1726,6 +1724,20 @@ export function PublicEstimate() {
         showerPackageLevel: plumbingOptions.showerPackageLevel,
         includeShower: plumbingResult.bathroomCount > 0 && plumbingOptions.includeShowerZone,
         includeInstallRelocation: plumbingResult.bathroomCount > 0 && plumbingOptions.includeInstallRelocation,
+        // A8.2: мигрированные legacy-опции разворачиваются в атомарную спецификацию (без строки резерва).
+        includeBathroomSet: plumbingResult.bathroomCount > 0 && plumbingOptions.includeBathroomSet,
+        includeBath:
+          plumbingResult.bathroomCount > 0 &&
+          plumbingOptions.includeBath &&
+          !plumbingOptions.includeShowerZone,
+        includeHygienicShower: plumbingResult.bathroomCount > 0 && plumbingOptions.includeHygienicShower,
+        includeElectricTowelRail: plumbingResult.bathroomCount > 0 && plumbingOptions.includeElectricTowelRail,
+        includeWasherOutput: plumbingOptions.includeWasherOutput,
+        includeWaterNode: plumbingOptions.includeWaterNode && plumbingResult.hasPlumbingRooms,
+        includeLeakProtection:
+          plumbingOptions.includeWaterNode &&
+          plumbingResult.hasPlumbingRooms &&
+          plumbingOptions.includeLeakProtection,
       });
     });
   }

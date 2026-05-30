@@ -23,16 +23,28 @@ from supply_bot.storage_estimates.tables import (
     estimate_plumbing_zones,
 )
 
-# Ожидаемые количества строк (производные от seed-данных, A5).
+# Ожидаемые количества строк (производные от seed-данных, A5; +7 зон в A8.2).
 _EXPECTED_ATOMS = 97
-_EXPECTED_ZONES = 5
-_EXPECTED_ZONE_ITEMS = 58
+_EXPECTED_ZONES = 12
+_EXPECTED_ZONE_ITEMS = 71
 _EXPECTED_PACKAGES = 9
 _EXPECTED_PACKAGE_ITEMS = 14
 
 # Парити-эталон «Зоны мойки» (zone-kitchen-sink), из A3 / public-estimate-plumbing-zones.ts.
 _SINK_BASE_TOTAL = 24612
 _SINK_PACKAGE_TOTALS = {"c": 39487, "b": 43530, "a": 54915}
+
+# A8.2: итоги мигрированных legacy-зон (единый итог = Σ атомов × (1 + 6.4 %), запечён).
+# Производны от текущих чисел plumbingRates — намеренные, не случайные.
+_MIGRATED_ZONE_TOTALS = {
+    "zone-bathroom-set": 118955,  # 34000+16300+61500 = 111800 ×1.064
+    "zone-bathroom-bath": 62776,  # 38000+4500+16500 = 59000 ×1.064
+    "zone-bathroom-hygienic-shower": 15428,  # 14500 ×1.064
+    "zone-bathroom-towel-rail": 22344,  # 21000 ×1.064
+    "zone-tech-washer-output": 12236,  # 11500 ×1.064
+    "zone-water-node": 75863,  # 41000+24500+5800 = 71300 ×1.064 (4 отсечных крана)
+    "zone-water-leak-protection": 67564,  # 63500 ×1.064
+}
 
 
 class PlumbingSeedTests(unittest.IsolatedAsyncioTestCase):
@@ -139,6 +151,21 @@ class PlumbingSeedTests(unittest.IsolatedAsyncioTestCase):
         # Активный пакет зоны (b) — итог зоны с запечённым резервом.
         self.assertEqual(sink.active_package, "b")
         self.assertEqual(sink.total, _SINK_PACKAGE_TOTALS["b"])
+
+    async def test_migrated_legacy_zones_totals(self) -> None:
+        # A8.2: каждая мигрированная legacy-опция стала зоной без пакетов с единым запечённым итогом.
+        await ensure_global_plumbing_defaults(self.session_factory)
+
+        repository = SqlAlchemyPlumbingRepository(self.session_factory)
+        snapshot = await BuildPlumbingSnapshotUseCase(repository, version="seed-test").build()
+        by_code = {zone.code: zone for zone in snapshot.zones}
+
+        for zone_code, expected_total in _MIGRATED_ZONE_TOTALS.items():
+            with self.subTest(zone=zone_code):
+                zone = by_code[zone_code]
+                self.assertEqual(zone.packages, (), "Мигрированная зона не должна иметь пакетов C/B/A")
+                self.assertIsNone(zone.active_package)
+                self.assertEqual(zone.total, expected_total)
 
     async def test_snapshot_parity_stable_after_reseed(self) -> None:
         await ensure_global_plumbing_defaults(self.session_factory)

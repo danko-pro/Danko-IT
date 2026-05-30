@@ -10,8 +10,10 @@ import {
   calculateInstallRelocationZone,
   calculateKitchenSinkZone,
   calculateShowerZone,
+  calculateZone,
   PLUMBING_ZONE_IDS,
   type PlumbingPackageLevel,
+  type PlumbingZoneId,
 } from "./public-estimate-plumbing-zones";
 
 export type { PlumbingPackageLevel } from "./public-estimate-plumbing-zones";
@@ -482,6 +484,29 @@ function addPlumbingPosition(
   addRateLines(items, id, title, quantity, rate);
 }
 
+type ZonePointContribution = Pick<
+  PlumbingComposition,
+  "coldWaterPoints" | "hotWaterPoints" | "sewerPoints" | "fixtureCount"
+>;
+
+/**
+ * A8.2: добавляет мигрированную зону снапшота в раздел одной строкой (запечённый итог зоны),
+ * учитывая водяные точки/приборы вручную (метаданные точек не публикуются в whitelist-снапшоте).
+ */
+function addZonePosition(
+  items: EstimateLineItem[],
+  points: PlumbingComposition,
+  zoneId: PlumbingZoneId,
+  contribution: ZonePointContribution,
+) {
+  const zone = calculateZone(zoneId, "b");
+  items.push(zone.sectionItem);
+  points.coldWaterPoints += contribution.coldWaterPoints;
+  points.hotWaterPoints += contribution.hotWaterPoints;
+  points.sewerPoints += contribution.sewerPoints;
+  points.fixtureCount += contribution.fixtureCount;
+}
+
 export function calculatePlumbing(rooms: PlumbingRoomInput[], options: PlumbingOptions): PlumbingCalculationResult {
   const includedRooms = rooms.filter((room) => safeNumber(room.area) > 0);
   const bathroomCount = includedRooms.filter((room) => room.roomType === "bathroom").length;
@@ -499,31 +524,42 @@ export function calculatePlumbing(rooms: PlumbingRoomInput[], options: PlumbingO
     fixtureCount: 0,
   };
 
-  if (options.includeBathroomSet) {
-    addPlumbingPosition(items, points, "vanity-sink-set", "Тумба / раковина / комплект", bathroomCount, plumbingRates.vanitySinkSet);
-    addPlumbingPosition(items, points, "sink-faucet", "Смеситель для раковины", bathroomCount, plumbingRates.sinkFaucet);
-    addPlumbingPosition(items, points, "wall-hung-toilet", "Инсталляция / унитаз", bathroomCount, plumbingRates.wallHungToilet);
+  // A8.2: legacy-опции санузла теперь зоны снапшота (единый запечённый итог, без разбивки по категориям).
+  // Зона добавляется один раз при наличии санузла (прежний множитель × bathroomCount не переносится).
+  if (bathroomCount > 0 && options.includeBathroomSet) {
+    addZonePosition(items, points, PLUMBING_ZONE_IDS.BATHROOM_SET, {
+      coldWaterPoints: 3,
+      hotWaterPoints: 2,
+      sewerPoints: 2,
+      fixtureCount: 3,
+    });
   }
 
-  if (options.includeBath && !options.includeShowerZone) {
-    addPlumbingPosition(items, points, "acrylic-bath", "Акриловая ванна", bathroomCount, plumbingRates.acrylicBath);
-    addPlumbingPosition(items, points, "bath-siphon", "Сифон для ванны", bathroomCount, plumbingRates.bathSiphon);
-    addPlumbingPosition(items, points, "bath-mixer", "Смеситель для ванны с лейкой", bathroomCount, plumbingRates.bathMixer);
+  if (bathroomCount > 0 && options.includeBath && !options.includeShowerZone) {
+    addZonePosition(items, points, PLUMBING_ZONE_IDS.BATHROOM_BATH, {
+      coldWaterPoints: 2,
+      hotWaterPoints: 2,
+      sewerPoints: 2,
+      fixtureCount: 3,
+    });
   }
 
-  if (options.includeHygienicShower) {
-    addPlumbingPosition(items, points, "hygienic-shower", "Гигиенический душ", bathroomCount, plumbingRates.hygienicShower);
+  if (bathroomCount > 0 && options.includeHygienicShower) {
+    addZonePosition(items, points, PLUMBING_ZONE_IDS.BATHROOM_HYGIENIC_SHOWER, {
+      coldWaterPoints: 1,
+      hotWaterPoints: 1,
+      sewerPoints: 0,
+      fixtureCount: 1,
+    });
   }
 
-  if (options.includeElectricTowelRail) {
-    addPlumbingPosition(
-      items,
-      points,
-      "electric-towel-rail",
-      "Электрический полотенцесушитель",
-      bathroomCount,
-      plumbingRates.electricTowelRail,
-    );
+  if (bathroomCount > 0 && options.includeElectricTowelRail) {
+    addZonePosition(items, points, PLUMBING_ZONE_IDS.BATHROOM_TOWEL_RAIL, {
+      coldWaterPoints: 0,
+      hotWaterPoints: 0,
+      sewerPoints: 0,
+      fixtureCount: 1,
+    });
   }
 
   if (hasKitchen && options.includeKitchenSink) {
@@ -561,30 +597,30 @@ export function calculatePlumbing(rooms: PlumbingRoomInput[], options: PlumbingO
   }
 
   if (options.includeWasherOutput) {
-    addPlumbingPosition(
-      items,
-      points,
-      "washer-dryer-output",
-      "Выводы стиральная / сушильная машина",
-      1,
-      plumbingRates.washerDryerOutput,
-    );
+    addZonePosition(items, points, PLUMBING_ZONE_IDS.TECH_WASHER_OUTPUT, {
+      coldWaterPoints: 1,
+      hotWaterPoints: 0,
+      sewerPoints: 1,
+      fixtureCount: 1,
+    });
   }
 
   if (options.includeWaterNode && hasPlumbingRooms) {
-    addPlumbingPosition(items, points, "water-collector", "Коллектор ХВС / ГВС", 1, plumbingRates.waterCollector);
-    addPlumbingPosition(items, points, "water-filters", "Фильтры водоснабжения", 1, plumbingRates.waterFilters);
-    addPlumbingPosition(
-      items,
-      points,
-      "shutoff-valves",
-      "Отсечные краны",
-      Math.max(4, points.coldWaterPoints + points.hotWaterPoints),
-      plumbingRates.shutoffValves,
-    );
+    // FLAG (A8.2): отсечные краны зафиксированы на 4 шт. в составе зоны (раньше max(4, ХВС+ГВС точек)).
+    addZonePosition(items, points, PLUMBING_ZONE_IDS.WATER_NODE, {
+      coldWaterPoints: 0,
+      hotWaterPoints: 0,
+      sewerPoints: 0,
+      fixtureCount: 2,
+    });
 
     if (options.includeLeakProtection) {
-      addPlumbingPosition(items, points, "leak-protection", "Система защиты от протечек", 1, plumbingRates.leakProtection);
+      addZonePosition(items, points, PLUMBING_ZONE_IDS.WATER_LEAK_PROTECTION, {
+        coldWaterPoints: 0,
+        hotWaterPoints: 0,
+        sewerPoints: 0,
+        fixtureCount: 1,
+      });
     }
   }
 

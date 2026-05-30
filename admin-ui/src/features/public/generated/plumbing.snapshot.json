@@ -680,7 +680,7 @@
       "unitPrice": 400
     }
   ],
-  "version": "snapshot-fe9a3b7e2825a25c",
+  "version": "snapshot-8a4f2c5b1062d3ff",
   "zones": [
     {
       "activePackage": "b",
@@ -1090,6 +1090,135 @@
       "subgroup": "Санузел",
       "title": "Перенос инсталляции",
       "total": 33523
+    },
+    {
+      "activePackage": null,
+      "base": [
+        {
+          "itemCode": "vanity-sink-set",
+          "quantity": 1.0
+        },
+        {
+          "itemCode": "sink-faucet",
+          "quantity": 1.0
+        },
+        {
+          "itemCode": "wall-hung-toilet",
+          "quantity": 1.0
+        }
+      ],
+      "code": "zone-bathroom-set",
+      "disclaimer": null,
+      "packages": [],
+      "subgroup": "Санузел",
+      "title": "Комплект санузла",
+      "total": 118955
+    },
+    {
+      "activePackage": null,
+      "base": [
+        {
+          "itemCode": "acrylic-bath",
+          "quantity": 1.0
+        },
+        {
+          "itemCode": "bath-siphon",
+          "quantity": 1.0
+        },
+        {
+          "itemCode": "bath-mixer",
+          "quantity": 1.0
+        }
+      ],
+      "code": "zone-bathroom-bath",
+      "disclaimer": null,
+      "packages": [],
+      "subgroup": "Санузел",
+      "title": "Ванна со смесителем",
+      "total": 62776
+    },
+    {
+      "activePackage": null,
+      "base": [
+        {
+          "itemCode": "hygienic-shower",
+          "quantity": 1.0
+        }
+      ],
+      "code": "zone-bathroom-hygienic-shower",
+      "disclaimer": null,
+      "packages": [],
+      "subgroup": "Санузел",
+      "title": "Гигиенический душ",
+      "total": 15428
+    },
+    {
+      "activePackage": null,
+      "base": [
+        {
+          "itemCode": "electric-towel-rail",
+          "quantity": 1.0
+        }
+      ],
+      "code": "zone-bathroom-towel-rail",
+      "disclaimer": null,
+      "packages": [],
+      "subgroup": "Санузел",
+      "title": "Электрический полотенцесушитель",
+      "total": 22344
+    },
+    {
+      "activePackage": null,
+      "base": [
+        {
+          "itemCode": "washer-dryer-output",
+          "quantity": 1.0
+        }
+      ],
+      "code": "zone-tech-washer-output",
+      "disclaimer": null,
+      "packages": [],
+      "subgroup": "Тех. зона",
+      "title": "Вывод под стиральную / сушильную машину",
+      "total": 12236
+    },
+    {
+      "activePackage": null,
+      "base": [
+        {
+          "itemCode": "water-collector",
+          "quantity": 1.0
+        },
+        {
+          "itemCode": "water-filters",
+          "quantity": 1.0
+        },
+        {
+          "itemCode": "shutoff-valves",
+          "quantity": 4.0
+        }
+      ],
+      "code": "zone-water-node",
+      "disclaimer": null,
+      "packages": [],
+      "subgroup": "Узел",
+      "title": "Сантехнический узел",
+      "total": 75863
+    },
+    {
+      "activePackage": null,
+      "base": [
+        {
+          "itemCode": "leak-protection",
+          "quantity": 1.0
+        }
+      ],
+      "code": "zone-water-leak-protection",
+      "disclaimer": null,
+      "packages": [],
+      "subgroup": "Узел",
+      "title": "Система защиты от протечек",
+      "total": 67564
     }
   ]
 }

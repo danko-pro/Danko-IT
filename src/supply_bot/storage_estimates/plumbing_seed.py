@@ -38,6 +38,10 @@ INSTALL_RELOCATION_GROOVE_METERS = 8
 DISHWASHER_ZONE_PPR_METERS = 10
 DISHWASHER_ZONE_SEWER_METERS = 2
 DISHWASHER_ZONE_GROOVE_METERS = 4
+# A8.2: фиксированное количество отсечных кранов в зоне «Сантехнический узел».
+# Раньше в плоской опции includeWaterNode было max(4, ХВС+ГВС точек) — зависело от остальной сметы;
+# в зональной модели фиксируем на минимуме 4 (намеренный детерминированный итог зоны).
+WATER_NODE_SHUTOFF_VALVES_QTY = 4
 DEFAULT_ZONE_RISK_PERCENT = 6.4
 
 
@@ -399,6 +403,90 @@ PLUMBING_SEED_ZONES: tuple[SeedZone, ...] = (
             SeedComposition("pipe-clamp-sewer", _pipe_clamp_qty(INSTALL_RELOCATION_SEWER_METERS)),
             SeedComposition("work-groove-pipe", INSTALL_RELOCATION_GROOVE_METERS),
         ),
+    ),
+    # --- A8.2: миграция legacy-опций сантехники (плоские include*-опции) в зоны ---
+    # Каждая зона ниже перенесена 1:1 из плоской ветки calculatePlumbing/plumbingRates.
+    # Состав — те же атомы и цены, что были в plumbingRates; итог = Σ атомов × (1 + 6.4 %),
+    # запекается общим механизмом снапшота (без пакетов C/B/A — выбора класса оборудования нет).
+    # Конвенция: единица зоны = один экземпляр (как у zone-kitchen-sink / zone-bathroom-shower);
+    # прежний множитель × bathroomCount у legacy-опций не переносится (зона добавляется один раз).
+    SeedZone(
+        zone_code="zone-bathroom-set",
+        subgroup="Санузел",
+        title="Комплект санузла",
+        description=(
+            "Базовый комплект приборов санузла: тумба с раковиной (vanity-sink-set), смеситель раковины "
+            "и инсталляция с подвесным унитазом. Перенос плоской опции includeBathroomSet (A8.2)."
+        ),
+        active_package_code=None,
+        base=(
+            SeedComposition("vanity-sink-set", 1),
+            SeedComposition("sink-faucet", 1),
+            SeedComposition("wall-hung-toilet", 1),
+        ),
+    ),
+    SeedZone(
+        zone_code="zone-bathroom-bath",
+        subgroup="Санузел",
+        title="Ванна со смесителем",
+        description=(
+            "Акриловая ванна, сифон (слив-перелив) и смеситель с лейкой. "
+            "Перенос плоской опции includeBath (A8.2). Взаимоисключение с душевой зоной — в UI."
+        ),
+        active_package_code=None,
+        base=(
+            SeedComposition("acrylic-bath", 1),
+            SeedComposition("bath-siphon", 1),
+            SeedComposition("bath-mixer", 1),
+        ),
+    ),
+    SeedZone(
+        zone_code="zone-bathroom-hygienic-shower",
+        subgroup="Санузел",
+        title="Гигиенический душ",
+        description="Выводы и подключение гигиенического душа в санузле. Перенос плоской опции includeHygienicShower (A8.2).",
+        active_package_code=None,
+        base=(SeedComposition("hygienic-shower", 1),),
+    ),
+    SeedZone(
+        zone_code="zone-bathroom-towel-rail",
+        subgroup="Санузел",
+        title="Электрический полотенцесушитель",
+        description="Монтаж и подключение электрического полотенцесушителя. Перенос плоской опции includeElectricTowelRail (A8.2).",
+        active_package_code=None,
+        base=(SeedComposition("electric-towel-rail", 1),),
+    ),
+    SeedZone(
+        zone_code="zone-tech-washer-output",
+        subgroup="Тех. зона",
+        title="Вывод под стиральную / сушильную машину",
+        description="Выводы под стиральную и сушильную машину. Перенос плоской опции includeWasherOutput (A8.2).",
+        active_package_code=None,
+        base=(SeedComposition("washer-dryer-output", 1),),
+    ),
+    SeedZone(
+        zone_code="zone-water-node",
+        subgroup="Узел",
+        title="Сантехнический узел",
+        description=(
+            "Базовый сантехнический узел объекта: коллектор ХВС/ГВС, фильтры водоснабжения и отсечные краны. "
+            "Перенос плоской опции includeWaterNode (A8.2). FLAG: количество отсечных кранов зафиксировано на "
+            "минимуме 4 шт. — ранее зависело от числа водяных точек (max(4, ХВС+ГВС))."
+        ),
+        active_package_code=None,
+        base=(
+            SeedComposition("water-collector", 1),
+            SeedComposition("water-filters", 1),
+            SeedComposition("shutoff-valves", WATER_NODE_SHUTOFF_VALVES_QTY),
+        ),
+    ),
+    SeedZone(
+        zone_code="zone-water-leak-protection",
+        subgroup="Узел",
+        title="Система защиты от протечек",
+        description="Датчики протечки и перекрытие воды. Перенос плоской опции includeLeakProtection (A8.2; в UI — поверх сантехнического узла).",
+        active_package_code=None,
+        base=(SeedComposition("leak-protection", 1),),
     ),
 )
 

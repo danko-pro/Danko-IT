@@ -78,6 +78,21 @@ export const PLUMBING_ZONE_IDS = {
   BATHROOM_SHOWER: "zone-bathroom-shower",
 
   BATHROOM_INSTALL_RELOCATION: "zone-bathroom-install-relocation",
+
+  // A8.2: мигрированные legacy-опции (единый итог, без пакетов C/B/A).
+  BATHROOM_SET: "zone-bathroom-set",
+
+  BATHROOM_BATH: "zone-bathroom-bath",
+
+  BATHROOM_HYGIENIC_SHOWER: "zone-bathroom-hygienic-shower",
+
+  BATHROOM_TOWEL_RAIL: "zone-bathroom-towel-rail",
+
+  TECH_WASHER_OUTPUT: "zone-tech-washer-output",
+
+  WATER_NODE: "zone-water-node",
+
+  WATER_LEAK_PROTECTION: "zone-water-leak-protection",
 } as const;
 
 export type PlumbingZoneId =
@@ -823,7 +838,35 @@ export type ExpandPlumbingSectionForSpecOptions = {
   includeShower?: boolean;
 
   includeInstallRelocation?: boolean;
+
+  // A8.2: мигрированные legacy-опции (единый итог без пакетов).
+  includeBathroomSet?: boolean;
+
+  includeBath?: boolean;
+
+  includeHygienicShower?: boolean;
+
+  includeElectricTowelRail?: boolean;
+
+  includeWasherOutput?: boolean;
+
+  includeWaterNode?: boolean;
+
+  includeLeakProtection?: boolean;
 };
+
+/** A8.2: простые мигрированные зоны (без пакетов) — флаг опции → zoneId. */
+const MIGRATED_SIMPLE_ZONE_FLAGS: ReadonlyArray<
+  [keyof ExpandPlumbingSectionForSpecOptions, PlumbingZoneId]
+> = [
+  ["includeBathroomSet", PLUMBING_ZONE_IDS.BATHROOM_SET],
+  ["includeBath", PLUMBING_ZONE_IDS.BATHROOM_BATH],
+  ["includeHygienicShower", PLUMBING_ZONE_IDS.BATHROOM_HYGIENIC_SHOWER],
+  ["includeElectricTowelRail", PLUMBING_ZONE_IDS.BATHROOM_TOWEL_RAIL],
+  ["includeWasherOutput", PLUMBING_ZONE_IDS.TECH_WASHER_OUTPUT],
+  ["includeWaterNode", PLUMBING_ZONE_IDS.WATER_NODE],
+  ["includeLeakProtection", PLUMBING_ZONE_IDS.WATER_LEAK_PROTECTION],
+];
 
 type ActiveZoneSpec = {
   zoneId: PlumbingZoneId;
@@ -907,6 +950,25 @@ function buildActiveZones(
       disclaimer: definition.disclaimer,
 
       isLine: isInstallRelocationZoneLine,
+    });
+  }
+
+  // A8.2: мигрированные legacy-опции — простые зоны без пакетов и без disclaimer-интро.
+  for (const [flag, zoneId] of MIGRATED_SIMPLE_ZONE_FLAGS) {
+    if (!options[flag]) {
+      continue;
+    }
+
+    const lineIdPrefix = getPlumbingZoneDefinition(zoneId).lineIdPrefix;
+
+    zones.push({
+      zoneId,
+
+      lineIdPrefix,
+
+      packageLevel: "b",
+
+      isLine: (item) => isZoneLine(item, lineIdPrefix),
     });
   }
 

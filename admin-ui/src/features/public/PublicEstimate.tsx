@@ -129,6 +129,7 @@ import {
   estimateNavigationItems,
 } from "./sections/registry";
 import type { EstimateNavigationIcon } from "./sections/types";
+import { ObjectSection } from "./sections/object/ObjectSection";
 
 function getGeometryRowRemoveDelayMs(): number {
   if (typeof window === "undefined") {
@@ -1839,70 +1840,24 @@ export function PublicEstimate() {
             </p>
           </div>
 
-          <section
-            id="estimate-object"
+          <ObjectSection
             className={withActiveEstimateSection("estimate-object", activeEstimateSection, "public-estimate-object")}
-            aria-labelledby="public-estimate-object-title"
-          >
-            <div className="public-estimate-object-head">
-              <div>
-                <span>{formatEstimateStep("estimate-object")}</span>
-                <h2 id="public-estimate-object-title">Объект</h2>
-              </div>
-            </div>
-
-            <div className="public-estimate-object-form">
-              <label className="public-estimate-field">
-                <span>Адрес объекта</span>
-                <input
-                  className="public-estimate-input"
-                  value={objectMeta.address}
-                  {...estimateTextFieldProps}
-                  onChange={(event) =>
-                    setObjectMeta((current) => ({ ...current, address: event.target.value }))
-                  }
-                />
-              </label>
-
-              <label className="public-estimate-field">
-                <span>Название ЖК</span>
-                <input
-                  className="public-estimate-input"
-                  placeholder="Необязательно"
-                  value={objectMeta.complexName}
-                  {...estimateTextFieldProps}
-                  onChange={(event) =>
-                    setObjectMeta((current) => ({ ...current, complexName: event.target.value }))
-                  }
-                />
-              </label>
-
-              <label className="public-estimate-field">
-                <span>Номер квартиры</span>
-                <input
-                  className="public-estimate-input"
-                  value={objectMeta.apartmentNumber}
-                  {...estimateTextFieldProps}
-                  onChange={(event) =>
-                    setObjectMeta((current) => ({ ...current, apartmentNumber: event.target.value }))
-                  }
-                />
-              </label>
-
-              <label className="public-estimate-field public-estimate-object-contact">
-                <span>Контакт</span>
-                <input
-                  className="public-estimate-input"
-                  placeholder="Телефон или имя + телефон"
-                  value={objectMeta.contact}
-                  {...estimateTextFieldProps}
-                  onChange={(event) =>
-                    setObjectMeta((current) => ({ ...current, contact: event.target.value }))
-                  }
-                />
-              </label>
-            </div>
-          </section>
+            stepLabel={formatEstimateStep("estimate-object")}
+            objectMeta={objectMeta}
+            textFieldProps={estimateTextFieldProps}
+            onAddressChange={(event) =>
+              setObjectMeta((current) => ({ ...current, address: event.target.value }))
+            }
+            onComplexNameChange={(event) =>
+              setObjectMeta((current) => ({ ...current, complexName: event.target.value }))
+            }
+            onApartmentNumberChange={(event) =>
+              setObjectMeta((current) => ({ ...current, apartmentNumber: event.target.value }))
+            }
+            onContactChange={(event) =>
+              setObjectMeta((current) => ({ ...current, contact: event.target.value }))
+            }
+          />
 
           <section
             id="estimate-geometry"

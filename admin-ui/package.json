@@ -6,6 +6,7 @@
   "scripts": {
     "predev": "python ../tools/project_guard.py frontend",
     "dev": "vite",
+    "prebuild": "node scripts/generate-snapshot.ts",
     "build": "tsc --noEmit && vite build",
     "smoke:ui": "playwright test",
     "test": "vitest run",

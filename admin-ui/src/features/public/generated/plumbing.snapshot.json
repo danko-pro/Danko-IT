@@ -1,0 +1,1095 @@
+{
+  "items": [
+    {
+      "category": "equipment",
+      "code": "acrylic-bath",
+      "title": "Акриловая ванна",
+      "unit": "шт",
+      "unitPrice": 38000
+    },
+    {
+      "category": "equipment",
+      "code": "bath-mixer",
+      "title": "Смеситель для ванны с лейкой",
+      "unit": "шт",
+      "unitPrice": 16500
+    },
+    {
+      "category": "equipment",
+      "code": "bathroom-mirror",
+      "title": "Зеркало в санузле",
+      "unit": "шт",
+      "unitPrice": 17300
+    },
+    {
+      "category": "equipment",
+      "code": "bidet",
+      "title": "Биде",
+      "unit": "шт",
+      "unitPrice": 38500
+    },
+    {
+      "category": "equipment",
+      "code": "concealed-mixer",
+      "title": "Скрытый смеситель / встроенный монтаж",
+      "unit": "шт",
+      "unitPrice": 39500
+    },
+    {
+      "category": "equipment",
+      "code": "drinking-water-filter",
+      "title": "Фильтр питьевой воды / вывод",
+      "unit": "шт",
+      "unitPrice": 19800
+    },
+    {
+      "category": "equipment",
+      "code": "electric-towel-rail",
+      "title": "Электрический полотенцесушитель",
+      "unit": "шт",
+      "unitPrice": 21000
+    },
+    {
+      "category": "equipment",
+      "code": "floor-toilet",
+      "title": "Унитаз напольный",
+      "unit": "шт",
+      "unitPrice": 30000
+    },
+    {
+      "category": "equipment",
+      "code": "food-disposer",
+      "title": "Измельчитель пищевых отходов",
+      "unit": "шт",
+      "unitPrice": 23500
+    },
+    {
+      "category": "equipment",
+      "code": "hygienic-shower",
+      "title": "Гигиенический душ",
+      "unit": "шт",
+      "unitPrice": 14500
+    },
+    {
+      "category": "equipment",
+      "code": "kitchen-faucet-a",
+      "title": "Смеситель кухонный — пакет A",
+      "unit": "шт",
+      "unitPrice": 27000
+    },
+    {
+      "category": "equipment",
+      "code": "kitchen-faucet-b",
+      "title": "Смеситель кухонный — пакет B",
+      "unit": "шт",
+      "unitPrice": 16300
+    },
+    {
+      "category": "equipment",
+      "code": "kitchen-faucet-c",
+      "title": "Смеситель для мойки — C",
+      "unit": "шт",
+      "unitPrice": 6000
+    },
+    {
+      "category": "equipment",
+      "code": "kitchen-sink-bowl-c",
+      "title": "Кухонная мойка — C",
+      "unit": "шт",
+      "unitPrice": 6500
+    },
+    {
+      "category": "equipment",
+      "code": "leak-protection",
+      "title": "Система защиты от протечек",
+      "unit": "шт",
+      "unitPrice": 63500
+    },
+    {
+      "category": "equipment",
+      "code": "shower-cabin",
+      "title": "Душевая кабина",
+      "unit": "шт",
+      "unitPrice": 53000
+    },
+    {
+      "category": "equipment",
+      "code": "shower-drain",
+      "title": "Душевой трап",
+      "unit": "шт",
+      "unitPrice": 36000
+    },
+    {
+      "category": "equipment",
+      "code": "shower-enclosure-glass",
+      "title": "Душевой уголок / стеклянное ограждение",
+      "unit": "шт",
+      "unitPrice": 40000
+    },
+    {
+      "category": "equipment",
+      "code": "shower-mixer-concealed",
+      "title": "Душевой смеситель / скрытый монтаж",
+      "unit": "шт",
+      "unitPrice": 52500
+    },
+    {
+      "category": "equipment",
+      "code": "shower-mixer-rail",
+      "title": "Душевой смеситель / душевая стойка",
+      "unit": "шт",
+      "unitPrice": 16500
+    },
+    {
+      "category": "equipment",
+      "code": "shower-mixer-thermostatic",
+      "title": "Термостатический смеситель для душа",
+      "unit": "шт",
+      "unitPrice": 29000
+    },
+    {
+      "category": "equipment",
+      "code": "shower-partition-fixed",
+      "title": "Душевая перегородка стационарная",
+      "unit": "шт",
+      "unitPrice": 24000
+    },
+    {
+      "category": "equipment",
+      "code": "sink-faucet",
+      "title": "Смеситель для раковины",
+      "unit": "шт",
+      "unitPrice": 16300
+    },
+    {
+      "category": "equipment",
+      "code": "sink-faucet-designer",
+      "title": "Смеситель для раковины дизайнерский",
+      "unit": "шт",
+      "unitPrice": 29800
+    },
+    {
+      "category": "equipment",
+      "code": "vanity-sink-set",
+      "title": "Тумба / раковина / комплект",
+      "unit": "комплект",
+      "unitPrice": 34000
+    },
+    {
+      "category": "equipment",
+      "code": "wall-hung-toilet",
+      "title": "Инсталляция / унитаз",
+      "unit": "шт",
+      "unitPrice": 61500
+    },
+    {
+      "category": "equipment",
+      "code": "water-heater-flow",
+      "title": "Водонагреватель проточный",
+      "unit": "шт",
+      "unitPrice": 25000
+    },
+    {
+      "category": "equipment",
+      "code": "water-heater-storage",
+      "title": "Водонагреватель накопительный",
+      "unit": "шт",
+      "unitPrice": 36500
+    },
+    {
+      "category": "materials",
+      "code": "bath-screen-porcelain",
+      "title": "Экран для ванны из керамогранита",
+      "unit": "шт",
+      "unitPrice": 34500
+    },
+    {
+      "category": "materials",
+      "code": "bath-siphon",
+      "title": "Сифон для ванны",
+      "unit": "шт",
+      "unitPrice": 4500
+    },
+    {
+      "category": "materials",
+      "code": "bath-siphon-overflow",
+      "title": "Сифон для ванны / слив-перелив",
+      "unit": "шт",
+      "unitPrice": 4500
+    },
+    {
+      "category": "materials",
+      "code": "bidet-siphon",
+      "title": "Сифон / выпуск для биде",
+      "unit": "шт",
+      "unitPrice": 3800
+    },
+    {
+      "category": "materials",
+      "code": "check-valves",
+      "title": "Обратные клапаны",
+      "unit": "шт",
+      "unitPrice": 4500
+    },
+    {
+      "category": "materials",
+      "code": "collector-cabinet",
+      "title": "Шкаф коллекторный / сантехнический короб",
+      "unit": "шт",
+      "unitPrice": 13500
+    },
+    {
+      "category": "materials",
+      "code": "fan-outlet-cuff-install",
+      "title": "Фановый отвод / манжета для инсталляции",
+      "unit": "шт",
+      "unitPrice": 3800
+    },
+    {
+      "category": "materials",
+      "code": "kit-ppr-d20-40m",
+      "title": "Комплект PPR d20 (~40 м + фитинги)",
+      "unit": "комплект",
+      "unitPrice": 4837
+    },
+    {
+      "category": "materials",
+      "code": "kitchen-sink-siphon",
+      "title": "Сифон для кухонной мойки",
+      "unit": "шт",
+      "unitPrice": 4500
+    },
+    {
+      "category": "materials",
+      "code": "kitchen-siphon-dishwasher",
+      "title": "Сифон кухонный с отводом под ПММ",
+      "unit": "шт",
+      "unitPrice": 5300
+    },
+    {
+      "category": "materials",
+      "code": "pipe-clamp-ppr-d20",
+      "title": "Крепёж трубы (хомут) PPR d20",
+      "unit": "шт",
+      "unitPrice": 78
+    },
+    {
+      "category": "materials",
+      "code": "pipe-clamp-sewer",
+      "title": "Крепёж трубы (хомут) канализация",
+      "unit": "шт",
+      "unitPrice": 87
+    },
+    {
+      "category": "materials",
+      "code": "pipe-ppr-d20",
+      "title": "Труба PPR d20",
+      "unit": "м.п.",
+      "unitPrice": 115
+    },
+    {
+      "category": "materials",
+      "code": "pipe-sewer-110",
+      "title": "Труба канализационная 110 мм",
+      "unit": "м.п.",
+      "unitPrice": 240
+    },
+    {
+      "category": "materials",
+      "code": "pipe-sewer-50",
+      "title": "Труба канализационная 50 мм",
+      "unit": "м.п.",
+      "unitPrice": 155
+    },
+    {
+      "category": "materials",
+      "code": "ppr-d20-fitting",
+      "title": "Фитинг / поворот PPR d20",
+      "unit": "шт",
+      "unitPrice": 10
+    },
+    {
+      "category": "materials",
+      "code": "ppr-d20-outlet",
+      "title": "Выход / подключение PPR d20",
+      "unit": "шт",
+      "unitPrice": 121
+    },
+    {
+      "category": "materials",
+      "code": "pressure-gauges",
+      "title": "Манометры",
+      "unit": "шт",
+      "unitPrice": 3800
+    },
+    {
+      "category": "materials",
+      "code": "pressure-reducer",
+      "title": "Редуктор давления ХВС / ГВС",
+      "unit": "шт",
+      "unitPrice": 12500
+    },
+    {
+      "category": "materials",
+      "code": "radiator-replacement",
+      "title": "Замена радиатора отопительного (диз.)",
+      "unit": "шт",
+      "unitPrice": 32200
+    },
+    {
+      "category": "materials",
+      "code": "revision-hatch",
+      "title": "Скрытый ревизионный люк",
+      "unit": "шт",
+      "unitPrice": 11000
+    },
+    {
+      "category": "materials",
+      "code": "shower-drain-trap",
+      "title": "Трап душевой с гидрозатвором",
+      "unit": "шт",
+      "unitPrice": 12500
+    },
+    {
+      "category": "materials",
+      "code": "shower-tray-siphon",
+      "title": "Сифон для душевого поддона",
+      "unit": "шт",
+      "unitPrice": 5000
+    },
+    {
+      "category": "materials",
+      "code": "shutoff-valves",
+      "title": "Отсечные краны",
+      "unit": "шт",
+      "unitPrice": 1450
+    },
+    {
+      "category": "materials",
+      "code": "sink-pop-up-waste",
+      "title": "Донный клапан / выпуск для раковины",
+      "unit": "шт",
+      "unitPrice": 2300
+    },
+    {
+      "category": "materials",
+      "code": "sink-siphon",
+      "title": "Сифон для раковины",
+      "unit": "шт",
+      "unitPrice": 3800
+    },
+    {
+      "category": "materials",
+      "code": "siphon-connection-reserve",
+      "title": "Сифон / комплект подключения (резерв)",
+      "unit": "комплект",
+      "unitPrice": 4500
+    },
+    {
+      "category": "materials",
+      "code": "vanity-sink-siphon",
+      "title": "Сифон для тумбы с раковиной",
+      "unit": "шт",
+      "unitPrice": 4000
+    },
+    {
+      "category": "materials",
+      "code": "washer-siphon-output",
+      "title": "Сифон / вывод для стиральной машины",
+      "unit": "шт",
+      "unitPrice": 3800
+    },
+    {
+      "category": "materials",
+      "code": "water-collector",
+      "title": "Коллектор ХВС / ГВС",
+      "unit": "шт",
+      "unitPrice": 41000
+    },
+    {
+      "category": "materials",
+      "code": "water-filters",
+      "title": "Фильтры водоснабжения",
+      "unit": "шт",
+      "unitPrice": 24500
+    },
+    {
+      "category": "works",
+      "code": "cold-hot-water-point",
+      "title": "Дополнительная точка ХВС / ГВС",
+      "unit": "шт",
+      "unitPrice": 8500
+    },
+    {
+      "category": "works",
+      "code": "dishwasher-45-package-b",
+      "title": "ПММ 45 см — пакет B",
+      "unit": "шт",
+      "unitPrice": 0
+    },
+    {
+      "category": "works",
+      "code": "dishwasher-45-package-c",
+      "title": "ПММ 45 см — пакет C",
+      "unit": "шт",
+      "unitPrice": 0
+    },
+    {
+      "category": "works",
+      "code": "dishwasher-60-package-a",
+      "title": "ПММ 60 см — пакет A",
+      "unit": "шт",
+      "unitPrice": 0
+    },
+    {
+      "category": "works",
+      "code": "dishwasher-output",
+      "title": "Выводы для ПМ машины",
+      "unit": "шт",
+      "unitPrice": 9500
+    },
+    {
+      "category": "works",
+      "code": "dishwasher-outputs-alt",
+      "title": "Выводы под посудомоечную машину",
+      "unit": "шт",
+      "unitPrice": 11500
+    },
+    {
+      "category": "works",
+      "code": "disposer-output",
+      "title": "Вывод под измельчитель",
+      "unit": "шт",
+      "unitPrice": 5000
+    },
+    {
+      "category": "works",
+      "code": "drain-clamp-filter",
+      "title": "Дренажный хомут / подключение фильтра к канализации",
+      "unit": "шт",
+      "unitPrice": 2700
+    },
+    {
+      "category": "works",
+      "code": "extra-sewer-point",
+      "title": "Дополнительная точка канализации",
+      "unit": "шт",
+      "unitPrice": 8000
+    },
+    {
+      "category": "works",
+      "code": "fan-outlet-cuff-toilet",
+      "title": "Фановый отвод / манжета для унитаза",
+      "unit": "шт",
+      "unitPrice": 3500
+    },
+    {
+      "category": "works",
+      "code": "kitchen-sink",
+      "title": "Кухонная мойка",
+      "unit": "шт",
+      "unitPrice": 11500
+    },
+    {
+      "category": "works",
+      "code": "kitchen-sink-bowl-a",
+      "title": "Мойка кухонная — пакет A",
+      "unit": "шт",
+      "unitPrice": 0
+    },
+    {
+      "category": "works",
+      "code": "kitchen-sink-bowl-b",
+      "title": "Мойка кухонная — пакет B",
+      "unit": "шт",
+      "unitPrice": 0
+    },
+    {
+      "category": "works",
+      "code": "shower-outputs",
+      "title": "Душ (выводы)",
+      "unit": "шт",
+      "unitPrice": 14500
+    },
+    {
+      "category": "works",
+      "code": "shower-tray-tiled",
+      "title": "Душевой поддон из плитки с трапом",
+      "unit": "шт",
+      "unitPrice": 34500
+    },
+    {
+      "category": "works",
+      "code": "sink",
+      "title": "Раковина",
+      "unit": "шт",
+      "unitPrice": 11500
+    },
+    {
+      "category": "works",
+      "code": "washer-dryer-output",
+      "title": "Выводы стиральная / сушильная машина",
+      "unit": "шт",
+      "unitPrice": 11500
+    },
+    {
+      "category": "works",
+      "code": "work-dishwasher-connect",
+      "title": "Подключение посудомойки",
+      "unit": "шт",
+      "unitPrice": 500
+    },
+    {
+      "category": "works",
+      "code": "work-floor-opening",
+      "title": "Вскрытие пола",
+      "unit": "м.п.",
+      "unitPrice": 600
+    },
+    {
+      "category": "works",
+      "code": "work-groove-pipe",
+      "title": "Штробление под трубу",
+      "unit": "м.п.",
+      "unitPrice": 900
+    },
+    {
+      "category": "works",
+      "code": "work-hygienic-shower-finish",
+      "title": "Монтаж гигиенического душа (чистовой)",
+      "unit": "шт",
+      "unitPrice": 1000
+    },
+    {
+      "category": "works",
+      "code": "work-hygienic-shower-rough",
+      "title": "Монтаж встроенного гигиенического душа (черновой)",
+      "unit": "шт",
+      "unitPrice": 4500
+    },
+    {
+      "category": "works",
+      "code": "work-install-frame-rough",
+      "title": "Монтаж инсталляции с подключением к сетям (черновой)",
+      "unit": "шт",
+      "unitPrice": 6500
+    },
+    {
+      "category": "works",
+      "code": "work-meter-relocation-130",
+      "title": "Перенос счётчика на высоту 130 см",
+      "unit": "усл.",
+      "unitPrice": 1800
+    },
+    {
+      "category": "works",
+      "code": "work-radiator-demolition",
+      "title": "Демонтаж радиатора с заглушиванием выводов",
+      "unit": "шт",
+      "unitPrice": 1600
+    },
+    {
+      "category": "works",
+      "code": "work-radiator-thermo-reconnect",
+      "title": "Демонтаж труб радиатора, установка терморегулятора, подключение",
+      "unit": "усл.",
+      "unitPrice": 4600
+    },
+    {
+      "category": "works",
+      "code": "work-risers-restore",
+      "title": "Восстановление стояков",
+      "unit": "усл.",
+      "unitPrice": 1500
+    },
+    {
+      "category": "works",
+      "code": "work-sewer-point",
+      "title": "Монтаж точки канализации",
+      "unit": "шт",
+      "unitPrice": 2500
+    },
+    {
+      "category": "works",
+      "code": "work-shower-mixer-install",
+      "title": "Монтаж душевого смесителя",
+      "unit": "шт",
+      "unitPrice": 1500
+    },
+    {
+      "category": "works",
+      "code": "work-sink-mixer-siphon-connect",
+      "title": "Подключение смесителя и сифона мойки",
+      "unit": "шт",
+      "unitPrice": 1500
+    },
+    {
+      "category": "works",
+      "code": "work-slab-glue-mount",
+      "title": "Монтаж плиты на клей",
+      "unit": "шт",
+      "unitPrice": 900
+    },
+    {
+      "category": "works",
+      "code": "work-vanity-sink-faucet-install",
+      "title": "Монтаж раковины на тумбе со смесителем",
+      "unit": "шт",
+      "unitPrice": 4000
+    },
+    {
+      "category": "works",
+      "code": "work-wall-chase",
+      "title": "Штробление стены",
+      "unit": "м.п.",
+      "unitPrice": 900
+    },
+    {
+      "category": "works",
+      "code": "work-wall-toilet-finish",
+      "title": "Монтаж подвесного унитаза (чистовой)",
+      "unit": "шт",
+      "unitPrice": 3000
+    },
+    {
+      "category": "works",
+      "code": "work-warm-floor-chase",
+      "title": "Монтаж тёплого пола в штробу с заделкой",
+      "unit": "м²",
+      "unitPrice": 1600
+    },
+    {
+      "category": "works",
+      "code": "work-washer-install-connect",
+      "title": "Установка и подключение стиральной машины",
+      "unit": "шт",
+      "unitPrice": 1500
+    },
+    {
+      "category": "works",
+      "code": "work-water-point",
+      "title": "Монтаж точки ХВС/ГВС",
+      "unit": "шт",
+      "unitPrice": 3500
+    },
+    {
+      "category": "works",
+      "code": "work-water-rosette-valves",
+      "title": "Монтаж кранов водорозеток",
+      "unit": "шт",
+      "unitPrice": 400
+    }
+  ],
+  "version": "snapshot-fe9a3b7e2825a25c",
+  "zones": [
+    {
+      "activePackage": "b",
+      "base": [
+        {
+          "itemCode": "work-water-point",
+          "quantity": 1.0
+        },
+        {
+          "itemCode": "work-sewer-point",
+          "quantity": 1.0
+        },
+        {
+          "itemCode": "work-sink-mixer-siphon-connect",
+          "quantity": 1.0
+        },
+        {
+          "itemCode": "kitchen-sink-siphon",
+          "quantity": 1.0
+        },
+        {
+          "itemCode": "pipe-sewer-50",
+          "quantity": 3.5
+        },
+        {
+          "itemCode": "pipe-ppr-d20",
+          "quantity": 20.0
+        },
+        {
+          "itemCode": "ppr-d20-outlet",
+          "quantity": 12.0
+        },
+        {
+          "itemCode": "ppr-d20-fitting",
+          "quantity": 12.0
+        },
+        {
+          "itemCode": "pipe-clamp-ppr-d20",
+          "quantity": 30.0
+        },
+        {
+          "itemCode": "pipe-clamp-sewer",
+          "quantity": 5.25
+        },
+        {
+          "itemCode": "work-groove-pipe",
+          "quantity": 6.0
+        }
+      ],
+      "code": "zone-kitchen-sink",
+      "disclaimer": null,
+      "packages": [
+        {
+          "code": "c",
+          "items": [
+            {
+              "itemCode": "kitchen-faucet-c",
+              "quantity": 1.0
+            },
+            {
+              "itemCode": "kitchen-sink-bowl-c",
+              "quantity": 1.0
+            }
+          ],
+          "label": "Пакет C",
+          "total": 39487
+        },
+        {
+          "code": "b",
+          "items": [
+            {
+              "itemCode": "kitchen-faucet-b",
+              "quantity": 1.0
+            },
+            {
+              "itemCode": "kitchen-sink-bowl-b",
+              "quantity": 1.0
+            }
+          ],
+          "label": "Пакет B",
+          "total": 43530
+        },
+        {
+          "code": "a",
+          "items": [
+            {
+              "itemCode": "kitchen-faucet-a",
+              "quantity": 1.0
+            },
+            {
+              "itemCode": "kitchen-sink-bowl-a",
+              "quantity": 1.0
+            }
+          ],
+          "label": "Пакет A",
+          "total": 54915
+        }
+      ],
+      "subgroup": "Кухня",
+      "title": "Зона мойки",
+      "total": 43530
+    },
+    {
+      "activePackage": "b",
+      "base": [
+        {
+          "itemCode": "work-water-point",
+          "quantity": 1.0
+        },
+        {
+          "itemCode": "work-sewer-point",
+          "quantity": 1.0
+        },
+        {
+          "itemCode": "work-dishwasher-connect",
+          "quantity": 1.0
+        },
+        {
+          "itemCode": "pipe-sewer-50",
+          "quantity": 2.0
+        },
+        {
+          "itemCode": "pipe-ppr-d20",
+          "quantity": 10.0
+        },
+        {
+          "itemCode": "ppr-d20-outlet",
+          "quantity": 6.0
+        },
+        {
+          "itemCode": "ppr-d20-fitting",
+          "quantity": 6.0
+        },
+        {
+          "itemCode": "pipe-clamp-ppr-d20",
+          "quantity": 15.0
+        },
+        {
+          "itemCode": "pipe-clamp-sewer",
+          "quantity": 3.0
+        },
+        {
+          "itemCode": "work-groove-pipe",
+          "quantity": 4.0
+        }
+      ],
+      "code": "zone-kitchen-dishwasher",
+      "disclaimer": null,
+      "packages": [
+        {
+          "code": "c",
+          "items": [
+            {
+              "itemCode": "dishwasher-45-package-c",
+              "quantity": 1.0
+            }
+          ],
+          "label": "Пакет C",
+          "total": 14659
+        },
+        {
+          "code": "b",
+          "items": [
+            {
+              "itemCode": "dishwasher-45-package-b",
+              "quantity": 1.0
+            }
+          ],
+          "label": "Пакет B",
+          "total": 14659
+        },
+        {
+          "code": "a",
+          "items": [
+            {
+              "itemCode": "dishwasher-60-package-a",
+              "quantity": 1.0
+            }
+          ],
+          "label": "Пакет A",
+          "total": 14659
+        }
+      ],
+      "subgroup": "Кухня",
+      "title": "Зона ПММ",
+      "total": 14659
+    },
+    {
+      "activePackage": null,
+      "base": [
+        {
+          "itemCode": "work-water-point",
+          "quantity": 1.0
+        },
+        {
+          "itemCode": "work-sewer-point",
+          "quantity": 1.0
+        },
+        {
+          "itemCode": "work-vanity-sink-faucet-install",
+          "quantity": 1.0
+        },
+        {
+          "itemCode": "vanity-sink-siphon",
+          "quantity": 1.0
+        },
+        {
+          "itemCode": "pipe-sewer-50",
+          "quantity": 3.5
+        },
+        {
+          "itemCode": "pipe-ppr-d20",
+          "quantity": 20.0
+        },
+        {
+          "itemCode": "ppr-d20-outlet",
+          "quantity": 12.0
+        },
+        {
+          "itemCode": "ppr-d20-fitting",
+          "quantity": 12.0
+        },
+        {
+          "itemCode": "pipe-clamp-ppr-d20",
+          "quantity": 30.0
+        },
+        {
+          "itemCode": "pipe-clamp-sewer",
+          "quantity": 5.25
+        },
+        {
+          "itemCode": "work-groove-pipe",
+          "quantity": 6.0
+        },
+        {
+          "itemCode": "vanity-sink-set",
+          "quantity": 1.0
+        },
+        {
+          "itemCode": "sink-faucet",
+          "quantity": 1.0
+        }
+      ],
+      "code": "zone-bathroom-vanity",
+      "disclaimer": null,
+      "packages": [],
+      "subgroup": "Санузел",
+      "title": "Зона умывальника",
+      "total": 81834
+    },
+    {
+      "activePackage": "b",
+      "base": [
+        {
+          "itemCode": "shower-outputs",
+          "quantity": 1.0
+        },
+        {
+          "itemCode": "work-water-point",
+          "quantity": 2.0
+        },
+        {
+          "itemCode": "work-sewer-point",
+          "quantity": 1.0
+        },
+        {
+          "itemCode": "work-shower-mixer-install",
+          "quantity": 1.0
+        },
+        {
+          "itemCode": "shower-drain-trap",
+          "quantity": 1.0
+        },
+        {
+          "itemCode": "pipe-sewer-50",
+          "quantity": 3.0
+        },
+        {
+          "itemCode": "pipe-ppr-d20",
+          "quantity": 20.0
+        },
+        {
+          "itemCode": "ppr-d20-outlet",
+          "quantity": 12.0
+        },
+        {
+          "itemCode": "ppr-d20-fitting",
+          "quantity": 12.0
+        },
+        {
+          "itemCode": "pipe-clamp-ppr-d20",
+          "quantity": 30.0
+        },
+        {
+          "itemCode": "pipe-clamp-sewer",
+          "quantity": 4.5
+        },
+        {
+          "itemCode": "work-groove-pipe",
+          "quantity": 6.0
+        }
+      ],
+      "code": "zone-bathroom-shower",
+      "disclaimer": null,
+      "packages": [
+        {
+          "code": "c",
+          "items": [
+            {
+              "itemCode": "shower-cabin",
+              "quantity": 1.0
+            }
+          ],
+          "label": "Пакет C",
+          "total": 110091
+        },
+        {
+          "code": "b",
+          "items": [
+            {
+              "itemCode": "shower-enclosure-glass",
+              "quantity": 1.0
+            },
+            {
+              "itemCode": "shower-mixer-rail",
+              "quantity": 1.0
+            }
+          ],
+          "label": "Пакет B",
+          "total": 113815
+        },
+        {
+          "code": "a",
+          "items": [
+            {
+              "itemCode": "shower-mixer-concealed",
+              "quantity": 1.0
+            },
+            {
+              "itemCode": "shower-partition-fixed",
+              "quantity": 1.0
+            }
+          ],
+          "label": "Пакет A",
+          "total": 135095
+        }
+      ],
+      "subgroup": "Санузел",
+      "title": "Душевая зона",
+      "total": 113815
+    },
+    {
+      "activePackage": null,
+      "base": [
+        {
+          "itemCode": "work-install-frame-rough",
+          "quantity": 1.0
+        },
+        {
+          "itemCode": "work-wall-toilet-finish",
+          "quantity": 1.0
+        },
+        {
+          "itemCode": "work-water-point",
+          "quantity": 1.0
+        },
+        {
+          "itemCode": "work-sewer-point",
+          "quantity": 1.0
+        },
+        {
+          "itemCode": "fan-outlet-cuff-install",
+          "quantity": 1.0
+        },
+        {
+          "itemCode": "pipe-sewer-110",
+          "quantity": 2.0
+        },
+        {
+          "itemCode": "pipe-ppr-d20",
+          "quantity": 15.0
+        },
+        {
+          "itemCode": "ppr-d20-outlet",
+          "quantity": 6.0
+        },
+        {
+          "itemCode": "ppr-d20-fitting",
+          "quantity": 6.0
+        },
+        {
+          "itemCode": "pipe-clamp-ppr-d20",
+          "quantity": 22.5
+        },
+        {
+          "itemCode": "pipe-clamp-sewer",
+          "quantity": 3.0
+        },
+        {
+          "itemCode": "work-groove-pipe",
+          "quantity": 8.0
+        }
+      ],
+      "code": "zone-bathroom-install-relocation",
+      "disclaimer": null,
+      "packages": [],
+      "subgroup": "Санузел",
+      "title": "Перенос инсталляции",
+      "total": 33523
+    }
+  ]
+}

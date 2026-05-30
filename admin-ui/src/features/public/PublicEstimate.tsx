@@ -116,6 +116,7 @@ import { AppliancesSection } from "./sections/appliances/AppliancesSection";
 import { LooseFurnitureSection } from "./sections/loose-furniture/LooseFurnitureSection";
 import { HomeGoodsSection } from "./sections/home-goods/HomeGoodsSection";
 import { CompletionSection } from "./sections/completion/CompletionSection";
+import { EstimatePassportSidebar } from "./components/estimate/EstimatePassportSidebar";
 import { CostsSection } from "./sections/costs/CostsSection";
 import { DoorsSection } from "./sections/doors/DoorsSection";
 import { ElectricSection } from "./sections/electric/ElectricSection";
@@ -2065,86 +2066,14 @@ export function PublicEstimate() {
           </div>
         </div>
 
-        <aside id="estimate-passport" className="public-estimate-passport-sidebar" aria-label="Паспорт сметы">
-          <section
-            id="estimate-passport-volumes"
-            className="public-estimate-card public-estimate-passport public-estimate-passport-volumes-panel"
-            aria-label="Объёмы объекта"
-          >
-            <div className="public-estimate-passport-volumes-head">
-              <span>Объём объекта</span>
-            </div>
-            <dl className="public-estimate-passport-volumes-list">
-              {summaryItems.map((item) => (
-                <div className="public-estimate-passport-volumes-item" key={item.label}>
-                  <dt>{item.label}</dt>
-                  <dd>{item.value}</dd>
-                </div>
-              ))}
-            </dl>
-            <button
-              className="public-estimate-passport-volumes-action"
-              type="button"
-              onClick={handlePrintVolumes}
-            >
-              Скачать объёмы
-            </button>
-          </section>
-
-          <section
-            className="public-estimate-card public-estimate-passport public-estimate-passport-estimate-panel"
-            aria-label="Оценка по составу сметы"
-          >
-            <div className="public-estimate-passport-head">
-              <h2>Оценка по составу сметы</h2>
-            </div>
-
-            <div className="public-estimate-passport-metrics" aria-label="Итоги паспорта сметы">
-              <div>
-                <span>Итого</span>
-                <strong>{formatMoney(estimateResult.totals.total)}</strong>
-              </div>
-              <div>
-                <span>₽/м²</span>
-                <strong>{formatMoney(estimateResult.totals.pricePerSquareMeter)}/м²</strong>
-              </div>
-            </div>
-
-            <div className="public-estimate-passport-detail">
-              <span>Ориентир пакета (по всей смете)</span>
-              <strong>
-                {packageClassification.referencePrice > 0
-                  ? `${packageClassification.referenceLabel}: ${formatMoney(packageClassification.referencePrice)}/м²`
-                  : packageClassification.referenceLabel}
-              </strong>
-              {packageClassification.nextLabel ? (
-                <small>
-                  До {packageClassification.nextLabel.replace("Пакет ", "")}: +{formatMoney(packageClassification.nextDelta)}/м²
-                </small>
-              ) : (
-                <small>Верхний ориентир публичной модели</small>
-              )}
-              <small className="public-estimate-passport-hint">
-                Это ориентир уровня всей сметы по ₽/м², а не выбранный вами пакет C / B / A в разделах
-                техники, мебели и комплектации.
-              </small>
-            </div>
-
-            {estimateResult.sections.length > 0 ? (
-              <button
-                className="public-estimate-passport-action public-estimate-passport-spec"
-                type="button"
-                onClick={openFullSpec}
-              >
-                Полная спецификация
-              </button>
-            ) : null}
-
-            <button className="public-estimate-passport-action" type="button" onClick={handlePrintEstimate}>
-              Скачать PDF сметы
-            </button>
-          </section>
-        </aside>
+        <EstimatePassportSidebar
+          summaryItems={summaryItems}
+          estimateResult={estimateResult}
+          packageClassification={packageClassification}
+          onPrintVolumes={handlePrintVolumes}
+          onOpenFullSpec={openFullSpec}
+          onPrintEstimate={handlePrintEstimate}
+        />
       </section>
 
       <aside className="public-estimate-mobile-total" aria-label="Краткий итог сметы">

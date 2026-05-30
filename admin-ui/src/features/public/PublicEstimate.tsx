@@ -44,8 +44,6 @@ import {
   calculateEstimateRoomGeometry,
   parseEstimateDecimal,
   parseEstimateInteger,
-  type EstimateRoomInput,
-  type EstimateRoomType,
 } from "./public-estimate-geometry";
 import {
   estimateNumericFieldProps,
@@ -101,12 +99,28 @@ import {
   getDefaultWallsCovering,
   getDefaultWallsPreparation,
   initialRooms,
-  NEW_ROOM_DEFAULT_NAME,
-  roomTypeOptions,
-  validEstimateRoomTypes,
   wallsCoveringOptions,
   wallsPreparationOptions,
 } from "./estimate/defaults";
+import {
+  buildNewRoomName,
+  inferRoomTypeFromName,
+  normalizeAppliancesOptionsDraft,
+  normalizeEstimateRoomDraft,
+  normalizeLooseFurnitureOptionsDraft,
+  normalizeRoom,
+  type AppliancesOptionsDraft,
+  type CeilingRoomDraft,
+  type CompletionOptionsDraft,
+  type ElectricRoomDraft,
+  type EstimateObjectMeta,
+  type EstimateRoomDraft,
+  type FlooringOptionsDraft,
+  type FlooringRoomDraft,
+  type LooseFurnitureOptionsDraft,
+  type WallsRoomDraft,
+  type WarmFloorRoomDraft,
+} from "./estimate/context";
 import { formatEstimateQuantity, formatMeasurement, formatMoney } from "./estimate/format";
 import {
   ESTIMATE_INITIAL_SECTION_ID,
@@ -129,55 +143,6 @@ function prefersReducedEstimateMotion(): boolean {
   }
 
   return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-}
-
-function inferRoomTypeFromName(name: string): EstimateRoomType | null {
-  const normalized = name.trim().toLocaleLowerCase("ru-RU");
-
-  if (!normalized) {
-    return null;
-  }
-
-  const matchedOption = roomTypeOptions.find((option) => option.label.toLocaleLowerCase("ru-RU") === normalized);
-
-  return matchedOption?.value ?? null;
-}
-
-function normalizeEstimateRoomType(type: string | undefined | null): EstimateRoomType {
-  if (type && validEstimateRoomTypes.has(type as EstimateRoomType)) {
-    return type as EstimateRoomType;
-  }
-
-  return "other";
-}
-
-function normalizeEstimateRoomDraft(room: EstimateRoomDraft): EstimateRoomDraft {
-  const type = normalizeEstimateRoomType(room.type);
-  const inferredType = inferRoomTypeFromName(room.name);
-
-  return {
-    ...room,
-    type: inferredType ?? type,
-  };
-}
-
-function buildNewRoomName(existingRooms: EstimateRoomDraft[]): string {
-  const usedNames = new Set(existingRooms.map((room) => room.name.trim().toLocaleLowerCase("ru-RU")));
-  const baseName = NEW_ROOM_DEFAULT_NAME;
-
-  if (!usedNames.has(baseName.toLocaleLowerCase("ru-RU"))) {
-    return baseName;
-  }
-
-  for (let suffix = 2; suffix < 1000; suffix += 1) {
-    const candidate = `${baseName} ${suffix}`;
-
-    if (!usedNames.has(candidate.toLocaleLowerCase("ru-RU"))) {
-      return candidate;
-    }
-  }
-
-  return `Помещение ${existingRooms.length + 1}`;
 }
 
 const ESTIMATE_PAGE_BOTTOM_THRESHOLD_PX = 96;
@@ -564,66 +529,6 @@ function PlumbingZoneCard({
   );
 }
 
-type EstimateObjectMeta = {
-  address: string;
-  complexName: string;
-  apartmentNumber: string;
-  contact: string;
-};
-
-type EstimateRoomDraft = Omit<EstimateRoomInput, "area" | "doorCount" | "windowCount"> & {
-  area: string;
-  doorCount: string;
-  windowCount: string;
-};
-
-type WarmFloorRoomDraft = {
-  isSelected?: boolean;
-  warmFloorArea?: string;
-};
-
-type FlooringRoomDraft = {
-  isIncluded?: boolean;
-  coveringType?: FlooringCoveringType;
-  preparationType?: FlooringPreparationType;
-  layoutType?: FlooringLayoutType;
-};
-
-type FlooringOptionsDraft = {
-  includePlinth: boolean;
-  plinthType: FlooringPlinthType;
-  includeThresholds: boolean;
-  thresholdCount: string;
-  includeDemolition: boolean;
-};
-
-type WallsRoomDraft = {
-  isIncluded?: boolean;
-  coveringType?: WallsCoveringType;
-  preparationType?: WallsPreparationType;
-};
-
-type CeilingRoomDraft = {
-  isIncluded?: boolean;
-  hasPointLights?: boolean;
-};
-
-type ElectricRoomDraft = {
-  isIncluded?: boolean;
-};
-
-type CompletionOptionsDraft = Omit<CompletionOptions, "kitchenLengthMeters"> & {
-  kitchenLengthMeters: string;
-};
-
-type AppliancesOptionsDraft = Omit<AppliancesOptions, "items"> & {
-  items: Record<ApplianceItemKey, { isIncluded: boolean; quantity: string }>;
-};
-
-type LooseFurnitureOptionsDraft = Omit<LooseFurnitureOptions, "items"> & {
-  items: Record<LooseFurnitureItemKey, { isIncluded: boolean; quantity: string }>;
-};
-
 function createDefaultAppliancesOptionsDraft(): AppliancesOptionsDraft {
   const base = createDefaultAppliancesOptions();
   const items = {} as AppliancesOptionsDraft["items"];
@@ -638,20 +543,6 @@ function createDefaultAppliancesOptionsDraft(): AppliancesOptionsDraft {
   return { packageLevel: base.packageLevel, fridgeVariant: base.fridgeVariant, items };
 }
 
-function normalizeAppliancesOptionsDraft(draft: AppliancesOptionsDraft): AppliancesOptions {
-  const items = {} as AppliancesOptions["items"];
-
-  for (const item of applianceItemCatalog) {
-    const itemDraft = draft.items[item.key];
-    items[item.key] = {
-      isIncluded: itemDraft.isIncluded,
-      quantity: Math.max(1, parseEstimateInteger(itemDraft.quantity)),
-    };
-  }
-
-  return { packageLevel: draft.packageLevel, fridgeVariant: draft.fridgeVariant, items };
-}
-
 function createDefaultLooseFurnitureOptionsDraft(): LooseFurnitureOptionsDraft {
   const base = createDefaultLooseFurnitureOptions();
   const items = {} as LooseFurnitureOptionsDraft["items"];
@@ -664,31 +555,6 @@ function createDefaultLooseFurnitureOptionsDraft(): LooseFurnitureOptionsDraft {
   }
 
   return { packageLevel: base.packageLevel, items };
-}
-
-function normalizeLooseFurnitureOptionsDraft(draft: LooseFurnitureOptionsDraft): LooseFurnitureOptions {
-  const items = {} as LooseFurnitureOptions["items"];
-
-  for (const item of looseFurnitureItemCatalog) {
-    const itemDraft = draft.items[item.key];
-    items[item.key] = {
-      isIncluded: itemDraft.isIncluded,
-      quantity: Math.max(1, parseEstimateInteger(itemDraft.quantity)),
-    };
-  }
-
-  return { packageLevel: draft.packageLevel, items };
-}
-
-function normalizeRoom(room: EstimateRoomDraft): EstimateRoomInput {
-  const normalizedDraft = normalizeEstimateRoomDraft(room);
-
-  return {
-    ...normalizedDraft,
-    area: parseEstimateDecimal(normalizedDraft.area),
-    doorCount: parseEstimateDecimal(normalizedDraft.doorCount),
-    windowCount: parseEstimateDecimal(normalizedDraft.windowCount),
-  };
 }
 
 function createEstimateRoom(existingRooms: EstimateRoomDraft[]): EstimateRoomDraft {

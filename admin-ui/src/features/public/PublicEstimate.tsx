@@ -86,6 +86,27 @@ import {
   type WallsCoveringType,
   type WallsPreparationType,
 } from "./public-estimate-walls";
+import {
+  doorPackageOptions,
+  flooringCoveringOptions,
+  flooringLayoutOptions,
+  flooringPlinthOptions,
+  flooringPreparationOptions,
+  GEOMETRY_ROW_REMOVE_MS,
+  GEOMETRY_STEP_HINT,
+  getDefaultCeilingLightSettings,
+  getDefaultFlooringCovering,
+  getDefaultFlooringLayout,
+  getDefaultFlooringPreparation,
+  getDefaultWallsCovering,
+  getDefaultWallsPreparation,
+  initialRooms,
+  NEW_ROOM_DEFAULT_NAME,
+  roomTypeOptions,
+  validEstimateRoomTypes,
+  wallsCoveringOptions,
+  wallsPreparationOptions,
+} from "./estimate/defaults";
 import { formatEstimateQuantity, formatMeasurement, formatMoney } from "./estimate/format";
 import {
   ESTIMATE_INITIAL_SECTION_ID,
@@ -93,20 +114,6 @@ import {
   estimateNavigationItems,
 } from "./sections/registry";
 import type { EstimateNavigationIcon } from "./sections/types";
-
-const roomTypeOptions: Array<{ value: EstimateRoomType; label: string }> = [
-  { value: "living_room", label: "Комната" },
-  { value: "kitchen", label: "Кухня" },
-  { value: "bathroom", label: "Санузел" },
-  { value: "hallway", label: "Прихожая" },
-  { value: "balcony", label: "Балкон" },
-  { value: "other", label: "Другое" },
-];
-
-const GEOMETRY_STEP_HINT =
-  "Площадь, двери и окна по БТИ — периметр и стены пересчитаются автоматически.";
-
-const GEOMETRY_ROW_REMOVE_MS = 280;
 
 function getGeometryRowRemoveDelayMs(): number {
   if (typeof window === "undefined") {
@@ -136,8 +143,6 @@ function inferRoomTypeFromName(name: string): EstimateRoomType | null {
   return matchedOption?.value ?? null;
 }
 
-const validEstimateRoomTypes = new Set<EstimateRoomType>(roomTypeOptions.map((option) => option.value));
-
 function normalizeEstimateRoomType(type: string | undefined | null): EstimateRoomType {
   if (type && validEstimateRoomTypes.has(type as EstimateRoomType)) {
     return type as EstimateRoomType;
@@ -155,8 +160,6 @@ function normalizeEstimateRoomDraft(room: EstimateRoomDraft): EstimateRoomDraft 
     type: inferredType ?? type,
   };
 }
-
-const NEW_ROOM_DEFAULT_NAME = "Новое помещение";
 
 function buildNewRoomName(existingRooms: EstimateRoomDraft[]): string {
   const usedNames = new Set(existingRooms.map((room) => room.name.trim().toLocaleLowerCase("ru-RU")));
@@ -176,54 +179,6 @@ function buildNewRoomName(existingRooms: EstimateRoomDraft[]): string {
 
   return `Помещение ${existingRooms.length + 1}`;
 }
-
-const flooringCoveringOptions: Array<{ value: FlooringCoveringType; label: string }> = [
-  { value: "porcelain", label: "Керамогранит" },
-  { value: "quartz_vinyl", label: "Кварцвинил" },
-  { value: "laminate", label: "Ламинат" },
-  { value: "carpet", label: "Ковролин" },
-  { value: "engineered_wood", label: "Инженерная доска" },
-];
-
-const flooringPreparationOptions: Array<{ value: FlooringPreparationType; label: string }> = [
-  { value: "none", label: "Без подготовки" },
-  { value: "primer", label: "Грунтование" },
-  { value: "self_leveling", label: "Наливной пол" },
-  { value: "waterproofing", label: "Гидроизоляция" },
-];
-
-const flooringLayoutOptions: Array<{ value: FlooringLayoutType; label: string }> = [
-  { value: "straight", label: "Прямая" },
-  { value: "large_format_straight", label: "Крупный формат" },
-  { value: "glue", label: "Клеевая" },
-  { value: "floating", label: "Плавающая" },
-];
-
-const flooringPlinthOptions: Array<{ value: FlooringPlinthType; label: string }> = [
-  { value: "none", label: "Без плинтуса" },
-  { value: "duropolymer", label: "Дюрополимерный" },
-  { value: "painted_mdf", label: "МДФ окрашенный" },
-];
-
-const wallsCoveringOptions: Array<{ value: WallsCoveringType; label: string }> = [
-  { value: "wallpaper", label: "Обои" },
-  { value: "tile", label: "Плитка" },
-  { value: "paint", label: "Окраска" },
-  { value: "paintable_wallpaper", label: "Обои под покраску" },
-];
-
-const wallsPreparationOptions: Array<{ value: WallsPreparationType; label: string }> = [
-  { value: "none", label: "Без подготовки" },
-  { value: "primer", label: "Грунтование" },
-  { value: "putty_wallpaper", label: "Шпаклевка под обои" },
-  { value: "putty_paint", label: "Шпаклевка под покраску" },
-  { value: "waterproofing", label: "Гидроизоляция" },
-];
-
-const doorPackageOptions: Array<{ value: DoorPackageType; label: string }> = [
-  { value: "invisible_19000", label: "INVISIBLE 3 / 19 000" },
-  { value: "invisible_20350", label: "INVISIBLE 3 / 20 350" },
-];
 
 const ESTIMATE_PAGE_BOTTOM_THRESHOLD_PX = 96;
 const ESTIMATE_SCROLL_ACTIVATION_LINE_DESKTOP_PX = 96;
@@ -725,14 +680,6 @@ function normalizeLooseFurnitureOptionsDraft(draft: LooseFurnitureOptionsDraft):
   return { packageLevel: draft.packageLevel, items };
 }
 
-const initialRooms: EstimateRoomDraft[] = [
-  { id: "hallway", name: "Прихожая", type: "hallway", area: "6.5", doorCount: "1", windowCount: "0" },
-  { id: "kitchen", name: "Кухня", type: "kitchen", area: "12", doorCount: "1", windowCount: "1" },
-  { id: "living-room", name: "Комната", type: "living_room", area: "18", doorCount: "1", windowCount: "1" },
-  { id: "bathroom", name: "Санузел", type: "bathroom", area: "4.3", doorCount: "1", windowCount: "0" },
-  { id: "balcony", name: "Балкон", type: "balcony", area: "2.2", doorCount: "1", windowCount: "1" },
-];
-
 function normalizeRoom(room: EstimateRoomDraft): EstimateRoomInput {
   const normalizedDraft = normalizeEstimateRoomDraft(room);
 
@@ -753,70 +700,6 @@ function createEstimateRoom(existingRooms: EstimateRoomDraft[]): EstimateRoomDra
     doorCount: "1",
     windowCount: "0",
   });
-}
-
-function getDefaultFlooringCovering(roomType: EstimateRoomType): FlooringCoveringType {
-  if (roomType === "living_room") {
-    return "carpet";
-  }
-
-  if (roomType === "other") {
-    return "quartz_vinyl";
-  }
-
-  return "porcelain";
-}
-
-function getDefaultFlooringPreparation(roomType: EstimateRoomType): FlooringPreparationType {
-  return roomType === "living_room" ? "self_leveling" : "primer";
-}
-
-function getDefaultFlooringLayout(coveringType: FlooringCoveringType): FlooringLayoutType {
-  if (coveringType === "porcelain") {
-    return "large_format_straight";
-  }
-
-  if (coveringType === "carpet" || coveringType === "engineered_wood") {
-    return "glue";
-  }
-
-  if (coveringType === "laminate") {
-    return "floating";
-  }
-
-  return "straight";
-}
-
-function getDefaultWallsCovering(roomType: EstimateRoomType): WallsCoveringType {
-  return roomType === "bathroom" ? "tile" : "wallpaper";
-}
-
-function getDefaultWallsPreparation(roomType: EstimateRoomType): WallsPreparationType {
-  return roomType === "bathroom" ? "waterproofing" : "primer";
-}
-
-function getDefaultCeilingLightSettings(roomType: EstimateRoomType) {
-  if (roomType === "hallway") {
-    return { squareMetersPerPoint: 2.5, minPoints: 2, hasPointLights: true };
-  }
-
-  if (roomType === "kitchen") {
-    return { squareMetersPerPoint: 2.5, minPoints: 3, hasPointLights: true };
-  }
-
-  if (roomType === "living_room") {
-    return { squareMetersPerPoint: 3, minPoints: 4, hasPointLights: true };
-  }
-
-  if (roomType === "bathroom") {
-    return { squareMetersPerPoint: 1.5, minPoints: 4, hasPointLights: true };
-  }
-
-  if (roomType === "balcony") {
-    return { squareMetersPerPoint: 4, minPoints: 1, hasPointLights: false };
-  }
-
-  return { squareMetersPerPoint: 3, minPoints: 2, hasPointLights: true };
 }
 
 export function PublicEstimate() {

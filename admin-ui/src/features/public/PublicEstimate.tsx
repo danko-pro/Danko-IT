@@ -116,6 +116,7 @@ import { AppliancesSection } from "./sections/appliances/AppliancesSection";
 import { LooseFurnitureSection } from "./sections/loose-furniture/LooseFurnitureSection";
 import { HomeGoodsSection } from "./sections/home-goods/HomeGoodsSection";
 import { CompletionSection } from "./sections/completion/CompletionSection";
+import { CostsSection } from "./sections/costs/CostsSection";
 import { DoorsSection } from "./sections/doors/DoorsSection";
 import { ElectricSection } from "./sections/electric/ElectricSection";
 import { PlumbingSection, type PlumbingZoneCardProps } from "./sections/plumbing/PlumbingSection";
@@ -2042,70 +2043,17 @@ export function PublicEstimate() {
             onOpenSectionSpec={() => openSectionSpec("home_goods")}
           />
 
-          <section
-            id="estimate-costs"
-            className={withActiveEstimateSection("estimate-costs", activeEstimateSection, "public-estimate-costs")}
-            aria-labelledby="public-estimate-costs-title"
-          >
-            <div className="public-estimate-costs-head">
-              <div>
-                <span>{formatEstimateStep("estimate-costs")}</span>
-                <p className="public-section-kicker">Итоговая смета</p>
-                <h2 id="public-estimate-costs-title">Стоимость по разделам</h2>
-              </div>
-            </div>
-
-            <div className="public-estimate-cost-grid">
-              {estimateTotalItems.map((item) => (
-                <div className={`public-estimate-cost-cell${item.isStrong ? " public-estimate-cost-cell-total" : ""}`} key={item.label}>
-                  <span>{item.label}</span>
-                  <strong>{item.value}</strong>
-                </div>
-              ))}
-            </div>
-
-            {estimateResult.sections.length > 0 ? (
-              <div className="public-estimate-cost-sections" aria-label="Стоимость по разделам">
-                <div className="public-estimate-cost-sections-head" aria-hidden="true">
-                  <span>Раздел</span>
-                  <span>Сумма ₽</span>
-                </div>
-                <ul className="public-estimate-cost-sections-list">
-                  {estimateResult.sections.map((section) => (
-                    <li className="public-estimate-cost-sections-row" key={section.id}>
-                      <span>{section.title}</span>
-                      <strong>{formatMoney(section.totals.total)}</strong>
-                    </li>
-                  ))}
-                  <li className="public-estimate-cost-sections-row public-estimate-cost-sections-row-total">
-                    <span>Итого по разделам</span>
-                    <strong>{formatMoney(estimateResult.totals.total)}</strong>
-                  </li>
-                </ul>
-              </div>
-            ) : (
-              <p className="public-estimate-cost-empty">
-                Заполните геометрию и выберите разделы — разбивка по разделам появится здесь автоматически.
-              </p>
+          <CostsSection
+            className={withActiveEstimateSection(
+              "estimate-costs",
+              activeEstimateSection,
+              "public-estimate-costs",
             )}
-
-            {estimateResult.sections.length > 0 ? (
-              <button
-                className="public-estimate-spec-open public-estimate-spec-open-full"
-                type="button"
-                onClick={openFullSpec}
-              >
-                Полная спецификация
-                <span className="public-estimate-spec-open-count">все разделы</span>
-              </button>
-            ) : null}
-
-            <p className="public-estimate-cost-note">
-              Сейчас в смету включены тёплый пол, полы, стены, потолки, электрика, сантехника, двери, встроенная
-              комплектация, выбранная бытовая техника, выбранная свободная мебель, а также выбранная финишная уборка и
-              товары для дома. Следующие разделы подключим отдельно: дополнительные работы и экспорт расчёта.
-            </p>
-          </section>
+            stepLabel={formatEstimateStep("estimate-costs")}
+            estimateTotalItems={estimateTotalItems}
+            estimateResult={estimateResult}
+            onOpenFullSpec={openFullSpec}
+          />
 
           <div className="public-estimate-actions" aria-label="Действия на странице калькулятора">
             <a className="public-action" href="/#contacts">

@@ -129,6 +129,7 @@ import {
   estimateNavigationItems,
 } from "./sections/registry";
 import type { EstimateNavigationIcon } from "./sections/types";
+import { GeometrySection } from "./sections/geometry/GeometrySection";
 import { ObjectSection } from "./sections/object/ObjectSection";
 
 function getGeometryRowRemoveDelayMs(): number {
@@ -1859,166 +1860,48 @@ export function PublicEstimate() {
             }
           />
 
-          <section
-            id="estimate-geometry"
+          <GeometrySection
             className={withActiveEstimateSection(
               "estimate-geometry",
               activeEstimateSection,
               "public-estimate-geometry",
             )}
-            aria-labelledby="public-estimate-geometry-title"
-          >
-            <div className="public-estimate-geometry-head">
-              <span>{formatEstimateStep("estimate-geometry")}</span>
-              <div className="public-estimate-geometry-title-row">
-                <h2 id="public-estimate-geometry-title">Помещения и объём</h2>
-                <span className="public-estimate-geometry-hint">{GEOMETRY_STEP_HINT}</span>
-              </div>
-            </div>
-
-            <div className="public-estimate-geometry-toolbar">
-              <label className="public-estimate-field public-estimate-ceiling-field">
-                <span>Высота потолков, м</span>
-                <input
-                  className="public-estimate-input"
-                  inputMode="decimal"
-                  value={ceilingHeightInput}
-                  {...estimateNumericFieldProps}
-                  onChange={(event) => setCeilingHeightInput(sanitizeEstimateDecimalInput(event.target.value))}
-                  onBlur={(event) => setCeilingHeightInput(normalizeEstimateCeilingHeightOnBlur(event.target.value))}
-                />
-              </label>
-            </div>
-
-            <div className="public-estimate-room-header" aria-hidden="true">
-              <span>№</span>
-              <span>Помещение</span>
-              <span className="public-estimate-room-header-metric">Площадь</span>
-              <span className="public-estimate-room-header-count">Двери</span>
-              <span className="public-estimate-room-header-count">Окна</span>
-              <span>Стены к отделке</span>
-              <span />
-            </div>
-
-            <div className="public-estimate-room-list" aria-label="Список помещений">
-              {roomGeometries.map((room, index) => {
-                const roomDraft = rooms[index];
-                const isEntering = enteringRoomIds.includes(room.id);
-                const isRemoving = removingRoomIds.includes(room.id);
-                const rowShellClassName = [
-                  "public-estimate-geometry-row-shell",
-                  isEntering ? "is-entering" : "",
-                  isRemoving ? "is-removing" : "",
-                ]
-                  .filter(Boolean)
-                  .join(" ");
-
-                return (
-                  <div className={rowShellClassName} key={room.id}>
-                    <div className="public-estimate-geometry-row-shell-inner">
-                      <article
-                        className="public-estimate-room-row public-estimate-geometry-row"
-                        data-estimate-room-id={room.id}
-                      >
-                        <div className="public-estimate-room-top">
-                          <div className="public-estimate-room-index" aria-hidden="true">
-                            {String(index + 1).padStart(2, "0")}
-                          </div>
-
-                          <label className="public-estimate-field public-estimate-room-name">
-                            <span className="public-estimate-mobile-label">Помещение</span>
-                            <input
-                              aria-label="Помещение"
-                              className="public-estimate-input"
-                              placeholder="Название по БТИ"
-                              value={roomDraft.name}
-                              onChange={(event) => updateRoom(room.id, { name: event.target.value })}
-                            />
-                          </label>
-
-                          <button
-                            aria-label="Удалить помещение"
-                            className="public-estimate-row-remove"
-                            type="button"
-                            disabled={rooms.length <= 1 || isRemoving}
-                            onClick={() => removeRoom(room.id)}
-                          >
-                            ×
-                          </button>
-                        </div>
-
-                        <div className="public-estimate-room-main">
-                          <div className="public-estimate-room-metrics">
-                            <label className="public-estimate-field public-estimate-room-area">
-                              <span className="public-estimate-mobile-label">Площадь</span>
-                              <input
-                                aria-label="Площадь помещения"
-                                className="public-estimate-input"
-                                inputMode="decimal"
-                                value={roomDraft.area}
-                                {...estimateNumericFieldProps}
-                                onChange={(event) =>
-                                  updateRoom(room.id, { area: sanitizeEstimateDecimalInput(event.target.value) })
-                                }
-                                onBlur={(event) =>
-                                  updateRoom(room.id, { area: normalizeEstimateDecimalOnBlur(event.target.value) })
-                                }
-                              />
-                            </label>
-
-                            <label className="public-estimate-field public-estimate-room-doors">
-                              <span className="public-estimate-mobile-label">Двери</span>
-                              <input
-                                aria-label="Количество дверей"
-                                className="public-estimate-input"
-                                inputMode="numeric"
-                                value={roomDraft.doorCount}
-                                {...estimateNumericFieldProps}
-                                onChange={(event) =>
-                                  updateRoom(room.id, { doorCount: sanitizeEstimateIntegerInput(event.target.value) })
-                                }
-                                onBlur={(event) =>
-                                  updateRoom(room.id, { doorCount: normalizeEstimateCountOnBlur(event.target.value) })
-                                }
-                              />
-                            </label>
-
-                            <label className="public-estimate-field public-estimate-room-windows">
-                              <span className="public-estimate-mobile-label">Окна</span>
-                              <input
-                                aria-label="Количество окон"
-                                className="public-estimate-input"
-                                inputMode="numeric"
-                                value={roomDraft.windowCount}
-                                {...estimateNumericFieldProps}
-                                onChange={(event) =>
-                                  updateRoom(room.id, { windowCount: sanitizeEstimateIntegerInput(event.target.value) })
-                                }
-                                onBlur={(event) =>
-                                  updateRoom(room.id, { windowCount: normalizeEstimateCountOnBlur(event.target.value) })
-                                }
-                              />
-                            </label>
-                          </div>
-
-                          <div className="public-estimate-room-result">
-                            <span className="public-estimate-mobile-label">Стены к отделке</span>
-                            <strong>{formatMeasurement(room.finishWallArea, "м²")}</strong>
-                          </div>
-                        </div>
-                      </article>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            <div className="public-estimate-geometry-footer">
-              <button className="public-estimate-small-action" type="button" onClick={addRoom}>
-                Добавить помещение
-              </button>
-            </div>
-          </section>
+            stepLabel={formatEstimateStep("estimate-geometry")}
+            geometryStepHint={GEOMETRY_STEP_HINT}
+            ceilingHeightInput={ceilingHeightInput}
+            numberFieldProps={estimateNumericFieldProps}
+            onCeilingHeightChange={(event) =>
+              setCeilingHeightInput(sanitizeEstimateDecimalInput(event.target.value))
+            }
+            onCeilingHeightBlur={(event) =>
+              setCeilingHeightInput(normalizeEstimateCeilingHeightOnBlur(event.target.value))
+            }
+            rooms={rooms}
+            roomGeometries={roomGeometries}
+            enteringRoomIds={enteringRoomIds}
+            removingRoomIds={removingRoomIds}
+            onRoomNameChange={(roomId, event) => updateRoom(roomId, { name: event.target.value })}
+            onRoomAreaChange={(roomId, event) =>
+              updateRoom(roomId, { area: sanitizeEstimateDecimalInput(event.target.value) })
+            }
+            onRoomAreaBlur={(roomId, event) =>
+              updateRoom(roomId, { area: normalizeEstimateDecimalOnBlur(event.target.value) })
+            }
+            onRoomDoorCountChange={(roomId, event) =>
+              updateRoom(roomId, { doorCount: sanitizeEstimateIntegerInput(event.target.value) })
+            }
+            onRoomDoorCountBlur={(roomId, event) =>
+              updateRoom(roomId, { doorCount: normalizeEstimateCountOnBlur(event.target.value) })
+            }
+            onRoomWindowCountChange={(roomId, event) =>
+              updateRoom(roomId, { windowCount: sanitizeEstimateIntegerInput(event.target.value) })
+            }
+            onRoomWindowCountBlur={(roomId, event) =>
+              updateRoom(roomId, { windowCount: normalizeEstimateCountOnBlur(event.target.value) })
+            }
+            onRemoveRoom={removeRoom}
+            onAddRoom={addRoom}
+          />
 
           <section
             id="estimate-warm-floor"

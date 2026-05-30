@@ -42,6 +42,7 @@ PUBLIC_ADMIN_API_PATHS = (
     "/api/auth/register",
     "/api/auth/logout",
     "/api/public/leads",
+    "/api/public/catalog/plumbing/snapshot",
 )
 
 SYSTEM_PROJECT_OWNER_EMAIL_DOMAIN = "system.local"
@@ -125,6 +126,9 @@ def create_admin_app(settings: Settings | None = None) -> FastAPI:
         lockout_seconds=resolved_settings.admin_login_rate_limit_lockout_seconds,
     )
     app.state.public_lead_rate_limiter = PublicLeadRateLimiter(max_requests=5, window_seconds=600)
+    # Публичный снапшот каталога — read-only, дёргается на сборке (A7); лимит как у /api/public/leads,
+    # но отдельный счётчик (своя область), чтобы не конкурировать с лид-формой.
+    app.state.public_snapshot_rate_limiter = PublicLeadRateLimiter(max_requests=30, window_seconds=600)
     configure_admin_cors(app)
     configure_admin_auth(app)
     register_admin_routes(app)

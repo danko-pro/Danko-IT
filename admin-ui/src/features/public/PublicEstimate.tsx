@@ -113,9 +113,12 @@ import { AppliancesSection } from "./sections/appliances/AppliancesSection";
 import { LooseFurnitureSection } from "./sections/loose-furniture/LooseFurnitureSection";
 import { HomeGoodsSection } from "./sections/home-goods/HomeGoodsSection";
 import { CompletionSection } from "./sections/completion/CompletionSection";
+import { EstimateActions } from "./components/estimate/EstimateActions";
+import { EstimateMobileTotal } from "./components/estimate/EstimateMobileTotal";
 import { EstimatePassportSidebar } from "./components/estimate/EstimatePassportSidebar";
 import { EstimateRail } from "./components/estimate/EstimateRail";
 import { EstimateSpecModal } from "./components/estimate/EstimateSpecModal";
+import { EstimateVolumesPrint } from "./components/estimate/EstimateVolumesPrint";
 import { CostsSection } from "./sections/costs/CostsSection";
 import { DoorsSection } from "./sections/doors/DoorsSection";
 import { ElectricSection } from "./sections/electric/ElectricSection";
@@ -1746,14 +1749,7 @@ export function PublicEstimate() {
             onOpenFullSpec={openFullSpec}
           />
 
-          <div className="public-estimate-actions" aria-label="Действия на странице калькулятора">
-            <a className="public-action" href="/#contacts">
-              Оставить заявку
-            </a>
-            <a className="public-hero-secondary" href="/">
-              Вернуться на главную
-            </a>
-          </div>
+          <EstimateActions />
         </div>
 
         <EstimatePassportSidebar
@@ -1766,38 +1762,13 @@ export function PublicEstimate() {
         />
       </section>
 
-      <aside className="public-estimate-mobile-total" aria-label="Краткий итог сметы">
-        <div className="public-estimate-mobile-total-main">
-          <span>Итого</span>
-          <strong>{formatMoney(estimateResult.totals.total)}</strong>
-        </div>
-        <div className="public-estimate-mobile-total-rate">
-          <span>₽/м²</span>
-          <strong>{formatMoney(estimateResult.totals.pricePerSquareMeter)}/м²</strong>
-        </div>
-        <a
-          className="public-estimate-mobile-total-link"
-          href="#estimate-costs"
-          onClick={(event) => {
-            event.preventDefault();
-            scrollToEstimateSection("estimate-costs");
-          }}
-        >
-          Итог
-        </a>
-      </aside>
+      <EstimateMobileTotal
+        total={estimateResult.totals.total}
+        pricePerSquareMeter={estimateResult.totals.pricePerSquareMeter}
+        onNavigateToCosts={() => scrollToEstimateSection("estimate-costs")}
+      />
 
-      <section className="public-estimate-volumes-print" aria-hidden="true">
-        <h1>Объёмы объекта</h1>
-        <dl className="public-estimate-volumes-print-list">
-          {summaryItems.map((item) => (
-            <div className="public-estimate-volumes-print-item" key={item.label}>
-              <dt>{item.label}</dt>
-              <dd>{item.value}</dd>
-            </div>
-          ))}
-        </dl>
-      </section>
+      <EstimateVolumesPrint summaryItems={summaryItems} />
 
       <EstimateSpecModal data={specModalData} onClose={closeSpecModal} />
     </main>

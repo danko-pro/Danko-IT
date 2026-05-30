@@ -18,15 +18,7 @@ import {
   type LooseFurnitureItemKey,
   type LooseFurnitureOptions,
 } from "./public-estimate-loose-furniture";
-import {
-  calculateHomeGoods,
-  cleaningRatePerM2,
-  createDefaultHomeGoodsOptions,
-  homeGoodsPackageLabels,
-  homeGoodsPackageRates,
-  type HomeGoodsOptions,
-  type HomeGoodsPackageLevel,
-} from "./public-estimate-home-goods";
+import { calculateHomeGoods, createDefaultHomeGoodsOptions, type HomeGoodsOptions } from "./public-estimate-home-goods";
 import { calculateDoors, type DoorOptions } from "./public-estimate-doors";
 import { calculateElectric, type ElectricOptions } from "./public-estimate-electric";
 import {
@@ -122,6 +114,7 @@ import { WarmFloorSection } from "./sections/warm-floor/WarmFloorSection";
 import { CeilingSection } from "./sections/ceiling/CeilingSection";
 import { AppliancesSection } from "./sections/appliances/AppliancesSection";
 import { LooseFurnitureSection } from "./sections/loose-furniture/LooseFurnitureSection";
+import { HomeGoodsSection } from "./sections/home-goods/HomeGoodsSection";
 import { CompletionSection } from "./sections/completion/CompletionSection";
 import { DoorsSection } from "./sections/doors/DoorsSection";
 import { ElectricSection } from "./sections/electric/ElectricSection";
@@ -2032,132 +2025,22 @@ export function PublicEstimate() {
             onOpenSectionSpec={() => openSectionSpec("loose_furniture")}
           />
 
-          <section
-            id="estimate-home-goods"
+          <HomeGoodsSection
             className={withActiveEstimateSection(
               "estimate-home-goods",
               activeEstimateSection,
               "public-estimate-home-goods",
             )}
-            aria-labelledby="public-estimate-home-goods-title"
-          >
-            <div className="public-estimate-home-goods-head">
-              <div>
-                <span>{formatEstimateStep("estimate-home-goods")}</span>
-                <h2 id="public-estimate-home-goods-title">Уборка и товары для дома</h2>
-                <p>
-                  Финишная уборка считается по площади пола, а комплект товаров для дома — фиксированным пакетом C / B /
-                  A.
-                </p>
-              </div>
-            </div>
-
-            <div className="public-estimate-home-goods-cards" aria-label="Опции уборки и товаров для дома">
-              <article className="public-estimate-home-goods-card">
-                <label className="public-estimate-home-goods-card-head">
-                  <input
-                    type="checkbox"
-                    checked={homeGoodsOptions.includeCleaning}
-                    onChange={(event) => updateHomeGoodsOptions({ includeCleaning: event.target.checked })}
-                  />
-                  <span className="public-estimate-home-goods-card-title">Финишная уборка</span>
-                </label>
-                <div className="public-estimate-home-goods-card-body">
-                  <div className="public-estimate-home-goods-metric">
-                    <span className="public-estimate-mobile-label">Площадь</span>
-                    <span>Площадь</span>
-                    <strong>{formatMeasurement(totals.floorArea, "м²")}</strong>
-                  </div>
-                  <div className="public-estimate-home-goods-metric">
-                    <span className="public-estimate-mobile-label">Ставка</span>
-                    <span>Ставка</span>
-                    <strong>{formatMoney(cleaningRatePerM2)}/м²</strong>
-                  </div>
-                  <div className="public-estimate-home-goods-metric public-estimate-home-goods-metric-total">
-                    <span className="public-estimate-mobile-label">Итого</span>
-                    <span>Итого</span>
-                    <strong>{formatMoney(homeGoodsResult.cleaningTotal)}</strong>
-                  </div>
-                </div>
-              </article>
-
-              <article className="public-estimate-home-goods-card">
-                <label className="public-estimate-home-goods-card-head">
-                  <input
-                    type="checkbox"
-                    checked={homeGoodsOptions.includeHomeGoods}
-                    onChange={(event) => updateHomeGoodsOptions({ includeHomeGoods: event.target.checked })}
-                  />
-                  <span className="public-estimate-home-goods-card-title">Товары для дома</span>
-                </label>
-                <div className="public-estimate-home-goods-card-body">
-                  <div className="public-estimate-home-goods-package" aria-label="Пакет товаров для дома">
-                    <span className="public-estimate-mobile-label">Пакет</span>
-                    <span>Пакет</span>
-                    <div
-                      className="public-estimate-toggle-group public-estimate-home-goods-toggle-group"
-                      role="group"
-                      aria-label="Пакет товаров для дома"
-                    >
-                      {(["c", "b", "a"] as HomeGoodsPackageLevel[]).map((level) => (
-                        <button
-                          key={level}
-                          className={
-                            homeGoodsOptions.packageLevel === level ? "public-estimate-toggle-active" : undefined
-                          }
-                          type="button"
-                          aria-pressed={homeGoodsOptions.packageLevel === level}
-                          onClick={() => updateHomeGoodsOptions({ packageLevel: level })}
-                        >
-                          {homeGoodsPackageLabels[level]}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="public-estimate-home-goods-metric">
-                    <span className="public-estimate-mobile-label">Стоимость пакета</span>
-                    <span>Стоимость пакета</span>
-                    <strong>{formatMoney(homeGoodsPackageRates[homeGoodsOptions.packageLevel])}</strong>
-                  </div>
-                  <div className="public-estimate-home-goods-metric public-estimate-home-goods-metric-total">
-                    <span className="public-estimate-mobile-label">Итого</span>
-                    <span>Итого</span>
-                    <strong>{formatMoney(homeGoodsResult.homeGoodsTotal)}</strong>
-                  </div>
-                </div>
-              </article>
-            </div>
-
-            <div className="public-estimate-home-goods-summary" aria-label="Итоги по уборке и товарам для дома">
-              {homeGoodsSummaryItems.map((item) => (
-                <div className={item.isStrong ? "public-estimate-home-goods-total-cell" : undefined} key={item.label}>
-                  <span>{item.label}</span>
-                  <strong>{item.value}</strong>
-                </div>
-              ))}
-            </div>
-
-            {homeGoodsResult.section.items.length > 0 ? (
-              <div className="public-estimate-spec-actions">
-                <div className="public-estimate-spec-actions-head">
-                  <p>Состав раздела</p>
-                  <span>Финишная уборка и комплект товаров для дома</span>
-                </div>
-                <button
-                  className="public-estimate-spec-open"
-                  type="button"
-                  onClick={() => openSectionSpec("home_goods")}
-                >
-                  Открыть спецификацию
-                  <span className="public-estimate-spec-open-count">{homeGoodsResult.section.items.length} строк</span>
-                </button>
-              </div>
-            ) : (
-              <p className="public-estimate-warm-floor-empty">
-                Включите финишную уборку или комплект товаров для дома, чтобы добавить их в смету.
-              </p>
-            )}
-          </section>
+            stepLabel={formatEstimateStep("estimate-home-goods")}
+            floorArea={totals.floorArea}
+            homeGoodsOptions={homeGoodsOptions}
+            homeGoodsSummaryItems={homeGoodsSummaryItems}
+            homeGoodsResult={homeGoodsResult}
+            onIncludeCleaningChange={(checked) => updateHomeGoodsOptions({ includeCleaning: checked })}
+            onIncludeHomeGoodsChange={(checked) => updateHomeGoodsOptions({ includeHomeGoods: checked })}
+            onPackageLevelChange={(level) => updateHomeGoodsOptions({ packageLevel: level })}
+            onOpenSectionSpec={() => openSectionSpec("home_goods")}
+          />
 
           <section
             id="estimate-costs"

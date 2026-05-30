@@ -126,6 +126,7 @@ import { GeometrySection } from "./sections/geometry/GeometrySection";
 import { ObjectSection } from "./sections/object/ObjectSection";
 import { WarmFloorSection } from "./sections/warm-floor/WarmFloorSection";
 import { CeilingSection } from "./sections/ceiling/CeilingSection";
+import { CompletionSection } from "./sections/completion/CompletionSection";
 import { DoorsSection } from "./sections/doors/DoorsSection";
 import { ElectricSection } from "./sections/electric/ElectricSection";
 import { PlumbingSection, type PlumbingZoneCardProps } from "./sections/plumbing/PlumbingSection";
@@ -1949,156 +1950,36 @@ export function PublicEstimate() {
             onOpenSectionSpec={() => openSectionSpec("doors")}
           />
 
-          <section
-            id="estimate-completion"
+          <CompletionSection
             className={withActiveEstimateSection(
               "estimate-completion",
               activeEstimateSection,
               "public-estimate-completion",
             )}
-            aria-labelledby="public-estimate-completion-title"
-          >
-            <div className="public-estimate-completion-head">
-              <div>
-                <span>{formatEstimateStep("estimate-completion")}</span>
-                <h2 id="public-estimate-completion-title">Комплектация</h2>
-                <p>Кухня, пеналы, гардеробная и мебель санузла включаются отдельно.</p>
-              </div>
-            </div>
-
-            <div className="public-estimate-completion-groups" aria-label="Опции комплектации">
-              <div className="public-estimate-completion-group">
-                <div className="public-estimate-completion-group-head">
-                  <div>
-                    <span>Кухня</span>
-                    <strong>{formatMoney(completionResult.kitchenTotal)}</strong>
-                  </div>
-                  <small>базовая кухня и высокие модули</small>
-                </div>
-
-                <label className="public-estimate-completion-option-zone">
-                  <input
-                    type="checkbox"
-                    checked={completionOptions.includeKitchenBase}
-                    onChange={(event) => updateCompletionOptions({ includeKitchenBase: event.target.checked })}
-                  />
-                  <span>
-                    <strong>Кухня базовая</strong>
-                    <small>расчёт по длине в погонных метрах</small>
-                  </span>
-                </label>
-
-                <label className="public-estimate-field public-estimate-completion-length">
-                  <span>Длина кухни, м.п.</span>
-                  <input
-                    className="public-estimate-input"
-                    inputMode="decimal"
-                    min="0"
-                    type="text"
-                    value={completionOptions.kitchenLengthMeters}
-                    {...estimateNumericFieldProps}
-                    onChange={(event) =>
-                      updateCompletionOptions({
-                        kitchenLengthMeters: sanitizeEstimateDecimalInput(event.target.value),
-                      })
-                    }
-                    onBlur={(event) =>
-                      updateCompletionOptions({
-                        kitchenLengthMeters: normalizeEstimateDecimalOnBlur(event.target.value),
-                      })
-                    }
-                  />
-                </label>
-
-                <label className="public-estimate-completion-option-zone">
-                  <input
-                    type="checkbox"
-                    checked={completionOptions.includeKitchenAppliancePenal}
-                    onChange={(event) => updateCompletionOptions({ includeKitchenAppliancePenal: event.target.checked })}
-                  />
-                  <span>
-                    <strong>Пенал под технику</strong>
-                    <small>отдельный высокий модуль под встроенную технику</small>
-                  </span>
-                </label>
-
-                <label className="public-estimate-completion-option-zone">
-                  <input
-                    type="checkbox"
-                    checked={completionOptions.includeKitchenFridgePenal}
-                    onChange={(event) => updateCompletionOptions({ includeKitchenFridgePenal: event.target.checked })}
-                  />
-                  <span>
-                    <strong>Пенал под холодильник / высокий модуль</strong>
-                    <small>отдельная опция, не смешивается с базовой кухней</small>
-                  </span>
-                </label>
-              </div>
-
-              <div className="public-estimate-completion-group">
-                <div className="public-estimate-completion-group-head">
-                  <div>
-                    <span>Мебель</span>
-                    <strong>{formatMoney(completionResult.furnitureTotal)}</strong>
-                  </div>
-                  <small>гардеробная и мебель санузла отдельно</small>
-                </div>
-
-                <label className="public-estimate-completion-option-zone">
-                  <input
-                    type="checkbox"
-                    checked={completionOptions.includeWardrobe}
-                    onChange={(event) => updateCompletionOptions({ includeWardrobe: event.target.checked })}
-                  />
-                  <span>
-                    <strong>Гардеробная / шкаф-купе</strong>
-                    <small>встроенная мебель отдельным компонентом</small>
-                  </span>
-                </label>
-
-                <label className="public-estimate-completion-option-zone">
-                  <input
-                    type="checkbox"
-                    checked={completionOptions.includeBathroomFurniture}
-                    onChange={(event) => updateCompletionOptions({ includeBathroomFurniture: event.target.checked })}
-                  />
-                  <span>
-                    <strong>Мебель санузла / пеналы</strong>
-                    <small>пеналы и встроенная мебель санузла</small>
-                  </span>
-                </label>
-              </div>
-
-            </div>
-
-            <div className="public-estimate-completion-summary" aria-label="Итоги по комплектации">
-              {completionSummaryItems.map((item) => (
-                <div className={item.isStrong ? "public-estimate-completion-total-cell" : undefined} key={item.label}>
-                  <span>{item.label}</span>
-                  <strong>{item.value}</strong>
-                </div>
-              ))}
-            </div>
-
-            {completionResult.section.items.length > 0 ? (
-              <div className="public-estimate-spec-actions">
-                <div className="public-estimate-spec-actions-head">
-                  <p>Состав раздела</p>
-                  <span>Кухня, пеналы, гардеробная и мебель санузла</span>
-                </div>
-                <button
-                  className="public-estimate-spec-open"
-                  type="button"
-                  onClick={() => openSectionSpec("completion")}
-                >
-                  Открыть спецификацию
-                  <span className="public-estimate-spec-open-count">{completionResult.section.items.length} строк</span>
-                </button>
-              </div>
-            ) : (
-              <p className="public-estimate-warm-floor-empty">Включите кухню, мебельные компоненты или технику, чтобы добавить комплектацию в смету.</p>
-            )}
-          </section>
+            stepLabel={formatEstimateStep("estimate-completion")}
+            completionOptions={completionOptions}
+            completionResult={completionResult}
+            completionSummaryItems={completionSummaryItems}
+            numberFieldProps={estimateNumericFieldProps}
+            onIncludeKitchenBaseChange={(checked) => updateCompletionOptions({ includeKitchenBase: checked })}
+            onKitchenLengthMetersChange={(value) =>
+              updateCompletionOptions({ kitchenLengthMeters: sanitizeEstimateDecimalInput(value) })
+            }
+            onKitchenLengthMetersBlur={(value) =>
+              updateCompletionOptions({ kitchenLengthMeters: normalizeEstimateDecimalOnBlur(value) })
+            }
+            onIncludeKitchenAppliancePenalChange={(checked) =>
+              updateCompletionOptions({ includeKitchenAppliancePenal: checked })
+            }
+            onIncludeKitchenFridgePenalChange={(checked) =>
+              updateCompletionOptions({ includeKitchenFridgePenal: checked })
+            }
+            onIncludeWardrobeChange={(checked) => updateCompletionOptions({ includeWardrobe: checked })}
+            onIncludeBathroomFurnitureChange={(checked) =>
+              updateCompletionOptions({ includeBathroomFurniture: checked })
+            }
+            onOpenSectionSpec={() => openSectionSpec("completion")}
+          />
 
           <section
             id="estimate-appliances"

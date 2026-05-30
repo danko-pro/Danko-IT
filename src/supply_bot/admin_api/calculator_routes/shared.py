@@ -8,12 +8,25 @@ from fastapi import HTTPException, Request
 from supply_bot.admin_api.calculator_payloads import _estimate_project_payload, _estimate_room_detail
 from supply_bot.admin_api.deps import get_storage
 from supply_bot.storage import BotStorage
+from supply_bot.storage_estimates.runtime_repository import SqlAlchemyEstimateRuntimeRepository
 
 _T = TypeVar("_T")
 
 
 def get_calculator_route_storage(request: Request) -> BotStorage:
     return get_storage(request)
+
+
+def get_plumbing_catalog_storage(request: Request) -> SqlAlchemyEstimateRuntimeRepository:
+    """Глобальный (owner=None) репозиторий каталога сантехники (Вариант A).
+
+    Каталог сантехники — единый глобальный прайс-лист: seed (owner_user_id = NULL),
+    правки админки и публичный снапшот работают с одними и теми же глобальными записями,
+    НЕЗАВИСИМО от сессии. Поэтому plumbing-роуты используют этот helper вместо
+    системно-owned storage (estimate_storage = for_owner(system_project_owner_id)).
+    Доступ к управлению — строго за ролью «админ» (см. require_admin_role_session).
+    """
+    return request.app.state.estimate_repository.for_owner(None)
 
 
 def normalize_optional_text(value: str | None) -> str | None:

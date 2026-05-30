@@ -2,12 +2,14 @@ from __future__ import annotations
 
 from typing import Any
 
-from fastapi import FastAPI, Query, Request
+from fastapi import Depends, FastAPI, Query, Request
 
+from supply_bot.admin_api.auth import AdminSession
 from supply_bot.admin_api.calculator_routes.shared import (
-    get_calculator_route_storage,
+    get_plumbing_catalog_storage,
     load_created_catalog_item,
 )
+from supply_bot.admin_api.deps import require_admin_role_session
 from supply_bot.admin_api.error_mapping import resolve_application_result
 from supply_bot.admin_api.schemas.calculator_plumbing import (
     PlumbingCatalogItemCreatePayload,
@@ -47,21 +49,27 @@ def register_calculator_plumbing_routes(app: FastAPI) -> None:
     async def list_calculator_plumbing_catalog_items(
         request: Request,
         include_inactive: bool = Query(False),
+        _session: AdminSession = Depends(require_admin_role_session),
     ) -> list[dict[str, Any]]:
-        storage_obj = get_calculator_route_storage(request)
+        storage_obj = get_plumbing_catalog_storage(request)
         return await ListPlumbingCatalogItemsUseCase(storage_obj).execute(include_inactive=include_inactive)
 
     @app.get("/api/calculator/plumbing/catalog-items/{item_id}")
-    async def get_calculator_plumbing_catalog_item(request: Request, item_id: int) -> dict[str, Any]:
-        storage_obj = get_calculator_route_storage(request)
+    async def get_calculator_plumbing_catalog_item(
+        request: Request,
+        item_id: int,
+        _session: AdminSession = Depends(require_admin_role_session),
+    ) -> dict[str, Any]:
+        storage_obj = get_plumbing_catalog_storage(request)
         return await resolve_application_result(GetPlumbingCatalogItemUseCase(storage_obj).execute(item_id))
 
     @app.post("/api/calculator/plumbing/catalog-items")
     async def create_calculator_plumbing_catalog_item(
         request: Request,
         payload: PlumbingCatalogItemCreatePayload,
+        _session: AdminSession = Depends(require_admin_role_session),
     ) -> dict[str, Any]:
-        storage_obj = get_calculator_route_storage(request)
+        storage_obj = get_plumbing_catalog_storage(request)
         command = CreatePlumbingCatalogItemCommand(
             source_code=payload.source_code,
             public_title=payload.public_title,
@@ -91,8 +99,9 @@ def register_calculator_plumbing_routes(app: FastAPI) -> None:
         request: Request,
         item_id: int,
         payload: PlumbingCatalogItemUpdatePayload,
+        _session: AdminSession = Depends(require_admin_role_session),
     ) -> dict[str, Any]:
-        storage_obj = get_calculator_route_storage(request)
+        storage_obj = get_plumbing_catalog_storage(request)
         command = UpdatePlumbingCatalogItemCommand(
             item_id=item_id,
             payload=payload.model_dump(exclude_unset=True),
@@ -100,8 +109,12 @@ def register_calculator_plumbing_routes(app: FastAPI) -> None:
         return await resolve_application_result(UpdatePlumbingCatalogItemUseCase(storage_obj).execute(command))
 
     @app.delete("/api/calculator/plumbing/catalog-items/{item_id}")
-    async def delete_calculator_plumbing_catalog_item(request: Request, item_id: int) -> dict[str, Any]:
-        storage_obj = get_calculator_route_storage(request)
+    async def delete_calculator_plumbing_catalog_item(
+        request: Request,
+        item_id: int,
+        _session: AdminSession = Depends(require_admin_role_session),
+    ) -> dict[str, Any]:
+        storage_obj = get_plumbing_catalog_storage(request)
         await resolve_application_result(DeletePlumbingCatalogItemUseCase(storage_obj).execute(item_id))
         return {"id": item_id, "deleted": True}
 
@@ -111,21 +124,27 @@ def register_calculator_plumbing_routes(app: FastAPI) -> None:
     async def list_calculator_plumbing_zones(
         request: Request,
         include_inactive: bool = Query(False),
+        _session: AdminSession = Depends(require_admin_role_session),
     ) -> list[dict[str, Any]]:
-        storage_obj = get_calculator_route_storage(request)
+        storage_obj = get_plumbing_catalog_storage(request)
         return await ListPlumbingZonesUseCase(storage_obj).execute(include_inactive=include_inactive)
 
     @app.get("/api/calculator/plumbing/zones/{zone_id}")
-    async def get_calculator_plumbing_zone(request: Request, zone_id: int) -> dict[str, Any]:
-        storage_obj = get_calculator_route_storage(request)
+    async def get_calculator_plumbing_zone(
+        request: Request,
+        zone_id: int,
+        _session: AdminSession = Depends(require_admin_role_session),
+    ) -> dict[str, Any]:
+        storage_obj = get_plumbing_catalog_storage(request)
         return await _load_plumbing_zone_detail(storage_obj, zone_id)
 
     @app.post("/api/calculator/plumbing/zones")
     async def create_calculator_plumbing_zone(
         request: Request,
         payload: PlumbingZoneCreatePayload,
+        _session: AdminSession = Depends(require_admin_role_session),
     ) -> dict[str, Any]:
-        storage_obj = get_calculator_route_storage(request)
+        storage_obj = get_plumbing_catalog_storage(request)
         command = CreatePlumbingZoneCommand(
             zone_code=payload.zone_code,
             subgroup=payload.subgroup,
@@ -145,15 +164,20 @@ def register_calculator_plumbing_routes(app: FastAPI) -> None:
         request: Request,
         zone_id: int,
         payload: PlumbingZoneUpdatePayload,
+        _session: AdminSession = Depends(require_admin_role_session),
     ) -> dict[str, Any]:
-        storage_obj = get_calculator_route_storage(request)
+        storage_obj = get_plumbing_catalog_storage(request)
         command = UpdatePlumbingZoneCommand(zone_id=zone_id, payload=payload.model_dump(exclude_unset=True))
         await resolve_application_result(UpdatePlumbingZoneUseCase(storage_obj).execute(command))
         return await _load_plumbing_zone_detail(storage_obj, zone_id)
 
     @app.delete("/api/calculator/plumbing/zones/{zone_id}")
-    async def delete_calculator_plumbing_zone(request: Request, zone_id: int) -> dict[str, Any]:
-        storage_obj = get_calculator_route_storage(request)
+    async def delete_calculator_plumbing_zone(
+        request: Request,
+        zone_id: int,
+        _session: AdminSession = Depends(require_admin_role_session),
+    ) -> dict[str, Any]:
+        storage_obj = get_plumbing_catalog_storage(request)
         await resolve_application_result(DeletePlumbingZoneUseCase(storage_obj).execute(zone_id))
         return {"id": zone_id, "deleted": True}
 
@@ -162,8 +186,9 @@ def register_calculator_plumbing_routes(app: FastAPI) -> None:
         request: Request,
         zone_id: int,
         payload: PlumbingZoneItemsReplacePayload,
+        _session: AdminSession = Depends(require_admin_role_session),
     ) -> dict[str, Any]:
-        storage_obj = get_calculator_route_storage(request)
+        storage_obj = get_plumbing_catalog_storage(request)
         command = ReplacePlumbingZoneItemsCommand(
             zone_id=zone_id,
             items=[item.model_dump() for item in payload.items],
@@ -176,8 +201,9 @@ def register_calculator_plumbing_routes(app: FastAPI) -> None:
         request: Request,
         zone_id: int,
         payload: PlumbingZonePackagesReplacePayload,
+        _session: AdminSession = Depends(require_admin_role_session),
     ) -> dict[str, Any]:
-        storage_obj = get_calculator_route_storage(request)
+        storage_obj = get_plumbing_catalog_storage(request)
         command = ReplacePlumbingZonePackagesCommand(
             zone_id=zone_id,
             packages=[package.model_dump() for package in payload.packages],
@@ -188,8 +214,11 @@ def register_calculator_plumbing_routes(app: FastAPI) -> None:
     # --- Снапшот (internal preview для админки) ---
 
     @app.get("/api/calculator/plumbing/snapshot/preview")
-    async def calculator_plumbing_snapshot_preview(request: Request) -> dict[str, Any]:
-        storage_obj = get_calculator_route_storage(request)
+    async def calculator_plumbing_snapshot_preview(
+        request: Request,
+        _session: AdminSession = Depends(require_admin_role_session),
+    ) -> dict[str, Any]:
+        storage_obj = get_plumbing_catalog_storage(request)
         return await BuildPlumbingSnapshotUseCase(storage_obj).build_internal()
 
 

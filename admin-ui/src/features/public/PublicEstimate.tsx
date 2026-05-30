@@ -33,11 +33,7 @@ import {
   type HomeGoodsOptions,
   type HomeGoodsPackageLevel,
 } from "./public-estimate-home-goods";
-import {
-  calculateDoors,
-  type DoorOptions,
-  type DoorPackageType,
-} from "./public-estimate-doors";
+import { calculateDoors, type DoorOptions } from "./public-estimate-doors";
 import { calculateElectric, type ElectricOptions } from "./public-estimate-electric";
 import {
   calculateEstimateGeometryTotals,
@@ -130,6 +126,7 @@ import { GeometrySection } from "./sections/geometry/GeometrySection";
 import { ObjectSection } from "./sections/object/ObjectSection";
 import { WarmFloorSection } from "./sections/warm-floor/WarmFloorSection";
 import { CeilingSection } from "./sections/ceiling/CeilingSection";
+import { DoorsSection } from "./sections/doors/DoorsSection";
 import { ElectricSection } from "./sections/electric/ElectricSection";
 import { PlumbingSection, type PlumbingZoneCardProps } from "./sections/plumbing/PlumbingSection";
 import { WallsSection } from "./sections/walls/WallsSection";
@@ -1936,121 +1933,21 @@ export function PublicEstimate() {
             onOpenSectionSpec={() => openSectionSpec("plumbing")}
           />
 
-          <section
-            id="estimate-doors"
+          <DoorsSection
             className={withActiveEstimateSection("estimate-doors", activeEstimateSection, "public-estimate-doors")}
-            aria-labelledby="public-estimate-doors-title"
-          >
-            <div className="public-estimate-doors-head">
-              <div>
-                <span>{formatEstimateStep("estimate-doors")}</span>
-                <h2 id="public-estimate-doors-title">Двери</h2>
-                <p>Предварительный расчёт дверных комплектов, фурнитуры, доставки, подъёма и монтажа.</p>
-              </div>
-            </div>
-
-            <div className="public-estimate-doors-composition" aria-label="Состав расчёта дверей">
-              {doorCompositionItems.map((item) => (
-                <div key={item.label}>
-                  <span>{item.label}</span>
-                  <strong>{item.value}</strong>
-                </div>
-              ))}
-            </div>
-
-            <div className="public-estimate-doors-options" aria-label="Опции дверей">
-              <label className="public-estimate-field public-estimate-doors-package">
-                <span>Пакет дверей</span>
-                <select
-                  className="public-estimate-select"
-                  value={doorOptions.packageType}
-                  onChange={(event) => updateDoorOptions({ packageType: event.target.value as DoorPackageType })}
-                >
-                  {doorPackageOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <label className="public-estimate-doors-option-zone">
-                <input
-                  type="checkbox"
-                  checked={doorOptions.includeHandles}
-                  onChange={(event) => updateDoorOptions({ includeHandles: event.target.checked })}
-                />
-                <span>
-                  <strong>Ручки</strong>
-                  <small>по одной ручке на каждый дверной комплект</small>
-                </span>
-              </label>
-
-              <label className="public-estimate-doors-option-zone">
-                <input
-                  type="checkbox"
-                  checked={doorOptions.includePrivacyLocks}
-                  onChange={(event) => updateDoorOptions({ includePrivacyLocks: event.target.checked })}
-                />
-                <span>
-                  <strong>Завертки для санузлов</strong>
-                  <small>считаются по дверям помещений типа санузел</small>
-                </span>
-              </label>
-
-              <label className="public-estimate-doors-option-zone">
-                <input
-                  type="checkbox"
-                  checked={doorOptions.includeLogistics}
-                  onChange={(event) => updateDoorOptions({ includeLogistics: event.target.checked })}
-                />
-                <span>
-                  <strong>Доставка и подъём</strong>
-                  <small>одна доставка и подъём по количеству дверей</small>
-                </span>
-              </label>
-
-              <label className="public-estimate-doors-option-zone">
-                <input
-                  type="checkbox"
-                  checked={doorOptions.includeInstallation}
-                  onChange={(event) => updateDoorOptions({ includeInstallation: event.target.checked })}
-                />
-                <span>
-                  <strong>Монтаж</strong>
-                  <small>монтаж каждого дверного комплекта</small>
-                </span>
-              </label>
-            </div>
-
-            <div className="public-estimate-doors-summary" aria-label="Итоги по дверям">
-              {doorSummaryItems.map((item) => (
-                <div className={item.isStrong ? "public-estimate-doors-total-cell" : undefined} key={item.label}>
-                  <span>{item.label}</span>
-                  <strong>{item.value}</strong>
-                </div>
-              ))}
-            </div>
-
-            {doorsResult.section.items.length > 0 ? (
-              <div className="public-estimate-spec-actions">
-                <div className="public-estimate-spec-actions-head">
-                  <p>Состав раздела</p>
-                  <span>Дверные комплекты, фурнитура, логистика и монтаж</span>
-                </div>
-                <button
-                  className="public-estimate-spec-open"
-                  type="button"
-                  onClick={() => openSectionSpec("doors")}
-                >
-                  Открыть спецификацию
-                  <span className="public-estimate-spec-open-count">{doorsResult.section.items.length} строк</span>
-                </button>
-              </div>
-            ) : (
-              <p className="public-estimate-warm-floor-empty">Укажите двери в помещениях, чтобы добавить дверные комплекты в смету.</p>
-            )}
-          </section>
+            stepLabel={formatEstimateStep("estimate-doors")}
+            doorCompositionItems={doorCompositionItems}
+            doorSummaryItems={doorSummaryItems}
+            doorOptions={doorOptions}
+            doorsResult={doorsResult}
+            doorPackageOptions={doorPackageOptions}
+            onPackageTypeChange={(packageType) => updateDoorOptions({ packageType })}
+            onIncludeHandlesChange={(checked) => updateDoorOptions({ includeHandles: checked })}
+            onIncludePrivacyLocksChange={(checked) => updateDoorOptions({ includePrivacyLocks: checked })}
+            onIncludeLogisticsChange={(checked) => updateDoorOptions({ includeLogistics: checked })}
+            onIncludeInstallationChange={(checked) => updateDoorOptions({ includeInstallation: checked })}
+            onOpenSectionSpec={() => openSectionSpec("doors")}
+          />
 
           <section
             id="estimate-completion"

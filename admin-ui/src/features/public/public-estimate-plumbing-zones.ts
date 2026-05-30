@@ -1,11 +1,4 @@
-import {
-  catalogItemUnitPrice,
-  DEFAULT_ZONE_RISK_PERCENT,
-  getPlumbingCatalogItem,
-  ZONES_SEED,
-  type CatalogZone,
-  type ZoneCompositionRow,
-} from "../catalog-editor/plumbing-seed";
+import plumbingSnapshotData from "./generated/plumbing.snapshot.json";
 
 import type {
   EstimateCostCategory,
@@ -13,11 +6,67 @@ import type {
   EstimateSection,
 } from "./public-estimate-model";
 
-/** Состав и цены зон — из catalog-editor/plumbing-seed.ts (ZONES_SEED + PLUMBING_SEED). */
+/**
+ * Состав, цены и запечённые итоги зон — из build-time снапшота
+ * `generated/plumbing.snapshot.json` (единственный источник правды публичного
+ * калькулятора, A8). Снапшот собирается на сборке (prebuild) из ГЛОБАЛЬНОГО
+ * каталога БД (owner=NULL, Слой 0) с уже запечённым резервом 6.4 % (Q3):
+ * клиент НЕ прибавляет резерв сам — берёт готовые суммы. Internal-поля
+ * (`riskPercent`, разбивка цен, coefficient, source, note) в снапшот не
+ * попадают по whitelist, поэтому процент резерва тут недоступен и не считается.
+ */
 
 export type PlumbingPackageLevel = "c" | "b" | "a";
 
 const PACKAGE_LEVELS: PlumbingPackageLevel[] = ["c", "b", "a"];
+
+type PlumbingSnapshotComposition = {
+  itemCode: string;
+  quantity: number;
+  coefficient?: number;
+};
+
+type PlumbingSnapshotPackage = {
+  code: PlumbingPackageLevel;
+  label: string;
+  items: PlumbingSnapshotComposition[];
+  total: number;
+};
+
+type PlumbingSnapshotZone = {
+  code: string;
+  subgroup: string;
+  title: string;
+  disclaimer: string | null;
+  activePackage: PlumbingPackageLevel | null;
+  base: PlumbingSnapshotComposition[];
+  packages: PlumbingSnapshotPackage[];
+  total: number;
+};
+
+type PlumbingSnapshotItem = {
+  code: string;
+  title: string;
+  unit: string;
+  category: EstimateCostCategory;
+  unitPrice: number;
+};
+
+type PlumbingSnapshot = {
+  version: string;
+  items: PlumbingSnapshotItem[];
+  zones: PlumbingSnapshotZone[];
+};
+
+const PLUMBING_SNAPSHOT = plumbingSnapshotData as unknown as PlumbingSnapshot;
+
+const SNAPSHOT_ITEMS = new Map<string, PlumbingSnapshotItem>(
+  PLUMBING_SNAPSHOT.items.map((item) => [item.code, item]),
+);
+
+const SNAPSHOT_ZONES = new Map<string, PlumbingSnapshotZone>(
+  PLUMBING_SNAPSHOT.zones.map((zone) => [zone.code, zone]),
+);
 
 export const PLUMBING_ZONE_IDS = {
   KITCHEN_SINK: "zone-kitchen-sink",
@@ -110,28 +159,28 @@ function isDishwasherAtomicId(id: string): boolean {
   return id.startsWith("dishwasher") || id.includes("dishwasher");
 }
 
-function buildZoneDefinition(seed: CatalogZone): PlumbingZoneDefinition {
-  const zoneId = seed.id as PlumbingZoneId;
+function buildZoneDefinition(zone: PlumbingSnapshotZone): PlumbingZoneDefinition {
+  const zoneId = zone.code as PlumbingZoneId;
 
   return {
     zoneId,
 
-    lineIdPrefix: zoneIdToLineIdPrefix(seed.id),
+    lineIdPrefix: zoneIdToLineIdPrefix(zone.code),
 
-    title: seed.title,
+    title: zone.title,
 
     disclaimer: ZONE_DISCLAIMERS[zoneId] ?? DEFAULT_ZONE_DISCLAIMER,
 
-    hasPackages: (seed.priceClassVariants?.length ?? 0) > 0,
+    hasPackages: zone.packages.length > 0,
 
     forbiddenAtomIds: ZONE_FORBIDDEN_ATOMS[zoneId] ?? new Set(),
   };
 }
 
 const ZONE_REGISTRY = new Map<PlumbingZoneId, PlumbingZoneDefinition>(
-  ZONES_SEED.map((seed) => [
-    seed.id as PlumbingZoneId,
-    buildZoneDefinition(seed),
+  PLUMBING_SNAPSHOT.zones.map((zone) => [
+    zone.code as PlumbingZoneId,
+    buildZoneDefinition(zone),
   ]),
 );
 
@@ -147,19 +196,15 @@ export function getPlumbingZoneDefinition(
   return definition;
 }
 
-export function getPlumbingZoneSeed(zoneId: PlumbingZoneId): CatalogZone {
-  const seed = ZONES_SEED.find((zone) => zone.id === zoneId);
+function getSnapshotZone(zoneId: PlumbingZoneId): PlumbingSnapshotZone {
+  const zone = SNAPSHOT_ZONES.get(zoneId);
 
-  if (!seed) {
-    throw new Error(`${zoneId} missing from ZONES_SEED`);
+  if (!zone) {
+    throw new Error(`plumbing.snapshot: нет зоны ${zoneId}`);
   }
 
-  return seed;
+  return zone;
 }
-
-export const KITCHEN_SINK_ZONE_RISK_PERCENT =
-  getPlumbingZoneSeed(PLUMBING_ZONE_IDS.KITCHEN_SINK).riskPercent ??
-  DEFAULT_ZONE_RISK_PERCENT;
 
 export const KITCHEN_SINK_ZONE_DISCLAIMER = getPlumbingZoneDefinition(
   PLUMBING_ZONE_IDS.KITCHEN_SINK,
@@ -181,9 +226,9 @@ export const BATHROOM_INSTALL_RELOCATION_ZONE_DISCLAIMER =
 export function getZonePackageLabels(
   zoneId: PlumbingZoneId,
 ): Record<PlumbingPackageLevel, string> {
-  const seed = getPlumbingZoneSeed(zoneId);
+  const zone = getSnapshotZone(zoneId);
 
-  if (!seed.priceClassVariants?.length) {
+  if (!zone.packages.length) {
     return Object.fromEntries(
       PACKAGE_LEVELS.map((level) => [level, `Пакет ${level.toUpperCase()}`]),
     ) as Record<PlumbingPackageLevel, string>;
@@ -191,7 +236,7 @@ export function getZonePackageLabels(
 
   return Object.fromEntries(
     PACKAGE_LEVELS.map((level) => {
-      const variant = seed.priceClassVariants?.find((v) => v.id === level);
+      const variant = zone.packages.find((pkg) => pkg.code === level);
 
       return [level, variant?.label ?? `Пакет ${level.toUpperCase()}`];
     }),
@@ -227,30 +272,31 @@ type ZoneAtom = {
 type BuiltZone = {
   definition: PlumbingZoneDefinition;
 
-  seed: CatalogZone;
-
   base: ZoneAtom[];
 
   packages: Record<PlumbingPackageLevel, ZoneAtom[]>;
+
+  /** Запечённые итоги зоны (с резервом) из снапшота — по уровню пакета. */
+  bakedTotals: Record<PlumbingPackageLevel, number>;
 };
 
-function compositionToZoneAtom(row: ZoneCompositionRow): ZoneAtom {
-  const item = getPlumbingCatalogItem(row.atomicItemId);
+function compositionToZoneAtom(row: PlumbingSnapshotComposition): ZoneAtom {
+  const item = SNAPSHOT_ITEMS.get(row.itemCode);
 
   if (!item) {
-    throw new Error(`PLUMBING_SEED: нет позиции ${row.atomicItemId}`);
+    throw new Error(`plumbing.snapshot: нет позиции ${row.itemCode}`);
   }
 
   const rowCoef = row.coefficient ?? 1;
 
   return {
-    id: item.id,
+    id: item.code,
 
-    title: item.publicTitle,
+    title: item.title,
 
     unit: item.unit,
 
-    publicPrice: catalogItemUnitPrice(item),
+    publicPrice: item.unitPrice,
 
     quantity: row.quantity * rowCoef,
 
@@ -258,36 +304,50 @@ function compositionToZoneAtom(row: ZoneCompositionRow): ZoneAtom {
   };
 }
 
-function buildZoneFromSeed(seed: CatalogZone): BuiltZone {
-  const definition = buildZoneDefinition(seed);
+function buildZoneFromSnapshot(zone: PlumbingSnapshotZone): BuiltZone {
+  const definition = buildZoneDefinition(zone);
 
-  const base = seed.items.map(compositionToZoneAtom);
+  const base = zone.base.map(compositionToZoneAtom);
+
+  const hasPackages = zone.packages.length > 0;
 
   const emptyPackage: ZoneAtom[] = [];
 
   const packages = Object.fromEntries(
     PACKAGE_LEVELS.map((level) => {
-      if (!seed.priceClassVariants?.length) {
+      if (!hasPackages) {
         return [level, emptyPackage];
       }
 
-      const variant = seed.priceClassVariants.find((v) => v.id === level);
+      const variant = zone.packages.find((pkg) => pkg.code === level);
 
       if (!variant) {
-        throw new Error(`${seed.id}: нет пакета ${level}`);
+        throw new Error(`${zone.code}: нет пакета ${level}`);
       }
 
       return [level, variant.items.map(compositionToZoneAtom)];
     }),
   ) as Record<PlumbingPackageLevel, ZoneAtom[]>;
 
-  return { definition, seed, base, packages };
+  const bakedTotals = Object.fromEntries(
+    PACKAGE_LEVELS.map((level) => {
+      if (!hasPackages) {
+        return [level, zone.total];
+      }
+
+      const variant = zone.packages.find((pkg) => pkg.code === level);
+
+      return [level, variant ? variant.total : zone.total];
+    }),
+  ) as Record<PlumbingPackageLevel, number>;
+
+  return { definition, base, packages, bakedTotals };
 }
 
 const BUILT_ZONES = new Map<PlumbingZoneId, BuiltZone>(
-  ZONES_SEED.map((seed) => [
-    seed.id as PlumbingZoneId,
-    buildZoneFromSeed(seed),
+  PLUMBING_SNAPSHOT.zones.map((zone) => [
+    zone.code as PlumbingZoneId,
+    buildZoneFromSnapshot(zone),
   ]),
 );
 
@@ -470,7 +530,7 @@ export function getZoneSpecItems(
 function computeZoneTotals(
   baseAtoms: ZoneAtom[],
   packageAtoms: ZoneAtom[],
-  riskPercent: number,
+  bakedTotal: number,
 ) {
   const baseTotal = atomsSubtotal(baseAtoms);
 
@@ -478,9 +538,11 @@ function computeZoneTotals(
 
   const subtotal = baseTotal + packageTotal;
 
-  const riskAmount = Math.round((subtotal * riskPercent) / 100);
+  // Резерв уже запечён в `bakedTotal` снапшота (Q3); клиент не считает процент
+  // сам, а выводит запечённую сумму. Остаток = разница с суммой атомов.
+  const total = bakedTotal;
 
-  const total = subtotal + riskAmount;
+  const riskAmount = total - subtotal;
 
   return { baseTotal, packageTotal, subtotal, riskAmount, total };
 }
@@ -540,12 +602,10 @@ export function calculateZone(
 ): PlumbingZoneResult {
   const zone = getBuiltZone(zoneId);
 
-  const riskPercent = zone.seed.riskPercent ?? DEFAULT_ZONE_RISK_PERCENT;
-
   const totals = computeZoneTotals(
     zone.base,
     zone.packages[packageLevel],
-    riskPercent,
+    zone.bakedTotals[packageLevel],
   );
 
   return {

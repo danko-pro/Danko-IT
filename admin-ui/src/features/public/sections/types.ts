@@ -1,3 +1,5 @@
+import type { EstimateSectionId } from "../public-estimate-model";
+
 export type EstimateNavigationIcon =
   | "object"
   | "geometry"
@@ -18,4 +20,12 @@ export type EstimateNavigationItem = {
   id: string;
   label: string;
   icon: EstimateNavigationIcon;
+};
+
+export type EstimateSectionDescriptor = {
+  id: string;
+  label: string;
+  icon: EstimateNavigationIcon;
+  className: string;
+  estimateSectionId?: EstimateSectionId;
 };

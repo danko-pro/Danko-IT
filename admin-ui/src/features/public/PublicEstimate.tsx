@@ -103,6 +103,8 @@ import {
   ESTIMATE_INITIAL_SECTION_ID,
   ESTIMATE_SCROLL_SPY_SECTION_IDS,
   estimateNavigationItems,
+  formatEstimateStep,
+  getEstimateSectionClassName,
 } from "./sections/registry";
 import { FlooringSection } from "./sections/flooring/FlooringSection";
 import { GeometrySection } from "./sections/geometry/GeometrySection";
@@ -196,24 +198,6 @@ function pickActiveEstimateSectionByScrollLine(
   }
 
   return activeId;
-}
-
-function getEstimateStepIndex(sectionId: string): number {
-  return estimateNavigationItems.findIndex((item) => item.id === sectionId);
-}
-
-function formatEstimateStep(sectionId: string): string {
-  const index = getEstimateStepIndex(sectionId);
-
-  if (index < 0) {
-    return "";
-  }
-
-  return `Шаг ${String(index + 1).padStart(2, "0")}`;
-}
-
-function withActiveEstimateSection(sectionId: string, activeSectionId: string, className: string): string {
-  return activeSectionId === sectionId ? `${className} is-active` : className;
 }
 
 function createDefaultAppliancesOptionsDraft(): AppliancesOptionsDraft {
@@ -1416,7 +1400,7 @@ export function PublicEstimate() {
           </div>
 
           <ObjectSection
-            className={withActiveEstimateSection("estimate-object", activeEstimateSection, "public-estimate-object")}
+            className={getEstimateSectionClassName("estimate-object", activeEstimateSection)}
             stepLabel={formatEstimateStep("estimate-object")}
             objectMeta={objectMeta}
             textFieldProps={estimateTextFieldProps}
@@ -1435,11 +1419,7 @@ export function PublicEstimate() {
           />
 
           <GeometrySection
-            className={withActiveEstimateSection(
-              "estimate-geometry",
-              activeEstimateSection,
-              "public-estimate-geometry",
-            )}
+            className={getEstimateSectionClassName("estimate-geometry", activeEstimateSection)}
             stepLabel={formatEstimateStep("estimate-geometry")}
             geometryStepHint={GEOMETRY_STEP_HINT}
             ceilingHeightInput={ceilingHeightInput}
@@ -1478,11 +1458,7 @@ export function PublicEstimate() {
           />
 
           <WarmFloorSection
-            className={withActiveEstimateSection(
-              "estimate-warm-floor",
-              activeEstimateSection,
-              "public-estimate-warm-floor",
-            )}
+            className={getEstimateSectionClassName("estimate-warm-floor", activeEstimateSection)}
             stepLabel={formatEstimateStep("estimate-warm-floor")}
             warmFloorMode={warmFloorMode}
             onSetWarmFloorMode={setWarmFloorMode}
@@ -1511,11 +1487,7 @@ export function PublicEstimate() {
           />
 
           <FlooringSection
-            className={withActiveEstimateSection(
-              "estimate-flooring",
-              activeEstimateSection,
-              "public-estimate-flooring",
-            )}
+            className={getEstimateSectionClassName("estimate-flooring", activeEstimateSection)}
             stepLabel={formatEstimateStep("estimate-flooring")}
             flooringResult={flooringResult}
             flooringRooms={flooringRooms}
@@ -1543,7 +1515,7 @@ export function PublicEstimate() {
           />
 
           <WallsSection
-            className={withActiveEstimateSection("estimate-walls", activeEstimateSection, "public-estimate-walls")}
+            className={getEstimateSectionClassName("estimate-walls", activeEstimateSection)}
             stepLabel={formatEstimateStep("estimate-walls")}
             wallsResult={wallsResult}
             wallsRooms={wallsRooms}
@@ -1557,7 +1529,7 @@ export function PublicEstimate() {
           />
 
           <CeilingSection
-            className={withActiveEstimateSection("estimate-ceiling", activeEstimateSection, "public-estimate-ceiling")}
+            className={getEstimateSectionClassName("estimate-ceiling", activeEstimateSection)}
             stepLabel={formatEstimateStep("estimate-ceiling")}
             ceilingResult={ceilingResult}
             ceilingRooms={ceilingRooms}
@@ -1573,7 +1545,7 @@ export function PublicEstimate() {
           />
 
           <ElectricSection
-            className={withActiveEstimateSection("estimate-electric", activeEstimateSection, "public-estimate-electric")}
+            className={getEstimateSectionClassName("estimate-electric", activeEstimateSection)}
             stepLabel={formatEstimateStep("estimate-electric")}
             electricResult={electricResult}
             electricRooms={electricRooms}
@@ -1588,7 +1560,7 @@ export function PublicEstimate() {
           />
 
           <PlumbingSection
-            className={withActiveEstimateSection("estimate-plumbing", activeEstimateSection, "public-estimate-plumbing")}
+            className={getEstimateSectionClassName("estimate-plumbing", activeEstimateSection)}
             stepLabel={formatEstimateStep("estimate-plumbing")}
             plumbingCompositionItems={plumbingCompositionItems}
             plumbingSummaryItems={plumbingSummaryItems}
@@ -1619,7 +1591,7 @@ export function PublicEstimate() {
           />
 
           <DoorsSection
-            className={withActiveEstimateSection("estimate-doors", activeEstimateSection, "public-estimate-doors")}
+            className={getEstimateSectionClassName("estimate-doors", activeEstimateSection)}
             stepLabel={formatEstimateStep("estimate-doors")}
             doorCompositionItems={doorCompositionItems}
             doorSummaryItems={doorSummaryItems}
@@ -1635,11 +1607,7 @@ export function PublicEstimate() {
           />
 
           <CompletionSection
-            className={withActiveEstimateSection(
-              "estimate-completion",
-              activeEstimateSection,
-              "public-estimate-completion",
-            )}
+            className={getEstimateSectionClassName("estimate-completion", activeEstimateSection)}
             stepLabel={formatEstimateStep("estimate-completion")}
             completionOptions={completionOptions}
             completionResult={completionResult}
@@ -1666,11 +1634,7 @@ export function PublicEstimate() {
           />
 
           <AppliancesSection
-            className={withActiveEstimateSection(
-              "estimate-appliances",
-              activeEstimateSection,
-              "public-estimate-appliances",
-            )}
+            className={getEstimateSectionClassName("estimate-appliances", activeEstimateSection)}
             stepLabel={formatEstimateStep("estimate-appliances")}
             appliancesOptions={appliancesOptions}
             appliancesSummaryItems={appliancesSummaryItems}
@@ -1694,11 +1658,7 @@ export function PublicEstimate() {
           />
 
           <LooseFurnitureSection
-            className={withActiveEstimateSection(
-              "estimate-loose-furniture",
-              activeEstimateSection,
-              "public-estimate-loose-furniture",
-            )}
+            className={getEstimateSectionClassName("estimate-loose-furniture", activeEstimateSection)}
             stepLabel={formatEstimateStep("estimate-loose-furniture")}
             looseFurnitureOptions={looseFurnitureOptions}
             looseFurnitureSummaryItems={looseFurnitureSummaryItems}
@@ -1721,11 +1681,7 @@ export function PublicEstimate() {
           />
 
           <HomeGoodsSection
-            className={withActiveEstimateSection(
-              "estimate-home-goods",
-              activeEstimateSection,
-              "public-estimate-home-goods",
-            )}
+            className={getEstimateSectionClassName("estimate-home-goods", activeEstimateSection)}
             stepLabel={formatEstimateStep("estimate-home-goods")}
             floorArea={totals.floorArea}
             homeGoodsOptions={homeGoodsOptions}
@@ -1738,11 +1694,7 @@ export function PublicEstimate() {
           />
 
           <CostsSection
-            className={withActiveEstimateSection(
-              "estimate-costs",
-              activeEstimateSection,
-              "public-estimate-costs",
-            )}
+            className={getEstimateSectionClassName("estimate-costs", activeEstimateSection)}
             stepLabel={formatEstimateStep("estimate-costs")}
             estimateTotalItems={estimateTotalItems}
             estimateResult={estimateResult}

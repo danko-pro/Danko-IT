@@ -62,7 +62,8 @@ import {
   type FlooringPlinthType,
   type FlooringPreparationType,
 } from "./public-estimate-flooring";
-import { calculateEstimateTotals, type EstimateSection, type EstimateSectionId } from "./public-estimate-model";
+import { buildPublicEstimateResult } from "./estimate/engine";
+import { type EstimateSection, type EstimateSectionId } from "./public-estimate-model";
 import { classifyEstimatePackage } from "./public-estimate-package";
 import { EstimateSpecOverlay } from "./EstimateSpecOverlay";
 import {
@@ -812,39 +813,37 @@ export function PublicEstimate() {
     () => calculateHomeGoods({ floorArea: totals.floorArea, options: homeGoodsOptions }),
     [homeGoodsOptions, totals.floorArea],
   );
-  const estimateResult = useMemo(() => {
-    const sections = [
-      ...(warmFloorResult.selectedArea > 0 ? [warmFloorResult.section] : []),
-      ...(flooringResult.flooringArea > 0 ? [flooringResult.section] : []),
-      ...(wallsResult.wallFinishArea > 0 ? [wallsResult.section] : []),
-      ...(ceilingResult.ceilingArea > 0 ? [ceilingResult.section] : []),
-      ...(electricResult.section.items.length > 0 ? [electricResult.section] : []),
-      ...(plumbingResult.section.items.length > 0 ? [plumbingResult.section] : []),
-      ...(doorsResult.section.items.length > 0 ? [doorsResult.section] : []),
-      ...(completionResult.section.items.length > 0 ? [completionResult.section] : []),
-      ...(appliancesResult.section.items.length > 0 ? [appliancesResult.section] : []),
-      ...(looseFurnitureResult.section.items.length > 0 ? [looseFurnitureResult.section] : []),
-      ...(homeGoodsResult.section.items.length > 0 ? [homeGoodsResult.section] : []),
-    ];
-
-    return {
-      sections,
-      totals: calculateEstimateTotals(sections, totals.floorArea),
-    };
-  }, [
-    appliancesResult,
-    looseFurnitureResult,
-    homeGoodsResult,
-    ceilingResult,
-    completionResult,
-    doorsResult,
-    electricResult,
-    flooringResult,
-    plumbingResult,
-    totals.floorArea,
-    wallsResult,
-    warmFloorResult,
-  ]);
+  const estimateResult = useMemo(
+    () =>
+      buildPublicEstimateResult({
+        warmFloorResult,
+        flooringResult,
+        wallsResult,
+        ceilingResult,
+        electricResult,
+        plumbingResult,
+        doorsResult,
+        completionResult,
+        appliancesResult,
+        looseFurnitureResult,
+        homeGoodsResult,
+        floorArea: totals.floorArea,
+      }),
+    [
+      appliancesResult,
+      looseFurnitureResult,
+      homeGoodsResult,
+      ceilingResult,
+      completionResult,
+      doorsResult,
+      electricResult,
+      flooringResult,
+      plumbingResult,
+      totals.floorArea,
+      wallsResult,
+      warmFloorResult,
+    ],
+  );
 
   const summaryItems = [
     { label: "Площадь пола", value: formatMeasurement(totals.floorArea, "м²") },

@@ -3,15 +3,11 @@ import { calculateCeiling } from "./public-estimate-ceiling";
 import { calculateCompletion, type CompletionOptions } from "./public-estimate-completion";
 import {
   applianceItemCatalog,
-  appliancePackageLabels,
   calculateAppliances,
   createDefaultAppliancesOptions,
-  fridgeVariantLabels,
   getApplianceUnitPrice,
   type ApplianceItemKey,
-  type AppliancePackageLevel,
   type AppliancesOptions,
-  type FridgeVariant,
 } from "./public-estimate-appliances";
 import {
   calculateLooseFurniture,
@@ -126,6 +122,7 @@ import { GeometrySection } from "./sections/geometry/GeometrySection";
 import { ObjectSection } from "./sections/object/ObjectSection";
 import { WarmFloorSection } from "./sections/warm-floor/WarmFloorSection";
 import { CeilingSection } from "./sections/ceiling/CeilingSection";
+import { AppliancesSection } from "./sections/appliances/AppliancesSection";
 import { CompletionSection } from "./sections/completion/CompletionSection";
 import { DoorsSection } from "./sections/doors/DoorsSection";
 import { ElectricSection } from "./sections/electric/ElectricSection";
@@ -1981,168 +1978,33 @@ export function PublicEstimate() {
             onOpenSectionSpec={() => openSectionSpec("completion")}
           />
 
-          <section
-            id="estimate-appliances"
+          <AppliancesSection
             className={withActiveEstimateSection(
               "estimate-appliances",
               activeEstimateSection,
               "public-estimate-appliances",
             )}
-            aria-labelledby="public-estimate-appliances-title"
-          >
-            <div className="public-estimate-appliances-head">
-              <div>
-                <span>{formatEstimateStep("estimate-appliances")}</span>
-                <h2 id="public-estimate-appliances-title">Бытовая техника</h2>
-                <p>Техника выбирается по позициям, а уровень цены задаётся пакетом C / B / A.</p>
-              </div>
-            </div>
-
-            <div className="public-estimate-appliances-package" aria-label="Пакет техники">
-              <div className="public-estimate-appliances-package-copy">
-                <span>Пакет техники</span>
-                <small>
-                  Модели и бренды уточняются при финальной комплектации. Сейчас расчёт показывает публичный ориентир по
-                  классу техники.
-                </small>
-              </div>
-              <div className="public-estimate-toggle-group public-estimate-appliances-toggle-group" role="group" aria-label="Пакет техники">
-                {(["c", "b", "a"] as AppliancePackageLevel[]).map((level) => (
-                  <button
-                    key={level}
-                    className={appliancesOptions.packageLevel === level ? "public-estimate-toggle-active" : undefined}
-                    type="button"
-                    aria-pressed={appliancesOptions.packageLevel === level}
-                    onClick={() => updateAppliancesOptions({ packageLevel: level })}
-                  >
-                    {appliancePackageLabels[level]}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="public-estimate-appliances-header" aria-hidden="true">
-              <span>Включить</span>
-              <span>Позиция</span>
-              <span>Вариант</span>
-              <span>Кол-во</span>
-              <span>Цена за ед.</span>
-              <span>Итого</span>
-            </div>
-
-            <div className="public-estimate-appliances-list" aria-label="Позиции бытовой техники">
-              {applianceItemCatalog.map((catalogItem) => {
-                const itemDraft = appliancesOptions.items[catalogItem.key];
-                const isIncluded = itemDraft.isIncluded;
-                const quantity = itemDraft.quantity;
-                const unitPrice = getApplianceUnitPrice(catalogItem.key, appliancesOptions);
-                const lineTotal = isIncluded ? unitPrice * Math.max(1, parseEstimateInteger(quantity)) : 0;
-
-                return (
-                  <article className="public-estimate-appliances-row" key={catalogItem.key}>
-                    <label className="public-estimate-appliances-include">
-                      <input
-                        type="checkbox"
-                        checked={isIncluded}
-                        onChange={(event) => updateApplianceItem(catalogItem.key, { isIncluded: event.target.checked })}
-                      />
-                      <span className="public-estimate-mobile-label">Включить</span>
-                    </label>
-
-                    <div className="public-estimate-appliances-title-cell">
-                      <span className="public-estimate-mobile-label">Позиция</span>
-                      <strong>{catalogItem.title}</strong>
-                      {catalogItem.note ? <small>{catalogItem.note}</small> : null}
-                    </div>
-
-                    <div className="public-estimate-appliances-variant-cell">
-                      <span className="public-estimate-mobile-label">Вариант</span>
-                      {catalogItem.key === "fridge" ? (
-                        <select
-                          className="public-estimate-select"
-                          value={appliancesOptions.fridgeVariant}
-                          disabled={!isIncluded}
-                          onChange={(event) =>
-                            updateAppliancesOptions({ fridgeVariant: event.target.value as FridgeVariant })
-                          }
-                        >
-                          {(Object.keys(fridgeVariantLabels) as FridgeVariant[]).map((variant) => (
-                            <option key={variant} value={variant}>
-                              {fridgeVariantLabels[variant]}
-                            </option>
-                          ))}
-                        </select>
-                      ) : (
-                        <span className="public-estimate-appliances-variant-placeholder">—</span>
-                      )}
-                    </div>
-
-                    <label className="public-estimate-appliances-quantity">
-                      <span className="public-estimate-mobile-label">Кол-во</span>
-                      <input
-                        className="public-estimate-input"
-                        disabled={!isIncluded}
-                        inputMode="numeric"
-                        type="text"
-                        value={quantity}
-                        {...estimateNumericFieldProps}
-                        onChange={(event) =>
-                          updateApplianceItem(catalogItem.key, {
-                            quantity: sanitizeEstimateIntegerInput(event.target.value),
-                          })
-                        }
-                        onBlur={(event) =>
-                          updateApplianceItem(catalogItem.key, {
-                            quantity: normalizeEstimateQuantityOnBlur(event.target.value),
-                          })
-                        }
-                      />
-                    </label>
-
-                    <div className="public-estimate-appliances-unit-price">
-                      <span className="public-estimate-mobile-label">Цена за ед.</span>
-                      <strong>{formatMoney(unitPrice)}</strong>
-                    </div>
-
-                    <div className="public-estimate-appliances-line-total">
-                      <span className="public-estimate-mobile-label">Итого</span>
-                      <strong>{formatMoney(lineTotal)}</strong>
-                    </div>
-                  </article>
-                );
-              })}
-            </div>
-
-            <div className="public-estimate-appliances-summary" aria-label="Итоги по бытовой технике">
-              {appliancesSummaryItems.map((item) => (
-                <div className={item.isStrong ? "public-estimate-appliances-total-cell" : undefined} key={item.label}>
-                  <span>{item.label}</span>
-                  <strong>{item.value}</strong>
-                </div>
-              ))}
-            </div>
-
-            {appliancesResult.section.items.length > 0 ? (
-              <div className="public-estimate-spec-actions">
-                <div className="public-estimate-spec-actions-head">
-                  <p>Состав раздела</p>
-                  <span>Бытовая техника по выбранному пакету</span>
-                </div>
-                <button
-                  className="public-estimate-spec-open"
-                  type="button"
-                  onClick={() => openSectionSpec("appliances")}
-                >
-                  Открыть спецификацию
-                  <span className="public-estimate-spec-open-count">{appliancesResult.section.items.length} строк</span>
-                </button>
-              </div>
-            ) : (
-              <p className="public-estimate-warm-floor-empty">
-                Включите нужные позиции техники, чтобы добавить их в смету.
-              </p>
-            )}
-          </section>
+            stepLabel={formatEstimateStep("estimate-appliances")}
+            appliancesOptions={appliancesOptions}
+            appliancesSummaryItems={appliancesSummaryItems}
+            appliancesResult={appliancesResult}
+            numberFieldProps={estimateNumericFieldProps}
+            getUnitPrice={(key) => getApplianceUnitPrice(key, appliancesOptions)}
+            getLineTotal={(key, isIncluded, quantity) => {
+              const unitPrice = getApplianceUnitPrice(key, appliancesOptions);
+              return isIncluded ? unitPrice * Math.max(1, parseEstimateInteger(quantity)) : 0;
+            }}
+            onPackageLevelChange={(level) => updateAppliancesOptions({ packageLevel: level })}
+            onFridgeVariantChange={(variant) => updateAppliancesOptions({ fridgeVariant: variant })}
+            onApplianceIncludeChange={(key, checked) => updateApplianceItem(key, { isIncluded: checked })}
+            onQuantityChange={(key, value) =>
+              updateApplianceItem(key, { quantity: sanitizeEstimateIntegerInput(value) })
+            }
+            onQuantityBlur={(key, value) =>
+              updateApplianceItem(key, { quantity: normalizeEstimateQuantityOnBlur(value) })
+            }
+            onOpenSectionSpec={() => openSectionSpec("appliances")}
+          />
 
           <section
             id="estimate-loose-furniture"

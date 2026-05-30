@@ -129,6 +129,7 @@ import { FlooringSection } from "./sections/flooring/FlooringSection";
 import { GeometrySection } from "./sections/geometry/GeometrySection";
 import { ObjectSection } from "./sections/object/ObjectSection";
 import { WarmFloorSection } from "./sections/warm-floor/WarmFloorSection";
+import { CeilingSection } from "./sections/ceiling/CeilingSection";
 import { WallsSection } from "./sections/walls/WallsSection";
 
 function getGeometryRowRemoveDelayMs(): number {
@@ -1981,113 +1982,21 @@ export function PublicEstimate() {
             onOpenSectionSpec={() => openSectionSpec("walls")}
           />
 
-          <section
-            id="estimate-ceiling"
+          <CeilingSection
             className={withActiveEstimateSection("estimate-ceiling", activeEstimateSection, "public-estimate-ceiling")}
-            aria-labelledby="public-estimate-ceiling-title"
-          >
-            <div className="public-estimate-ceiling-head">
-              <div>
-                <span>{formatEstimateStep("estimate-ceiling")}</span>
-                <h2 id="public-estimate-ceiling-title">Потолки</h2>
-                <p>Первый срез потолков: ПВХ матовый / сатин и точечный свет с закладными, врезкой и светильниками GX53.</p>
-              </div>
-            </div>
-
-            <div className="public-estimate-ceiling-header" aria-hidden="true">
-              <span>Помещение</span>
-              <span>Потолок</span>
-              <span>Точечный свет</span>
-              <span>Площадь</span>
-              <span>Точки</span>
-              <span>Итого</span>
-            </div>
-
-            <div className="public-estimate-ceiling-room-list" aria-label="Помещения для расчёта потолков">
-              {ceilingResult.roomResults.map((room) => {
-                const ceilingDraft = ceilingRooms[room.roomId] ?? {};
-                const lightDefaults = getDefaultCeilingLightSettings(
-                  rooms.find((estimateRoom) => estimateRoom.id === room.roomId)?.type ?? "other",
-                );
-                const isIncluded = ceilingDraft.isIncluded ?? true;
-                const hasPointLights = ceilingDraft.hasPointLights ?? lightDefaults.hasPointLights;
-
-                return (
-                  <article className="public-estimate-ceiling-row" key={room.roomId}>
-                    <label className="public-estimate-ceiling-room">
-                      <input
-                        type="checkbox"
-                        checked={isIncluded}
-                        onChange={(event) => updateCeilingRoom(room.roomId, { isIncluded: event.target.checked })}
-                      />
-                      <span>
-                        <strong>{room.roomName}</strong>
-                        <small>{formatMeasurement(room.ceilingArea, "м²")}</small>
-                      </span>
-                    </label>
-
-                    <div className="public-estimate-ceiling-type">
-                      <span className="public-estimate-mobile-label">Потолок</span>
-                      <strong>ПВХ матовый / сатин</strong>
-                    </div>
-
-                    <label className="public-estimate-ceiling-light">
-                      <input
-                        type="checkbox"
-                        checked={hasPointLights}
-                        disabled={!isIncluded}
-                        onChange={(event) => updateCeilingRoom(room.roomId, { hasPointLights: event.target.checked })}
-                      />
-                      <span>Точечный свет</span>
-                    </label>
-
-                    <div className="public-estimate-ceiling-result">
-                      <span className="public-estimate-mobile-label">Площадь</span>
-                      <strong>{formatMeasurement(room.ceilingArea, "м²")}</strong>
-                    </div>
-
-                    <div className="public-estimate-ceiling-result">
-                      <span className="public-estimate-mobile-label">Точки</span>
-                      <strong>{room.pointCount} шт.</strong>
-                    </div>
-
-                    <div className="public-estimate-ceiling-total">
-                      <span className="public-estimate-mobile-label">Итого</span>
-                      <strong>{formatMoney(room.roomTotal)}</strong>
-                    </div>
-                  </article>
-                );
-              })}
-            </div>
-
-            <div className="public-estimate-ceiling-summary" aria-label="Итоги по потолкам">
-              {ceilingSummaryItems.map((item) => (
-                <div className={item.isStrong ? "public-estimate-ceiling-total-cell" : undefined} key={item.label}>
-                  <span>{item.label}</span>
-                  <strong>{item.value}</strong>
-                </div>
-              ))}
-            </div>
-
-            {ceilingResult.section.items.length > 0 ? (
-              <div className="public-estimate-spec-actions">
-                <div className="public-estimate-spec-actions-head">
-                  <p>Состав раздела</p>
-                  <span>ПВХ потолок, закладные, врезка и светильники GX53</span>
-                </div>
-                <button
-                  className="public-estimate-spec-open"
-                  type="button"
-                  onClick={() => openSectionSpec("ceiling")}
-                >
-                  Открыть спецификацию
-                  <span className="public-estimate-spec-open-count">{ceilingResult.section.items.length} строк</span>
-                </button>
-              </div>
-            ) : (
-              <p className="public-estimate-warm-floor-empty">Включите хотя бы одно помещение, чтобы добавить потолки в смету.</p>
-            )}
-          </section>
+            stepLabel={formatEstimateStep("estimate-ceiling")}
+            ceilingResult={ceilingResult}
+            ceilingRooms={ceilingRooms}
+            ceilingSummaryItems={ceilingSummaryItems}
+            getCeilingLightDefaults={(roomId) =>
+              getDefaultCeilingLightSettings(
+                rooms.find((estimateRoom) => estimateRoom.id === roomId)?.type ?? "other",
+              )
+            }
+            onCeilingRoomIncludedChange={(roomId, isIncluded) => updateCeilingRoom(roomId, { isIncluded })}
+            onCeilingPointLightsChange={(roomId, hasPointLights) => updateCeilingRoom(roomId, { hasPointLights })}
+            onOpenSectionSpec={() => openSectionSpec("ceiling")}
+          />
 
           <section
             id="estimate-electric"

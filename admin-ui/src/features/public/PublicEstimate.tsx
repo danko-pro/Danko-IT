@@ -47,11 +47,9 @@ import {
 import { buildPublicEstimateResult } from "./estimate/engine";
 import { type EstimateSection, type EstimateSectionId } from "./public-estimate-model";
 import { classifyEstimatePackage } from "./public-estimate-package";
-import { EstimateSpecOverlay } from "./EstimateSpecOverlay";
 import {
   calculatePlumbing,
   dishwasherPackageLabels,
-  expandPlumbingSectionForSpec,
   getDishwasherZonePackageTotal,
   getInstallRelocationZoneTotal,
   getKitchenSinkZonePackageTotal,
@@ -100,7 +98,8 @@ import {
   type WallsRoomDraft,
   type WarmFloorRoomDraft,
 } from "./estimate/context";
-import { formatEstimateQuantity, formatMeasurement, formatMoney } from "./estimate/format";
+import { formatMeasurement, formatMoney } from "./estimate/format";
+import { buildEstimateSpecModalData } from "./estimate/spec";
 import {
   ESTIMATE_INITIAL_SECTION_ID,
   ESTIMATE_SCROLL_SPY_SECTION_IDS,
@@ -117,6 +116,7 @@ import { HomeGoodsSection } from "./sections/home-goods/HomeGoodsSection";
 import { CompletionSection } from "./sections/completion/CompletionSection";
 import { EstimatePassportSidebar } from "./components/estimate/EstimatePassportSidebar";
 import { EstimateRail } from "./components/estimate/EstimateRail";
+import { EstimateSpecModal } from "./components/estimate/EstimateSpecModal";
 import { CostsSection } from "./sections/costs/CostsSection";
 import { DoorsSection } from "./sections/doors/DoorsSection";
 import { ElectricSection } from "./sections/electric/ElectricSection";
@@ -1164,63 +1164,17 @@ export function PublicEstimate() {
     looseFurnitureResult.section,
     homeGoodsResult.section,
   ];
-  function mapSectionsForSpec(sections: EstimateSection[]) {
-    return sections.map((section) => {
-      if (section.id !== "plumbing") {
-        return section;
-      }
-
-      return expandPlumbingSectionForSpec(section, {
-        kitchenSinkPackageLevel: plumbingOptions.kitchenSinkPackageLevel,
-        includeKitchenSink: plumbingResult.hasKitchen && plumbingOptions.includeKitchenSink,
-        dishwasherPackageLevel: plumbingOptions.dishwasherPackageLevel,
-        includeDishwasher: plumbingResult.hasKitchen && plumbingOptions.includeDishwasherOutput,
-        showerPackageLevel: plumbingOptions.showerPackageLevel,
-        includeShower: plumbingResult.bathroomCount > 0 && plumbingOptions.includeShowerZone,
-        includeInstallRelocation: plumbingResult.bathroomCount > 0 && plumbingOptions.includeInstallRelocation,
-        // A8.2: мигрированные legacy-опции разворачиваются в атомарную спецификацию (без строки резерва).
-        includeBathroomSet: plumbingResult.bathroomCount > 0 && plumbingOptions.includeBathroomSet,
-        includeBath:
-          plumbingResult.bathroomCount > 0 &&
-          plumbingOptions.includeBath &&
-          !plumbingOptions.includeShowerZone,
-        includeHygienicShower: plumbingResult.bathroomCount > 0 && plumbingOptions.includeHygienicShower,
-        includeElectricTowelRail: plumbingResult.bathroomCount > 0 && plumbingOptions.includeElectricTowelRail,
-        includeWasherOutput: plumbingOptions.includeWasherOutput,
-        includeWaterNode: plumbingOptions.includeWaterNode && plumbingResult.hasPlumbingRooms,
-        includeLeakProtection:
-          plumbingOptions.includeWaterNode &&
-          plumbingResult.hasPlumbingRooms &&
-          plumbingOptions.includeLeakProtection,
-      });
-    });
-  }
-
-  const specModalData = (() => {
-    if (!specModal) {
-      return null;
-    }
-
-    if (specModal.kind === "full") {
-      return {
-        title: "Полная спецификация",
-        subtitle: "Все разделы текущей сметы по позициям",
-        sections: mapSectionsForSpec(estimateResult.sections),
-      };
-    }
-
-    const section = allEstimateSections.find((candidate) => candidate.id === specModal.sectionId);
-
-    if (!section) {
-      return null;
-    }
-
-    return {
-      title: section.title,
-      subtitle: section.description,
-      sections: mapSectionsForSpec([section]),
-    };
-  })();
+  const specModalData = useMemo(
+    () =>
+      buildEstimateSpecModalData({
+        specModal,
+        allEstimateSections,
+        estimateResult,
+        plumbingOptions,
+        plumbingResult,
+      }),
+    [allEstimateSections, estimateResult, plumbingOptions, plumbingResult, specModal],
+  );
 
   function openSectionSpec(sectionId: EstimateSectionId) {
     setSpecModal({ kind: "section", sectionId });
@@ -1922,16 +1876,7 @@ export function PublicEstimate() {
         </dl>
       </section>
 
-      {specModalData ? (
-        <EstimateSpecOverlay
-          title={specModalData.title}
-          subtitle={specModalData.subtitle}
-          sections={specModalData.sections}
-          formatMoney={formatMoney}
-          formatQuantity={formatEstimateQuantity}
-          onClose={closeSpecModal}
-        />
-      ) : null}
+      <EstimateSpecModal data={specModalData} onClose={closeSpecModal} />
     </main>
   );
 }

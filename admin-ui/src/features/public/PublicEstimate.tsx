@@ -15,10 +15,8 @@ import {
   getLooseFurnitureUnitPrice,
   looseFurnitureGroupLabels,
   looseFurnitureItemCatalog,
-  looseFurniturePackageLabels,
   type LooseFurnitureItemKey,
   type LooseFurnitureOptions,
-  type LooseFurniturePackageLevel,
 } from "./public-estimate-loose-furniture";
 import {
   calculateHomeGoods,
@@ -123,6 +121,7 @@ import { ObjectSection } from "./sections/object/ObjectSection";
 import { WarmFloorSection } from "./sections/warm-floor/WarmFloorSection";
 import { CeilingSection } from "./sections/ceiling/CeilingSection";
 import { AppliancesSection } from "./sections/appliances/AppliancesSection";
+import { LooseFurnitureSection } from "./sections/loose-furniture/LooseFurnitureSection";
 import { CompletionSection } from "./sections/completion/CompletionSection";
 import { DoorsSection } from "./sections/doors/DoorsSection";
 import { ElectricSection } from "./sections/electric/ElectricSection";
@@ -2006,161 +2005,32 @@ export function PublicEstimate() {
             onOpenSectionSpec={() => openSectionSpec("appliances")}
           />
 
-          <section
-            id="estimate-loose-furniture"
+          <LooseFurnitureSection
             className={withActiveEstimateSection(
               "estimate-loose-furniture",
               activeEstimateSection,
               "public-estimate-loose-furniture",
             )}
-            aria-labelledby="public-estimate-loose-furniture-title"
-          >
-            <div className="public-estimate-loose-furniture-head">
-              <div>
-                <span>{formatEstimateStep("estimate-loose-furniture")}</span>
-                <h2 id="public-estimate-loose-furniture-title">Свободная мебель</h2>
-                <p>Мебель выбирается по позициям, а уровень цены задаётся пакетом C / B / A.</p>
-              </div>
-            </div>
-
-            <div className="public-estimate-loose-furniture-package" aria-label="Пакет мебели">
-              <div className="public-estimate-loose-furniture-package-copy">
-                <span>Пакет мебели</span>
-                <small>
-                  Модели и бренды уточняются при финальной комплектации. Сейчас расчёт показывает публичный ориентир по
-                  классу мебели.
-                </small>
-              </div>
-              <div
-                className="public-estimate-toggle-group public-estimate-loose-furniture-toggle-group"
-                role="group"
-                aria-label="Пакет мебели"
-              >
-                {(["c", "b", "a"] as LooseFurniturePackageLevel[]).map((level) => (
-                  <button
-                    key={level}
-                    className={
-                      looseFurnitureOptions.packageLevel === level ? "public-estimate-toggle-active" : undefined
-                    }
-                    type="button"
-                    aria-pressed={looseFurnitureOptions.packageLevel === level}
-                    onClick={() => updateLooseFurnitureOptions({ packageLevel: level })}
-                  >
-                    {looseFurniturePackageLabels[level]}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="public-estimate-loose-furniture-header" aria-hidden="true">
-              <span>Включить</span>
-              <span>Позиция</span>
-              <span>Группа</span>
-              <span>Кол-во</span>
-              <span>Цена за ед.</span>
-              <span>Итого</span>
-            </div>
-
-            <div className="public-estimate-loose-furniture-list" aria-label="Позиции свободной мебели">
-              {looseFurnitureItemCatalog.map((catalogItem) => {
-                const itemDraft = looseFurnitureOptions.items[catalogItem.key];
-                const isIncluded = itemDraft.isIncluded;
-                const quantity = itemDraft.quantity;
-                const unitPrice = getLooseFurnitureUnitPrice(catalogItem.key, looseFurnitureOptions);
-                const lineTotal = isIncluded ? unitPrice * Math.max(1, parseEstimateInteger(quantity)) : 0;
-
-                return (
-                  <article className="public-estimate-loose-furniture-row" key={catalogItem.key}>
-                    <label className="public-estimate-loose-furniture-include">
-                      <input
-                        type="checkbox"
-                        checked={isIncluded}
-                        onChange={(event) =>
-                          updateLooseFurnitureItem(catalogItem.key, { isIncluded: event.target.checked })
-                        }
-                      />
-                      <span className="public-estimate-mobile-label">Включить</span>
-                    </label>
-
-                    <div className="public-estimate-loose-furniture-title-cell">
-                      <span className="public-estimate-mobile-label">Позиция</span>
-                      <strong>{catalogItem.title}</strong>
-                    </div>
-
-                    <div className="public-estimate-loose-furniture-group-cell">
-                      <span className="public-estimate-mobile-label">Группа</span>
-                      <strong>{looseFurnitureGroupLabels[catalogItem.group]}</strong>
-                    </div>
-
-                    <label className="public-estimate-loose-furniture-quantity">
-                      <span className="public-estimate-mobile-label">Кол-во</span>
-                      <input
-                        className="public-estimate-input"
-                        disabled={!isIncluded}
-                        inputMode="numeric"
-                        type="text"
-                        value={quantity}
-                        {...estimateNumericFieldProps}
-                        onChange={(event) =>
-                          updateLooseFurnitureItem(catalogItem.key, {
-                            quantity: sanitizeEstimateIntegerInput(event.target.value),
-                          })
-                        }
-                        onBlur={(event) =>
-                          updateLooseFurnitureItem(catalogItem.key, {
-                            quantity: normalizeEstimateQuantityOnBlur(event.target.value),
-                          })
-                        }
-                      />
-                    </label>
-
-                    <div className="public-estimate-loose-furniture-unit-price">
-                      <span className="public-estimate-mobile-label">Цена за ед.</span>
-                      <strong>{formatMoney(unitPrice)}</strong>
-                    </div>
-
-                    <div className="public-estimate-loose-furniture-line-total">
-                      <span className="public-estimate-mobile-label">Итого</span>
-                      <strong>{formatMoney(lineTotal)}</strong>
-                    </div>
-                  </article>
-                );
-              })}
-            </div>
-
-            <div className="public-estimate-loose-furniture-summary" aria-label="Итоги по свободной мебели">
-              {looseFurnitureSummaryItems.map((item) => (
-                <div
-                  className={item.isStrong ? "public-estimate-loose-furniture-total-cell" : undefined}
-                  key={item.label}
-                >
-                  <span>{item.label}</span>
-                  <strong>{item.value}</strong>
-                </div>
-              ))}
-            </div>
-
-            {looseFurnitureResult.section.items.length > 0 ? (
-              <div className="public-estimate-spec-actions">
-                <div className="public-estimate-spec-actions-head">
-                  <p>Состав раздела</p>
-                  <span>Свободная мебель по выбранному пакету</span>
-                </div>
-                <button
-                  className="public-estimate-spec-open"
-                  type="button"
-                  onClick={() => openSectionSpec("loose_furniture")}
-                >
-                  Открыть спецификацию
-                  <span className="public-estimate-spec-open-count">{looseFurnitureResult.section.items.length} строк</span>
-                </button>
-              </div>
-            ) : (
-              <p className="public-estimate-warm-floor-empty">
-                Включите нужные позиции мебели, чтобы добавить их в смету.
-              </p>
-            )}
-          </section>
+            stepLabel={formatEstimateStep("estimate-loose-furniture")}
+            looseFurnitureOptions={looseFurnitureOptions}
+            looseFurnitureSummaryItems={looseFurnitureSummaryItems}
+            looseFurnitureResult={looseFurnitureResult}
+            numberFieldProps={estimateNumericFieldProps}
+            getUnitPrice={(key) => getLooseFurnitureUnitPrice(key, looseFurnitureOptions)}
+            getLineTotal={(key, isIncluded, quantity) => {
+              const unitPrice = getLooseFurnitureUnitPrice(key, looseFurnitureOptions);
+              return isIncluded ? unitPrice * Math.max(1, parseEstimateInteger(quantity)) : 0;
+            }}
+            onPackageLevelChange={(level) => updateLooseFurnitureOptions({ packageLevel: level })}
+            onLooseFurnitureIncludeChange={(key, checked) => updateLooseFurnitureItem(key, { isIncluded: checked })}
+            onQuantityChange={(key, value) =>
+              updateLooseFurnitureItem(key, { quantity: sanitizeEstimateIntegerInput(value) })
+            }
+            onQuantityBlur={(key, value) =>
+              updateLooseFurnitureItem(key, { quantity: normalizeEstimateQuantityOnBlur(value) })
+            }
+            onOpenSectionSpec={() => openSectionSpec("loose_furniture")}
+          />
 
           <section
             id="estimate-home-goods"

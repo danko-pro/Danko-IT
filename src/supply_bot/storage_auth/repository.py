@@ -74,3 +74,42 @@ class SqlAlchemyUserAuthRepository:
                 )
             )
             await session.commit()
+
+    async def provision_bootstrap_admin(
+        self,
+        *,
+        email: str,
+        password_hash: str,
+        display_name: str | None = None,
+    ) -> str:
+        normalized_email = normalize_app_user_email(email)
+        if not normalized_email or "@" not in normalized_email:
+            raise ValueError("Email is required")
+
+        existing = await self.get_app_user_by_email(normalized_email)
+        if existing is None:
+            await self.create_app_user(
+                email=normalized_email,
+                password_hash=password_hash,
+                display_name=str(display_name or "").strip(),
+                role="admin",
+            )
+            return "created"
+
+        update_values: dict[str, Any] = {
+            "role": "admin",
+            "is_active": 1,
+            "password_hash": password_hash,
+            "updated_at": func.current_timestamp(),
+        }
+        if display_name is not None:
+            update_values["display_name"] = str(display_name).strip()
+
+        async with self.session_factory() as session:
+            await session.execute(
+                update(app_users)
+                .where(app_users.c.id == existing["id"])
+                .values(**update_values)
+            )
+            await session.commit()
+        return "updated"

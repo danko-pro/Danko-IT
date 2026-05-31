@@ -275,6 +275,29 @@ Generate `ADMIN_SESSION_SECRET` locally:
 python -c "import secrets; print(secrets.token_urlsafe(64))"
 ```
 
+### Admin bootstrap (manual provisioning)
+
+Production admin accounts are provisioned on backend startup from environment variables, not through a public admin registration endpoint. `/api/auth/register` still creates only regular users with `role='user'`.
+
+Backend Web Service env:
+
+```env
+ADMIN_BOOTSTRAP_EMAIL=admin@example.com
+ADMIN_BOOTSTRAP_PASSWORD=replace-with-strong-password
+ADMIN_BOOTSTRAP_DISPLAY_NAME=Site Admin
+```
+
+Behavior:
+
+```text
+If ADMIN_BOOTSTRAP_EMAIL or ADMIN_BOOTSTRAP_PASSWORD is missing -> bootstrap is skipped silently
+If both are set -> create or update the matching app user as role=admin on startup
+Restart/redeploy is idempotent (no duplicate users)
+Password is never logged; only email and created/updated/skipped result are logged
+```
+
+After the first successful login, remove `ADMIN_BOOTSTRAP_PASSWORD` from Render env and redeploy the backend. Without the password env var, startup will not overwrite the stored password on each restart. You can keep `ADMIN_BOOTSTRAP_EMAIL` (and optional `ADMIN_BOOTSTRAP_DISPLAY_NAME`) if you still want role/display-name reconciliation on startup.
+
 Render Postgres can show a connection string as `postgresql://...`. The application uses SQLAlchemy async runtime, so production `DATABASE_URL` should use the async driver form:
 
 ```text

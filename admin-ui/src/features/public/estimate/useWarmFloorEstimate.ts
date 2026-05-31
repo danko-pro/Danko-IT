@@ -49,11 +49,11 @@ export function useWarmFloorEstimate({
     warmFloorMode === "electric"
       ? "автомат в щит"
       : warmFloorResult.usesTowelRailConnection
-        ? "от полотенцесушителя"
+        ? "малый контур от полотенцесушителя"
         : warmFloorResult.needsPump
-          ? "гребенка + насос"
+          ? "гребенка + насосно-смесительный узел"
           : warmFloorResult.needsManifold
-            ? "гребенка"
+            ? "распределительная гребенка"
             : "без отдельного узла";
   const warmFloorSummaryItems = buildWarmFloorSummaryItems(warmFloorMode, warmFloorResult);
 

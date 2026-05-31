@@ -98,7 +98,12 @@ function createResult(mode: WarmFloorMode, rooms: WarmFloorRoomInput[], items: E
   const chaseLengthMeters = mode === "water" && selectedArea > 0 ? Math.max(3, roomCount * 3) : 0;
   const thermostatCount = mode === "electric" && selectedArea > 0 ? 1 : 0;
   const electricBreakerCount = mode === "electric" && selectedArea > 0 ? 1 : 0;
-  const section = createEstimateSection("warm_floor", "Тёплый пол", items, "Водяной или электрический тёплый пол по выбранным помещениям.");
+  const section = createEstimateSection(
+    "warm_floor",
+    "Тёплый пол",
+    items,
+    "Водяной или электрический тёплый пол по выбранным помещениям.",
+  );
 
   return {
     mode,
@@ -174,7 +179,7 @@ export function calculateWarmFloor(mode: WarmFloorMode, rooms: WarmFloorRoomInpu
       items.push(
         createLineItem(
           "warm-floor-small-loop-connection-labor",
-          "Подключение контура от существующего водяного полотенцесушителя",
+          "Подключение малого контура от существующего полотенцесушителя",
           "works",
           1,
           "компл.",
@@ -182,7 +187,7 @@ export function calculateWarmFloor(mode: WarmFloorMode, rooms: WarmFloorRoomInpu
         ),
         createLineItem(
           "warm-floor-small-loop-fittings-material",
-          "Фитинги и запорная арматура для подключения",
+          "Комплект фитингов для малого контура",
           "materials",
           1,
           "компл.",
@@ -190,7 +195,7 @@ export function calculateWarmFloor(mode: WarmFloorMode, rooms: WarmFloorRoomInpu
         ),
         createLineItem(
           "warm-floor-small-loop-control-head-material",
-          "Узел регулировки / термоголовка",
+          "Термоголовка для регулировки малого контура",
           "materials",
           1,
           "компл.",
@@ -201,7 +206,14 @@ export function calculateWarmFloor(mode: WarmFloorMode, rooms: WarmFloorRoomInpu
 
     if (needsManifold) {
       items.push(
-        createLineItem("warm-floor-manifold-labor", "Монтаж распределительной гребенки", "works", 1, "компл.", warmFloorRates.manifoldLabor),
+        createLineItem(
+          "warm-floor-manifold-labor",
+          "Монтаж распределительной гребенки",
+          "works",
+          1,
+          "компл.",
+          warmFloorRates.manifoldLabor,
+        ),
         createLineItem(
           "warm-floor-manifold-material",
           "Комплект распределительной гребенки",
@@ -215,7 +227,14 @@ export function calculateWarmFloor(mode: WarmFloorMode, rooms: WarmFloorRoomInpu
 
     if (needsPump) {
       items.push(
-        createLineItem("warm-floor-pump-labor", "Монтаж насосно-смесительного узла", "works", 1, "компл.", warmFloorRates.pumpLabor),
+        createLineItem(
+          "warm-floor-pump-labor",
+          "Монтаж насосно-смесительного узла",
+          "works",
+          1,
+          "компл.",
+          warmFloorRates.pumpLabor,
+        ),
         createLineItem(
           "warm-floor-pump-material",
           "Комплект насосно-смесительного узла",

@@ -5276,18 +5276,18 @@
   justify-content: space-between;
   gap: 0.7rem;
   padding: 0.78rem 0.9rem;
-  border-top: 1px solid rgba(30, 81, 74, 0.14);
-  background: rgba(233, 242, 239, 0.62);
+  border-top: 1px solid rgba(30, 81, 74, 0.22);
+  background: #edf7f3;
 }
 
 .public-estimate-spec-modal-foot span {
-  color: var(--public-ink);
+  color: #13231f;
   font-size: 0.82rem;
-  font-weight: 760;
+  font-weight: 820;
 }
 
 .public-estimate-spec-modal-foot strong {
-  color: var(--public-green-deep);
+  color: #103f37;
   font-size: 1.05rem;
   font-weight: 880;
   white-space: nowrap;

@@ -14,6 +14,7 @@ from supply_bot.domain.public_leads import (
     PUBLIC_LEAD_TELEGRAM_SENT,
     PUBLIC_LEAD_TELEGRAM_SKIPPED,
 )
+from supply_bot.estimates.application.flooring_snapshot import BuildFlooringSnapshotUseCase
 from supply_bot.estimates.application.plumbing_snapshot import BuildPlumbingSnapshotUseCase
 from supply_bot.estimates.application.warm_floor_snapshot import BuildWarmFloorSnapshotUseCase
 
@@ -118,3 +119,8 @@ def register_public_catalog_routes(app: FastAPI) -> None:
         check_snapshot_rate_limit(request)
         storage_obj = get_global_estimate_catalog_storage(request)
         return await BuildWarmFloorSnapshotUseCase(storage_obj).build_public()
+
+    @app.get("/api/public/catalog/flooring/snapshot")
+    async def public_flooring_snapshot(request: Request) -> dict[str, Any]:
+        check_snapshot_rate_limit(request)
+        return await BuildFlooringSnapshotUseCase().build_public()

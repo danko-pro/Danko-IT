@@ -1,10 +1,13 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  buildFlooringSnapshotUrl,
   buildSnapshotUrl,
   buildWarmFloorSnapshotUrl,
   findForbiddenKeys,
+  FLOORING_V1_SEED,
   resolveRemoteBaseUrl,
+  validateFlooringSnapshotPayload,
   validateSnapshotPayload,
   validateWarmFloorSnapshotPayload,
   WARM_FLOOR_V1_SEED,
@@ -48,6 +51,9 @@ describe("generate-snapshot validation", () => {
     expect(buildWarmFloorSnapshotUrl("https://api.example.com/")).toBe(
       "https://api.example.com/api/public/catalog/warm-floor/snapshot",
     );
+    expect(buildFlooringSnapshotUrl("https://api.example.com/")).toBe(
+      "https://api.example.com/api/public/catalog/flooring/snapshot",
+    );
   });
 
   it("accepts a minimal valid public payload", () => {
@@ -90,6 +96,37 @@ describe("generate-snapshot validation", () => {
     expect(validateWarmFloorSnapshotPayload({ version: "warm-floor-v1" })).toEqual({
       ok: false,
       reason: "water must be an object",
+    });
+  });
+
+  it("accepts the flooring v1 seed payload", () => {
+    expect(validateFlooringSnapshotPayload(FLOORING_V1_SEED)).toEqual({ ok: true });
+  });
+
+  it("rejects flooring payloads missing required catalog codes", () => {
+    expect(
+      validateFlooringSnapshotPayload({
+        ...FLOORING_V1_SEED,
+        coverings: FLOORING_V1_SEED.coverings.filter((item) => item.code !== "porcelain"),
+      }),
+    ).toEqual({
+      ok: false,
+      reason: "coverings missing required code: porcelain",
+    });
+  });
+
+  it("rejects flooring payloads with forbidden internal keys", () => {
+    expect(
+      validateFlooringSnapshotPayload({
+        ...FLOORING_V1_SEED,
+        globalAddons: {
+          ...FLOORING_V1_SEED.globalAddons,
+          note: "internal",
+        },
+      }),
+    ).toEqual({
+      ok: false,
+      reason: "forbidden internal keys: note",
     });
   });
 });

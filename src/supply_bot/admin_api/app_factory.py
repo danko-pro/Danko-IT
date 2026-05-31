@@ -47,6 +47,7 @@ PUBLIC_ADMIN_API_PATHS = (
     "/api/public/leads",
     "/api/public/catalog/plumbing/snapshot",
     "/api/public/catalog/warm-floor/snapshot",
+    "/api/public/catalog/flooring/snapshot",
 )
 
 SYSTEM_PROJECT_OWNER_EMAIL_DOMAIN = "system.local"

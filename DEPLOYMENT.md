@@ -248,8 +248,8 @@ PUBLIC_SNAPSHOT_BASE_URL=https://api.danko39.ru
 
 During `npm run build`, the `prebuild` step runs `admin-ui/scripts/generate-snapshot.js`:
 
-- **Production / Render** (when `PUBLIC_SNAPSHOT_BASE_URL` or `VITE_API_BASE_URL` is set): fetches `GET /api/public/catalog/plumbing/snapshot` and `GET /api/public/catalog/warm-floor/snapshot` from the backend, validates both public payloads, and writes `admin-ui/src/features/public/generated/*.snapshot.json`. If either fetch or validation fails, the build **must fail** (no seed fallback).
-- **Local build** (neither env var set): deterministic seed fallback via `tools/generate_plumbing_snapshot.py` for plumbing and the in-repo v1 warm-floor seed.
+- **Production / Render** (when `PUBLIC_SNAPSHOT_BASE_URL` or `VITE_API_BASE_URL` is set): fetches `GET /api/public/catalog/plumbing/snapshot`, `GET /api/public/catalog/warm-floor/snapshot`, and `GET /api/public/catalog/flooring/snapshot` from the backend, validates all three public payloads, and writes `admin-ui/src/features/public/generated/*.snapshot.json`. If any fetch or validation fails, the build **must fail** (no seed fallback).
+- **Local build** (neither env var set): deterministic seed fallback via `tools/generate_plumbing_snapshot.py` for plumbing and the in-repo v1 warm-floor and flooring seeds.
 
 Warm-floor rates are managed in Admin (`/catalog-editor`, tab "Тёплый пол") and published through `GET /api/public/catalog/warm-floor/snapshot`, same production flow as plumbing.
 
@@ -403,7 +403,7 @@ admin-ui/dist
 VITE_API_BASE_URL=https://api.danko39.ru
 ```
 
-Prebuild pulls public catalog snapshots from `GET /api/public/catalog/plumbing/snapshot` and `GET /api/public/catalog/warm-floor/snapshot` on that backend (or set `PUBLIC_SNAPSHOT_BASE_URL` to the same host). Local builds without these env vars use deterministic seed fallback.
+Prebuild pulls public catalog snapshots from `GET /api/public/catalog/plumbing/snapshot`, `GET /api/public/catalog/warm-floor/snapshot`, and `GET /api/public/catalog/flooring/snapshot` on that backend (or set `PUBLIC_SNAPSHOT_BASE_URL` to the same host). Local builds without these env vars use deterministic seed fallback.
 
 5. Add custom domains:
 

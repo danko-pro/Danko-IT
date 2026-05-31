@@ -24,19 +24,11 @@ import { parseEstimateDecimal, parseEstimateInteger } from "./public-estimate-ge
 import {
   estimateNumericFieldProps,
   estimateTextFieldProps,
-  normalizeEstimateCountOnBlur,
   normalizeEstimateDecimalOnBlur,
   normalizeEstimateQuantityOnBlur,
   sanitizeEstimateDecimalInput,
   sanitizeEstimateIntegerInput,
 } from "./public-estimate-input";
-import {
-  calculateFlooring,
-  type FlooringCoveringType,
-  type FlooringLayoutType,
-  type FlooringPlinthType,
-  type FlooringPreparationType,
-} from "./public-estimate-flooring";
 import { buildPublicEstimateResult } from "./estimate/engine";
 import { type EstimateSection, type EstimateSectionId } from "./public-estimate-model";
 import { classifyEstimatePackage } from "./public-estimate-package";
@@ -60,9 +52,6 @@ import {
   flooringPreparationOptions,
   GEOMETRY_STEP_HINT,
   getDefaultCeilingLightSettings,
-  getDefaultFlooringCovering,
-  getDefaultFlooringLayout,
-  getDefaultFlooringPreparation,
   getDefaultWallsCovering,
   getDefaultWallsPreparation,
   wallsCoveringOptions,
@@ -76,8 +65,6 @@ import {
   type CompletionOptionsDraft,
   type ElectricRoomDraft,
   type EstimateObjectMeta,
-  type FlooringOptionsDraft,
-  type FlooringRoomDraft,
   type LooseFurnitureOptionsDraft,
   type WallsRoomDraft,
 } from "./estimate/context";
@@ -91,7 +78,6 @@ import {
   buildDoorSummaryItems,
   buildElectricSummaryItems,
   buildEstimateTotalItems,
-  buildFlooringSummaryItems,
   buildHomeGoodsSummaryItems,
   buildLooseFurnitureSummaryItems,
   buildPlumbingCompositionItems,
@@ -103,6 +89,7 @@ import { estimateNavigationItems, formatEstimateStep, getEstimateSectionClassNam
 import { useEstimateNavigation } from "./estimate/useEstimateNavigation";
 import { useEstimateRooms } from "./estimate/useEstimateRooms";
 import { useWarmFloorEstimate } from "./estimate/useWarmFloorEstimate";
+import { useFlooringEstimate } from "./estimate/useFlooringEstimate";
 import { FlooringSection } from "./sections/flooring/FlooringSection";
 import { GeometrySection } from "./sections/geometry/GeometrySection";
 import { ObjectSection } from "./sections/object/ObjectSection";
@@ -159,17 +146,9 @@ export function PublicEstimate() {
     apartmentNumber: "",
     contact: "",
   });
-  const [flooringRooms, setFlooringRooms] = useState<Record<string, FlooringRoomDraft>>({});
   const [wallsRooms, setWallsRooms] = useState<Record<string, WallsRoomDraft>>({});
   const [ceilingRooms, setCeilingRooms] = useState<Record<string, CeilingRoomDraft>>({});
   const [electricRooms, setElectricRooms] = useState<Record<string, ElectricRoomDraft>>({});
-  const [flooringOptions, setFlooringOptions] = useState<FlooringOptionsDraft>({
-    includePlinth: true,
-    plinthType: "duropolymer",
-    includeThresholds: false,
-    thresholdCount: "0",
-    includeDemolition: false,
-  });
   const [electricOptions, setElectricOptions] = useState<ElectricOptions>({
     includeKitchenOutputs: true,
     includeSwitchboard: true,
@@ -255,16 +234,24 @@ export function PublicEstimate() {
     onWarmFloorAreaChange,
     onWarmFloorAreaBlur,
   } = useWarmFloorEstimate({ rooms, roomInputs });
+  const {
+    flooringRooms,
+    flooringOptions,
+    flooringResult,
+    flooringSummaryItems,
+    removeFlooringRoom,
+    onFlooringRoomIncludedChange,
+    onFlooringCoveringChange,
+    onFlooringPreparationChange,
+    onFlooringLayoutChange,
+    onFlooringOptionsChange,
+    onFlooringThresholdCountChange,
+    onFlooringThresholdCountBlur,
+  } = useFlooringEstimate({ rooms, roomInputs, roomGeometries });
   const purgeRoomFromRelatedState = useCallback(
     (roomId: string) => {
       removeWarmFloorRoom(roomId);
-      setFlooringRooms((currentRooms) => {
-        const nextRooms = { ...currentRooms };
-
-        delete nextRooms[roomId];
-
-        return nextRooms;
-      });
+      removeFlooringRoom(roomId);
       setWallsRooms((currentRooms) => {
         const nextRooms = { ...currentRooms };
 
@@ -287,42 +274,11 @@ export function PublicEstimate() {
         return nextRooms;
       });
     },
-    [removeWarmFloorRoom],
+    [removeFlooringRoom, removeWarmFloorRoom],
   );
   const handleRemoveRoom = useCallback(
     (roomId: string) => removeRoom(roomId, purgeRoomFromRelatedState),
     [removeRoom, purgeRoomFromRelatedState],
-  );
-  const flooringRoomInputs = useMemo(
-    () =>
-      rooms.map((room, index) => {
-        const flooringDraft = flooringRooms[room.id] ?? {};
-        const coveringType = flooringDraft.coveringType ?? getDefaultFlooringCovering(room.type);
-
-        return {
-          roomId: room.id,
-          roomName: room.name.trim() || "Помещение",
-          area: roomInputs[index]?.area ?? 0,
-          perimeter: roomGeometries[index]?.perimeter ?? 0,
-          plinthLength: roomGeometries[index]?.plinthLength ?? 0,
-          coveringType,
-          preparationType: flooringDraft.preparationType ?? getDefaultFlooringPreparation(room.type),
-          layoutType: flooringDraft.layoutType ?? getDefaultFlooringLayout(coveringType),
-          isIncluded: flooringDraft.isIncluded ?? true,
-        };
-      }),
-    [flooringRooms, roomGeometries, roomInputs, rooms],
-  );
-  const flooringResult = useMemo(
-    () =>
-      calculateFlooring(flooringRoomInputs, {
-        includePlinth: flooringOptions.includePlinth,
-        plinthType: flooringOptions.plinthType,
-        includeThresholds: flooringOptions.includeThresholds,
-        thresholdCount: parseEstimateDecimal(flooringOptions.thresholdCount),
-        includeDemolition: flooringOptions.includeDemolition,
-      }),
-    [flooringOptions, flooringRoomInputs],
   );
   const wallsRoomInputs = useMemo(
     () =>
@@ -472,7 +428,6 @@ export function PublicEstimate() {
   const estimateTotalItems = buildEstimateTotalItems(estimateResult.totals);
   const packageClassification = classifyEstimatePackage(estimateResult.totals.pricePerSquareMeter);
 
-  const flooringSummaryItems = buildFlooringSummaryItems(flooringResult);
   const wallsSummaryItems = buildWallsSummaryItems(wallsResult);
   const ceilingSummaryItems = buildCeilingSummaryItems(ceilingResult);
   const electricSummaryItems = buildElectricSummaryItems(electricResult);
@@ -519,30 +474,6 @@ export function PublicEstimate() {
 
   function closeSpecModal() {
     setSpecModal(null);
-  }
-
-  function updateFlooringRoom(roomId: string, patch: FlooringRoomDraft) {
-    setFlooringRooms((currentRooms) => ({
-      ...currentRooms,
-      [roomId]: {
-        ...currentRooms[roomId],
-        ...patch,
-      },
-    }));
-  }
-
-  function updateFlooringCovering(roomId: string, coveringType: FlooringCoveringType) {
-    updateFlooringRoom(roomId, {
-      coveringType,
-      layoutType: getDefaultFlooringLayout(coveringType),
-    });
-  }
-
-  function updateFlooringOptions(patch: Partial<FlooringOptionsDraft>) {
-    setFlooringOptions((currentOptions) => ({
-      ...currentOptions,
-      ...patch,
-    }));
   }
 
   function updateWallsRoom(roomId: string, patch: WallsRoomDraft) {
@@ -779,19 +710,13 @@ export function PublicEstimate() {
             flooringPlinthOptions={flooringPlinthOptions}
             numberFieldProps={estimateNumericFieldProps}
             flooringSummaryItems={flooringSummaryItems}
-            onFlooringRoomIncludedChange={(roomId, isIncluded) => updateFlooringRoom(roomId, { isIncluded })}
-            onFlooringCoveringChange={updateFlooringCovering}
-            onFlooringPreparationChange={(roomId, preparationType) =>
-              updateFlooringRoom(roomId, { preparationType })
-            }
-            onFlooringLayoutChange={(roomId, layoutType) => updateFlooringRoom(roomId, { layoutType })}
-            onFlooringOptionsChange={updateFlooringOptions}
-            onFlooringThresholdCountChange={(event) =>
-              updateFlooringOptions({ thresholdCount: sanitizeEstimateIntegerInput(event.target.value) })
-            }
-            onFlooringThresholdCountBlur={(event) =>
-              updateFlooringOptions({ thresholdCount: normalizeEstimateCountOnBlur(event.target.value) })
-            }
+            onFlooringRoomIncludedChange={onFlooringRoomIncludedChange}
+            onFlooringCoveringChange={onFlooringCoveringChange}
+            onFlooringPreparationChange={onFlooringPreparationChange}
+            onFlooringLayoutChange={onFlooringLayoutChange}
+            onFlooringOptionsChange={onFlooringOptionsChange}
+            onFlooringThresholdCountChange={onFlooringThresholdCountChange}
+            onFlooringThresholdCountBlur={onFlooringThresholdCountBlur}
             onOpenSectionSpec={() => openSectionSpec("flooring")}
           />
 

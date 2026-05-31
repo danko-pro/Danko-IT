@@ -1,5 +1,4 @@
 import { useCallback, useMemo, useState } from "react";
-import { calculateCeiling } from "./public-estimate-ceiling";
 import { calculateCompletion, type CompletionOptions } from "./public-estimate-completion";
 import {
   applianceItemCatalog,
@@ -50,7 +49,6 @@ import {
   flooringPlinthOptions,
   flooringPreparationOptions,
   GEOMETRY_STEP_HINT,
-  getDefaultCeilingLightSettings,
   wallsCoveringOptions,
   wallsPreparationOptions,
 } from "./estimate/defaults";
@@ -58,7 +56,6 @@ import {
   normalizeAppliancesOptionsDraft,
   normalizeLooseFurnitureOptionsDraft,
   type AppliancesOptionsDraft,
-  type CeilingRoomDraft,
   type CompletionOptionsDraft,
   type ElectricRoomDraft,
   type EstimateObjectMeta,
@@ -67,7 +64,6 @@ import {
 import { buildEstimateSpecModalData } from "./estimate/spec";
 import {
   buildAppliancesSummaryItems,
-  buildCeilingSummaryItems,
   buildCompactVolumeItems,
   buildCompletionSummaryItems,
   buildDoorCompositionItems,
@@ -86,6 +82,7 @@ import { useEstimateRooms } from "./estimate/useEstimateRooms";
 import { useWarmFloorEstimate } from "./estimate/useWarmFloorEstimate";
 import { useFlooringEstimate } from "./estimate/useFlooringEstimate";
 import { useWallsEstimate } from "./estimate/useWallsEstimate";
+import { useCeilingEstimate } from "./estimate/useCeilingEstimate";
 import { FlooringSection } from "./sections/flooring/FlooringSection";
 import { GeometrySection } from "./sections/geometry/GeometrySection";
 import { ObjectSection } from "./sections/object/ObjectSection";
@@ -142,7 +139,6 @@ export function PublicEstimate() {
     apartmentNumber: "",
     contact: "",
   });
-  const [ceilingRooms, setCeilingRooms] = useState<Record<string, CeilingRoomDraft>>({});
   const [electricRooms, setElectricRooms] = useState<Record<string, ElectricRoomDraft>>({});
   const [electricOptions, setElectricOptions] = useState<ElectricOptions>({
     includeKitchenOutputs: true,
@@ -252,18 +248,21 @@ export function PublicEstimate() {
     onWallsCoveringChange,
     onWallsPreparationChange,
   } = useWallsEstimate({ rooms, roomGeometries });
+  const {
+    ceilingRooms,
+    ceilingResult,
+    ceilingSummaryItems,
+    removeCeilingRoom,
+    getCeilingLightDefaults,
+    onCeilingRoomIncludedChange,
+    onCeilingPointLightsChange,
+  } = useCeilingEstimate({ rooms, roomGeometries });
   const purgeRoomFromRelatedState = useCallback(
     (roomId: string) => {
       removeWarmFloorRoom(roomId);
       removeFlooringRoom(roomId);
       removeWallsRoom(roomId);
-      setCeilingRooms((currentRooms) => {
-        const nextRooms = { ...currentRooms };
-
-        delete nextRooms[roomId];
-
-        return nextRooms;
-      });
+      removeCeilingRoom(roomId);
       setElectricRooms((currentRooms) => {
         const nextRooms = { ...currentRooms };
 
@@ -272,31 +271,12 @@ export function PublicEstimate() {
         return nextRooms;
       });
     },
-    [removeFlooringRoom, removeWarmFloorRoom, removeWallsRoom],
+    [removeCeilingRoom, removeFlooringRoom, removeWarmFloorRoom, removeWallsRoom],
   );
   const handleRemoveRoom = useCallback(
     (roomId: string) => removeRoom(roomId, purgeRoomFromRelatedState),
     [removeRoom, purgeRoomFromRelatedState],
   );
-  const ceilingRoomInputs = useMemo(
-    () =>
-      rooms.map((room, index) => {
-        const ceilingDraft = ceilingRooms[room.id] ?? {};
-        const lightDefaults = getDefaultCeilingLightSettings(room.type);
-
-        return {
-          roomId: room.id,
-          roomName: room.name.trim() || "Помещение",
-          ceilingArea: roomGeometries[index]?.ceilingArea ?? 0,
-          isIncluded: ceilingDraft.isIncluded ?? true,
-          hasPointLights: ceilingDraft.hasPointLights ?? lightDefaults.hasPointLights,
-          squareMetersPerPoint: lightDefaults.squareMetersPerPoint,
-          minPoints: lightDefaults.minPoints,
-        };
-      }),
-    [ceilingRooms, roomGeometries, rooms],
-  );
-  const ceilingResult = useMemo(() => calculateCeiling(ceilingRoomInputs), [ceilingRoomInputs]);
   const electricRoomInputs = useMemo(
     () =>
       rooms.map((room, index) => {
@@ -409,7 +389,6 @@ export function PublicEstimate() {
   const estimateTotalItems = buildEstimateTotalItems(estimateResult.totals);
   const packageClassification = classifyEstimatePackage(estimateResult.totals.pricePerSquareMeter);
 
-  const ceilingSummaryItems = buildCeilingSummaryItems(ceilingResult);
   const electricSummaryItems = buildElectricSummaryItems(electricResult);
   const plumbingCompositionItems = buildPlumbingCompositionItems(plumbingResult);
   const plumbingSummaryItems = buildPlumbingSummaryItems(plumbingResult);
@@ -454,16 +433,6 @@ export function PublicEstimate() {
 
   function closeSpecModal() {
     setSpecModal(null);
-  }
-
-  function updateCeilingRoom(roomId: string, patch: CeilingRoomDraft) {
-    setCeilingRooms((currentRooms) => ({
-      ...currentRooms,
-      [roomId]: {
-        ...currentRooms[roomId],
-        ...patch,
-      },
-    }));
   }
 
   function updateElectricRoom(roomId: string, patch: ElectricRoomDraft) {
@@ -710,13 +679,9 @@ export function PublicEstimate() {
             ceilingResult={ceilingResult}
             ceilingRooms={ceilingRooms}
             ceilingSummaryItems={ceilingSummaryItems}
-            getCeilingLightDefaults={(roomId) =>
-              getDefaultCeilingLightSettings(
-                rooms.find((estimateRoom) => estimateRoom.id === roomId)?.type ?? "other",
-              )
-            }
-            onCeilingRoomIncludedChange={(roomId, isIncluded) => updateCeilingRoom(roomId, { isIncluded })}
-            onCeilingPointLightsChange={(roomId, hasPointLights) => updateCeilingRoom(roomId, { hasPointLights })}
+            getCeilingLightDefaults={getCeilingLightDefaults}
+            onCeilingRoomIncludedChange={onCeilingRoomIncludedChange}
+            onCeilingPointLightsChange={onCeilingPointLightsChange}
             onOpenSectionSpec={() => openSectionSpec("ceiling")}
           />
 

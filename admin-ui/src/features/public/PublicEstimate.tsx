@@ -1,5 +1,4 @@
 import { useCallback, useMemo, useState } from "react";
-import { calculateCompletion, type CompletionOptions } from "./public-estimate-completion";
 import {
   applianceItemCatalog,
   calculateAppliances,
@@ -17,13 +16,11 @@ import {
   type LooseFurnitureOptions,
 } from "./public-estimate-loose-furniture";
 import { calculateHomeGoods, createDefaultHomeGoodsOptions, type HomeGoodsOptions } from "./public-estimate-home-goods";
-import { parseEstimateDecimal, parseEstimateInteger } from "./public-estimate-geometry";
+import { parseEstimateInteger } from "./public-estimate-geometry";
 import {
   estimateNumericFieldProps,
   estimateTextFieldProps,
-  normalizeEstimateDecimalOnBlur,
   normalizeEstimateQuantityOnBlur,
-  sanitizeEstimateDecimalInput,
   sanitizeEstimateIntegerInput,
 } from "./public-estimate-input";
 import { buildPublicEstimateResult } from "./estimate/engine";
@@ -43,7 +40,6 @@ import {
   normalizeAppliancesOptionsDraft,
   normalizeLooseFurnitureOptionsDraft,
   type AppliancesOptionsDraft,
-  type CompletionOptionsDraft,
   type EstimateObjectMeta,
   type LooseFurnitureOptionsDraft,
 } from "./estimate/context";
@@ -51,7 +47,6 @@ import { buildEstimateSpecModalData } from "./estimate/spec";
 import {
   buildAppliancesSummaryItems,
   buildCompactVolumeItems,
-  buildCompletionSummaryItems,
   buildEstimateTotalItems,
   buildHomeGoodsSummaryItems,
   buildLooseFurnitureSummaryItems,
@@ -67,6 +62,7 @@ import { useCeilingEstimate } from "./estimate/useCeilingEstimate";
 import { useElectricEstimate } from "./estimate/useElectricEstimate";
 import { usePlumbingEstimate } from "./estimate/usePlumbingEstimate";
 import { useDoorsEstimate } from "./estimate/useDoorsEstimate";
+import { useCompletionEstimate } from "./estimate/useCompletionEstimate";
 import { FlooringSection } from "./sections/flooring/FlooringSection";
 import { GeometrySection } from "./sections/geometry/GeometrySection";
 import { ObjectSection } from "./sections/object/ObjectSection";
@@ -122,14 +118,6 @@ export function PublicEstimate() {
     complexName: "",
     apartmentNumber: "",
     contact: "",
-  });
-  const [completionOptions, setCompletionOptions] = useState<CompletionOptionsDraft>({
-    includeKitchenBase: false,
-    kitchenLengthMeters: "5",
-    includeKitchenAppliancePenal: false,
-    includeKitchenFridgePenal: false,
-    includeWardrobe: false,
-    includeBathroomFurniture: false,
   });
   const [appliancesOptions, setAppliancesOptions] = useState<AppliancesOptionsDraft>(() =>
     createDefaultAppliancesOptionsDraft(),
@@ -261,6 +249,18 @@ export function PublicEstimate() {
     onIncludeLogisticsChange,
     onIncludeInstallationChange,
   } = useDoorsEstimate({ rooms, roomInputs });
+  const {
+    completionOptions,
+    completionResult,
+    completionSummaryItems,
+    onIncludeKitchenBaseChange,
+    onKitchenLengthMetersChange,
+    onKitchenLengthMetersBlur,
+    onIncludeKitchenAppliancePenalChange,
+    onIncludeKitchenFridgePenalChange,
+    onIncludeWardrobeChange,
+    onIncludeBathroomFurnitureChange,
+  } = useCompletionEstimate();
   const purgeRoomFromRelatedState = useCallback(
     (roomId: string) => {
       removeWarmFloorRoom(roomId);
@@ -274,14 +274,6 @@ export function PublicEstimate() {
   const handleRemoveRoom = useCallback(
     (roomId: string) => removeRoom(roomId, purgeRoomFromRelatedState),
     [removeRoom, purgeRoomFromRelatedState],
-  );
-  const completionResult = useMemo(
-    () =>
-      calculateCompletion({
-        ...completionOptions,
-        kitchenLengthMeters: parseEstimateDecimal(completionOptions.kitchenLengthMeters),
-      }),
-    [completionOptions],
   );
   const normalizedAppliancesOptions = useMemo(
     () => normalizeAppliancesOptionsDraft(appliancesOptions),
@@ -340,7 +332,6 @@ export function PublicEstimate() {
   const estimateTotalItems = buildEstimateTotalItems(estimateResult.totals);
   const packageClassification = classifyEstimatePackage(estimateResult.totals.pricePerSquareMeter);
 
-  const completionSummaryItems = buildCompletionSummaryItems(completionResult);
   const appliancesSummaryItems = buildAppliancesSummaryItems(appliancesResult);
   const looseFurnitureSummaryItems = buildLooseFurnitureSummaryItems(looseFurnitureResult);
   const homeGoodsSummaryItems = buildHomeGoodsSummaryItems(homeGoodsResult);
@@ -379,13 +370,6 @@ export function PublicEstimate() {
 
   function closeSpecModal() {
     setSpecModal(null);
-  }
-
-  function updateCompletionOptions(patch: Partial<CompletionOptionsDraft>) {
-    setCompletionOptions((currentOptions) => ({
-      ...currentOptions,
-      ...patch,
-    }));
   }
 
   function updateAppliancesOptions(patch: Partial<Pick<AppliancesOptions, "packageLevel" | "fridgeVariant">>) {
@@ -667,23 +651,13 @@ export function PublicEstimate() {
             completionResult={completionResult}
             completionSummaryItems={completionSummaryItems}
             numberFieldProps={estimateNumericFieldProps}
-            onIncludeKitchenBaseChange={(checked) => updateCompletionOptions({ includeKitchenBase: checked })}
-            onKitchenLengthMetersChange={(value) =>
-              updateCompletionOptions({ kitchenLengthMeters: sanitizeEstimateDecimalInput(value) })
-            }
-            onKitchenLengthMetersBlur={(value) =>
-              updateCompletionOptions({ kitchenLengthMeters: normalizeEstimateDecimalOnBlur(value) })
-            }
-            onIncludeKitchenAppliancePenalChange={(checked) =>
-              updateCompletionOptions({ includeKitchenAppliancePenal: checked })
-            }
-            onIncludeKitchenFridgePenalChange={(checked) =>
-              updateCompletionOptions({ includeKitchenFridgePenal: checked })
-            }
-            onIncludeWardrobeChange={(checked) => updateCompletionOptions({ includeWardrobe: checked })}
-            onIncludeBathroomFurnitureChange={(checked) =>
-              updateCompletionOptions({ includeBathroomFurniture: checked })
-            }
+            onIncludeKitchenBaseChange={onIncludeKitchenBaseChange}
+            onKitchenLengthMetersChange={onKitchenLengthMetersChange}
+            onKitchenLengthMetersBlur={onKitchenLengthMetersBlur}
+            onIncludeKitchenAppliancePenalChange={onIncludeKitchenAppliancePenalChange}
+            onIncludeKitchenFridgePenalChange={onIncludeKitchenFridgePenalChange}
+            onIncludeWardrobeChange={onIncludeWardrobeChange}
+            onIncludeBathroomFurnitureChange={onIncludeBathroomFurnitureChange}
             onOpenSectionSpec={() => openSectionSpec("completion")}
           />
 

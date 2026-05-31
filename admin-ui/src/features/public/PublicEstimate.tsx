@@ -1,7 +1,7 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo } from "react";
 import { estimateNumericFieldProps, estimateTextFieldProps } from "./public-estimate-input";
 import { buildPublicEstimateResult } from "./estimate/engine";
-import { type EstimateSection, type EstimateSectionId } from "./public-estimate-model";
+import { type EstimateSection } from "./public-estimate-model";
 import { classifyEstimatePackage } from "./public-estimate-package";
 import {
   doorPackageOptions,
@@ -13,7 +13,8 @@ import {
   wallsCoveringOptions,
   wallsPreparationOptions,
 } from "./estimate/defaults";
-import { buildEstimateSpecModalData } from "./estimate/spec";
+import { useEstimateSpecModal } from "./estimate/useEstimateSpecModal";
+import { useEstimatePrintActions } from "./estimate/useEstimatePrintActions";
 import {
   buildCompactVolumeItems,
   buildEstimateTotalItems,
@@ -63,9 +64,6 @@ export function PublicEstimate() {
     onApartmentNumberChange,
     onContactChange,
   } = useEstimateObjectMeta();
-  const [specModal, setSpecModal] = useState<{ kind: "section" | "full"; sectionId?: EstimateSectionId } | null>(
-    null,
-  );
   const {
     activeEstimateSection,
     estimateRailScrollRef,
@@ -293,44 +291,13 @@ export function PublicEstimate() {
     looseFurnitureResult.section,
     homeGoodsResult.section,
   ];
-  const specModalData = useMemo(
-    () =>
-      buildEstimateSpecModalData({
-        specModal,
-        allEstimateSections,
-        estimateResult,
-        plumbingOptions,
-        plumbingResult,
-      }),
-    [allEstimateSections, estimateResult, plumbingOptions, plumbingResult, specModal],
-  );
-
-  function openSectionSpec(sectionId: EstimateSectionId) {
-    setSpecModal({ kind: "section", sectionId });
-  }
-
-  function openFullSpec() {
-    setSpecModal({ kind: "full" });
-  }
-
-  function closeSpecModal() {
-    setSpecModal(null);
-  }
-
-  function handlePrintEstimate() {
-    window.print();
-  }
-
-  function handlePrintVolumes() {
-    document.body.classList.add("public-estimate-print-volumes");
-
-    const cleanup = () => {
-      document.body.classList.remove("public-estimate-print-volumes");
-    };
-
-    window.addEventListener("afterprint", cleanup, { once: true });
-    window.print();
-  }
+  const { specModalData, openSectionSpec, openFullSpec, closeSpecModal } = useEstimateSpecModal({
+    allEstimateSections,
+    estimateResult,
+    plumbingOptions,
+    plumbingResult,
+  });
+  const { handlePrintEstimate, handlePrintVolumes } = useEstimatePrintActions();
 
   return (
     <main className="public-landing public-estimate-page">

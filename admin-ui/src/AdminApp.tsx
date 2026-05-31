@@ -8,6 +8,7 @@ import { AppScreenRouter, preloadAppScreen } from "./shell/screen-router";
 import { AppShellFooter } from "./shell/footer";
 import { AppShellHeader } from "./shell/header";
 import { AppShellSidebar } from "./shell/sidebar";
+import { isAdminRoleSession } from "./shared/utils";
 
 // Внутренний редактор каталога. Доступен только за auth-gate (см. ветку catalogEditor ниже),
 // грузится лениво, чтобы не попадать в основной shell-бандл.
@@ -19,8 +20,7 @@ function isNavigationScreen(screen: ScreenKey): screen is NavigationScreenKey {
 
 export default function AdminApp({ catalogEditor = false }: { catalogEditor?: boolean }) {
   const controller = useAdminAppController();
-  const requiresLogin = controller.authSession?.auth_enabled && !controller.authSession.authenticated;
-  const showAuthGate = !controller.authLoading && (!controller.authSession || requiresLogin);
+  const showAuthGate = !controller.authLoading && !isAdminRoleSession(controller.authSession);
 
   const { screen, summary, successMessage, setSuccessMessage, loadOverview, loadCalculatorProjects } = controller;
   const isEditorScreen = screen === "editor";

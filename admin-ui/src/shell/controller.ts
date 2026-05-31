@@ -3,9 +3,11 @@ import { useAdminCalculatorController } from "../features/calculator/app/use";
 import { useAdminMaterialsController } from "../features/materials/controller";
 import { useAdminRequestsController } from "../features/requests/controller";
 import type { AdminAuthSession, DeliverySettings, GroupProfile, ScreenKey, Summary } from "../shared/types";
-import { ApiError, fetchJson, isAuthenticatedSession } from "../shared/utils";
+import { ApiError, fetchJson, isAdminRoleSession, isAuthenticatedSession } from "../shared/utils";
 
 // Основной orchestration-слой admin UI: shell, auth, overview и сборка доменных hooks.
+const ADMIN_ACCESS_REQUIRED_MESSAGE = "Нет доступа к админке.";
+
 export function useAdminAppController() {
   const [screen, setScreen] = useState<ScreenKey>("dashboard");
   const [authSession, setAuthSession] = useState<AdminAuthSession | null>(null);
@@ -66,8 +68,13 @@ export function useAdminAppController() {
       const session = await fetchJson<AdminAuthSession>("/api/auth/session");
       setAuthSession(session);
 
-      if (isAuthenticatedSession(session)) {
+      if (isAdminRoleSession(session)) {
         await loadOverview();
+        return;
+      }
+
+      if (isAuthenticatedSession(session)) {
+        await rejectNonAdminSession(session);
         return;
       }
 
@@ -152,9 +159,12 @@ export function useAdminAppController() {
       });
       setAuthSession(session);
 
-      if (isAuthenticatedSession(session)) {
-        await loadOverview();
+      if (!isAdminRoleSession(session)) {
+        await rejectNonAdminSession(session);
+        return;
       }
+
+      await loadOverview();
     } catch (loginError) {
       if (loginError instanceof ApiError && loginError.status === 401) {
         setAuthError("Неверная почта или пароль.");
@@ -176,9 +186,12 @@ export function useAdminAppController() {
       });
       setAuthSession(session);
 
-      if (isAuthenticatedSession(session)) {
-        await loadOverview();
+      if (!isAdminRoleSession(session)) {
+        await rejectNonAdminSession(session);
+        return;
       }
+
+      await loadOverview();
     } catch (registerError) {
       if (registerError instanceof ApiError && registerError.status === 409) {
         setAuthError("Этот email уже зарегистрирован.");
@@ -187,6 +200,35 @@ export function useAdminAppController() {
       setAuthError(registerError instanceof Error ? registerError.message : "Не удалось зарегистрироваться");
     } finally {
       setAuthPending(false);
+    }
+  }
+
+  async function rejectNonAdminSession(session: AdminAuthSession | null) {
+    setAuthSession(
+      session
+        ? {
+            ...session,
+            authenticated: false,
+            user: null,
+            expires_at: null,
+          }
+        : {
+            auth_enabled: true,
+            authenticated: false,
+            mode: "session",
+            user: null,
+            expires_at: null,
+          },
+    );
+    setAuthError(ADMIN_ACCESS_REQUIRED_MESSAGE);
+    setLoading(false);
+
+    try {
+      await fetchJson<AdminAuthSession>("/api/auth/logout", {
+        method: "POST",
+      });
+    } catch {
+      // Keep the UI gate closed even if cookie cleanup fails.
     }
   }
 

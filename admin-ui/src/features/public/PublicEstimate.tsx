@@ -18,7 +18,6 @@ import {
 } from "./public-estimate-loose-furniture";
 import { calculateHomeGoods, createDefaultHomeGoodsOptions, type HomeGoodsOptions } from "./public-estimate-home-goods";
 import { calculateDoors, type DoorOptions } from "./public-estimate-doors";
-import { calculateElectric, type ElectricOptions } from "./public-estimate-electric";
 import { parseEstimateDecimal, parseEstimateInteger } from "./public-estimate-geometry";
 import {
   estimateNumericFieldProps,
@@ -57,7 +56,6 @@ import {
   normalizeLooseFurnitureOptionsDraft,
   type AppliancesOptionsDraft,
   type CompletionOptionsDraft,
-  type ElectricRoomDraft,
   type EstimateObjectMeta,
   type LooseFurnitureOptionsDraft,
 } from "./estimate/context";
@@ -68,7 +66,6 @@ import {
   buildCompletionSummaryItems,
   buildDoorCompositionItems,
   buildDoorSummaryItems,
-  buildElectricSummaryItems,
   buildEstimateTotalItems,
   buildHomeGoodsSummaryItems,
   buildLooseFurnitureSummaryItems,
@@ -83,6 +80,7 @@ import { useWarmFloorEstimate } from "./estimate/useWarmFloorEstimate";
 import { useFlooringEstimate } from "./estimate/useFlooringEstimate";
 import { useWallsEstimate } from "./estimate/useWallsEstimate";
 import { useCeilingEstimate } from "./estimate/useCeilingEstimate";
+import { useElectricEstimate } from "./estimate/useElectricEstimate";
 import { FlooringSection } from "./sections/flooring/FlooringSection";
 import { GeometrySection } from "./sections/geometry/GeometrySection";
 import { ObjectSection } from "./sections/object/ObjectSection";
@@ -138,11 +136,6 @@ export function PublicEstimate() {
     complexName: "",
     apartmentNumber: "",
     contact: "",
-  });
-  const [electricRooms, setElectricRooms] = useState<Record<string, ElectricRoomDraft>>({});
-  const [electricOptions, setElectricOptions] = useState<ElectricOptions>({
-    includeKitchenOutputs: true,
-    includeSwitchboard: true,
   });
   const [plumbingOptions, setPlumbingOptions] = useState<PlumbingOptions>({
     includeBathroomSet: true,
@@ -257,46 +250,29 @@ export function PublicEstimate() {
     onCeilingRoomIncludedChange,
     onCeilingPointLightsChange,
   } = useCeilingEstimate({ rooms, roomGeometries });
+  const {
+    electricRooms,
+    electricOptions,
+    electricResult,
+    electricSummaryItems,
+    removeElectricRoom,
+    onElectricRoomIncludedChange,
+    onElectricKitchenOutputsChange,
+    onElectricSwitchboardChange,
+  } = useElectricEstimate({ rooms, roomInputs, ceilingResult });
   const purgeRoomFromRelatedState = useCallback(
     (roomId: string) => {
       removeWarmFloorRoom(roomId);
       removeFlooringRoom(roomId);
       removeWallsRoom(roomId);
       removeCeilingRoom(roomId);
-      setElectricRooms((currentRooms) => {
-        const nextRooms = { ...currentRooms };
-
-        delete nextRooms[roomId];
-
-        return nextRooms;
-      });
+      removeElectricRoom(roomId);
     },
-    [removeCeilingRoom, removeFlooringRoom, removeWarmFloorRoom, removeWallsRoom],
+    [removeCeilingRoom, removeElectricRoom, removeFlooringRoom, removeWarmFloorRoom, removeWallsRoom],
   );
   const handleRemoveRoom = useCallback(
     (roomId: string) => removeRoom(roomId, purgeRoomFromRelatedState),
     [removeRoom, purgeRoomFromRelatedState],
-  );
-  const electricRoomInputs = useMemo(
-    () =>
-      rooms.map((room, index) => {
-        const electricDraft = electricRooms[room.id] ?? {};
-        const ceilingRoom = ceilingResult.roomResults.find((ceilingResultRoom) => ceilingResultRoom.roomId === room.id);
-
-        return {
-          roomId: room.id,
-          roomName: room.name.trim() || "Помещение",
-          roomType: room.type,
-          area: roomInputs[index]?.area ?? 0,
-          isIncluded: electricDraft.isIncluded ?? true,
-          ceilingPointCount: ceilingRoom?.pointCount ?? 1,
-        };
-      }),
-    [ceilingResult.roomResults, electricRooms, roomInputs, rooms],
-  );
-  const electricResult = useMemo(
-    () => calculateElectric(electricRoomInputs, electricOptions),
-    [electricOptions, electricRoomInputs],
   );
   const plumbingRoomInputs = useMemo(
     () =>
@@ -389,7 +365,6 @@ export function PublicEstimate() {
   const estimateTotalItems = buildEstimateTotalItems(estimateResult.totals);
   const packageClassification = classifyEstimatePackage(estimateResult.totals.pricePerSquareMeter);
 
-  const electricSummaryItems = buildElectricSummaryItems(electricResult);
   const plumbingCompositionItems = buildPlumbingCompositionItems(plumbingResult);
   const plumbingSummaryItems = buildPlumbingSummaryItems(plumbingResult);
   const doorCompositionItems = buildDoorCompositionItems(doorsResult, doorOptions);
@@ -433,23 +408,6 @@ export function PublicEstimate() {
 
   function closeSpecModal() {
     setSpecModal(null);
-  }
-
-  function updateElectricRoom(roomId: string, patch: ElectricRoomDraft) {
-    setElectricRooms((currentRooms) => ({
-      ...currentRooms,
-      [roomId]: {
-        ...currentRooms[roomId],
-        ...patch,
-      },
-    }));
-  }
-
-  function updateElectricOptions(patch: Partial<ElectricOptions>) {
-    setElectricOptions((currentOptions) => ({
-      ...currentOptions,
-      ...patch,
-    }));
   }
 
   function updatePlumbingOptions(patch: Partial<PlumbingOptions>) {
@@ -692,11 +650,9 @@ export function PublicEstimate() {
             electricRooms={electricRooms}
             electricOptions={electricOptions}
             electricSummaryItems={electricSummaryItems}
-            onElectricRoomIncludedChange={(roomId, isIncluded) => updateElectricRoom(roomId, { isIncluded })}
-            onElectricKitchenOutputsChange={(includeKitchenOutputs) =>
-              updateElectricOptions({ includeKitchenOutputs })
-            }
-            onElectricSwitchboardChange={(includeSwitchboard) => updateElectricOptions({ includeSwitchboard })}
+            onElectricRoomIncludedChange={onElectricRoomIncludedChange}
+            onElectricKitchenOutputsChange={onElectricKitchenOutputsChange}
+            onElectricSwitchboardChange={onElectricSwitchboardChange}
             onOpenSectionSpec={() => openSectionSpec("electric")}
           />
 

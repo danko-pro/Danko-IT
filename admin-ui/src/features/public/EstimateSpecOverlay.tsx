@@ -1,11 +1,12 @@
 import { useEffect, useId, useRef } from "react";
 import { createPortal } from "react-dom";
 import type { EstimateSection } from "./public-estimate-model";
+import type { EstimateSpecSection } from "./public-estimate-plumbing-zones";
 
 type EstimateSpecOverlayProps = {
   title: string;
   subtitle?: string;
-  sections: EstimateSection[];
+  sections: EstimateSpecSection[];
   formatMoney: (value: number) => string;
   formatQuantity: (value: number) => string;
   onClose: () => void;
@@ -145,16 +146,27 @@ export function EstimateSpecOverlay({
                     <strong>{formatMoney(section.totals.total)}</strong>
                   </div>
                 ) : null}
+                {section.specIntro ? (
+                  <p className="public-estimate-spec-modal-intro">{section.specIntro}</p>
+                ) : null}
                 <ul className="public-estimate-spec-modal-list">
-                  {section.items.map((item) => (
-                    <li key={item.id}>
-                      <span className="public-estimate-spec-modal-line-title">{item.title}</span>
-                      <span className="public-estimate-spec-modal-line-meta">
-                        {formatQuantity(item.quantity)} {item.unit} × {formatMoney(item.unitPrice)}
-                      </span>
-                      <strong>{formatMoney(item.total)}</strong>
-                    </li>
-                  ))}
+                  {section.items.map((item) => {
+                    const pricePending = item.note === "уточняется";
+                    return (
+                      <li key={item.id}>
+                        <span className="public-estimate-spec-modal-line-title">{item.title}</span>
+                        <span className="public-estimate-spec-modal-line-meta">
+                          {formatQuantity(item.quantity)} {item.unit}
+                          {pricePending ? (
+                            <> · уточняется</>
+                          ) : (
+                            <> × {formatMoney(item.unitPrice)}</>
+                          )}
+                        </span>
+                        <strong>{pricePending ? "—" : formatMoney(item.total)}</strong>
+                      </li>
+                    );
+                  })}
                 </ul>
               </div>
             ))

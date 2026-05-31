@@ -23,6 +23,10 @@ function isPublicEstimate(pathname: string) {
   return pathname === "/estimate";
 }
 
+function isCatalogEditor(pathname: string) {
+  return pathname === "/catalog-editor";
+}
+
 export default function App() {
   const pathname = normalizePathname(window.location.pathname);
 
@@ -36,6 +40,16 @@ export default function App() {
 
   if (isPublicEstimate(pathname)) {
     return <PublicEstimate />;
+  }
+
+  // Редактор каталога монтируется внутри AdminApp за auth-gate (require_admin_session),
+  // публичного доступа без авторизации больше нет. Lazy-загрузка сохранена.
+  if (isCatalogEditor(pathname)) {
+    return (
+      <Suspense fallback={<div className="public-admin-loading" aria-hidden="true" />}>
+        <AdminApp catalogEditor />
+      </Suspense>
+    );
   }
 
   return (

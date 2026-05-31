@@ -27,6 +27,16 @@ from supply_bot.admin_api.schemas.calculator_flooring import (
     CalculatorFlooringRoomPayload,
     CalculatorFlooringUpdatePayload,
 )
+from supply_bot.admin_api.schemas.calculator_plumbing import (
+    PlumbingCatalogItemCreatePayload,
+    PlumbingCatalogItemUpdatePayload,
+    PlumbingZoneCreatePayload,
+    PlumbingZoneItemPayload,
+    PlumbingZoneItemsReplacePayload,
+    PlumbingZonePackagePayload,
+    PlumbingZonePackagesReplacePayload,
+    PlumbingZoneUpdatePayload,
+)
 from supply_bot.admin_api.schemas.materials import (
     AliasCreatePayload,
     FamilyCreatePayload,
@@ -91,6 +101,14 @@ __all__ = [
     "ProjectLedgerEntryCreatePayload",
     "ProjectLedgerEntryUpdatePayload",
     "ProjectUpdatePayload",
+    "PlumbingCatalogItemCreatePayload",
+    "PlumbingCatalogItemUpdatePayload",
+    "PlumbingZoneCreatePayload",
+    "PlumbingZoneItemPayload",
+    "PlumbingZoneItemsReplacePayload",
+    "PlumbingZonePackagePayload",
+    "PlumbingZonePackagesReplacePayload",
+    "PlumbingZoneUpdatePayload",
     "PublicLeadPayload",
     "RequestActionResult",
     "RequestDeliveryPayload",

@@ -1,4 +1,7 @@
 import { publicHeroFacts } from "../public-content";
+import { PublicHeroActions } from "./hero/PublicHeroActions";
+import { PublicHeroFacts } from "./hero/PublicHeroFacts";
+import { PublicHeroVisual } from "./hero/PublicHeroVisual";
 
 export function PublicHero() {
   return (
@@ -52,53 +55,12 @@ export function PublicHero() {
           апартаментами и инвесторскими проектами.
         </p>
 
-        <div className="public-hero-actions" aria-label="Основные действия">
-          <a className="public-action public-hero-primary" href="/estimate">
-            Рассчитать стоимость
-          </a>
-          <a className="public-hero-secondary" href="#projects">
-            Посмотреть объекты
-          </a>
-        </div>
+        <PublicHeroActions />
 
-        <ul className="public-hero-facts" aria-label="Факты о работе Danko">
-          {publicHeroFacts.map((fact) => (
-            <li className="public-hero-fact" key={fact}>
-              <span>{fact}</span>
-            </li>
-          ))}
-        </ul>
+        <PublicHeroFacts facts={publicHeroFacts} />
       </div>
 
-      <div className="public-calc-shell">
-        <aside className="public-calc-card" aria-label="Клиентский калькулятор сметы">
-          <img className="public-calc-image" src="/brand/1.jpg" alt="" aria-hidden="true" />
-
-          <div className="public-calc-head">
-            <p className="public-calc-kicker">Клиентский калькулятор</p>
-            <span className="public-calc-badge">PDF-смета</span>
-          </div>
-
-          <h2 className="public-calc-title">Смета для старта ремонта</h2>
-
-          <div className="public-calc-route" aria-hidden="true">
-            <span>Состав</span>
-            <span>PDF</span>
-            <strong>Старт</strong>
-          </div>
-
-          <a className="public-action public-calc-cta" href="/estimate">
-            Открыть калькулятор
-          </a>
-          <p className="public-calc-note">
-            Перед запуском команда проверит вводные и подтвердит рабочую смету.
-          </p>
-        </aside>
-
-        <p className="public-calc-promise">
-          <span className="public-calc-promise-text">Рассчитайте свой ремонт.</span>
-        </p>
-      </div>
+      <PublicHeroVisual />
     </section>
   );
 }

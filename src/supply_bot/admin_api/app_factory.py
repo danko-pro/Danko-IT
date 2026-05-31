@@ -27,6 +27,7 @@ from supply_bot.storage_auth import SqlAlchemyUserAuthRepository
 from supply_bot.storage_auth.tables import app_users
 from supply_bot.storage_catalog import SqlAlchemyCatalogRepository
 from supply_bot.storage_dashboard import SqlAlchemyDashboardReadModel
+from supply_bot.storage_estimates.plumbing_seed import ensure_global_plumbing_defaults
 from supply_bot.storage_estimates.runtime_repository import SqlAlchemyEstimateRuntimeRepository
 from supply_bot.storage_notifications import SqlAlchemyTelegramNotificationRepository
 from supply_bot.storage_projects import SqlAlchemyProjectWorkspaceRepository
@@ -41,6 +42,7 @@ PUBLIC_ADMIN_API_PATHS = (
     "/api/auth/register",
     "/api/auth/logout",
     "/api/public/leads",
+    "/api/public/catalog/plumbing/snapshot",
 )
 
 SYSTEM_PROJECT_OWNER_EMAIL_DOMAIN = "system.local"
@@ -124,6 +126,9 @@ def create_admin_app(settings: Settings | None = None) -> FastAPI:
         lockout_seconds=resolved_settings.admin_login_rate_limit_lockout_seconds,
     )
     app.state.public_lead_rate_limiter = PublicLeadRateLimiter(max_requests=5, window_seconds=600)
+    # Публичный снапшот каталога — read-only, дёргается на сборке (A7); лимит как у /api/public/leads,
+    # но отдельный счётчик (своя область), чтобы не конкурировать с лид-формой.
+    app.state.public_snapshot_rate_limiter = PublicLeadRateLimiter(max_requests=30, window_seconds=600)
     configure_admin_cors(app)
     configure_admin_auth(app)
     register_admin_routes(app)
@@ -242,6 +247,8 @@ def _build_admin_lifespan(
         await storage.initialize()
         if database_runtime.backend == "sqlite":
             await _claim_legacy_estimate_runtime_owner(database_runtime, owner_id=system_project_owner_id)
+        # Глобальные дефолты каталога сантехники (owner_user_id = NULL) — идемпотентный seed (A5).
+        await ensure_global_plumbing_defaults(database_runtime.session_factory)
         await storage.ensure_runtime_settings(
             delivery_start=settings.default_delivery_start.strftime("%H:%M"),
             delivery_end=settings.default_delivery_end.strftime("%H:%M"),

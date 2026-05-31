@@ -550,6 +550,124 @@ estimate_project_ceiling_items = Table(
     Column("updated_at", Text, nullable=False, server_default=text("CURRENT_TIMESTAMP")),
 )
 
+# --- Сантехника (Трек A, этап A1) ---
+# Аддитивная схема каталога сантехники по образцу ceilings: owner-scoping
+# (owner_user_id NULL = глобальный дефолт), soft-delete (is_active), partial-unique
+# индексы global/owner. Зона не хранит свою цену — агрегирует атомы; risk_percent
+# остаётся internal и запекается в публичный снапшот (см. plan §1.1, Q3).
+
+estimate_plumbing_catalog_items = Table(
+    "estimate_plumbing_catalog_items",
+    metadata,
+    Column("id", Integer, primary_key=True, autoincrement=True),
+    Column("owner_user_id", Integer, ForeignKey("app_users.id", ondelete="CASCADE"), nullable=True),
+    Column("source_code", Text, nullable=False),
+    Column("public_title", Text, nullable=False),
+    Column("technical_title", Text),
+    Column("category", Text, nullable=False),
+    Column("unit", Text, nullable=False),
+    Column("work_price", Float, nullable=False, server_default=text("0")),
+    Column("material_price", Float, nullable=False, server_default=text("0")),
+    Column("equipment_price", Float, nullable=False, server_default=text("0")),
+    Column("consumables_price", Float, nullable=False, server_default=text("0")),
+    Column("coefficient", Float, nullable=False, server_default=text("1")),
+    Column("catalog_group", Text),
+    Column("source", Text),
+    Column("note", Text),
+    Column("is_active", Integer, nullable=False, server_default=text("1")),
+    Column("sort_order", Integer, nullable=False, server_default=text("100")),
+    Column("created_at", Text, nullable=False, server_default=text("CURRENT_TIMESTAMP")),
+    Column("updated_at", Text, nullable=False, server_default=text("CURRENT_TIMESTAMP")),
+)
+
+estimate_plumbing_zones = Table(
+    "estimate_plumbing_zones",
+    metadata,
+    Column("id", Integer, primary_key=True, autoincrement=True),
+    Column("owner_user_id", Integer, ForeignKey("app_users.id", ondelete="CASCADE"), nullable=True),
+    Column("zone_code", Text, nullable=False),
+    Column("subgroup", Text, nullable=False),
+    Column("title", Text, nullable=False),
+    Column("description", Text),
+    Column("disclaimer", Text),
+    Column("risk_percent", Float, nullable=False, server_default=text("6.4")),
+    Column("active_package_code", Text),
+    Column("is_active", Integer, nullable=False, server_default=text("1")),
+    Column("sort_order", Integer, nullable=False, server_default=text("100")),
+    Column("created_at", Text, nullable=False, server_default=text("CURRENT_TIMESTAMP")),
+    Column("updated_at", Text, nullable=False, server_default=text("CURRENT_TIMESTAMP")),
+)
+
+estimate_plumbing_zone_items = Table(
+    "estimate_plumbing_zone_items",
+    metadata,
+    Column("id", Integer, primary_key=True, autoincrement=True),
+    Column("owner_user_id", Integer, ForeignKey("app_users.id", ondelete="CASCADE"), nullable=True),
+    Column("zone_id", Integer, ForeignKey("estimate_plumbing_zones.id", ondelete="CASCADE"), nullable=False),
+    Column(
+        "atomic_item_id",
+        Integer,
+        ForeignKey("estimate_plumbing_catalog_items.id", ondelete="SET NULL"),
+    ),
+    Column("atomic_source_code", Text, nullable=False),
+    Column("quantity", Float, nullable=False, server_default=text("0")),
+    Column("coefficient", Float, nullable=False, server_default=text("1")),
+    Column("sort_order", Integer, nullable=False, server_default=text("100")),
+    Column("created_at", Text, nullable=False, server_default=text("CURRENT_TIMESTAMP")),
+    Column("updated_at", Text, nullable=False, server_default=text("CURRENT_TIMESTAMP")),
+)
+
+estimate_plumbing_zone_packages = Table(
+    "estimate_plumbing_zone_packages",
+    metadata,
+    Column("id", Integer, primary_key=True, autoincrement=True),
+    Column("owner_user_id", Integer, ForeignKey("app_users.id", ondelete="CASCADE"), nullable=True),
+    Column("zone_id", Integer, ForeignKey("estimate_plumbing_zones.id", ondelete="CASCADE"), nullable=False),
+    Column("package_code", Text, nullable=False),
+    Column("label", Text),
+    Column("sort_order", Integer, nullable=False, server_default=text("100")),
+    Column("created_at", Text, nullable=False, server_default=text("CURRENT_TIMESTAMP")),
+    Column("updated_at", Text, nullable=False, server_default=text("CURRENT_TIMESTAMP")),
+)
+
+estimate_plumbing_zone_package_items = Table(
+    "estimate_plumbing_zone_package_items",
+    metadata,
+    Column("id", Integer, primary_key=True, autoincrement=True),
+    Column("owner_user_id", Integer, ForeignKey("app_users.id", ondelete="CASCADE"), nullable=True),
+    Column(
+        "package_id",
+        Integer,
+        ForeignKey("estimate_plumbing_zone_packages.id", ondelete="CASCADE"),
+        nullable=False,
+    ),
+    Column("zone_id", Integer, ForeignKey("estimate_plumbing_zones.id", ondelete="CASCADE"), nullable=False),
+    Column(
+        "atomic_item_id",
+        Integer,
+        ForeignKey("estimate_plumbing_catalog_items.id", ondelete="SET NULL"),
+    ),
+    Column("atomic_source_code", Text, nullable=False),
+    Column("quantity", Float, nullable=False, server_default=text("0")),
+    Column("coefficient", Float, nullable=False, server_default=text("1")),
+    Column("sort_order", Integer, nullable=False, server_default=text("100")),
+    Column("created_at", Text, nullable=False, server_default=text("CURRENT_TIMESTAMP")),
+    Column("updated_at", Text, nullable=False, server_default=text("CURRENT_TIMESTAMP")),
+)
+
+estimate_plumbing_catalog_audit = Table(
+    "estimate_plumbing_catalog_audit",
+    metadata,
+    Column("id", Integer, primary_key=True, autoincrement=True),
+    Column("owner_user_id", Integer, ForeignKey("app_users.id", ondelete="CASCADE"), nullable=True),
+    Column("entity_type", Text, nullable=False),
+    Column("entity_id", Integer),
+    Column("action", Text, nullable=False),
+    Column("changed_by_user_id", Integer, ForeignKey("app_users.id", ondelete="SET NULL")),
+    Column("diff_json", Text),
+    Column("created_at", Text, nullable=False, server_default=text("CURRENT_TIMESTAMP")),
+)
+
 Index(
     "ix_estimate_projects_owner_updated",
     estimate_projects.c.owner_user_id,
@@ -842,6 +960,102 @@ Index(
     estimate_project_ceiling_items.c.room_id,
 )
 
+# --- Индексы сантехники (Трек A, этап A1) ---
+Index("ix_estimate_plumbing_catalog_items_owner", estimate_plumbing_catalog_items.c.owner_user_id)
+Index("ix_estimate_plumbing_catalog_items_source_code", estimate_plumbing_catalog_items.c.source_code)
+Index(
+    "ix_estimate_plumbing_catalog_items_owner_active",
+    estimate_plumbing_catalog_items.c.owner_user_id,
+    estimate_plumbing_catalog_items.c.is_active,
+)
+Index(
+    "uq_estimate_plumbing_catalog_items_global_source_code",
+    estimate_plumbing_catalog_items.c.source_code,
+    unique=True,
+    sqlite_where=estimate_plumbing_catalog_items.c.owner_user_id.is_(None),
+    postgresql_where=estimate_plumbing_catalog_items.c.owner_user_id.is_(None),
+)
+Index(
+    "uq_estimate_plumbing_catalog_items_owner_source_code",
+    estimate_plumbing_catalog_items.c.owner_user_id,
+    estimate_plumbing_catalog_items.c.source_code,
+    unique=True,
+    sqlite_where=estimate_plumbing_catalog_items.c.owner_user_id.is_not(None),
+    postgresql_where=estimate_plumbing_catalog_items.c.owner_user_id.is_not(None),
+)
+Index("ix_estimate_plumbing_zones_owner", estimate_plumbing_zones.c.owner_user_id)
+Index("ix_estimate_plumbing_zones_zone_code", estimate_plumbing_zones.c.zone_code)
+Index(
+    "ix_estimate_plumbing_zones_owner_active",
+    estimate_plumbing_zones.c.owner_user_id,
+    estimate_plumbing_zones.c.is_active,
+)
+Index(
+    "uq_estimate_plumbing_zones_global_zone_code",
+    estimate_plumbing_zones.c.zone_code,
+    unique=True,
+    sqlite_where=estimate_plumbing_zones.c.owner_user_id.is_(None),
+    postgresql_where=estimate_plumbing_zones.c.owner_user_id.is_(None),
+)
+Index(
+    "uq_estimate_plumbing_zones_owner_zone_code",
+    estimate_plumbing_zones.c.owner_user_id,
+    estimate_plumbing_zones.c.zone_code,
+    unique=True,
+    sqlite_where=estimate_plumbing_zones.c.owner_user_id.is_not(None),
+    postgresql_where=estimate_plumbing_zones.c.owner_user_id.is_not(None),
+)
+Index("ix_estimate_plumbing_zone_items_owner", estimate_plumbing_zone_items.c.owner_user_id)
+Index("ix_estimate_plumbing_zone_items_zone", estimate_plumbing_zone_items.c.zone_id)
+Index("ix_estimate_plumbing_zone_items_atomic", estimate_plumbing_zone_items.c.atomic_item_id)
+Index(
+    "ix_estimate_plumbing_zone_items_atomic_source_code",
+    estimate_plumbing_zone_items.c.atomic_source_code,
+)
+Index(
+    "ix_estimate_plumbing_zone_items_owner_zone",
+    estimate_plumbing_zone_items.c.owner_user_id,
+    estimate_plumbing_zone_items.c.zone_id,
+)
+Index("ix_estimate_plumbing_zone_packages_owner", estimate_plumbing_zone_packages.c.owner_user_id)
+Index("ix_estimate_plumbing_zone_packages_zone", estimate_plumbing_zone_packages.c.zone_id)
+Index(
+    "uq_estimate_plumbing_zone_packages_zone_code",
+    estimate_plumbing_zone_packages.c.zone_id,
+    estimate_plumbing_zone_packages.c.package_code,
+    unique=True,
+)
+Index(
+    "ix_estimate_plumbing_zone_package_items_owner",
+    estimate_plumbing_zone_package_items.c.owner_user_id,
+)
+Index(
+    "ix_estimate_plumbing_zone_package_items_package",
+    estimate_plumbing_zone_package_items.c.package_id,
+)
+Index(
+    "ix_estimate_plumbing_zone_package_items_zone",
+    estimate_plumbing_zone_package_items.c.zone_id,
+)
+Index(
+    "ix_estimate_plumbing_zone_package_items_atomic",
+    estimate_plumbing_zone_package_items.c.atomic_item_id,
+)
+Index(
+    "ix_estimate_plumbing_zone_package_items_atomic_source_code",
+    estimate_plumbing_zone_package_items.c.atomic_source_code,
+)
+Index(
+    "ix_estimate_plumbing_catalog_audit_entity",
+    estimate_plumbing_catalog_audit.c.entity_type,
+    estimate_plumbing_catalog_audit.c.entity_id,
+)
+Index(
+    "ix_estimate_plumbing_catalog_audit_changed_by",
+    estimate_plumbing_catalog_audit.c.changed_by_user_id,
+)
+Index("ix_estimate_plumbing_catalog_audit_created_at", estimate_plumbing_catalog_audit.c.created_at)
+
 __all__ = [
     "estimate_ceiling_catalog_items",
     "estimate_ceiling_configs",
@@ -854,6 +1068,12 @@ __all__ = [
     "estimate_flooring_preparations",
     "estimate_flooring_room_zones",
     "estimate_flooring_rooms",
+    "estimate_plumbing_catalog_audit",
+    "estimate_plumbing_catalog_items",
+    "estimate_plumbing_zone_items",
+    "estimate_plumbing_zone_package_items",
+    "estimate_plumbing_zone_packages",
+    "estimate_plumbing_zones",
     "estimate_project_door_components",
     "estimate_project_doors",
     "estimate_project_ceiling_items",

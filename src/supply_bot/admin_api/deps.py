@@ -65,3 +65,16 @@ def require_admin_session(request: Request) -> AdminSession:
     if session is not None:
         return session
     raise HTTPException(status_code=401, detail="Admin authentication required")
+
+
+def require_admin_role_session(request: Request) -> AdminSession:
+    """Сессия с ролью «админ». Для инструментов, доступных только администратору.
+
+    Каталог сантехники (Вариант A) — единый глобальный прайс-лист, управление которым
+    закреплено строго за ролью «админ». Не-админская валидная сессия получает 403.
+    Локальный bypass (admin_auth_enabled=False) считается админом.
+    """
+    session = require_admin_session(request)
+    if session.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin role required")
+    return session

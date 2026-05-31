@@ -1,0 +1,199 @@
+import { describe, expect, it, vi } from "vitest";
+import { createEmptyEstimateResult, createEstimateSection } from "../public-estimate-model";
+import type { PlumbingCalculationResult, PlumbingOptions } from "../public-estimate-plumbing";
+import * as plumbingModule from "../public-estimate-plumbing";
+import {
+  buildEstimateSpecModalData,
+  buildPlumbingSpecExpansionOptions,
+  mapSectionsForSpec,
+} from "./spec";
+
+function defaultPlumbingOptions(overrides: Partial<PlumbingOptions> = {}): PlumbingOptions {
+  return {
+    includeBathroomSet: true,
+    includeBath: true,
+    includeHygienicShower: true,
+    includeElectricTowelRail: false,
+    includeKitchenSink: true,
+    kitchenSinkPackageLevel: "b",
+    includeDishwasherOutput: true,
+    dishwasherPackageLevel: "b",
+    includeShowerZone: false,
+    showerPackageLevel: "b",
+    includeInstallRelocation: false,
+    includeWasherOutput: true,
+    includeWaterNode: true,
+    includeLeakProtection: false,
+    ...overrides,
+  };
+}
+
+function emptyPlumbingResult(overrides: Partial<PlumbingCalculationResult> = {}): PlumbingCalculationResult {
+  return {
+    bathroomCount: 1,
+    hasKitchen: true,
+    hasPlumbingRooms: true,
+    coldWaterPoints: 0,
+    hotWaterPoints: 0,
+    sewerPoints: 0,
+    fixtureCount: 0,
+    worksTotal: 0,
+    materialsTotal: 0,
+    equipmentTotal: 0,
+    consumablesTotal: 0,
+    total: 0,
+    section: createEstimateSection("plumbing", "Сантехника", []),
+    ...overrides,
+  };
+}
+
+describe("buildEstimateSpecModalData", () => {
+  it("возвращает null, если modal закрыт", () => {
+    const result = buildEstimateSpecModalData({
+      specModal: null,
+      allEstimateSections: [],
+      estimateResult: createEmptyEstimateResult(),
+      plumbingOptions: defaultPlumbingOptions(),
+      plumbingResult: emptyPlumbingResult(),
+    });
+
+    expect(result).toBeNull();
+  });
+
+  it("для полной спецификации возвращает только видимые разделы estimateResult", () => {
+    const wallsSection = createEstimateSection("walls", "Стены", []);
+    const plumbingSection = createEstimateSection("plumbing", "Сантехника", []);
+    const allEstimateSections = [wallsSection, plumbingSection];
+
+    const result = buildEstimateSpecModalData({
+      specModal: { kind: "full" },
+      allEstimateSections,
+      estimateResult: {
+        sections: [wallsSection],
+        totals: createEmptyEstimateResult().totals,
+      },
+      plumbingOptions: defaultPlumbingOptions(),
+      plumbingResult: emptyPlumbingResult(),
+    });
+
+    expect(result).toEqual({
+      title: "Полная спецификация",
+      subtitle: "Все разделы текущей сметы по позициям",
+      sections: [wallsSection],
+    });
+  });
+
+  it("для section modal находит раздел в allEstimateSections", () => {
+    const wallsSection = createEstimateSection("walls", "Стены", [], "Описание стен");
+    const plumbingSection = createEstimateSection("plumbing", "Сантехника", []);
+
+    const result = buildEstimateSpecModalData({
+      specModal: { kind: "section", sectionId: "walls" },
+      allEstimateSections: [wallsSection, plumbingSection],
+      estimateResult: createEmptyEstimateResult(),
+      plumbingOptions: defaultPlumbingOptions(),
+      plumbingResult: emptyPlumbingResult(),
+    });
+
+    expect(result).toEqual({
+      title: "Стены",
+      subtitle: "Описание стен",
+      sections: [wallsSection],
+    });
+  });
+
+  it("возвращает null, если section modal ссылается на неизвестный раздел", () => {
+    const result = buildEstimateSpecModalData({
+      specModal: { kind: "section", sectionId: "walls" },
+      allEstimateSections: [],
+      estimateResult: createEmptyEstimateResult(),
+      plumbingOptions: defaultPlumbingOptions(),
+      plumbingResult: emptyPlumbingResult(),
+    });
+
+    expect(result).toBeNull();
+  });
+});
+
+describe("buildPlumbingSpecExpansionOptions", () => {
+  it("собирает A8-опции kitchen/dishwasher/shower/legacy по plumbingOptions и plumbingResult", () => {
+    const plumbingOptions = defaultPlumbingOptions({
+      includeKitchenSink: true,
+      kitchenSinkPackageLevel: "a",
+      includeDishwasherOutput: true,
+      dishwasherPackageLevel: "c",
+      includeShowerZone: true,
+      showerPackageLevel: "b",
+      includeInstallRelocation: true,
+      includeBath: true,
+      includeBathroomSet: false,
+      includeHygienicShower: false,
+      includeElectricTowelRail: true,
+      includeWasherOutput: false,
+      includeWaterNode: true,
+      includeLeakProtection: true,
+    });
+    const plumbingResult = emptyPlumbingResult({
+      bathroomCount: 2,
+      hasKitchen: true,
+      hasPlumbingRooms: true,
+    });
+
+    expect(buildPlumbingSpecExpansionOptions(plumbingOptions, plumbingResult)).toEqual({
+      kitchenSinkPackageLevel: "a",
+      includeKitchenSink: true,
+      dishwasherPackageLevel: "c",
+      includeDishwasher: true,
+      showerPackageLevel: "b",
+      includeShower: true,
+      includeInstallRelocation: true,
+      includeBathroomSet: false,
+      includeBath: false,
+      includeHygienicShower: false,
+      includeElectricTowelRail: true,
+      includeWasherOutput: false,
+      includeWaterNode: true,
+      includeLeakProtection: true,
+    });
+  });
+});
+
+describe("mapSectionsForSpec", () => {
+  it("разворачивает plumbing через expandPlumbingSectionForSpec с текущими A8-опциями", () => {
+    const plumbingSection = createEstimateSection("plumbing", "Сантехника", []);
+    const wallsSection = createEstimateSection("walls", "Стены", []);
+    const plumbingOptions = defaultPlumbingOptions({
+      includeKitchenSink: true,
+      kitchenSinkPackageLevel: "b",
+      includeDishwasherOutput: false,
+    });
+    const plumbingResult = emptyPlumbingResult({ hasKitchen: true, bathroomCount: 0 });
+    const expandedSection = { ...plumbingSection, specIntro: "disclaimer" };
+    const expandSpy = vi
+      .spyOn(plumbingModule, "expandPlumbingSectionForSpec")
+      .mockReturnValue(expandedSection);
+
+    const result = mapSectionsForSpec([wallsSection, plumbingSection], plumbingOptions, plumbingResult);
+
+    expect(result).toEqual([wallsSection, expandedSection]);
+    expect(expandSpy).toHaveBeenCalledOnce();
+    expect(expandSpy).toHaveBeenCalledWith(plumbingSection, {
+      kitchenSinkPackageLevel: "b",
+      includeKitchenSink: true,
+      dishwasherPackageLevel: "b",
+      includeDishwasher: false,
+      showerPackageLevel: "b",
+      includeShower: false,
+      includeInstallRelocation: false,
+      includeBathroomSet: false,
+      includeBath: false,
+      includeHygienicShower: false,
+      includeElectricTowelRail: false,
+      includeWasherOutput: true,
+      includeWaterNode: true,
+      includeLeakProtection: false,
+    });
+
+    expandSpy.mockRestore();
+  });
+});

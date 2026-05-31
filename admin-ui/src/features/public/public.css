@@ -5190,6 +5190,17 @@
   gap: 0.4rem;
 }
 
+.public-estimate-spec-modal-intro {
+  margin: 0;
+  padding: 0.62rem 0.72rem;
+  border-radius: 12px;
+  background: rgba(233, 242, 239, 0.55);
+  color: rgba(19, 35, 31, 0.72);
+  font-size: 0.78rem;
+  font-weight: 640;
+  line-height: 1.38;
+}
+
 .public-estimate-spec-modal-section-head {
   display: flex;
   align-items: baseline;
@@ -6133,6 +6144,50 @@
   background: rgba(255, 255, 255, 0.68);
   color: var(--public-ink);
   cursor: pointer;
+  transition:
+    border-color var(--public-motion-smooth) var(--ui-motion-ease-soft),
+    background-color var(--public-motion-smooth) var(--ui-motion-ease-soft);
+}
+
+.public-estimate-option-expand-shell {
+  display: grid;
+  grid-template-rows: 0fr;
+  flex: 1 1 100%;
+  min-width: 0;
+  opacity: 0;
+  transform: translateY(-4px);
+  transition:
+    grid-template-rows var(--public-motion-smooth) var(--ui-motion-ease-emphasis),
+    opacity var(--public-motion-smooth) var(--ui-motion-ease-soft),
+    transform var(--public-motion-smooth) var(--ui-motion-ease-soft);
+}
+
+.public-estimate-option-expand-shell.is-expanded {
+  grid-template-rows: 1fr;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.public-estimate-option-expand-shell-inner {
+  min-height: 0;
+  overflow: hidden;
+}
+
+@keyframes public-estimate-option-value-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(2px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.public-estimate-option-value-fade {
+  display: inline-block;
+  animation: public-estimate-option-value-fade-in var(--public-motion-smooth) var(--ui-motion-ease-soft);
 }
 
 .public-estimate-plumbing-option-zone-wide {
@@ -6166,6 +6221,110 @@
   font-size: 0.68rem;
   font-weight: 740;
   line-height: 1.2;
+}
+
+.public-estimate-plumbing-sink-zone {
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.42rem;
+  transition:
+    border-color var(--public-motion-smooth) var(--ui-motion-ease-soft),
+    background-color var(--public-motion-smooth) var(--ui-motion-ease-soft),
+    gap var(--public-motion-smooth) var(--ui-motion-ease-soft);
+}
+
+.public-estimate-plumbing-sink-zone-expand-content {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.42rem;
+  padding-top: 0.06rem;
+}
+
+.public-estimate-plumbing-sink-zone:not(.public-estimate-plumbing-sink-zone-active) .public-estimate-plumbing-sink-zone-expand {
+  pointer-events: none;
+}
+
+.public-estimate-plumbing-sink-zone-icon {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  color: var(--public-green-deep);
+}
+
+.public-estimate-plumbing-sink-zone-icon svg {
+  width: 1.125rem;
+  height: 1.125rem;
+}
+
+.public-estimate-plumbing-sink-zone-label {
+  flex: 0 1 auto;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  color: var(--public-ink);
+  font-size: 0.82rem;
+  font-weight: 820;
+  line-height: 1.18;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.public-estimate-plumbing-sink-zone-toggle {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 0.18rem;
+  min-width: 0;
+}
+
+.public-estimate-plumbing-sink-zone-toggle button {
+  min-height: 24px;
+  min-width: 1.85rem;
+  padding: 0 0.34rem;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  color: rgba(19, 35, 31, 0.68);
+  font: inherit;
+  font-size: 0.7rem;
+  font-weight: 820;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition:
+    border-color var(--ui-motion-fast) var(--ui-motion-ease-soft),
+    background-color var(--ui-motion-fast) var(--ui-motion-ease-soft),
+    color var(--ui-motion-fast) var(--ui-motion-ease-soft),
+    box-shadow var(--ui-motion-fast) var(--ui-motion-ease-soft);
+}
+
+.public-estimate-plumbing-sink-zone-toggle button:hover,
+.public-estimate-plumbing-sink-zone-toggle button:focus-visible,
+.public-estimate-plumbing-sink-zone-toggle .public-estimate-toggle-active {
+  border-color: rgba(30, 81, 74, 0.22);
+  background: var(--public-green);
+  color: #ffffff;
+  box-shadow: 0 10px 24px rgba(30, 81, 74, 0.14);
+}
+
+.public-estimate-plumbing-sink-zone-total {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  padding: 0.14rem 0.4rem;
+  border-radius: 999px;
+  background: rgba(233, 242, 239, 0.72);
+}
+
+.public-estimate-plumbing-sink-zone-total strong {
+  color: var(--public-green-deep);
+  font-size: 0.76rem;
+  font-weight: 820;
+  line-height: 1.1;
+  white-space: nowrap;
 }
 
 .public-estimate-plumbing-summary {
@@ -9540,14 +9699,6 @@ html:has(.public-estimate-page) {
     border-bottom: 0;
   }
 
-  .public-estimate-plumbing-options {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .public-estimate-plumbing-option-zone-wide {
-    grid-column: auto;
-  }
-
   .public-estimate-plumbing-scenario-toggle {
     grid-template-columns: auto minmax(0, 1fr);
   }
@@ -11201,10 +11352,18 @@ html:has(.public-estimate-page) {
   .public-estimate-rail-link,
   .public-estimate-rail-icon,
   .public-estimate-geometry-row-shell,
-  .public-estimate-geometry-row {
+  .public-estimate-geometry-row,
+  .public-estimate-plumbing-option-zone,
+  .public-estimate-plumbing-sink-zone,
+  .public-estimate-option-expand-shell,
+  .public-estimate-option-value-fade {
     transition: none;
     animation: none;
     transform: none;
+  }
+
+  .public-estimate-option-expand-shell:not(.is-expanded) {
+    display: none;
   }
 
   .public-package-card:hover,

@@ -1,13 +1,17 @@
 from __future__ import annotations
 
+from typing import Any
+
 from fastapi import FastAPI, HTTPException, Request
 
+from supply_bot.admin_api.calculator_routes.shared import get_plumbing_catalog_storage
 from supply_bot.admin_api.public_lead_notifications import PublicLeadTelegramNotifier
 from supply_bot.domain.public_leads import (
     PUBLIC_LEAD_TELEGRAM_FAILED,
     PUBLIC_LEAD_TELEGRAM_SENT,
     PUBLIC_LEAD_TELEGRAM_SKIPPED,
 )
+from supply_bot.estimates.application.plumbing_snapshot import BuildPlumbingSnapshotUseCase
 
 
 def _resolve_public_lead_client_ip(request: Request) -> str:
@@ -77,3 +81,28 @@ def register_public_routes(
 
     create_public_lead.__annotations__["payload"] = public_lead_payload_model
     app.post("/api/public/leads")(create_public_lead)
+
+
+def register_public_catalog_routes(app: FastAPI) -> None:
+    """Публичный read-only снапшот каталога сантехники (A7.1).
+
+    Источник правды — глобальный каталог (owner_user_id = NULL, Слой 0): тот же,
+    что правит админка. Отдаётся ТОЛЬКО публичный whitelist-payload: итоги с уже
+    запечённым резервом, без internal-полей (riskPercent, разбивка цен, coefficient,
+    source, note, technical_title). Эндпоинт публичный (см. PUBLIC_ADMIN_API_PATHS),
+    но с rate-limit как у /api/public/leads — дёргается на сборке генератором (A7.2).
+    """
+
+    @app.get("/api/public/catalog/plumbing/snapshot")
+    async def public_plumbing_snapshot(request: Request) -> dict[str, Any]:
+        limiter = getattr(request.app.state, "public_snapshot_rate_limiter", None)
+        if limiter is not None:
+            decision = limiter.check(_resolve_public_lead_client_ip(request))
+            if not decision.allowed:
+                headers: dict[str, str] = {}
+                if decision.retry_after_seconds is not None:
+                    headers["Retry-After"] = str(decision.retry_after_seconds)
+                raise HTTPException(status_code=429, detail="Too many requests", headers=headers)
+
+        storage_obj = get_plumbing_catalog_storage(request)
+        return await BuildPlumbingSnapshotUseCase(storage_obj).build_public()

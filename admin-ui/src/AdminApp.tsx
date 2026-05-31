@@ -1,3 +1,5 @@
+import { Suspense, lazy } from "react";
+
 import type { ScreenKey } from "./shared/types";
 import { AdminAuthScreen } from "./features/auth/screen";
 import { useAdminAppController } from "./shell/controller";
@@ -7,11 +9,15 @@ import { AppShellFooter } from "./shell/footer";
 import { AppShellHeader } from "./shell/header";
 import { AppShellSidebar } from "./shell/sidebar";
 
+// Внутренний редактор каталога. Доступен только за auth-gate (см. ветку catalogEditor ниже),
+// грузится лениво, чтобы не попадать в основной shell-бандл.
+const CatalogEditor = lazy(() => import("./features/catalog-editor/CatalogEditor"));
+
 function isNavigationScreen(screen: ScreenKey): screen is NavigationScreenKey {
   return navigation.some((item) => item.key === screen);
 }
 
-export default function AdminApp() {
+export default function AdminApp({ catalogEditor = false }: { catalogEditor?: boolean }) {
   const controller = useAdminAppController();
   const requiresLogin = controller.authSession?.auth_enabled && !controller.authSession.authenticated;
   const showAuthGate = !controller.authLoading && (!controller.authSession || requiresLogin);
@@ -67,6 +73,10 @@ export default function AdminApp() {
             onLogin={controller.handleLogin}
             onRegister={controller.handleRegister}
           />
+        ) : catalogEditor ? (
+          <Suspense fallback={<div className="public-admin-loading" aria-hidden="true" />}>
+            <CatalogEditor />
+          </Suspense>
         ) : (
           <div className="grid flex-1 grid-cols-1 gap-4 lg:grid-cols-[272px_minmax(0,1fr)]">
             <AppShellSidebar

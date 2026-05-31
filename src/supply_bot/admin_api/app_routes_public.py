@@ -123,4 +123,5 @@ def register_public_catalog_routes(app: FastAPI) -> None:
     @app.get("/api/public/catalog/flooring/snapshot")
     async def public_flooring_snapshot(request: Request) -> dict[str, Any]:
         check_snapshot_rate_limit(request)
-        return await BuildFlooringSnapshotUseCase().build_public()
+        storage_obj = get_global_estimate_catalog_storage(request)
+        return await BuildFlooringSnapshotUseCase(storage_obj).build_public()

@@ -43,7 +43,6 @@ import {
   showerPackageLabels,
   type PlumbingOptions,
 } from "./public-estimate-plumbing";
-import { calculateWalls } from "./public-estimate-walls";
 import {
   doorPackageOptions,
   flooringCoveringOptions,
@@ -52,8 +51,6 @@ import {
   flooringPreparationOptions,
   GEOMETRY_STEP_HINT,
   getDefaultCeilingLightSettings,
-  getDefaultWallsCovering,
-  getDefaultWallsPreparation,
   wallsCoveringOptions,
   wallsPreparationOptions,
 } from "./estimate/defaults";
@@ -66,7 +63,6 @@ import {
   type ElectricRoomDraft,
   type EstimateObjectMeta,
   type LooseFurnitureOptionsDraft,
-  type WallsRoomDraft,
 } from "./estimate/context";
 import { buildEstimateSpecModalData } from "./estimate/spec";
 import {
@@ -83,13 +79,13 @@ import {
   buildPlumbingCompositionItems,
   buildPlumbingSummaryItems,
   buildVolumeSummaryItems,
-  buildWallsSummaryItems,
 } from "./estimate/summary";
 import { estimateNavigationItems, formatEstimateStep, getEstimateSectionClassName } from "./sections/registry";
 import { useEstimateNavigation } from "./estimate/useEstimateNavigation";
 import { useEstimateRooms } from "./estimate/useEstimateRooms";
 import { useWarmFloorEstimate } from "./estimate/useWarmFloorEstimate";
 import { useFlooringEstimate } from "./estimate/useFlooringEstimate";
+import { useWallsEstimate } from "./estimate/useWallsEstimate";
 import { FlooringSection } from "./sections/flooring/FlooringSection";
 import { GeometrySection } from "./sections/geometry/GeometrySection";
 import { ObjectSection } from "./sections/object/ObjectSection";
@@ -146,7 +142,6 @@ export function PublicEstimate() {
     apartmentNumber: "",
     contact: "",
   });
-  const [wallsRooms, setWallsRooms] = useState<Record<string, WallsRoomDraft>>({});
   const [ceilingRooms, setCeilingRooms] = useState<Record<string, CeilingRoomDraft>>({});
   const [electricRooms, setElectricRooms] = useState<Record<string, ElectricRoomDraft>>({});
   const [electricOptions, setElectricOptions] = useState<ElectricOptions>({
@@ -248,17 +243,20 @@ export function PublicEstimate() {
     onFlooringThresholdCountChange,
     onFlooringThresholdCountBlur,
   } = useFlooringEstimate({ rooms, roomInputs, roomGeometries });
+  const {
+    wallsRooms,
+    wallsResult,
+    wallsSummaryItems,
+    removeWallsRoom,
+    onWallsRoomIncludedChange,
+    onWallsCoveringChange,
+    onWallsPreparationChange,
+  } = useWallsEstimate({ rooms, roomGeometries });
   const purgeRoomFromRelatedState = useCallback(
     (roomId: string) => {
       removeWarmFloorRoom(roomId);
       removeFlooringRoom(roomId);
-      setWallsRooms((currentRooms) => {
-        const nextRooms = { ...currentRooms };
-
-        delete nextRooms[roomId];
-
-        return nextRooms;
-      });
+      removeWallsRoom(roomId);
       setCeilingRooms((currentRooms) => {
         const nextRooms = { ...currentRooms };
 
@@ -274,29 +272,12 @@ export function PublicEstimate() {
         return nextRooms;
       });
     },
-    [removeFlooringRoom, removeWarmFloorRoom],
+    [removeFlooringRoom, removeWarmFloorRoom, removeWallsRoom],
   );
   const handleRemoveRoom = useCallback(
     (roomId: string) => removeRoom(roomId, purgeRoomFromRelatedState),
     [removeRoom, purgeRoomFromRelatedState],
   );
-  const wallsRoomInputs = useMemo(
-    () =>
-      rooms.map((room, index) => {
-        const wallsDraft = wallsRooms[room.id] ?? {};
-
-        return {
-          roomId: room.id,
-          roomName: room.name.trim() || "Помещение",
-          finishWallArea: roomGeometries[index]?.finishWallArea ?? 0,
-          coveringType: wallsDraft.coveringType ?? getDefaultWallsCovering(room.type),
-          preparationType: wallsDraft.preparationType ?? getDefaultWallsPreparation(room.type),
-          isIncluded: wallsDraft.isIncluded ?? true,
-        };
-      }),
-    [roomGeometries, rooms, wallsRooms],
-  );
-  const wallsResult = useMemo(() => calculateWalls(wallsRoomInputs), [wallsRoomInputs]);
   const ceilingRoomInputs = useMemo(
     () =>
       rooms.map((room, index) => {
@@ -428,7 +409,6 @@ export function PublicEstimate() {
   const estimateTotalItems = buildEstimateTotalItems(estimateResult.totals);
   const packageClassification = classifyEstimatePackage(estimateResult.totals.pricePerSquareMeter);
 
-  const wallsSummaryItems = buildWallsSummaryItems(wallsResult);
   const ceilingSummaryItems = buildCeilingSummaryItems(ceilingResult);
   const electricSummaryItems = buildElectricSummaryItems(electricResult);
   const plumbingCompositionItems = buildPlumbingCompositionItems(plumbingResult);
@@ -474,16 +454,6 @@ export function PublicEstimate() {
 
   function closeSpecModal() {
     setSpecModal(null);
-  }
-
-  function updateWallsRoom(roomId: string, patch: WallsRoomDraft) {
-    setWallsRooms((currentRooms) => ({
-      ...currentRooms,
-      [roomId]: {
-        ...currentRooms[roomId],
-        ...patch,
-      },
-    }));
   }
 
   function updateCeilingRoom(roomId: string, patch: CeilingRoomDraft) {
@@ -728,9 +698,9 @@ export function PublicEstimate() {
             wallsCoveringOptions={wallsCoveringOptions}
             wallsPreparationOptions={wallsPreparationOptions}
             wallsSummaryItems={wallsSummaryItems}
-            onWallsRoomIncludedChange={(roomId, isIncluded) => updateWallsRoom(roomId, { isIncluded })}
-            onWallsCoveringChange={(roomId, coveringType) => updateWallsRoom(roomId, { coveringType })}
-            onWallsPreparationChange={(roomId, preparationType) => updateWallsRoom(roomId, { preparationType })}
+            onWallsRoomIncludedChange={onWallsRoomIncludedChange}
+            onWallsCoveringChange={onWallsCoveringChange}
+            onWallsPreparationChange={onWallsPreparationChange}
             onOpenSectionSpec={() => openSectionSpec("walls")}
           />
 

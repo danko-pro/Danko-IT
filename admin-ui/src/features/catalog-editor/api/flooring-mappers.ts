@@ -8,12 +8,15 @@ import type {
   FlooringCoveringCreatePayload,
   FlooringCoveringDraft,
   FlooringCoveringDto,
+  FlooringCoveringUpdatePayload,
   FlooringLayoutCreatePayload,
   FlooringLayoutDraft,
   FlooringLayoutDto,
+  FlooringLayoutUpdatePayload,
   FlooringPreparationCreatePayload,
   FlooringPreparationDraft,
   FlooringPreparationDto,
+  FlooringPreparationUpdatePayload,
   FlooringSnapshotDisplayRow,
 } from "./flooring-types";
 
@@ -154,6 +157,18 @@ export function dtoToFlooringLayoutDraft(dto: FlooringLayoutDto): FlooringLayout
   };
 }
 
+export function coveringDraftToUpdatePayload(draft: FlooringCoveringDraft): FlooringCoveringUpdatePayload {
+  return coveringDraftToPayload(draft);
+}
+
+export function preparationDraftToUpdatePayload(draft: FlooringPreparationDraft): FlooringPreparationUpdatePayload {
+  return preparationDraftToPayload(draft);
+}
+
+export function layoutDraftToUpdatePayload(draft: FlooringLayoutDraft): FlooringLayoutUpdatePayload {
+  return layoutDraftToPayload(draft);
+}
+
 export function coveringDraftToPayload(draft: FlooringCoveringDraft): FlooringCoveringCreatePayload {
   return {
     title: draft.title,
@@ -217,6 +232,45 @@ function snapshotItemToRow(
     rates[key] = normalizeNum(item[key]);
   }
   return { section, code: item.code, title: item.title, rates };
+}
+
+function normalizeCatalogTitle(title: string): string {
+  return title.trim().toLowerCase();
+}
+
+export function attachCatalogIdsToDisplayRows(
+  rows: FlooringSnapshotDisplayRow[],
+  catalogs: {
+    coverings: FlooringCoveringDto[];
+    preparations: FlooringPreparationDto[];
+    layouts: FlooringLayoutDto[];
+  },
+): FlooringSnapshotDisplayRow[] {
+  const coveringByTitle = new Map(
+    catalogs.coverings.map((item) => [normalizeCatalogTitle(item.title), item.id] as const),
+  );
+  const preparationByTitle = new Map(
+    catalogs.preparations.map((item) => [normalizeCatalogTitle(item.title), item.id] as const),
+  );
+  const layoutByTitle = new Map(
+    catalogs.layouts.map((item) => [normalizeCatalogTitle(item.title), item.id] as const),
+  );
+
+  return rows.map((row) => {
+    if (row.section === "coverings") {
+      const catalogId = coveringByTitle.get(normalizeCatalogTitle(row.title));
+      return catalogId ? { ...row, catalogId } : row;
+    }
+    if (row.section === "preparations") {
+      const catalogId = preparationByTitle.get(normalizeCatalogTitle(row.title));
+      return catalogId ? { ...row, catalogId } : row;
+    }
+    if (row.section === "layouts") {
+      const catalogId = layoutByTitle.get(normalizeCatalogTitle(row.title));
+      return catalogId ? { ...row, catalogId } : row;
+    }
+    return row;
+  });
 }
 
 export function snapshotToDisplayRows(snapshot: FlooringSnapshot): FlooringSnapshotDisplayRow[] {

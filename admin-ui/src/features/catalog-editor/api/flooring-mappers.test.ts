@@ -2,14 +2,19 @@ import { describe, expect, it } from "vitest";
 
 import type { FlooringSnapshot } from "../../public/public-flooring-snapshot";
 import {
+  attachCatalogIdsToDisplayRows,
   consumablePricePerM2,
   coveringDtoToConsumableRates,
   coveringDraftToPayload,
+  coveringDraftToUpdatePayload,
   dtoToFlooringCoveringDraft,
   dtoToFlooringLayoutDraft,
   dtoToFlooringPreparationDraft,
   layoutDraftToPayload,
+  layoutDraftToUpdatePayload,
   normalizeNum,
+  preparationDraftToPayload,
+  preparationDraftToUpdatePayload,
   snapshotToDisplayRows,
 } from "./flooring-mappers";
 import type { FlooringCoveringDto, FlooringLayoutDto, FlooringPreparationDto } from "./flooring-types";
@@ -171,6 +176,15 @@ describe("dtoToFlooringLayoutDraft", () => {
 });
 
 describe("draft payloads", () => {
+  it("update payload совпадает с create payload", () => {
+    const coveringDraft = dtoToFlooringCoveringDraft(makeCoveringDto());
+    expect(coveringDraftToUpdatePayload(coveringDraft)).toEqual(coveringDraftToPayload(coveringDraft));
+    const preparationDraft = dtoToFlooringPreparationDraft(makePreparationDto());
+    expect(preparationDraftToUpdatePayload(preparationDraft)).toEqual(preparationDraftToPayload(preparationDraft));
+    const layoutDraft = dtoToFlooringLayoutDraft(makeLayoutDto());
+    expect(layoutDraftToUpdatePayload(layoutDraft)).toEqual(layoutDraftToPayload(layoutDraft));
+  });
+
   it("coveringDraftToPayload сохраняет snake_case поля", () => {
     const draft = dtoToFlooringCoveringDraft(makeCoveringDto({ note: "  заметка  " }));
     const payload = coveringDraftToPayload(draft);
@@ -186,6 +200,20 @@ describe("draft payloads", () => {
     expect(payload.labor_multiplier).toBe(1.1);
     expect(payload.extra_waste_percent).toBe(5);
     expect(payload.note).toBeNull();
+  });
+});
+
+describe("attachCatalogIdsToDisplayRows", () => {
+  it("проставляет catalogId по совпадению title", () => {
+    const rows = snapshotToDisplayRows(MINI_SNAPSHOT);
+    const withIds = attachCatalogIdsToDisplayRows(rows, {
+      coverings: [makeCoveringDto({ id: 11, title: "Керамогранит" })],
+      preparations: [makePreparationDto({ id: 22, title: "Грунтование" })],
+      layouts: [makeLayoutDto({ id: 33, title: "Прямая" })],
+    });
+    expect(withIds.find((row) => row.code === "porcelain")?.catalogId).toBe(11);
+    expect(withIds.find((row) => row.code === "primer")?.catalogId).toBe(22);
+    expect(withIds.find((row) => row.code === "straight")?.catalogId).toBe(33);
   });
 });
 

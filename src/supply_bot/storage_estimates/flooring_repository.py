@@ -34,6 +34,14 @@ class SqlAlchemyEstimateFlooringRepository(SqlAlchemyEstimateRepository):
         values["needs_plinth"] = _bool_int(bool(values.get("needs_plinth")))
         return await self._create_catalog_item(estimate_flooring_coverings, values)
 
+    async def get_estimate_flooring_covering(self, covering_id: int) -> dict[str, Any] | None:
+        return await self._get_global_catalog_item(estimate_flooring_coverings, covering_id)
+
+    async def update_estimate_flooring_covering(self, covering_id: int, **values: Any) -> bool:
+        if "needs_plinth" in values:
+            values["needs_plinth"] = _bool_int(bool(values["needs_plinth"]))
+        return await self._update_global_catalog_item(estimate_flooring_coverings, covering_id, values)
+
     async def list_estimate_flooring_preparations(self) -> list[dict[str, Any]]:
         return await self._list_catalog(
             estimate_flooring_preparations,
@@ -45,6 +53,12 @@ class SqlAlchemyEstimateFlooringRepository(SqlAlchemyEstimateRepository):
         values["owner_user_id"] = self._catalog_write_owner_value()
         return await self._create_catalog_item(estimate_flooring_preparations, values)
 
+    async def get_estimate_flooring_preparation(self, preparation_id: int) -> dict[str, Any] | None:
+        return await self._get_global_catalog_item(estimate_flooring_preparations, preparation_id)
+
+    async def update_estimate_flooring_preparation(self, preparation_id: int, **values: Any) -> bool:
+        return await self._update_global_catalog_item(estimate_flooring_preparations, preparation_id, values)
+
     async def list_estimate_flooring_layouts(self) -> list[dict[str, Any]]:
         return await self._list_catalog(
             estimate_flooring_layouts,
@@ -54,6 +68,12 @@ class SqlAlchemyEstimateFlooringRepository(SqlAlchemyEstimateRepository):
     async def create_estimate_flooring_layout(self, **values: Any) -> int:
         values["owner_user_id"] = self._catalog_write_owner_value()
         return await self._create_catalog_item(estimate_flooring_layouts, values)
+
+    async def get_estimate_flooring_layout(self, layout_id: int) -> dict[str, Any] | None:
+        return await self._get_global_catalog_item(estimate_flooring_layouts, layout_id)
+
+    async def update_estimate_flooring_layout(self, layout_id: int, **values: Any) -> bool:
+        return await self._update_global_catalog_item(estimate_flooring_layouts, layout_id, values)
 
     async def get_estimate_flooring_config(self, project_id: int) -> dict[str, Any] | None:
         self._required_owner_user_id()
@@ -216,6 +236,35 @@ class SqlAlchemyEstimateFlooringRepository(SqlAlchemyEstimateRepository):
             async with session.begin():
                 result = await session.execute(insert(table).values(**values))
                 return int(result.inserted_primary_key[0])
+
+    async def _get_global_catalog_item(self, table, item_id: int) -> dict[str, Any] | None:
+        async with self._session_factory() as session:
+            result = await session.execute(
+                select(*(column for column in table.c if column.name != "owner_user_id")).where(
+                    table.c.owner_user_id.is_(None),
+                    table.c.is_active == 1,
+                    table.c.id == item_id,
+                )
+            )
+            return _row_to_dict(result.fetchone())
+
+    async def _update_global_catalog_item(self, table, item_id: int, values: dict[str, Any]) -> bool:
+        if self._owner_user_id is not None:
+            return False
+        if not values:
+            return False
+        async with self._session_factory() as session:
+            async with session.begin():
+                result = await session.execute(
+                    update(table)
+                    .where(
+                        table.c.owner_user_id.is_(None),
+                        table.c.is_active == 1,
+                        table.c.id == item_id,
+                    )
+                    .values(**values, updated_at=func.current_timestamp())
+                )
+                return bool(result.rowcount)
 
     async def _list_project_rows(self, table, project_id: int, *columns: Any) -> list[dict[str, Any]]:
         self._required_owner_user_id()

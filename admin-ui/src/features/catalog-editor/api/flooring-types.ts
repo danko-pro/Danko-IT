@@ -113,6 +113,10 @@ export type FlooringLayoutCreatePayload = {
   note: string | null;
 };
 
+export type FlooringCoveringUpdatePayload = FlooringCoveringCreatePayload;
+export type FlooringPreparationUpdatePayload = FlooringPreparationCreatePayload;
+export type FlooringLayoutUpdatePayload = FlooringLayoutCreatePayload;
+
 /** Публичный ответ GET /api/public/catalog/flooring/snapshot (контракт flooring-v1). */
 export type PublicFlooringSnapshotResponse = FlooringSnapshot;
 
@@ -186,5 +190,6 @@ export type FlooringSnapshotDisplayRow = {
   section: "coverings" | "preparations" | "layouts" | "plinthTypes" | "globalAddons";
   code: string;
   title: string;
+  catalogId?: number;
   rates: Record<string, number>;
 };

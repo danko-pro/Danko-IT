@@ -91,6 +91,10 @@ export function isAuthenticatedSession(session: AdminAuthSession | null): boolea
   return Boolean(session?.authenticated);
 }
 
+export function isAdminRoleSession(session: AdminAuthSession | null): boolean {
+  return Boolean(session?.authenticated && session.user?.role === "admin");
+}
+
 export async function safeJson(response: Response): Promise<unknown> {
   try {
     return await response.json();
@@ -121,6 +125,9 @@ function extractDownloadFileName(response: Response): string | null {
 function localizeApiError(detail: string | undefined, status: number, statusText: string): string {
   if (detail === "Admin authentication required") {
     return "Требуется вход в аккаунт.";
+  }
+  if (detail === "Admin role required") {
+    return "Нет доступа к админке.";
   }
   if (detail === "Invalid credentials") {
     return "Неверная почта или пароль.";

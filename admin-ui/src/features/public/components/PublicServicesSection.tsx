@@ -1,6 +1,5 @@
-import { useEffect, useRef, useState } from "react";
-
 import { publicServiceItems } from "../public-content";
+import { usePublicServicesExplorer } from "../hooks/usePublicServicesExplorer";
 import { PublicSectionContour } from "./PublicSectionContour";
 import { PublicServiceVisualIcon, getServiceVisualIcon } from "./services/PublicServiceVisualIcon";
 
@@ -8,41 +7,15 @@ type PublicServicesSectionProps = {
   getContourClassName: (sectionName: string, side: "left" | "right") => string;
 };
 
-const PUBLIC_SERVICE_HOVER_DELAY_MS = 140;
-
 export function PublicServicesSection({ getContourClassName }: PublicServicesSectionProps) {
-  const [activeServiceIndex, setActiveServiceIndex] = useState(0);
-  const serviceHoverTimerIdRef = useRef<number | null>(null);
+  const {
+    activeServiceIndex,
+    setActiveServiceIndex,
+    activateServiceImmediately,
+    scheduleServiceActivation,
+    clearServiceHoverTimer,
+  } = usePublicServicesExplorer();
   const activeService = publicServiceItems[activeServiceIndex];
-
-  const clearServiceHoverTimer = () => {
-    if (serviceHoverTimerIdRef.current === null) {
-      return;
-    }
-
-    window.clearTimeout(serviceHoverTimerIdRef.current);
-    serviceHoverTimerIdRef.current = null;
-  };
-
-  const activateService = (index: number) => {
-    clearServiceHoverTimer();
-    setActiveServiceIndex(index);
-  };
-
-  const scheduleServiceActivation = (index: number) => {
-    clearServiceHoverTimer();
-
-    if (index === activeServiceIndex) {
-      return;
-    }
-
-    serviceHoverTimerIdRef.current = window.setTimeout(() => {
-      serviceHoverTimerIdRef.current = null;
-      setActiveServiceIndex(index);
-    }, PUBLIC_SERVICE_HOVER_DELAY_MS);
-  };
-
-  useEffect(() => () => clearServiceHoverTimer(), []);
 
   return (
     <section
@@ -79,8 +52,8 @@ export function PublicServicesSection({ getContourClassName }: PublicServicesSec
                 key={service.title}
                 onMouseEnter={() => scheduleServiceActivation(index)}
                 onMouseLeave={clearServiceHoverTimer}
-                onFocus={() => activateService(index)}
-                onClick={() => activateService(index)}
+                onFocus={() => activateServiceImmediately(index)}
+                onClick={() => activateServiceImmediately(index)}
               >
                 <span className="public-service-number">{serviceNumber}</span>
                 <span className="public-service-tab-copy">

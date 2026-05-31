@@ -1,20 +1,6 @@
 import { useCallback, useMemo, useState } from "react";
-import {
-  calculateLooseFurniture,
-  createDefaultLooseFurnitureOptions,
-  getLooseFurnitureUnitPrice,
-  looseFurnitureItemCatalog,
-  type LooseFurnitureItemKey,
-  type LooseFurnitureOptions,
-} from "./public-estimate-loose-furniture";
 import { calculateHomeGoods, createDefaultHomeGoodsOptions, type HomeGoodsOptions } from "./public-estimate-home-goods";
-import { parseEstimateInteger } from "./public-estimate-geometry";
-import {
-  estimateNumericFieldProps,
-  estimateTextFieldProps,
-  normalizeEstimateQuantityOnBlur,
-  sanitizeEstimateIntegerInput,
-} from "./public-estimate-input";
+import { estimateNumericFieldProps, estimateTextFieldProps } from "./public-estimate-input";
 import { buildPublicEstimateResult } from "./estimate/engine";
 import { type EstimateSection, type EstimateSectionId } from "./public-estimate-model";
 import { classifyEstimatePackage } from "./public-estimate-package";
@@ -28,17 +14,12 @@ import {
   wallsCoveringOptions,
   wallsPreparationOptions,
 } from "./estimate/defaults";
-import {
-  normalizeLooseFurnitureOptionsDraft,
-  type EstimateObjectMeta,
-  type LooseFurnitureOptionsDraft,
-} from "./estimate/context";
+import { type EstimateObjectMeta } from "./estimate/context";
 import { buildEstimateSpecModalData } from "./estimate/spec";
 import {
   buildCompactVolumeItems,
   buildEstimateTotalItems,
   buildHomeGoodsSummaryItems,
-  buildLooseFurnitureSummaryItems,
   buildVolumeSummaryItems,
 } from "./estimate/summary";
 import { estimateNavigationItems, formatEstimateStep, getEstimateSectionClassName } from "./sections/registry";
@@ -53,6 +34,7 @@ import { usePlumbingEstimate } from "./estimate/usePlumbingEstimate";
 import { useDoorsEstimate } from "./estimate/useDoorsEstimate";
 import { useCompletionEstimate } from "./estimate/useCompletionEstimate";
 import { useAppliancesEstimate } from "./estimate/useAppliancesEstimate";
+import { useLooseFurnitureEstimate } from "./estimate/useLooseFurnitureEstimate";
 import { FlooringSection } from "./sections/flooring/FlooringSection";
 import { GeometrySection } from "./sections/geometry/GeometrySection";
 import { ObjectSection } from "./sections/object/ObjectSection";
@@ -74,20 +56,6 @@ import { ElectricSection } from "./sections/electric/ElectricSection";
 import { PlumbingSection } from "./sections/plumbing/PlumbingSection";
 import { WallsSection } from "./sections/walls/WallsSection";
 
-function createDefaultLooseFurnitureOptionsDraft(): LooseFurnitureOptionsDraft {
-  const base = createDefaultLooseFurnitureOptions();
-  const items = {} as LooseFurnitureOptionsDraft["items"];
-
-  for (const item of looseFurnitureItemCatalog) {
-    items[item.key] = {
-      isIncluded: base.items[item.key].isIncluded,
-      quantity: String(base.items[item.key].quantity),
-    };
-  }
-
-  return { packageLevel: base.packageLevel, items };
-}
-
 export function PublicEstimate() {
   const [objectMeta, setObjectMeta] = useState<EstimateObjectMeta>({
     address: "",
@@ -95,9 +63,6 @@ export function PublicEstimate() {
     apartmentNumber: "",
     contact: "",
   });
-  const [looseFurnitureOptions, setLooseFurnitureOptions] = useState<LooseFurnitureOptionsDraft>(() =>
-    createDefaultLooseFurnitureOptionsDraft(),
-  );
   const [homeGoodsOptions, setHomeGoodsOptions] = useState<HomeGoodsOptions>(() => createDefaultHomeGoodsOptions());
   const [specModal, setSpecModal] = useState<{ kind: "section" | "full"; sectionId?: EstimateSectionId } | null>(
     null,
@@ -246,6 +211,17 @@ export function PublicEstimate() {
     onQuantityChange,
     onQuantityBlur,
   } = useAppliancesEstimate();
+  const {
+    looseFurnitureOptions,
+    looseFurnitureResult,
+    looseFurnitureSummaryItems,
+    getLooseFurnitureUnitPriceForKey,
+    getLooseFurnitureLineTotal,
+    onPackageLevelChange: onLooseFurniturePackageLevelChange,
+    onLooseFurnitureIncludeChange,
+    onQuantityChange: onLooseFurnitureQuantityChange,
+    onQuantityBlur: onLooseFurnitureQuantityBlur,
+  } = useLooseFurnitureEstimate();
   const purgeRoomFromRelatedState = useCallback(
     (roomId: string) => {
       removeWarmFloorRoom(roomId);
@@ -259,14 +235,6 @@ export function PublicEstimate() {
   const handleRemoveRoom = useCallback(
     (roomId: string) => removeRoom(roomId, purgeRoomFromRelatedState),
     [removeRoom, purgeRoomFromRelatedState],
-  );
-  const normalizedLooseFurnitureOptions = useMemo(
-    () => normalizeLooseFurnitureOptionsDraft(looseFurnitureOptions),
-    [looseFurnitureOptions],
-  );
-  const looseFurnitureResult = useMemo(
-    () => calculateLooseFurniture(normalizedLooseFurnitureOptions),
-    [normalizedLooseFurnitureOptions],
   );
   const homeGoodsResult = useMemo(
     () => calculateHomeGoods({ floorArea: totals.floorArea, options: homeGoodsOptions }),
@@ -309,7 +277,6 @@ export function PublicEstimate() {
   const estimateTotalItems = buildEstimateTotalItems(estimateResult.totals);
   const packageClassification = classifyEstimatePackage(estimateResult.totals.pricePerSquareMeter);
 
-  const looseFurnitureSummaryItems = buildLooseFurnitureSummaryItems(looseFurnitureResult);
   const homeGoodsSummaryItems = buildHomeGoodsSummaryItems(homeGoodsResult);
   const allEstimateSections: EstimateSection[] = [
     warmFloorResult.section,
@@ -346,29 +313,6 @@ export function PublicEstimate() {
 
   function closeSpecModal() {
     setSpecModal(null);
-  }
-
-  function updateLooseFurnitureOptions(patch: Partial<Pick<LooseFurnitureOptions, "packageLevel">>) {
-    setLooseFurnitureOptions((currentOptions) => ({
-      ...currentOptions,
-      ...patch,
-    }));
-  }
-
-  function updateLooseFurnitureItem(
-    key: LooseFurnitureItemKey,
-    patch: Partial<{ isIncluded: boolean; quantity: string }>,
-  ) {
-    setLooseFurnitureOptions((currentOptions) => ({
-      ...currentOptions,
-      items: {
-        ...currentOptions.items,
-        [key]: {
-          ...currentOptions.items[key],
-          ...patch,
-        },
-      },
-    }));
   }
 
   function updateHomeGoodsOptions(patch: Partial<HomeGoodsOptions>) {
@@ -641,19 +585,12 @@ export function PublicEstimate() {
             looseFurnitureSummaryItems={looseFurnitureSummaryItems}
             looseFurnitureResult={looseFurnitureResult}
             numberFieldProps={estimateNumericFieldProps}
-            getUnitPrice={(key) => getLooseFurnitureUnitPrice(key, looseFurnitureOptions)}
-            getLineTotal={(key, isIncluded, quantity) => {
-              const unitPrice = getLooseFurnitureUnitPrice(key, looseFurnitureOptions);
-              return isIncluded ? unitPrice * Math.max(1, parseEstimateInteger(quantity)) : 0;
-            }}
-            onPackageLevelChange={(level) => updateLooseFurnitureOptions({ packageLevel: level })}
-            onLooseFurnitureIncludeChange={(key, checked) => updateLooseFurnitureItem(key, { isIncluded: checked })}
-            onQuantityChange={(key, value) =>
-              updateLooseFurnitureItem(key, { quantity: sanitizeEstimateIntegerInput(value) })
-            }
-            onQuantityBlur={(key, value) =>
-              updateLooseFurnitureItem(key, { quantity: normalizeEstimateQuantityOnBlur(value) })
-            }
+            getUnitPrice={getLooseFurnitureUnitPriceForKey}
+            getLineTotal={getLooseFurnitureLineTotal}
+            onPackageLevelChange={onLooseFurniturePackageLevelChange}
+            onLooseFurnitureIncludeChange={onLooseFurnitureIncludeChange}
+            onQuantityChange={onLooseFurnitureQuantityChange}
+            onQuantityBlur={onLooseFurnitureQuantityBlur}
             onOpenSectionSpec={() => openSectionSpec("loose_furniture")}
           />
 

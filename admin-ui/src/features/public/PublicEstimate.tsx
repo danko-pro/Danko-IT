@@ -51,7 +51,6 @@ import {
   showerPackageLabels,
   type PlumbingOptions,
 } from "./public-estimate-plumbing";
-import { calculateWarmFloor, type WarmFloorMode } from "./public-estimate-warm-floor";
 import { calculateWalls } from "./public-estimate-walls";
 import {
   doorPackageOptions,
@@ -81,7 +80,6 @@ import {
   type FlooringRoomDraft,
   type LooseFurnitureOptionsDraft,
   type WallsRoomDraft,
-  type WarmFloorRoomDraft,
 } from "./estimate/context";
 import { buildEstimateSpecModalData } from "./estimate/spec";
 import {
@@ -100,11 +98,11 @@ import {
   buildPlumbingSummaryItems,
   buildVolumeSummaryItems,
   buildWallsSummaryItems,
-  buildWarmFloorSummaryItems,
 } from "./estimate/summary";
 import { estimateNavigationItems, formatEstimateStep, getEstimateSectionClassName } from "./sections/registry";
 import { useEstimateNavigation } from "./estimate/useEstimateNavigation";
 import { useEstimateRooms } from "./estimate/useEstimateRooms";
+import { useWarmFloorEstimate } from "./estimate/useWarmFloorEstimate";
 import { FlooringSection } from "./sections/flooring/FlooringSection";
 import { GeometrySection } from "./sections/geometry/GeometrySection";
 import { ObjectSection } from "./sections/object/ObjectSection";
@@ -161,8 +159,6 @@ export function PublicEstimate() {
     apartmentNumber: "",
     contact: "",
   });
-  const [warmFloorMode, setWarmFloorMode] = useState<WarmFloorMode>("water");
-  const [warmFloorRooms, setWarmFloorRooms] = useState<Record<string, WarmFloorRoomDraft>>({});
   const [flooringRooms, setFlooringRooms] = useState<Record<string, FlooringRoomDraft>>({});
   const [wallsRooms, setWallsRooms] = useState<Record<string, WallsRoomDraft>>({});
   const [ceilingRooms, setCeilingRooms] = useState<Record<string, CeilingRoomDraft>>({});
@@ -226,43 +222,6 @@ export function PublicEstimate() {
     toggleMobileVolumesExpanded,
     scrollToEstimateSection,
   } = useEstimateNavigation();
-  const purgeRoomFromRelatedState = useCallback((roomId: string) => {
-    setWarmFloorRooms((currentRooms) => {
-      const nextRooms = { ...currentRooms };
-
-      delete nextRooms[roomId];
-
-      return nextRooms;
-    });
-    setFlooringRooms((currentRooms) => {
-      const nextRooms = { ...currentRooms };
-
-      delete nextRooms[roomId];
-
-      return nextRooms;
-    });
-    setWallsRooms((currentRooms) => {
-      const nextRooms = { ...currentRooms };
-
-      delete nextRooms[roomId];
-
-      return nextRooms;
-    });
-    setCeilingRooms((currentRooms) => {
-      const nextRooms = { ...currentRooms };
-
-      delete nextRooms[roomId];
-
-      return nextRooms;
-    });
-    setElectricRooms((currentRooms) => {
-      const nextRooms = { ...currentRooms };
-
-      delete nextRooms[roomId];
-
-      return nextRooms;
-    });
-  }, []);
   const {
     ceilingHeightInput,
     rooms,
@@ -283,28 +242,56 @@ export function PublicEstimate() {
     addRoom,
     removeRoom,
   } = useEstimateRooms();
+  const {
+    warmFloorMode,
+    setWarmFloorMode,
+    warmFloorRooms,
+    warmFloorResult,
+    warmFloorModeLabel,
+    warmFloorConnectionLabel,
+    warmFloorSummaryItems,
+    removeWarmFloorRoom,
+    onWarmFloorRoomSelectedChange,
+    onWarmFloorAreaChange,
+    onWarmFloorAreaBlur,
+  } = useWarmFloorEstimate({ rooms, roomInputs });
+  const purgeRoomFromRelatedState = useCallback(
+    (roomId: string) => {
+      removeWarmFloorRoom(roomId);
+      setFlooringRooms((currentRooms) => {
+        const nextRooms = { ...currentRooms };
+
+        delete nextRooms[roomId];
+
+        return nextRooms;
+      });
+      setWallsRooms((currentRooms) => {
+        const nextRooms = { ...currentRooms };
+
+        delete nextRooms[roomId];
+
+        return nextRooms;
+      });
+      setCeilingRooms((currentRooms) => {
+        const nextRooms = { ...currentRooms };
+
+        delete nextRooms[roomId];
+
+        return nextRooms;
+      });
+      setElectricRooms((currentRooms) => {
+        const nextRooms = { ...currentRooms };
+
+        delete nextRooms[roomId];
+
+        return nextRooms;
+      });
+    },
+    [removeWarmFloorRoom],
+  );
   const handleRemoveRoom = useCallback(
     (roomId: string) => removeRoom(roomId, purgeRoomFromRelatedState),
     [removeRoom, purgeRoomFromRelatedState],
-  );
-  const warmFloorRoomInputs = useMemo(
-    () =>
-      rooms.map((room, index) => {
-        const warmFloorDraft = warmFloorRooms[room.id] ?? {};
-
-        return {
-          roomId: room.id,
-          roomName: room.name.trim() || "Помещение",
-          area: roomInputs[index]?.area ?? 0,
-          isSelected: warmFloorDraft.isSelected ?? room.type === "bathroom",
-          warmFloorArea: parseEstimateDecimal(warmFloorDraft.warmFloorArea ?? room.area),
-        };
-      }),
-    [roomInputs, rooms, warmFloorRooms],
-  );
-  const warmFloorResult = useMemo(
-    () => calculateWarmFloor(warmFloorMode, warmFloorRoomInputs),
-    [warmFloorMode, warmFloorRoomInputs],
   );
   const flooringRoomInputs = useMemo(
     () =>
@@ -485,18 +472,6 @@ export function PublicEstimate() {
   const estimateTotalItems = buildEstimateTotalItems(estimateResult.totals);
   const packageClassification = classifyEstimatePackage(estimateResult.totals.pricePerSquareMeter);
 
-  const warmFloorModeLabel = warmFloorMode === "water" ? "Водяной" : "Электрический";
-  const warmFloorConnectionLabel =
-    warmFloorMode === "electric"
-      ? "автомат в щит"
-      : warmFloorResult.usesTowelRailConnection
-        ? "от полотенцесушителя"
-        : warmFloorResult.needsPump
-          ? "гребенка + насос"
-          : warmFloorResult.needsManifold
-            ? "гребенка"
-            : "без отдельного узла";
-  const warmFloorSummaryItems = buildWarmFloorSummaryItems(warmFloorMode, warmFloorResult);
   const flooringSummaryItems = buildFlooringSummaryItems(flooringResult);
   const wallsSummaryItems = buildWallsSummaryItems(wallsResult);
   const ceilingSummaryItems = buildCeilingSummaryItems(ceilingResult);
@@ -544,16 +519,6 @@ export function PublicEstimate() {
 
   function closeSpecModal() {
     setSpecModal(null);
-  }
-
-  function updateWarmFloorRoom(roomId: string, patch: WarmFloorRoomDraft) {
-    setWarmFloorRooms((currentRooms) => ({
-      ...currentRooms,
-      [roomId]: {
-        ...currentRooms[roomId],
-        ...patch,
-      },
-    }));
   }
 
   function updateFlooringRoom(roomId: string, patch: FlooringRoomDraft) {
@@ -792,19 +757,9 @@ export function PublicEstimate() {
             warmFloorRooms={warmFloorRooms}
             roomInputs={roomInputs}
             numberFieldProps={estimateNumericFieldProps}
-            onWarmFloorRoomSelectedChange={(roomId, isSelected) =>
-              updateWarmFloorRoom(roomId, { isSelected })
-            }
-            onWarmFloorAreaChange={(roomId, event) =>
-              updateWarmFloorRoom(roomId, {
-                warmFloorArea: sanitizeEstimateDecimalInput(event.target.value),
-              })
-            }
-            onWarmFloorAreaBlur={(roomId, event) =>
-              updateWarmFloorRoom(roomId, {
-                warmFloorArea: normalizeEstimateDecimalOnBlur(event.target.value),
-              })
-            }
+            onWarmFloorRoomSelectedChange={onWarmFloorRoomSelectedChange}
+            onWarmFloorAreaChange={onWarmFloorAreaChange}
+            onWarmFloorAreaBlur={onWarmFloorAreaBlur}
             warmFloorSummaryItems={warmFloorSummaryItems}
             warmFloorResult={warmFloorResult}
             warmFloorModeLabel={warmFloorModeLabel}

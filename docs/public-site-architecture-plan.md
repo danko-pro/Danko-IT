@@ -630,20 +630,22 @@ flowchart TB
 
 | Файл | Строк | Роль |
 |---|---:|---|
-| `PublicLanding.tsx` | 33 | Тонкий шелл: собирает секции |
+| `PublicLanding.tsx` | 38 | Тонкий шелл: layout-only, собирает секции |
 | `components/PublicHeader.tsx` | 48 | Шапка/навигация |
-| `components/PublicHero.tsx` | 90 | Hero |
-| `components/PublicServicesSection.tsx` | **392** | Услуги (крупнейший компонент лендинга) |
-| `components/PublicProjectsSection.tsx` | 283 | Кейсы/портфолио |
-| `components/PublicContactsSection.tsx` | 207 | Контакты + форма заявки |
-| `components/PublicPricingSection.tsx` | 70 | Витрина пакетов |
-| `components/PublicProcessSection.tsx` | 65 | Процесс |
+| `components/PublicHero.tsx` | 66 | Hero (shell; JSX — `components/hero/*`) |
+| `components/PublicServicesSection.tsx` | 59 | Услуги (shell; JSX — `components/services/*`) |
+| `components/PublicProjectsSection.tsx` | 63 | Кейсы/портфолио (shell; JSX — `components/projects/*`) |
+| `components/PublicContactsSection.tsx` | 49 | Контакты + форма (shell; JSX — `components/contacts/*`) |
+| `components/PublicPricingSection.tsx` | 37 | Витрина пакетов (shell; JSX — `components/pricing/*`) |
+| `components/PublicProcessSection.tsx` | 51 | Процесс (shell; JSX — `components/process/*`) |
 | `components/PublicSectionContour.tsx` | 21 | Декор-контур |
 | `hooks/usePublicProcessSteps.ts` | 122 | Логика шагов процесса |
 | `hooks/usePublicContourRoute.ts` | 87 | Анимация контура |
 | `hooks/useLeadFormDraft.ts` | 73 | Состояние/сабмит формы заявки |
 | `hooks/usePublicHeaderVisibility.ts` | 34 | Скрытие шапки при скролле |
-| `public-content.ts` | **360** | **Весь контент лендинга захардкожен** |
+| `hooks/usePublicServicesExplorer.ts` | — | Табы/аккордеон услуг (L1) |
+| `hooks/usePublicProjectsShowcase.ts` | — | Переключение кейсов/галерея (L3) |
+| `public-content.ts` | **360** | **Весь контент лендинга захардкожен** (не трогали в L1–L7) |
 | `PublicPrivacy.tsx` | 93 | Политика ПДн (отдельная поверхность, хардкод-текст + дата `2026-05-24`) |
 
 **Hardcode-контент в `public-content.ts` (360 стр.):**
@@ -678,49 +680,83 @@ flowchart TB
 | Контакты | hardcode | Опционально | Меняется редко |
 | Privacy дата/версия | hardcode `2026-05-24` | Опционально | Юридический текст |
 
-##### B.L0.as-built. Public landing as-is architecture (зафиксировано L0)
+##### B.L0.as-built. Public landing baseline (зафиксировано L0)
 
-**Статус L0:** только документация as-is + architecture guards в vitest (`public-landing-architecture.test.ts`). Поведение, UI, CSS и тексты **не меняются**. Следующий подшаг декомпозиции — **L1: split `PublicServicesSection`** (крупнейший компонент лендинга, ~392 стр.).
+**Статус L0:** первичная фиксация as-is + базовые architecture guards в vitest (`public-landing-architecture.test.ts`). Поведение, UI, CSS и тексты **не менялись**. Декомпозиция секций — подшаги **L1–L6**; итоговая as-built архитектура — **[B.L7.as-built](#bl7as-built-landing-decomposition-l1l7-зафиксировано)**.
+
+**Guards (L0, сохранены):** лимит строк `PublicLanding.tsx` (≤ 80), запрет `useState`/`useEffect`/`useMemo`/`useCallback` в shell, наличие файлов секций и хуков, маркеры секций в `public.css`.
+
+- **DoD L0:** выполнен; superseded by L7 для структуры после split.
+
+##### B.L7.as-built. Landing decomposition (L1–L7, зафиксировано)
+
+**Статус L7:** трек декомпозиции лендинга **закрыт (as-built)**. Подшаги L1–L6 разрезали крупные секции на shell + `components/<section>/*` + секционные хуки; L7 — только docs + расширенные architecture guards (без изменения поведения, UI, CSS, `public-content.ts`).
 
 ```mermaid
 flowchart TB
-  PL["PublicLanding.tsx — shell / layout"]
-  SEC["components/* — presentational sections"]
-  HOOK["hooks/* — section interactivity"]
+  PL["PublicLanding.tsx — shell / layout-only"]
+  SEC["components/Public*Section.tsx — section shells"]
+  SUB["components/{hero,services,projects,contacts,pricing,process}/* — JSX chunks"]
+  HOOK["hooks/usePublic*.ts — section controllers"]
   CONTENT["public-content.ts — content monolith"]
-  CSS["public.css — shared CSS monolith"]
+  CSS["public.css — CSS monolith (DEBT-5 / C2)"]
 
   PL --> SEC
+  SEC --> SUB
   SEC --> HOOK
+  SUB --> CONTENT
   SEC --> CONTENT
   PL --> CSS
   SEC --> CSS
+  SUB --> CSS
 ```
 
 | Слой | Путь | Ответственность |
 |---|---|---|
-| Shell | `PublicLanding.tsx` | Компоновка страницы: шапка, `<main>`, порядок секций; единственный оркестрационный хук — `usePublicContourRoute` для декора-контура |
-| Секции UI | `components/PublicHeader.tsx` | Шапка/навигация (+ `usePublicHeaderVisibility`) |
-| | `components/PublicHero.tsx` | Hero-блок |
-| | `components/PublicServicesSection.tsx` | Услуги (крупнейший компонент) |
-| | `components/PublicPricingSection.tsx` | Витрина пакетов |
-| | `components/PublicProjectsSection.tsx` | Кейсы/портфолио |
-| | `components/PublicProcessSection.tsx` | Процесс (+ `usePublicProcessSteps`) |
-| | `components/PublicContactsSection.tsx` | Контакты + форма заявки (+ `useLeadFormDraft`) |
-| | `components/PublicSectionContour.tsx` | Декор-контур (presentational) |
-| Хуки | `hooks/usePublicHeaderVisibility.ts` | Скрытие шапки при скролле |
+| Shell | `PublicLanding.tsx` (38 стр.) | Layout-only: шапка, `<main>`, порядок секций; единственный оркестрационный хук — `usePublicContourRoute` (`getContourClassName`) |
+| Section shells | `components/PublicHeader.tsx` (48) | Шапка/навигация (+ `usePublicHeaderVisibility`) |
+| | `components/PublicHero.tsx` (66) | Hero shell → `components/hero/*` |
+| | `components/PublicServicesSection.tsx` (59) | Услуги shell → `components/services/*` (+ `usePublicServicesExplorer`) |
+| | `components/PublicPricingSection.tsx` (37) | Витрина пакетов shell → `components/pricing/*` |
+| | `components/PublicProjectsSection.tsx` (63) | Кейсы shell → `components/projects/*` (+ `usePublicProjectsShowcase`) |
+| | `components/PublicProcessSection.tsx` (51) | Процесс shell → `components/process/*` (+ `usePublicProcessSteps`) |
+| | `components/PublicContactsSection.tsx` (49) | Контакты shell → `components/contacts/*` (+ `useLeadFormDraft`) |
+| | `components/PublicSectionContour.tsx` (21) | Декор-контур (presentational) |
+| Subcomponents | `components/hero/*` | `PublicHeroActions`, `PublicHeroFacts`, `PublicHeroVisual` |
+| | `components/services/*` | `PublicServiceVisualIcon`, `PublicServicesTabs`, `PublicServiceDetail`, `PublicServicesAccordion`, `PublicServiceVisualList` |
+| | `components/projects/*` | `publicProjectModel`, `PublicProjectShowcaseInfo`, `PublicProjectShowcaseMedia`, `PublicProjectSwitcher`, `PublicProjectScope` |
+| | `components/contacts/*` | `PublicLeadForm`, `PublicContactsSideCard` |
+| | `components/pricing/*` | `PublicPricingCard`, `PublicPricingCards` |
+| | `components/process/*` | `PublicProcessSteps` |
+| Хуки / контроллеры | `hooks/usePublicHeaderVisibility.ts` | Скрытие шапки при скролле |
 | | `hooks/usePublicContourRoute.ts` | Анимация/маршрут контура между секциями |
+| | `hooks/usePublicServicesExplorer.ts` | Табы/аккордеон услуг (L1) |
+| | `hooks/usePublicProjectsShowcase.ts` | Переключение кейсов, галерея (L3) |
 | | `hooks/usePublicProcessSteps.ts` | Логика шагов процесса |
 | | `hooks/useLeadFormDraft.ts` | Состояние/сабмит формы заявки |
-| Контент | `public-content.ts` | **Монолит контента** лендинга (навигация, hero, услуги, пакеты, кейсы, процесс, опции формы) |
-| Стили | `public.css` | **Общий CSS-монолит** (лендинг + `/estimate` + `/privacy`); секции по маркерам-комментариям: `public-base` → `public-header` → `public-hero` → `public-services` → `public-pricing` → `public-process` → `public-contacts` → `public-estimate-ux` → `public-responsive` |
+| Контент | `public-content.ts` | **Монолит контента** лендинга (навигация, hero, услуги, пакеты, кейсы, процесс, опции формы) — **не менялся в L1–L7** |
+| Стили | `public.css` | **CSS-монолит** (лендинг + `/estimate` + `/privacy`); split — отдельный трек **C2 / DEBT-5**, не в scope L7 |
 
-**Правило расширения (обязательное):** новое состояние, эффекты и обработчики секций **не добавляются** в `PublicLanding.tsx`. Интерактивность секции — в `hooks/use*.ts` (или внутри компонента секции через хук); shell только собирает layout и прокидывает props (например `getContourClassName`).
+**Правило расширения (обязательное):**
+- новое состояние/эффекты секции → `hooks/use*.ts` (секционный контроллер);
+- новые JSX-куски секции → `components/<section>/*`;
+- `PublicLanding.tsx` — **только layout** (без `useState`/`useEffect`/`useMemo`/`useCallback`).
 
-**Guards (L0):** `admin-ui/src/features/public/public-landing-architecture.test.ts` — лимит строк shell (≤ 80), запрет `useState`/`useEffect`/`useMemo`/`useCallback` в shell, наличие файлов секций и хуков, маркеры секций в `public.css`.
+**Guards (L0 + L7):** `admin-ui/src/features/public/public-landing-architecture.test.ts` — L0: shell ≤ 80 строк, запрет React-хуков в shell, секции/хуки/CSS-маркеры; L7: subcomponents по папкам, лимиты section shells (`PublicHero` ≤ 90, `PublicServicesSection` ≤ 80, `PublicProjectsSection` ≤ 90, `PublicContactsSection` ≤ 80, `PublicPricingSection` ≤ 60, `PublicProcessSection` ≤ 70).
 
-- **DoD L0:** as-built архитектура задокументирована; guards зелёные; продуктовый код без изменений.
-- **Можно остановиться:** да. **Следующий шаг:** L1 — декомпозиция `PublicServicesSection` (не L0).
+| Подшаг | Что сделано | Статус |
+|---|---|---|
+| L0 | Baseline docs + guards | ✅ |
+| L1 | Split `PublicServicesSection` → `services/*` + `usePublicServicesExplorer` | ✅ |
+| L2 | Split hero | ✅ |
+| L3 | Split projects → `projects/*` + `usePublicProjectsShowcase` | ✅ |
+| L4 | Split contacts | ✅ |
+| L5 | Split pricing | ✅ |
+| L6 | Split process | ✅ |
+| L7 | As-built docs + guards | ✅ |
+
+- **DoD L7:** as-built архитектура задокументирована; guards L0+L7 зелёные; трек декомпозиции лендинга закрыт.
+- **Можно остановиться:** да. **Следующий шаг по лендингу:** B1/B2/B3 (SEO, перф, контент-слой) — не декомпозиция JSX.
 
 ### 5.B.tobe. To-be (лендинг)
 

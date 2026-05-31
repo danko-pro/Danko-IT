@@ -13,7 +13,6 @@ import {
   wallsCoveringOptions,
   wallsPreparationOptions,
 } from "./estimate/defaults";
-import { type EstimateObjectMeta } from "./estimate/context";
 import { buildEstimateSpecModalData } from "./estimate/spec";
 import {
   buildCompactVolumeItems,
@@ -31,6 +30,7 @@ import { useElectricEstimate } from "./estimate/useElectricEstimate";
 import { usePlumbingEstimate } from "./estimate/usePlumbingEstimate";
 import { useDoorsEstimate } from "./estimate/useDoorsEstimate";
 import { useCompletionEstimate } from "./estimate/useCompletionEstimate";
+import { useEstimateObjectMeta } from "./estimate/useEstimateObjectMeta";
 import { useAppliancesEstimate } from "./estimate/useAppliancesEstimate";
 import { useLooseFurnitureEstimate } from "./estimate/useLooseFurnitureEstimate";
 import { useHomeGoodsEstimate } from "./estimate/useHomeGoodsEstimate";
@@ -56,12 +56,13 @@ import { PlumbingSection } from "./sections/plumbing/PlumbingSection";
 import { WallsSection } from "./sections/walls/WallsSection";
 
 export function PublicEstimate() {
-  const [objectMeta, setObjectMeta] = useState<EstimateObjectMeta>({
-    address: "",
-    complexName: "",
-    apartmentNumber: "",
-    contact: "",
-  });
+  const {
+    objectMeta,
+    onAddressChange,
+    onComplexNameChange,
+    onApartmentNumberChange,
+    onContactChange,
+  } = useEstimateObjectMeta();
   const [specModal, setSpecModal] = useState<{ kind: "section" | "full"; sectionId?: EstimateSectionId } | null>(
     null,
   );
@@ -374,18 +375,10 @@ export function PublicEstimate() {
             stepLabel={formatEstimateStep("estimate-object")}
             objectMeta={objectMeta}
             textFieldProps={estimateTextFieldProps}
-            onAddressChange={(event) =>
-              setObjectMeta((current) => ({ ...current, address: event.target.value }))
-            }
-            onComplexNameChange={(event) =>
-              setObjectMeta((current) => ({ ...current, complexName: event.target.value }))
-            }
-            onApartmentNumberChange={(event) =>
-              setObjectMeta((current) => ({ ...current, apartmentNumber: event.target.value }))
-            }
-            onContactChange={(event) =>
-              setObjectMeta((current) => ({ ...current, contact: event.target.value }))
-            }
+            onAddressChange={onAddressChange}
+            onComplexNameChange={onComplexNameChange}
+            onApartmentNumberChange={onApartmentNumberChange}
+            onContactChange={onContactChange}
           />
 
           <GeometrySection

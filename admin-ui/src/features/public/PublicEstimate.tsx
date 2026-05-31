@@ -17,7 +17,6 @@ import {
   type LooseFurnitureOptions,
 } from "./public-estimate-loose-furniture";
 import { calculateHomeGoods, createDefaultHomeGoodsOptions, type HomeGoodsOptions } from "./public-estimate-home-goods";
-import { calculateDoors, type DoorOptions } from "./public-estimate-doors";
 import { parseEstimateDecimal, parseEstimateInteger } from "./public-estimate-geometry";
 import {
   estimateNumericFieldProps,
@@ -53,8 +52,6 @@ import {
   buildAppliancesSummaryItems,
   buildCompactVolumeItems,
   buildCompletionSummaryItems,
-  buildDoorCompositionItems,
-  buildDoorSummaryItems,
   buildEstimateTotalItems,
   buildHomeGoodsSummaryItems,
   buildLooseFurnitureSummaryItems,
@@ -69,6 +66,7 @@ import { useWallsEstimate } from "./estimate/useWallsEstimate";
 import { useCeilingEstimate } from "./estimate/useCeilingEstimate";
 import { useElectricEstimate } from "./estimate/useElectricEstimate";
 import { usePlumbingEstimate } from "./estimate/usePlumbingEstimate";
+import { useDoorsEstimate } from "./estimate/useDoorsEstimate";
 import { FlooringSection } from "./sections/flooring/FlooringSection";
 import { GeometrySection } from "./sections/geometry/GeometrySection";
 import { ObjectSection } from "./sections/object/ObjectSection";
@@ -124,13 +122,6 @@ export function PublicEstimate() {
     complexName: "",
     apartmentNumber: "",
     contact: "",
-  });
-  const [doorOptions, setDoorOptions] = useState<DoorOptions>({
-    packageType: "invisible_19000",
-    includeHandles: true,
-    includePrivacyLocks: true,
-    includeLogistics: true,
-    includeInstallation: true,
   });
   const [completionOptions, setCompletionOptions] = useState<CompletionOptionsDraft>({
     includeKitchenBase: false,
@@ -259,6 +250,17 @@ export function PublicEstimate() {
     onIncludeWaterNodeChange,
     onIncludeLeakProtectionChange,
   } = usePlumbingEstimate({ rooms, roomInputs });
+  const {
+    doorOptions,
+    doorsResult,
+    doorCompositionItems,
+    doorSummaryItems,
+    onPackageTypeChange,
+    onIncludeHandlesChange,
+    onIncludePrivacyLocksChange,
+    onIncludeLogisticsChange,
+    onIncludeInstallationChange,
+  } = useDoorsEstimate({ rooms, roomInputs });
   const purgeRoomFromRelatedState = useCallback(
     (roomId: string) => {
       removeWarmFloorRoom(roomId);
@@ -273,18 +275,6 @@ export function PublicEstimate() {
     (roomId: string) => removeRoom(roomId, purgeRoomFromRelatedState),
     [removeRoom, purgeRoomFromRelatedState],
   );
-  const doorRoomInputs = useMemo(
-    () =>
-      rooms.map((room, index) => ({
-        roomId: room.id,
-        roomName: room.name.trim() || "Помещение",
-        roomType: room.type,
-        area: roomInputs[index]?.area ?? 0,
-        doorCount: roomInputs[index]?.doorCount ?? 0,
-      })),
-    [roomInputs, rooms],
-  );
-  const doorsResult = useMemo(() => calculateDoors(doorRoomInputs, doorOptions), [doorOptions, doorRoomInputs]);
   const completionResult = useMemo(
     () =>
       calculateCompletion({
@@ -350,8 +340,6 @@ export function PublicEstimate() {
   const estimateTotalItems = buildEstimateTotalItems(estimateResult.totals);
   const packageClassification = classifyEstimatePackage(estimateResult.totals.pricePerSquareMeter);
 
-  const doorCompositionItems = buildDoorCompositionItems(doorsResult, doorOptions);
-  const doorSummaryItems = buildDoorSummaryItems(doorsResult);
   const completionSummaryItems = buildCompletionSummaryItems(completionResult);
   const appliancesSummaryItems = buildAppliancesSummaryItems(appliancesResult);
   const looseFurnitureSummaryItems = buildLooseFurnitureSummaryItems(looseFurnitureResult);
@@ -391,13 +379,6 @@ export function PublicEstimate() {
 
   function closeSpecModal() {
     setSpecModal(null);
-  }
-
-  function updateDoorOptions(patch: Partial<DoorOptions>) {
-    setDoorOptions((currentOptions) => ({
-      ...currentOptions,
-      ...patch,
-    }));
   }
 
   function updateCompletionOptions(patch: Partial<CompletionOptionsDraft>) {
@@ -671,11 +652,11 @@ export function PublicEstimate() {
             doorOptions={doorOptions}
             doorsResult={doorsResult}
             doorPackageOptions={doorPackageOptions}
-            onPackageTypeChange={(packageType) => updateDoorOptions({ packageType })}
-            onIncludeHandlesChange={(checked) => updateDoorOptions({ includeHandles: checked })}
-            onIncludePrivacyLocksChange={(checked) => updateDoorOptions({ includePrivacyLocks: checked })}
-            onIncludeLogisticsChange={(checked) => updateDoorOptions({ includeLogistics: checked })}
-            onIncludeInstallationChange={(checked) => updateDoorOptions({ includeInstallation: checked })}
+            onPackageTypeChange={onPackageTypeChange}
+            onIncludeHandlesChange={onIncludeHandlesChange}
+            onIncludePrivacyLocksChange={onIncludePrivacyLocksChange}
+            onIncludeLogisticsChange={onIncludeLogisticsChange}
+            onIncludeInstallationChange={onIncludeInstallationChange}
             onOpenSectionSpec={() => openSectionSpec("doors")}
           />
 

@@ -5,6 +5,7 @@ import unittest
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 from supply_bot.database.metadata import metadata
+from supply_bot.estimates.application.warm_floor_snapshot import DEFAULT_PUBLIC_WARM_FLOOR_CONFIG
 from supply_bot.storage_estimates.runtime_repository import SqlAlchemyEstimateRuntimeRepository
 
 
@@ -54,3 +55,19 @@ class SqlAlchemyEstimateWarmFloorRepositoryTest(unittest.IsolatedAsyncioTestCase
         self.assertEqual((await owner_1.list_estimate_warm_floor_rooms(project_id))[0]["area_m2_override"], 8.5)
         self.assertIsNone(await owner_2.get_estimate_warm_floor_config(project_id))
         self.assertEqual(await owner_2.list_estimate_warm_floor_rooms(project_id), [])
+
+    async def test_public_warm_floor_config_is_global_and_updateable(self) -> None:
+        global_catalog = self.repository.for_owner(None)
+
+        config = await global_catalog.ensure_public_warm_floor_config(DEFAULT_PUBLIC_WARM_FLOOR_CONFIG)
+        self.assertEqual(config["config_key"], "global")
+        self.assertEqual(config["pipe_price_per_meter"], 168.78)
+
+        updated = await global_catalog.update_public_warm_floor_config(
+            {"pipe_price_per_meter": 222.5, "electric_mat_price_per_m2": 3100},
+            defaults=DEFAULT_PUBLIC_WARM_FLOOR_CONFIG,
+        )
+
+        self.assertEqual(updated["pipe_price_per_meter"], 222.5)
+        self.assertEqual(updated["electric_mat_price_per_m2"], 3100)
+        self.assertEqual((await global_catalog.get_public_warm_floor_config())["pipe_price_per_meter"], 222.5)

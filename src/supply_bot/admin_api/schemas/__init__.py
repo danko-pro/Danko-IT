@@ -37,6 +37,7 @@ from supply_bot.admin_api.schemas.calculator_plumbing import (
     PlumbingZonePackagesReplacePayload,
     PlumbingZoneUpdatePayload,
 )
+from supply_bot.admin_api.schemas.calculator_warm_floor_public import PublicWarmFloorConfigPayload
 from supply_bot.admin_api.schemas.materials import (
     AliasCreatePayload,
     FamilyCreatePayload,
@@ -109,6 +110,7 @@ __all__ = [
     "PlumbingZonePackagePayload",
     "PlumbingZonePackagesReplacePayload",
     "PlumbingZoneUpdatePayload",
+    "PublicWarmFloorConfigPayload",
     "PublicLeadPayload",
     "RequestActionResult",
     "RequestDeliveryPayload",

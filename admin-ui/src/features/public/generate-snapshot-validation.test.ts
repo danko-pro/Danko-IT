@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   buildSnapshotUrl,
+  buildWarmFloorSnapshotUrl,
   findForbiddenKeys,
   resolveRemoteBaseUrl,
   validateSnapshotPayload,
@@ -43,6 +44,9 @@ describe("generate-snapshot validation", () => {
     );
     expect(buildSnapshotUrl("https://api.example.com/")).toBe(
       "https://api.example.com/api/public/catalog/plumbing/snapshot",
+    );
+    expect(buildWarmFloorSnapshotUrl("https://api.example.com/")).toBe(
+      "https://api.example.com/api/public/catalog/warm-floor/snapshot",
     );
   });
 

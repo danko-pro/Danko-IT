@@ -110,6 +110,35 @@ estimate_warm_floor_configs = Table(
     Column("updated_at", Text, nullable=False, server_default=text("CURRENT_TIMESTAMP")),
 )
 
+estimate_public_warm_floor_configs = Table(
+    "estimate_public_warm_floor_configs",
+    metadata,
+    Column("config_key", Text, primary_key=True, server_default=text("'global'")),
+    Column("owner_user_id", Integer, ForeignKey("app_users.id", ondelete="CASCADE"), nullable=True),
+    Column("version", Text, nullable=False, server_default=text("'warm-floor-v1'")),
+    Column("water_labor_rate_per_m2", Float, nullable=False, server_default=text("1600")),
+    Column("pipe_meters_per_m2", Float, nullable=False, server_default=text("6")),
+    Column("max_circuit_area_m2", Float, nullable=False, server_default=text("15")),
+    Column("pump_room_threshold", Integer, nullable=False, server_default=text("3")),
+    Column("pump_circuit_threshold", Integer, nullable=False, server_default=text("4")),
+    Column("pipe_price_per_meter", Float, nullable=False, server_default=text("168.78")),
+    Column("chase_labor_per_meter", Float, nullable=False, server_default=text("900")),
+    Column("small_loop_fittings_material", Float, nullable=False, server_default=text("1501.19")),
+    Column("small_loop_control_head_material", Float, nullable=False, server_default=text("7000")),
+    Column("small_loop_connection_labor", Float, nullable=False, server_default=text("4600")),
+    Column("manifold_labor", Float, nullable=False, server_default=text("6000")),
+    Column("manifold_material", Float, nullable=False, server_default=text("20000")),
+    Column("pump_labor", Float, nullable=False, server_default=text("8000")),
+    Column("pump_material", Float, nullable=False, server_default=text("25000")),
+    Column("electric_mat_price_per_m2", Float, nullable=False, server_default=text("2700")),
+    Column("electric_breaker_material", Float, nullable=False, server_default=text("1500")),
+    Column("thermostat_material", Float, nullable=False, server_default=text("5500")),
+    Column("electric_wire_material", Float, nullable=False, server_default=text("1000")),
+    Column("electric_installation_labor", Float, nullable=False, server_default=text("7000")),
+    Column("created_at", Text, nullable=False, server_default=text("CURRENT_TIMESTAMP")),
+    Column("updated_at", Text, nullable=False, server_default=text("CURRENT_TIMESTAMP")),
+)
+
 estimate_warm_floor_rooms = Table(
     "estimate_warm_floor_rooms",
     metadata,
@@ -714,6 +743,7 @@ Index(
     sqlite_where=estimate_warm_floor_rooms.c.owner_user_id.is_not(None),
     postgresql_where=estimate_warm_floor_rooms.c.owner_user_id.is_not(None),
 )
+Index("ix_estimate_public_warm_floor_configs_owner", estimate_public_warm_floor_configs.c.owner_user_id)
 Index(
     "uq_estimate_flooring_coverings_global_title",
     estimate_flooring_coverings.c.title,
@@ -1077,6 +1107,7 @@ __all__ = [
     "estimate_project_door_components",
     "estimate_project_doors",
     "estimate_project_ceiling_items",
+    "estimate_public_warm_floor_configs",
     "estimate_projects",
     "estimate_room_floor_sections",
     "estimate_room_openings",

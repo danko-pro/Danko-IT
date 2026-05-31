@@ -9,8 +9,9 @@
  * Local/dev mode (env не задан): Python-генератор (tools/generate_plumbing_snapshot.py)
  * с детерминированным seed-fallback.
  *
- * Также пишет `generated/warm-floor.snapshot.json` из детерминированного v1 seed
- * (отдельного public API пока нет).
+ * Также пишет `generated/warm-floor.snapshot.json`:
+ * - remote mode: GET /api/public/catalog/warm-floor/snapshot;
+ * - local/dev mode: детерминированный v1 seed fallback.
  *
  * Запуск: `node scripts/generate-snapshot.js`.
  */
@@ -99,6 +100,12 @@ export function resolveRemoteBaseUrl() {
 export function buildSnapshotUrl(baseUrl) {
   const normalized = baseUrl.replace(/\/+$/, "");
   return `${normalized}/api/public/catalog/plumbing/snapshot`;
+}
+
+/** @param {string} baseUrl */
+export function buildWarmFloorSnapshotUrl(baseUrl) {
+  const normalized = baseUrl.replace(/\/+$/, "");
+  return `${normalized}/api/public/catalog/warm-floor/snapshot`;
 }
 
 /**
@@ -283,8 +290,10 @@ function runLocalPythonGenerator() {
 
 async function runRemoteMode(baseUrl) {
   const url = buildSnapshotUrl(baseUrl);
+  const warmFloorUrl = buildWarmFloorSnapshotUrl(baseUrl);
   console.log("[generate-snapshot] mode: remote");
   console.log(`[generate-snapshot] URL: ${url}`);
+  console.log(`[generate-snapshot] warm-floor URL: ${warmFloorUrl}`);
 
   try {
     const payload = await fetchRemoteSnapshot(url);
@@ -296,7 +305,8 @@ async function runRemoteMode(baseUrl) {
 
     writeSnapshot(payload);
     console.log(`[generate-snapshot] success: remote snapshot written to ${outputFile}`);
-    writeWarmFloorSnapshot(WARM_FLOOR_V1_SEED);
+    const warmFloorPayload = await fetchRemoteSnapshot(warmFloorUrl);
+    writeWarmFloorSnapshot(warmFloorPayload);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.error(`[generate-snapshot] failure: remote fetch failed — ${message}`);

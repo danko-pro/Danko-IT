@@ -21,8 +21,10 @@ import {
   type ZoneSubgroup,
 } from "./plumbing-seed";
 import { usePlumbingCatalog } from "./api/client";
+import { useWarmFloorCatalog } from "./api/warm-floor-client";
 import type { PlumbingSnapshotPreview } from "./api/types";
 import { CATALOG_EDITOR_STYLES } from "./styles";
+import { WarmFloorCatalogPanel } from "./WarmFloorCatalogPanel";
 
 const CATEGORY_LABELS: Record<CatalogCategory, string> = {
   works: "Работа",
@@ -43,7 +45,7 @@ const SECTION_TABS: SectionTab[] = [
   { id: "walls", label: "Стены", ready: false },
   { id: "ceilings", label: "Потолки", ready: false },
   { id: "electrics", label: "Электрика", ready: false },
-  { id: "warm-floor", label: "Тёплый пол", ready: false },
+  { id: "warm-floor", label: "Тёплый пол", ready: true },
   { id: "doors", label: "Двери", ready: false },
   { id: "completion", label: "Комплектация", ready: false },
   { id: "appliances", label: "Техника", ready: false },
@@ -249,6 +251,7 @@ function makeNewZoneId(existing: CatalogZone[]): string {
 
 export function CatalogEditor() {
   const catalog = usePlumbingCatalog();
+  const warmFloorCatalog = useWarmFloorCatalog();
   const { items, zones, setItems, setZones, loading, saving, error, savedAt } = catalog;
   const [activeTab, setActiveTab] = useState<string>("plumbing");
   const [plumbingView, setPlumbingView] = useState<"zones" | "library">("zones");
@@ -551,6 +554,10 @@ export function CatalogEditor() {
   }
 
   const activeSection = SECTION_TABS.find((tab) => tab.id === activeTab);
+  const activeLoading = activeTab === "warm-floor" ? warmFloorCatalog.loading : loading;
+  const activeSaving = activeTab === "warm-floor" ? warmFloorCatalog.saving : saving;
+  const activeSavedAt = activeTab === "warm-floor" ? warmFloorCatalog.savedAt : savedAt;
+  const activeError = activeTab === "warm-floor" ? warmFloorCatalog.error : error;
 
   return (
     <div className="catalog-editor">
@@ -568,18 +575,18 @@ export function CatalogEditor() {
         </div>
         <div className="ce-save-status">
           <span className="ce-dot" aria-hidden="true" />
-          {loading
+          {activeLoading
             ? "Загрузка из БД…"
-            : saving
+            : activeSaving
               ? "Сохранение…"
-              : `Сохранено в БД${savedAt ? ` · ${savedAt}` : ""}`}
+              : `Сохранено в БД${activeSavedAt ? ` · ${activeSavedAt}` : ""}`}
         </div>
       </header>
 
-      {error ? (
+      {activeError ? (
         <div className="ce-note ce-note-warn" role="alert">
           <span className="ce-note-tag">Ошибка</span>
-          {error}
+          {activeError}
         </div>
       ) : null}
 
@@ -597,7 +604,9 @@ export function CatalogEditor() {
         ))}
       </nav>
 
-      {activeSection && !activeSection.ready ? (
+      {activeSection?.id === "warm-floor" ? (
+        <WarmFloorCatalogPanel controller={warmFloorCatalog} />
+      ) : activeSection && !activeSection.ready ? (
         <div className="ce-stub-panel">
           <h2>{activeSection.label}</h2>
           <p>Раздел в разработке. Сейчас наполняется только вкладка «Сантехника».</p>

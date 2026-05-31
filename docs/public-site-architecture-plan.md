@@ -475,6 +475,107 @@ flowchart LR
   - **Примечание:** ретирмент фронтового `catalog-editor/plumbing-seed.ts` остаётся в A10.2 (здесь не трогаем).
 - **DoD A8:** сантех-расчёт полностью на снапшоте (включая мигрированные legacy-опции как зоны глобального seed); разбивки по категориям в публичном UI сантехники нет; `plumbingRates` и legacy-ветка `calculatePlumbing` удалены; цены идентичны намеренным (парити зоны мойки неизменно).
 
+#### Flooring Snapshot Track — Полы: admin/catalog → snapshot → public
+
+> **Статус:** план (audit 2026-06-01). Продуктовый код не менялся. Параллельный трек после A8 (сантехника) и по образцу warm-floor snapshot; не блокирует A9/A10.
+
+##### F.as-is. Текущее состояние (аудит)
+
+| Слой | Файлы / артефакты | Состояние |
+|---|---|---|
+| Публичный расчёт | `public-estimate-flooring.ts`, `useFlooringEstimate.ts`, `defaults.ts`, `FlooringSection.tsx` | **Hardcode-ставки** (`flooringCoveringRates`, `flooringPreparationRates`, `flooringLayoutRates`, `flooringPlinthRates`, `flooringExtraRates`). Per-room: покрытие + подготовка + укладка; глобально: плинтус, порожки, демонтаж. Снапшот **не** используется. |
+| Публичные тесты | `public-estimate-flooring.test.ts` | Golden-case (ламинат 16 м², plinthLength из геометрии, total ≈ 60 510 ₽). База парити F1/F4. |
+| Backend БД | `tables.py`: `estimate_flooring_coverings`, `_preparations`, `_layouts`, `_configs`, `_rooms`, `_room_zones` | Схема **есть** (owner-scoping, `custom_consumables_json`, consumption-based поля). Проектные `_rooms` / `_room_zones` — контур **CRM-калькулятора**, не публичный. |
+| Backend seed | `defaults_flooring.py`, `seeding_flooring.py` | Идемпотентный seed по **title** (6 покрытий, 6 подготовок, 5 укладок). **Не совпадает** 1:1 с публичными enum-кодами и числами `public-estimate-flooring.ts`. |
+| Backend API | `calculator_routes/flooring.py` | `POST …/flooring/{coverings\|preparations\|layouts}`, `PATCH …/projects/{id}/flooring`. **Нет** публичного snapshot, **нет** admin list/CRUD как у plumbing, **нет** `snapshot/preview`. |
+| Публичный endpoint | `app_routes_public.py`, `PUBLIC_ADMIN_API_PATHS` | **`GET /api/public/catalog/flooring/snapshot` — нет** (есть только plumbing + warm-floor). |
+| Build-time JSON | `generate-snapshot.js`, `generated/` | **`flooring.snapshot.json` — нет** (есть `plumbing.snapshot.json`, `warm-floor.snapshot.json`). |
+| Catalog editor | `CatalogEditor.tsx` | Вкладка **«Полы»** — `ready: false`, stub «в разработке». API-клиентов/mappers для flooring **нет** (есть plumbing + warm-floor). |
+
+**Продуктовая модель (целевая, для снапшота):**
+- Каталог покрытий: керамогранит, кварцвинил, ламинат, ковролин, инженерная доска + admin-добавления.
+- Каталог подготовки основания.
+- Каталог способов укладки.
+- Расходники per covering (подложка, клей, грунт, СВП, затирка, инструмент, custom consumables).
+- Глобальные add-ons: плинтус (типы), порожки, демонтаж.
+
+##### F.tobe. Целевая архитектура
+
+```mermaid
+flowchart LR
+  Admin["Admin / CatalogEditor «Полы»"]
+  DB[("estimate_flooring_* global owner=NULL")]
+  API["GET /api/public/catalog/flooring/snapshot"]
+  Gen["generate-snapshot.js prebuild"]
+  Snap[("generated/flooring.snapshot.json")]
+  Pub["public-estimate-flooring.ts + loader"]
+
+  Admin --> DB
+  DB --> API
+  API --> Gen --> Snap --> Pub
+```
+
+- **Источник правды — Postgres (Слой 0, `owner_user_id = NULL`)**, как Q1/Q2.
+- **Публичный контракт — build-time snapshot** (не рантайм-API в браузере): whitelist без internal-полей (разбивка consumption×price, `note`, `custom_consumables_json` raw — только публичные агрегаты ₽/m² или готовые unitPrice).
+- **Local/dev:** детерминированный seed-fallback в `generate-snapshot.js` (как `WARM_FLOOR_V1_SEED`), числа **точно** из текущего `public-estimate-flooring.ts` до парити.
+- **Render/production:** `PUBLIC_SNAPSHOT_BASE_URL` / `VITE_API_BASE_URL` → remote `GET /api/public/catalog/flooring/snapshot`; при ошибке fetch/валидации — **build fail** (без silent fallback).
+- **Формула расчёта на клиенте не меняется на F1–F4** — меняется только источник ставок (как A8.1 для сантехники, warm-floor loader).
+
+##### F.steps. План F1–F6 (этап → gate)
+
+**F1 — Snapshot contract + loader + tests (без смены UI/формул)**
+
+- **Файлы:** `admin-ui/src/features/public/public-flooring-snapshot.ts`, `public-flooring-snapshot.test.ts`, черновой `generated/flooring.snapshot.json` (seed v1 из hardcode, **не** из backend defaults).
+- **Контракт (whitelist):** `version`, `coverings[]` (code, title, materialPricePerM2, laborPricePerM2, baseWastePercent, consumables per m²), `preparations[]`, `layouts[]`, `plinthTypes[]`, `globalAddons` (thresholdPrice, demolitionPricePerM2). Stable **codes** (`porcelain`, `quartz_vinyl`, …) — не DB id.
+- **Gate:** loader валидирует payload; `public-estimate-flooring.test.ts` зелёный; snapshot-тесты зелёные; **поведение `/estimate` идентично** (парити golden-case).
+
+**F2 — Backend `GET /api/public/catalog/flooring/snapshot`**
+
+- **Файлы:** `estimates/application/flooring_snapshot.py`, `app_routes_public.py`, `PUBLIC_ADMIN_API_PATHS`, `BuildFlooringSnapshotUseCase` (read global catalog + map to public DTO).
+- **Gate:** `pytest tests/test_public_flooring_snapshot_whitelist.py` — нет `note`, consumption raw, internal ids без code; rate-limit как у plumbing/warm-floor.
+
+**F3 — Расширить `generate-snapshot.js`**
+
+- **Файлы:** `admin-ui/scripts/generate-snapshot.js` — `buildFlooringSnapshotUrl`, `validateFlooringSnapshotPayload`, `flooringOutputFile` → `generated/flooring.snapshot.json`.
+- **Remote mode:** fetch после plumbing/warm-floor; **local mode:** `FLOORING_V1_SEED` = текущие hardcode-числа (парити F1).
+- **Gate:** `npm run prebuild` пишет три JSON; `npm run build` зелёный.
+
+**F4 — `public-estimate-flooring.ts` читает snapshot-backed rates**
+
+- **Файлы:** `public-estimate-flooring.ts` — заменить exported hardcode tables на `getFlooringRates()` из loader; сохранить типы `FlooringCoveringType` и сигнатуры `calculateFlooring`.
+- **Gate:** все тесты `public-estimate-flooring.test.ts` без изменения expected; dev `/estimate` визуально без регрессии.
+
+**F5 — Catalog editor UI (Полы)**
+
+- **Файлы:** `catalog-editor/api/flooring-client.ts`, types/mappers, `FlooringCatalogPanel.tsx`; `CatalogEditor.tsx` — `floors.ready = true`.
+- **Scope UI:** CRUD/global read coverings, preparations, layouts, consumables per covering; global add-ons (plinth types, threshold, demolition). Паттерн — warm-floor tab + plumbing preview (опц. `snapshot/preview` admin-only позже).
+- **Gate:** dev `/catalog-editor` → вкладка «Полы» редактирует БД; preview/patch не ломает F2 whitelist.
+
+**F6 — Cleanup hardcoded defaults после парити**
+
+- **Файлы:** удалить `flooringCoveringRates` и sibling exports из `public-estimate-flooring.ts`; оставить enum codes + `calculateFlooring`; `defaults.ts` room-mapping **остаётся во фронте** (продуктовое правило, см. риски).
+- **Gate:** grep — нет hardcode rate tables в public path; CI парити «snapshot == DB export» для flooring (расширение A11).
+
+- **DoD Flooring track:** публичный расчёт полностью на `flooring.snapshot.json`; admin управляет глобальным каталогом; golden-case и `/estimate` парити; нет утечки internal в whitelist.
+- **Можно остановиться:** после F1 (loader + seed JSON, поведение прежнее) и после F4 (публичный расчёт на снапшоте без editor).
+
+##### F.risks. Риски и решения
+
+| # | Риск | Решение |
+|---|---|---|
+| R1 | **Stable codes vs DB ids** — публичный UI использует enum (`porcelain`), БД — autoincrement id + unique title | В snapshot — обязательный `code` (stable string) на covering/preparation/layout; seed/backfill `source_code` или mapping table; admin additions получают slug-code при create. |
+| R2 | **Default room mapping** (`getDefaultFlooringCovering(roomType)`) | **Остаётся во фронте** (как warm-floor default `bathroom` selected): snapshot не хранит per-room defaults; документировать в F1 contract. |
+| R3 | **Zones vs per-room** — CRM имеет `estimate_flooring_room_zones`, public — flat per-room | Публичный snapshot **не** включает zones; CRM zones — internal only. Парити только per-room public formula. |
+| R4 | **Custom consumables** — backend `custom_consumables_json`, public — flat ₽/m² поля | Snapshot builder **агрегирует** custom + standard consumables в публичные `*PricePerM2` (whitelist); деталь consumption — internal. |
+| R5 | **Seed parity** — `defaults_flooring.py` ≠ `public-estimate-flooring.ts` | F1 seed = **public hardcode**, не backend CRM seed; отдельный `flooring_public_seed.py` или mapping step в F2; парити-test explicit totals. |
+| R6 | **Парити-тесты** | Перенести golden-case из `public-estimate-flooring.test.ts` + добавить backend `test_flooring_snapshot_parity.py`; gate в A11/C5 (site-wide no-leak). |
+
+##### F.non-goals. Вне scope audit-реализации
+
+- Изменение формул `calculateFlooring`, UI `FlooringSection.tsx`, CRM project flooring API, миграций БД, generated JSON в этом audit-PR.
+- Унификация CRM layout names («Ёлка») с public enums — отдельное продуктовое решение после F1 contract.
+- Per-room zones в публичном калькуляторе — не в первом проходе.
+
 #### Этап A9 — Декомпозиция `PublicEstimate.tsx` (реестр секций + engine)
 
 **Статус: закрыт (as-built).** Подшаги A9.1–A9.6 и серия A9.7e–A9.7q-b выполнены; этап A9.8 зафиксировал целевую архитектуру и лёгкие architecture-guards в vitest. Дальнейшая декомпозиция JSX — не в scope A9 (см. A10, C2, DEBT-* в [§4.A.debt](#4adebt-зафиксированные-долги-a8a9-не-чинить-в-a9)).
@@ -912,6 +1013,7 @@ flowchart TB
 | Unit (frontend) | Calc-ядро: зоны/пакеты, агрегаты секций | `sections/*/calc.test.ts` (расширить текущие `public-estimate-*.test.ts`) |
 | API smoke | Каждый admin-эндпоинт (200/401/422) | `tests/test_calculator_plumbing_routes.py` |
 | Whitelist | Публичный снапшот без internal/резерва | `tests/test_public_plumbing_snapshot_whitelist.py` |
+| Flooring snapshot whitelist + parity | Whitelist + парити полов (golden-case, без internal) | `tests/test_public_flooring_snapshot_whitelist.py`, `public-flooring-snapshot.test.ts` |
 | Парити | `version` снапшота == экспорт БД; суммы фронт == backend (с резервом) | CI-job + `tests/test_plumbing_snapshot_parity.py` |
 | Компонентные | `ZoneCard`, `PackagePicker`, `SpecOverlay` | vitest + testing-library |
 | Лендинг | SEO-мета присутствуют; форма заявки (honeypot/429) | smoke + ручной/Lighthouse |

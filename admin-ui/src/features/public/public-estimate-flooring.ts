@@ -4,6 +4,7 @@ import {
   type EstimateLineItem,
   type EstimateSection,
 } from "./public-estimate-model";
+import { getFlooringSnapshotRates } from "./public-flooring-snapshot";
 
 export type FlooringCoveringType = "porcelain" | "quartz_vinyl" | "laminate" | "carpet" | "engineered_wood";
 
@@ -62,152 +63,14 @@ export type FlooringCalculationResult = {
   section: EstimateSection;
 };
 
-type CoveringRates = {
-  materialPricePerM2: number;
-  laborPricePerM2: number;
-  baseWastePercent: number;
-  underlayPricePerM2: number;
-  adhesivePricePerM2: number;
-  primerPricePerM2: number;
-  svpPricePerM2: number;
-  groutPricePerM2: number;
-  toolConsumablesPerM2: number;
-};
+/** Публичные тарифы v1 из `generated/flooring.snapshot.json`. */
+const flooringSnapshotRates = getFlooringSnapshotRates();
 
-type PreparationRates = {
-  laborPricePerM2: number;
-  materialPricePerM2: number;
-};
-
-type LayoutRates = {
-  laborFactor: number;
-  additionalWastePercent: number;
-};
-
-type PlinthRates = {
-  materialPricePerMeter: number;
-  laborPricePerMeter: number;
-  factor: number;
-};
-
-export const flooringCoveringRates: Record<FlooringCoveringType, CoveringRates> = {
-  porcelain: {
-    materialPricePerM2: 2900,
-    laborPricePerM2: 2000,
-    baseWastePercent: 10,
-    underlayPricePerM2: 0,
-    adhesivePricePerM2: 450,
-    primerPricePerM2: 25,
-    svpPricePerM2: 120,
-    groutPricePerM2: 90,
-    toolConsumablesPerM2: 40,
-  },
-  quartz_vinyl: {
-    materialPricePerM2: 1700,
-    laborPricePerM2: 800,
-    baseWastePercent: 5,
-    underlayPricePerM2: 220,
-    adhesivePricePerM2: 0,
-    primerPricePerM2: 25,
-    svpPricePerM2: 0,
-    groutPricePerM2: 0,
-    toolConsumablesPerM2: 80,
-  },
-  laminate: {
-    materialPricePerM2: 930,
-    laborPricePerM2: 1000,
-    baseWastePercent: 10,
-    underlayPricePerM2: 220,
-    adhesivePricePerM2: 0,
-    primerPricePerM2: 25,
-    svpPricePerM2: 0,
-    groutPricePerM2: 0,
-    toolConsumablesPerM2: 40,
-  },
-  carpet: {
-    materialPricePerM2: 1500,
-    laborPricePerM2: 900,
-    baseWastePercent: 7,
-    underlayPricePerM2: 0,
-    adhesivePricePerM2: 250,
-    primerPricePerM2: 25,
-    svpPricePerM2: 0,
-    groutPricePerM2: 0,
-    toolConsumablesPerM2: 40,
-  },
-  engineered_wood: {
-    materialPricePerM2: 6000,
-    laborPricePerM2: 2500,
-    baseWastePercent: 10,
-    underlayPricePerM2: 0,
-    adhesivePricePerM2: 900,
-    primerPricePerM2: 120,
-    svpPricePerM2: 0,
-    groutPricePerM2: 0,
-    toolConsumablesPerM2: 120,
-  },
-};
-
-export const flooringPreparationRates: Record<FlooringPreparationType, PreparationRates> = {
-  none: {
-    laborPricePerM2: 300,
-    materialPricePerM2: 100,
-  },
-  primer: {
-    laborPricePerM2: 250,
-    materialPricePerM2: 120,
-  },
-  self_leveling: {
-    laborPricePerM2: 650,
-    materialPricePerM2: 120,
-  },
-  waterproofing: {
-    laborPricePerM2: 300,
-    materialPricePerM2: 80,
-  },
-};
-
-export const flooringLayoutRates: Record<FlooringLayoutType, LayoutRates> = {
-  straight: {
-    laborFactor: 1.1,
-    additionalWastePercent: 5,
-  },
-  large_format_straight: {
-    laborFactor: 1.2,
-    additionalWastePercent: 10,
-  },
-  glue: {
-    laborFactor: 1.25,
-    additionalWastePercent: 5,
-  },
-  floating: {
-    laborFactor: 1,
-    additionalWastePercent: 3,
-  },
-};
-
-export const flooringPlinthRates: Record<FlooringPlinthType, PlinthRates> = {
-  none: {
-    materialPricePerMeter: 0,
-    laborPricePerMeter: 0,
-    factor: 1,
-  },
-  duropolymer: {
-    materialPricePerMeter: 450,
-    laborPricePerMeter: 450,
-    factor: 1,
-  },
-  painted_mdf: {
-    materialPricePerMeter: 650,
-    laborPricePerMeter: 500,
-    factor: 1,
-  },
-};
-
-export const flooringExtraRates = {
-  thresholdPrice: 900,
-  demolitionPricePerM2: 150,
-} as const;
+export const flooringCoveringRates = flooringSnapshotRates.flooringCoveringRates;
+export const flooringPreparationRates = flooringSnapshotRates.flooringPreparationRates;
+export const flooringLayoutRates = flooringSnapshotRates.flooringLayoutRates;
+export const flooringPlinthRates = flooringSnapshotRates.flooringPlinthRates;
+export const flooringExtraRates = flooringSnapshotRates.flooringExtraRates;
 
 function safeNumber(value: number) {
   return Number.isFinite(value) ? Math.max(0, value) : 0;

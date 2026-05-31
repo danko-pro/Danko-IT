@@ -1,5 +1,4 @@
 import { useCallback, useMemo, useState } from "react";
-import { calculateHomeGoods, createDefaultHomeGoodsOptions, type HomeGoodsOptions } from "./public-estimate-home-goods";
 import { estimateNumericFieldProps, estimateTextFieldProps } from "./public-estimate-input";
 import { buildPublicEstimateResult } from "./estimate/engine";
 import { type EstimateSection, type EstimateSectionId } from "./public-estimate-model";
@@ -19,7 +18,6 @@ import { buildEstimateSpecModalData } from "./estimate/spec";
 import {
   buildCompactVolumeItems,
   buildEstimateTotalItems,
-  buildHomeGoodsSummaryItems,
   buildVolumeSummaryItems,
 } from "./estimate/summary";
 import { estimateNavigationItems, formatEstimateStep, getEstimateSectionClassName } from "./sections/registry";
@@ -35,6 +33,7 @@ import { useDoorsEstimate } from "./estimate/useDoorsEstimate";
 import { useCompletionEstimate } from "./estimate/useCompletionEstimate";
 import { useAppliancesEstimate } from "./estimate/useAppliancesEstimate";
 import { useLooseFurnitureEstimate } from "./estimate/useLooseFurnitureEstimate";
+import { useHomeGoodsEstimate } from "./estimate/useHomeGoodsEstimate";
 import { FlooringSection } from "./sections/flooring/FlooringSection";
 import { GeometrySection } from "./sections/geometry/GeometrySection";
 import { ObjectSection } from "./sections/object/ObjectSection";
@@ -63,7 +62,6 @@ export function PublicEstimate() {
     apartmentNumber: "",
     contact: "",
   });
-  const [homeGoodsOptions, setHomeGoodsOptions] = useState<HomeGoodsOptions>(() => createDefaultHomeGoodsOptions());
   const [specModal, setSpecModal] = useState<{ kind: "section" | "full"; sectionId?: EstimateSectionId } | null>(
     null,
   );
@@ -222,6 +220,14 @@ export function PublicEstimate() {
     onQuantityChange: onLooseFurnitureQuantityChange,
     onQuantityBlur: onLooseFurnitureQuantityBlur,
   } = useLooseFurnitureEstimate();
+  const {
+    homeGoodsOptions,
+    homeGoodsResult,
+    homeGoodsSummaryItems,
+    onIncludeCleaningChange,
+    onIncludeHomeGoodsChange,
+    onPackageLevelChange: onHomeGoodsPackageLevelChange,
+  } = useHomeGoodsEstimate({ floorArea: totals.floorArea });
   const purgeRoomFromRelatedState = useCallback(
     (roomId: string) => {
       removeWarmFloorRoom(roomId);
@@ -235,10 +241,6 @@ export function PublicEstimate() {
   const handleRemoveRoom = useCallback(
     (roomId: string) => removeRoom(roomId, purgeRoomFromRelatedState),
     [removeRoom, purgeRoomFromRelatedState],
-  );
-  const homeGoodsResult = useMemo(
-    () => calculateHomeGoods({ floorArea: totals.floorArea, options: homeGoodsOptions }),
-    [homeGoodsOptions, totals.floorArea],
   );
   const estimateResult = useMemo(
     () =>
@@ -277,7 +279,6 @@ export function PublicEstimate() {
   const estimateTotalItems = buildEstimateTotalItems(estimateResult.totals);
   const packageClassification = classifyEstimatePackage(estimateResult.totals.pricePerSquareMeter);
 
-  const homeGoodsSummaryItems = buildHomeGoodsSummaryItems(homeGoodsResult);
   const allEstimateSections: EstimateSection[] = [
     warmFloorResult.section,
     flooringResult.section,
@@ -313,13 +314,6 @@ export function PublicEstimate() {
 
   function closeSpecModal() {
     setSpecModal(null);
-  }
-
-  function updateHomeGoodsOptions(patch: Partial<HomeGoodsOptions>) {
-    setHomeGoodsOptions((currentOptions) => ({
-      ...currentOptions,
-      ...patch,
-    }));
   }
 
   function handlePrintEstimate() {
@@ -601,9 +595,9 @@ export function PublicEstimate() {
             homeGoodsOptions={homeGoodsOptions}
             homeGoodsSummaryItems={homeGoodsSummaryItems}
             homeGoodsResult={homeGoodsResult}
-            onIncludeCleaningChange={(checked) => updateHomeGoodsOptions({ includeCleaning: checked })}
-            onIncludeHomeGoodsChange={(checked) => updateHomeGoodsOptions({ includeHomeGoods: checked })}
-            onPackageLevelChange={(level) => updateHomeGoodsOptions({ packageLevel: level })}
+            onIncludeCleaningChange={onIncludeCleaningChange}
+            onIncludeHomeGoodsChange={onIncludeHomeGoodsChange}
+            onPackageLevelChange={onHomeGoodsPackageLevelChange}
             onOpenSectionSpec={() => openSectionSpec("home_goods")}
           />
 

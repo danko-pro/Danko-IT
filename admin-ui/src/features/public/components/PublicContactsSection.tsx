@@ -1,10 +1,6 @@
-import {
-  contactMethodOptions,
-  contactsListItems,
-  objectTypeOptions,
-  packageTypeOptions,
-} from "../public-content";
+import { contactsListItems } from "../public-content";
 import { useLeadFormDraft } from "../hooks/useLeadFormDraft";
+import { PublicLeadForm } from "./contacts/PublicLeadForm";
 import { PublicSectionContour } from "./PublicSectionContour";
 
 type PublicContactsSectionProps = {
@@ -36,160 +32,13 @@ export function PublicContactsSection({ getContourClassName }: PublicContactsSec
 
       <div className="public-contacts-layout">
         <div className="public-contacts-panel">
-          <form className="public-lead-form" onSubmit={handleLeadFormSubmit}>
-            <label className="public-form-honeypot" htmlFor="public-lead-website" aria-hidden="true">
-              <span>Website</span>
-              <input
-                id="public-lead-website"
-                name="website"
-                type="text"
-                value={leadForm.website}
-                onChange={handleLeadFormChange}
-                autoComplete="off"
-                tabIndex={-1}
-              />
-            </label>
-
-            <div className="public-form-grid">
-              <label className="public-form-field" htmlFor="public-lead-name">
-                <span className="public-form-label">Имя</span>
-                <input
-                  className="public-form-input"
-                  id="public-lead-name"
-                  name="name"
-                  type="text"
-                  value={leadForm.name}
-                  onChange={handleLeadFormChange}
-                  placeholder="Как к вам обращаться"
-                />
-              </label>
-
-              <label className="public-form-field" htmlFor="public-lead-phone">
-                <span className="public-form-label">Телефон или Telegram</span>
-                <input
-                  className="public-form-input"
-                  id="public-lead-phone"
-                  name="phone"
-                  type="text"
-                  value={leadForm.phone}
-                  onChange={handleLeadFormChange}
-                  placeholder="+7 / @username"
-                />
-              </label>
-
-              <label className="public-form-field" htmlFor="public-lead-object-type">
-                <span className="public-form-label">Тип объекта</span>
-                <select
-                  className="public-form-select"
-                  id="public-lead-object-type"
-                  name="objectType"
-                  value={leadForm.objectType}
-                  onChange={handleLeadFormChange}
-                >
-                  <option value="">Выберите тип объекта</option>
-                  {objectTypeOptions.map((option) => (
-                    <option value={option} key={option}>
-                      {option}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <label className="public-form-field" htmlFor="public-lead-area">
-                <span className="public-form-label">Площадь</span>
-                <input
-                  className="public-form-input"
-                  id="public-lead-area"
-                  name="area"
-                  type="text"
-                  value={leadForm.area}
-                  onChange={handleLeadFormChange}
-                  placeholder="Например, 52 м²"
-                />
-              </label>
-
-              <label className="public-form-field" htmlFor="public-lead-package-type">
-                <span className="public-form-label">Интересующий формат</span>
-                <select
-                  className="public-form-select"
-                  id="public-lead-package-type"
-                  name="packageType"
-                  value={leadForm.packageType}
-                  onChange={handleLeadFormChange}
-                >
-                  <option value="">Выберите формат</option>
-                  {packageTypeOptions.map((option) => (
-                    <option value={option} key={option}>
-                      {option}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <label className="public-form-field" htmlFor="public-lead-contact-method">
-                <span className="public-form-label">Удобный способ связи</span>
-                <select
-                  className="public-form-select"
-                  id="public-lead-contact-method"
-                  name="contactMethod"
-                  value={leadForm.contactMethod}
-                  onChange={handleLeadFormChange}
-                >
-                  {contactMethodOptions.map((option) => (
-                    <option value={option.value} key={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <label className="public-form-field public-form-field-wide" htmlFor="public-lead-comment">
-                <span className="public-form-label">Комментарий</span>
-                <textarea
-                  className="public-form-textarea"
-                  id="public-lead-comment"
-                  name="comment"
-                  value={leadForm.comment}
-                  onChange={handleLeadFormChange}
-                  placeholder="Кратко опишите объект, задачу, сроки или что уже известно"
-                  rows={5}
-                />
-              </label>
-            </div>
-
-            <label className="public-form-consent" htmlFor="public-lead-personal-data-consent">
-              <input
-                id="public-lead-personal-data-consent"
-                name="personalDataConsent"
-                type="checkbox"
-                checked={leadForm.personalDataConsent}
-                onChange={handleLeadFormChange}
-                required
-              />
-              <span>
-                Я согласен на{" "}
-                <a className="public-form-consent-link" href="/privacy">
-                  обработку персональных данных
-                </a>{" "}
-                для обработки заявки и обратной связи.
-              </span>
-            </label>
-
-            <div className="public-form-footer">
-              <button
-                className="public-form-submit"
-                type="submit"
-                disabled={isLeadFormSubmitting || !leadForm.personalDataConsent}
-              >
-                {isLeadFormSubmitting ? "Отправляем..." : "Отправить заявку"}
-              </button>
-              {leadFormStatus && (
-                <p className="public-form-status" role="status" aria-live="polite">
-                  {leadFormStatus}
-                </p>
-              )}
-            </div>
-          </form>
+          <PublicLeadForm
+            leadForm={leadForm}
+            leadFormStatus={leadFormStatus}
+            isLeadFormSubmitting={isLeadFormSubmitting}
+            onChange={handleLeadFormChange}
+            onSubmit={handleLeadFormSubmit}
+          />
         </div>
 
         <aside className="public-contacts-side" aria-label="Будущая QR-визитка">

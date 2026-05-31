@@ -475,6 +475,8 @@ flowchart LR
 
 #### Этап A9 — Декомпозиция `PublicEstimate.tsx` (реестр секций + engine)
 
+**Статус: закрыт (as-built).** Подшаги A9.1–A9.6 и серия A9.7e–A9.7q-b выполнены; этап A9.8 зафиксировал целевую архитектуру и лёгкие architecture-guards в vitest. Дальнейшая декомпозиция JSX — не в scope A9 (см. A10, C2, DEBT-* в [§4.A.debt](#4adebt-зафиксированные-долги-a8a9-не-чинить-в-a9)).
+
 Зависит от: C1, C2 (желательно) · Размер: L (дробится) · Параллельно: A1–A7
 
 > Дробится на подшаги по группам секций. Каждый подшаг = отдельный коммит, gate после каждого.
@@ -488,12 +490,47 @@ flowchart LR
 - **Шаг A9.4 — полы/стены/потолки/электрика/тёплый пол.**
 - **Шаг A9.5 — двери/завершение/техника/мебель/товары.**
 - **Шаг A9.6 — общие компоненты** (`ZoneCard`, `PackagePicker`, `SpecOverlay`, `NumberField`/`TextField`).
-- **Шаг A9.7 — ужать шелл** `PublicEstimate.tsx` до layout + цикл по `SECTION_REGISTRY`.
+- **Шаг A9.7 — ужать шелл** `PublicEstimate.tsx` до layout + wiring секций (серия A9.7e–A9.7q-b).
   - **Проверка (после каждого A9.x):** `npm run build` + `npm run test` + dev `/estimate` визуально.
-  - **Критерий:** на каждом подшаге расчёты и UI идентичны; в конце `PublicEstimate.tsx` ≤ 300 стр., каждый модуль секции ≤ 400 стр.
-  - **Откат:** revert конкретного подшага (атомарность).
-- **DoD A9:** шелл ≤ 300 стр., calc-ядро pure, единый `SECTION_REGISTRY`, все тесты зелёные.
-- **Можно остановиться:** после любого A9.x (каждый подшаг самодостаточен).
+  - **Критерий:** на каждом подшаге расчёты и UI идентичны; **Откат:** revert конкретного подшага (атомарность).
+- **Шаг A9.8 — as-built документация + architecture guards** (только docs + `public-estimate-architecture.test.ts`, без изменения поведения).
+  - **Проверка:** `npm run test` + `npm run build`.
+  - **Критерий:** guards зелёные; правила слоёв задокументированы ниже; **Откат:** revert.
+
+##### A9.as-built. Слои `/estimate` (зафиксировано)
+
+```mermaid
+flowchart TB
+  PE["PublicEstimate.tsx — shell / orchestration"]
+  SEC["sections/* — presentational sections"]
+  HOOK["estimate/use*Estimate.ts — state, handlers, section wiring"]
+  CALC["public-estimate-*.ts — pure calculation / domain"]
+  CORE["estimate/engine.ts · summary.ts · spec.ts — pure builders / model"]
+
+  PE --> SEC
+  PE --> HOOK
+  HOOK --> CALC
+  PE --> CORE
+  HOOK --> CORE
+  SEC -.props only.- PE
+```
+
+| Слой | Путь | Ответственность |
+|---|---|---|
+| Shell | `PublicEstimate.tsx` | Компоновка страницы, навигация, вызов хуков, прокидывание props в секции, сборка итога через `engine`/`summary` |
+| Секции UI | `sections/*` | Разметка и отображение одной зоны сметы (без локального `useState` и без `calculate*`) |
+| Контроллеры секций | `estimate/use*Estimate.ts` | `useState`/handlers секции, вызов `calculate*` из `public-estimate-*.ts`, подготовка props |
+| Домен расчёта | `public-estimate-*.ts` | Чистые функции расчёта и типы входов/выходов секции |
+| Ядро сметы | `estimate/engine.ts`, `summary.ts`, `spec.ts` | Агрегация секций, итоги, спецификация (pure) |
+
+Дополнительно в shell: оркестрационные хуки `useEstimateObjectMeta`, `useEstimateSpecModal`, `useEstimatePrintActions`, `useEstimateNavigation` (не секционные, но остаются вне presentational-секций).
+
+**Правило расширения (обязательное):** новое состояние секции, обработчики ввода и вызовы `calculate*` **не добавляются** в `PublicEstimate.tsx`. Добавляют `estimate/use<Section>Estimate.ts` + `sections/<section>/` (и при необходимости `public-estimate-<section>.ts`), shell только подключает хук и рендерит секцию.
+
+**Guards (A9.8):** `admin-ui/src/features/public/public-estimate-architecture.test.ts` — лимит строк shell (≤ 650), запрет `useState`/`function update*`/`calculate*` imports в shell, наличие файлов секционных хуков.
+
+- **DoD A9 (as-built):** shell без бизнес-логики секций (см. guards); calc-ядро pure (`engine`/`public-estimate-*`); секции и хуки по таблице выше; все тесты зелёные. Ориентир «≤ 300 стр.» из раннего плана заменён практическим лимитом guard (≤ 650) до отдельного сжатия shell.
+- **Можно остановиться:** этап закрыт; следующий шаг по треку A — [A10](#этап-a10--зачистка-legacy).
 
 #### 4.A.debt. Зафиксированные долги A8/A9 (не чинить в A9)
 

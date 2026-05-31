@@ -678,6 +678,50 @@ flowchart TB
 | Контакты | hardcode | Опционально | Меняется редко |
 | Privacy дата/версия | hardcode `2026-05-24` | Опционально | Юридический текст |
 
+##### B.L0.as-built. Public landing as-is architecture (зафиксировано L0)
+
+**Статус L0:** только документация as-is + architecture guards в vitest (`public-landing-architecture.test.ts`). Поведение, UI, CSS и тексты **не меняются**. Следующий подшаг декомпозиции — **L1: split `PublicServicesSection`** (крупнейший компонент лендинга, ~392 стр.).
+
+```mermaid
+flowchart TB
+  PL["PublicLanding.tsx — shell / layout"]
+  SEC["components/* — presentational sections"]
+  HOOK["hooks/* — section interactivity"]
+  CONTENT["public-content.ts — content monolith"]
+  CSS["public.css — shared CSS monolith"]
+
+  PL --> SEC
+  SEC --> HOOK
+  SEC --> CONTENT
+  PL --> CSS
+  SEC --> CSS
+```
+
+| Слой | Путь | Ответственность |
+|---|---|---|
+| Shell | `PublicLanding.tsx` | Компоновка страницы: шапка, `<main>`, порядок секций; единственный оркестрационный хук — `usePublicContourRoute` для декора-контура |
+| Секции UI | `components/PublicHeader.tsx` | Шапка/навигация (+ `usePublicHeaderVisibility`) |
+| | `components/PublicHero.tsx` | Hero-блок |
+| | `components/PublicServicesSection.tsx` | Услуги (крупнейший компонент) |
+| | `components/PublicPricingSection.tsx` | Витрина пакетов |
+| | `components/PublicProjectsSection.tsx` | Кейсы/портфолио |
+| | `components/PublicProcessSection.tsx` | Процесс (+ `usePublicProcessSteps`) |
+| | `components/PublicContactsSection.tsx` | Контакты + форма заявки (+ `useLeadFormDraft`) |
+| | `components/PublicSectionContour.tsx` | Декор-контур (presentational) |
+| Хуки | `hooks/usePublicHeaderVisibility.ts` | Скрытие шапки при скролле |
+| | `hooks/usePublicContourRoute.ts` | Анимация/маршрут контура между секциями |
+| | `hooks/usePublicProcessSteps.ts` | Логика шагов процесса |
+| | `hooks/useLeadFormDraft.ts` | Состояние/сабмит формы заявки |
+| Контент | `public-content.ts` | **Монолит контента** лендинга (навигация, hero, услуги, пакеты, кейсы, процесс, опции формы) |
+| Стили | `public.css` | **Общий CSS-монолит** (лендинг + `/estimate` + `/privacy`); секции по маркерам-комментариям: `public-base` → `public-header` → `public-hero` → `public-services` → `public-pricing` → `public-process` → `public-contacts` → `public-estimate-ux` → `public-responsive` |
+
+**Правило расширения (обязательное):** новое состояние, эффекты и обработчики секций **не добавляются** в `PublicLanding.tsx`. Интерактивность секции — в `hooks/use*.ts` (или внутри компонента секции через хук); shell только собирает layout и прокидывает props (например `getContourClassName`).
+
+**Guards (L0):** `admin-ui/src/features/public/public-landing-architecture.test.ts` — лимит строк shell (≤ 80), запрет `useState`/`useEffect`/`useMemo`/`useCallback` в shell, наличие файлов секций и хуков, маркеры секций в `public.css`.
+
+- **DoD L0:** as-built архитектура задокументирована; guards зелёные; продуктовый код без изменений.
+- **Можно остановиться:** да. **Следующий шаг:** L1 — декомпозиция `PublicServicesSection` (не L0).
+
 ### 5.B.tobe. To-be (лендинг)
 
 - **SEO-фундамент:** корректные `title`/`description`/OG/canonical/favicon; per-route мета (через prerender — Q10).

@@ -115,7 +115,6 @@ export function usePublicProjectsShowcase({ projects }: UsePublicProjectsShowcas
     activeProject,
     activeProjectImages,
     activeProjectImage,
-    activeProjectScope,
     activeProjectMapUrl,
     isProjectScopeOpen,
     projectScopeToRender,

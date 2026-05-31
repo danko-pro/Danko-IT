@@ -257,4 +257,24 @@ select.ce-cell-input { appearance: none; cursor: pointer; }
 }
 .ce-preview-hint { display: block; margin-top: 4px; color: var(--ce-muted); font-size: 12px; }
 .ce-preview-body { margin-top: 8px; }
+
+/* --- Вкладка «Полы» (F5b) --- */
+.ce-flooring-section { margin-bottom: 20px; }
+.ce-flooring-section-title { margin: 0 0 10px; font-size: 15px; font-weight: 650; }
+.ce-flooring-table-wrap { margin-bottom: 10px; max-height: none; }
+.ce-flooring-table { min-width: 720px; }
+.ce-flooring-form {
+  padding: 12px; border: 1px solid var(--ce-border); border-radius: 10px;
+  background: var(--ce-panel);
+}
+.ce-flooring-form-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  margin-bottom: 10px;
+}
+.ce-flooring-form-fields {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px;
+}
+.ce-flooring-field { display: flex; flex-direction: column; gap: 4px; font-size: 12px; }
+.ce-flooring-field-label { color: var(--ce-muted); }
+.ce-flooring-field .ce-input { width: 100%; }
 `;

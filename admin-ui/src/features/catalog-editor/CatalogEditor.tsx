@@ -24,6 +24,7 @@ import { usePlumbingCatalog } from "./api/client";
 import { useWarmFloorCatalog } from "./api/warm-floor-client";
 import type { PlumbingSnapshotPreview } from "./api/types";
 import { CATALOG_EDITOR_STYLES } from "./styles";
+import { FlooringCatalogPanel } from "./FlooringCatalogPanel";
 import { WarmFloorCatalogPanel } from "./WarmFloorCatalogPanel";
 
 const CATEGORY_LABELS: Record<CatalogCategory, string> = {
@@ -41,7 +42,7 @@ type SectionTab = {
 
 const SECTION_TABS: SectionTab[] = [
   { id: "plumbing", label: "Сантехника", ready: true },
-  { id: "floors", label: "Полы", ready: false },
+  { id: "floors", label: "Полы", ready: true },
   { id: "walls", label: "Стены", ready: false },
   { id: "ceilings", label: "Потолки", ready: false },
   { id: "electrics", label: "Электрика", ready: false },
@@ -554,10 +555,14 @@ export function CatalogEditor() {
   }
 
   const activeSection = SECTION_TABS.find((tab) => tab.id === activeTab);
-  const activeLoading = activeTab === "warm-floor" ? warmFloorCatalog.loading : loading;
-  const activeSaving = activeTab === "warm-floor" ? warmFloorCatalog.saving : saving;
-  const activeSavedAt = activeTab === "warm-floor" ? warmFloorCatalog.savedAt : savedAt;
-  const activeError = activeTab === "warm-floor" ? warmFloorCatalog.error : error;
+  const activeLoading =
+    activeTab === "warm-floor" ? warmFloorCatalog.loading : activeTab === "plumbing" ? loading : false;
+  const activeSaving =
+    activeTab === "warm-floor" ? warmFloorCatalog.saving : activeTab === "plumbing" ? saving : false;
+  const activeSavedAt =
+    activeTab === "warm-floor" ? warmFloorCatalog.savedAt : activeTab === "plumbing" ? savedAt : null;
+  const activeError =
+    activeTab === "warm-floor" ? warmFloorCatalog.error : activeTab === "plumbing" ? error : null;
 
   return (
     <div className="catalog-editor">
@@ -606,6 +611,8 @@ export function CatalogEditor() {
 
       {activeSection?.id === "warm-floor" ? (
         <WarmFloorCatalogPanel controller={warmFloorCatalog} />
+      ) : activeSection?.id === "floors" ? (
+        <FlooringCatalogPanel />
       ) : activeSection && !activeSection.ready ? (
         <div className="ce-stub-panel">
           <h2>{activeSection.label}</h2>

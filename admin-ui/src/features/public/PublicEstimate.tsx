@@ -1,13 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
 import {
-  applianceItemCatalog,
-  calculateAppliances,
-  createDefaultAppliancesOptions,
-  getApplianceUnitPrice,
-  type ApplianceItemKey,
-  type AppliancesOptions,
-} from "./public-estimate-appliances";
-import {
   calculateLooseFurniture,
   createDefaultLooseFurnitureOptions,
   getLooseFurnitureUnitPrice,
@@ -37,15 +29,12 @@ import {
   wallsPreparationOptions,
 } from "./estimate/defaults";
 import {
-  normalizeAppliancesOptionsDraft,
   normalizeLooseFurnitureOptionsDraft,
-  type AppliancesOptionsDraft,
   type EstimateObjectMeta,
   type LooseFurnitureOptionsDraft,
 } from "./estimate/context";
 import { buildEstimateSpecModalData } from "./estimate/spec";
 import {
-  buildAppliancesSummaryItems,
   buildCompactVolumeItems,
   buildEstimateTotalItems,
   buildHomeGoodsSummaryItems,
@@ -63,6 +52,7 @@ import { useElectricEstimate } from "./estimate/useElectricEstimate";
 import { usePlumbingEstimate } from "./estimate/usePlumbingEstimate";
 import { useDoorsEstimate } from "./estimate/useDoorsEstimate";
 import { useCompletionEstimate } from "./estimate/useCompletionEstimate";
+import { useAppliancesEstimate } from "./estimate/useAppliancesEstimate";
 import { FlooringSection } from "./sections/flooring/FlooringSection";
 import { GeometrySection } from "./sections/geometry/GeometrySection";
 import { ObjectSection } from "./sections/object/ObjectSection";
@@ -83,20 +73,6 @@ import { DoorsSection } from "./sections/doors/DoorsSection";
 import { ElectricSection } from "./sections/electric/ElectricSection";
 import { PlumbingSection } from "./sections/plumbing/PlumbingSection";
 import { WallsSection } from "./sections/walls/WallsSection";
-
-function createDefaultAppliancesOptionsDraft(): AppliancesOptionsDraft {
-  const base = createDefaultAppliancesOptions();
-  const items = {} as AppliancesOptionsDraft["items"];
-
-  for (const item of applianceItemCatalog) {
-    items[item.key] = {
-      isIncluded: base.items[item.key].isIncluded,
-      quantity: String(base.items[item.key].quantity),
-    };
-  }
-
-  return { packageLevel: base.packageLevel, fridgeVariant: base.fridgeVariant, items };
-}
 
 function createDefaultLooseFurnitureOptionsDraft(): LooseFurnitureOptionsDraft {
   const base = createDefaultLooseFurnitureOptions();
@@ -119,9 +95,6 @@ export function PublicEstimate() {
     apartmentNumber: "",
     contact: "",
   });
-  const [appliancesOptions, setAppliancesOptions] = useState<AppliancesOptionsDraft>(() =>
-    createDefaultAppliancesOptionsDraft(),
-  );
   const [looseFurnitureOptions, setLooseFurnitureOptions] = useState<LooseFurnitureOptionsDraft>(() =>
     createDefaultLooseFurnitureOptionsDraft(),
   );
@@ -261,6 +234,18 @@ export function PublicEstimate() {
     onIncludeWardrobeChange,
     onIncludeBathroomFurnitureChange,
   } = useCompletionEstimate();
+  const {
+    appliancesOptions,
+    appliancesResult,
+    appliancesSummaryItems,
+    getApplianceUnitPriceForKey,
+    getApplianceLineTotal,
+    onPackageLevelChange,
+    onFridgeVariantChange,
+    onApplianceIncludeChange,
+    onQuantityChange,
+    onQuantityBlur,
+  } = useAppliancesEstimate();
   const purgeRoomFromRelatedState = useCallback(
     (roomId: string) => {
       removeWarmFloorRoom(roomId);
@@ -275,17 +260,9 @@ export function PublicEstimate() {
     (roomId: string) => removeRoom(roomId, purgeRoomFromRelatedState),
     [removeRoom, purgeRoomFromRelatedState],
   );
-  const normalizedAppliancesOptions = useMemo(
-    () => normalizeAppliancesOptionsDraft(appliancesOptions),
-    [appliancesOptions],
-  );
   const normalizedLooseFurnitureOptions = useMemo(
     () => normalizeLooseFurnitureOptionsDraft(looseFurnitureOptions),
     [looseFurnitureOptions],
-  );
-  const appliancesResult = useMemo(
-    () => calculateAppliances(normalizedAppliancesOptions),
-    [normalizedAppliancesOptions],
   );
   const looseFurnitureResult = useMemo(
     () => calculateLooseFurniture(normalizedLooseFurnitureOptions),
@@ -332,7 +309,6 @@ export function PublicEstimate() {
   const estimateTotalItems = buildEstimateTotalItems(estimateResult.totals);
   const packageClassification = classifyEstimatePackage(estimateResult.totals.pricePerSquareMeter);
 
-  const appliancesSummaryItems = buildAppliancesSummaryItems(appliancesResult);
   const looseFurnitureSummaryItems = buildLooseFurnitureSummaryItems(looseFurnitureResult);
   const homeGoodsSummaryItems = buildHomeGoodsSummaryItems(homeGoodsResult);
   const allEstimateSections: EstimateSection[] = [
@@ -370,26 +346,6 @@ export function PublicEstimate() {
 
   function closeSpecModal() {
     setSpecModal(null);
-  }
-
-  function updateAppliancesOptions(patch: Partial<Pick<AppliancesOptions, "packageLevel" | "fridgeVariant">>) {
-    setAppliancesOptions((currentOptions) => ({
-      ...currentOptions,
-      ...patch,
-    }));
-  }
-
-  function updateApplianceItem(key: ApplianceItemKey, patch: Partial<{ isIncluded: boolean; quantity: string }>) {
-    setAppliancesOptions((currentOptions) => ({
-      ...currentOptions,
-      items: {
-        ...currentOptions.items,
-        [key]: {
-          ...currentOptions.items[key],
-          ...patch,
-        },
-      },
-    }));
   }
 
   function updateLooseFurnitureOptions(patch: Partial<Pick<LooseFurnitureOptions, "packageLevel">>) {
@@ -668,20 +624,13 @@ export function PublicEstimate() {
             appliancesSummaryItems={appliancesSummaryItems}
             appliancesResult={appliancesResult}
             numberFieldProps={estimateNumericFieldProps}
-            getUnitPrice={(key) => getApplianceUnitPrice(key, appliancesOptions)}
-            getLineTotal={(key, isIncluded, quantity) => {
-              const unitPrice = getApplianceUnitPrice(key, appliancesOptions);
-              return isIncluded ? unitPrice * Math.max(1, parseEstimateInteger(quantity)) : 0;
-            }}
-            onPackageLevelChange={(level) => updateAppliancesOptions({ packageLevel: level })}
-            onFridgeVariantChange={(variant) => updateAppliancesOptions({ fridgeVariant: variant })}
-            onApplianceIncludeChange={(key, checked) => updateApplianceItem(key, { isIncluded: checked })}
-            onQuantityChange={(key, value) =>
-              updateApplianceItem(key, { quantity: sanitizeEstimateIntegerInput(value) })
-            }
-            onQuantityBlur={(key, value) =>
-              updateApplianceItem(key, { quantity: normalizeEstimateQuantityOnBlur(value) })
-            }
+            getUnitPrice={getApplianceUnitPriceForKey}
+            getLineTotal={getApplianceLineTotal}
+            onPackageLevelChange={onPackageLevelChange}
+            onFridgeVariantChange={onFridgeVariantChange}
+            onApplianceIncludeChange={onApplianceIncludeChange}
+            onQuantityChange={onQuantityChange}
+            onQuantityBlur={onQuantityBlur}
             onOpenSectionSpec={() => openSectionSpec("appliances")}
           />
 

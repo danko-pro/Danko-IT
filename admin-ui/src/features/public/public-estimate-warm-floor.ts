@@ -4,6 +4,7 @@ import {
   type EstimateLineItem,
   type EstimateSection,
 } from "./public-estimate-model";
+import { getWarmFloorRates } from "./public-warm-floor-snapshot";
 
 export type WarmFloorMode = "water" | "electric";
 
@@ -35,27 +36,8 @@ export type WarmFloorCalculationResult = {
   section: EstimateSection;
 };
 
-export const warmFloorRates = {
-  waterLaborRatePerM2: 1600,
-  pipeMetersPerM2: 6,
-  maxCircuitAreaM2: 15,
-  pipePricePerMeter: 168.78,
-  chaseLaborPerMeter: 900,
-  smallLoopFittingsMaterial: 1501.19,
-  smallLoopControlHeadMaterial: 7000,
-  smallLoopConnectionLabor: 4600,
-  manifoldLabor: 6000,
-  manifoldMaterial: 20000,
-  pumpLabor: 8000,
-  pumpMaterial: 25000,
-  pumpRoomThreshold: 3,
-  pumpCircuitThreshold: 4,
-  electricMatPricePerM2: 2700,
-  electricBreakerMaterial: 1500,
-  thermostatMaterial: 5500,
-  electricWireMaterial: 1000,
-  electricInstallationLabor: 7000,
-} as const;
+/** Публичные тарифы v1 из `generated/warm-floor.snapshot.json`. */
+export const warmFloorRates = getWarmFloorRates();
 
 function safeNumber(value: number) {
   return Number.isFinite(value) ? Math.max(0, value) : 0;

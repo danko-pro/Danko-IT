@@ -9,6 +9,9 @@
  * Local/dev mode (env не задан): Python-генератор (tools/generate_plumbing_snapshot.py)
  * с детерминированным seed-fallback.
  *
+ * Также пишет `generated/warm-floor.snapshot.json` из детерминированного v1 seed
+ * (отдельного public API пока нет).
+ *
  * Запуск: `node scripts/generate-snapshot.js`.
  */
 import { spawnSync } from "node:child_process";
@@ -42,6 +45,42 @@ const outputFile = resolve(
   "generated",
   "plumbing.snapshot.json",
 );
+const warmFloorOutputFile = resolve(
+  adminUiRoot,
+  "src",
+  "features",
+  "public",
+  "generated",
+  "warm-floor.snapshot.json",
+);
+
+/** Детерминированный seed публичных тарифов тёплого пола v1 (нет remote API). */
+export const WARM_FLOOR_V1_SEED = {
+  version: "warm-floor-v1",
+  water: {
+    waterLaborRatePerM2: 1600,
+    pipeMetersPerM2: 6,
+    maxCircuitAreaM2: 15,
+    pumpRoomThreshold: 3,
+    pumpCircuitThreshold: 4,
+    pipePricePerMeter: 168.78,
+    chaseLaborPerMeter: 900,
+    smallLoopFittingsMaterial: 1501.19,
+    smallLoopControlHeadMaterial: 7000,
+    smallLoopConnectionLabor: 4600,
+    manifoldLabor: 6000,
+    manifoldMaterial: 20000,
+    pumpLabor: 8000,
+    pumpMaterial: 25000,
+  },
+  electric: {
+    electricMatPricePerM2: 2700,
+    electricBreakerMaterial: 1500,
+    thermostatMaterial: 5500,
+    electricWireMaterial: 1000,
+    electricInstallationLabor: 7000,
+  },
+};
 
 /** @returns {string | null} */
 export function resolveRemoteBaseUrl() {
@@ -114,6 +153,87 @@ export function validateSnapshotPayload(payload) {
   return { ok: true };
 }
 
+const WARM_FLOOR_WATER_KEYS = [
+  "waterLaborRatePerM2",
+  "pipeMetersPerM2",
+  "maxCircuitAreaM2",
+  "pumpRoomThreshold",
+  "pumpCircuitThreshold",
+  "pipePricePerMeter",
+  "chaseLaborPerMeter",
+  "smallLoopFittingsMaterial",
+  "smallLoopControlHeadMaterial",
+  "smallLoopConnectionLabor",
+  "manifoldLabor",
+  "manifoldMaterial",
+  "pumpLabor",
+  "pumpMaterial",
+];
+
+const WARM_FLOOR_ELECTRIC_KEYS = [
+  "electricMatPricePerM2",
+  "electricBreakerMaterial",
+  "thermostatMaterial",
+  "electricWireMaterial",
+  "electricInstallationLabor",
+];
+
+/**
+ * @param {Record<string, unknown>} section
+ * @param {string[]} keys
+ * @returns {boolean}
+ */
+function hasNumericRates(section, keys) {
+  return keys.every(
+    (key) => typeof section[key] === "number" && Number.isFinite(section[key]),
+  );
+}
+
+/**
+ * @param {unknown} payload
+ * @returns {{ ok: true } | { ok: false; reason: string }}
+ */
+export function validateWarmFloorSnapshotPayload(payload) {
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+    return { ok: false, reason: "payload must be a non-null object" };
+  }
+  if (typeof payload.version !== "string" || payload.version.length === 0) {
+    return { ok: false, reason: "version must be a non-empty string" };
+  }
+  if (!payload.water || typeof payload.water !== "object" || Array.isArray(payload.water)) {
+    return { ok: false, reason: "water must be an object" };
+  }
+  if (!payload.electric || typeof payload.electric !== "object" || Array.isArray(payload.electric)) {
+    return { ok: false, reason: "electric must be an object" };
+  }
+  if (!hasNumericRates(payload.water, WARM_FLOOR_WATER_KEYS)) {
+    return { ok: false, reason: "water rates must be finite numbers" };
+  }
+  if (!hasNumericRates(payload.electric, WARM_FLOOR_ELECTRIC_KEYS)) {
+    return { ok: false, reason: "electric rates must be finite numbers" };
+  }
+
+  return { ok: true };
+}
+
+/** @param {unknown} payload */
+function writeWarmFloorSnapshot(payload) {
+  const validation = validateWarmFloorSnapshotPayload(payload);
+  if (!validation.ok) {
+    console.error(
+      `[generate-snapshot] failure: invalid warm-floor payload — ${validation.reason}`,
+    );
+    process.exit(1);
+  }
+
+  mkdirSync(dirname(warmFloorOutputFile), { recursive: true });
+  const rendered = `${JSON.stringify(payload, null, 2)}\n`;
+  writeFileSync(warmFloorOutputFile, rendered, "utf-8");
+  console.log(
+    `[generate-snapshot] success: warm-floor snapshot written to ${warmFloorOutputFile}`,
+  );
+}
+
 /** @param {string} url */
 async function fetchRemoteSnapshot(url) {
   const response = await fetch(url, {
@@ -158,6 +278,7 @@ function runLocalPythonGenerator() {
   }
 
   console.log(`[generate-snapshot] success: local snapshot written to ${outputFile}`);
+  writeWarmFloorSnapshot(WARM_FLOOR_V1_SEED);
 }
 
 async function runRemoteMode(baseUrl) {
@@ -175,6 +296,7 @@ async function runRemoteMode(baseUrl) {
 
     writeSnapshot(payload);
     console.log(`[generate-snapshot] success: remote snapshot written to ${outputFile}`);
+    writeWarmFloorSnapshot(WARM_FLOOR_V1_SEED);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.error(`[generate-snapshot] failure: remote fetch failed — ${message}`);

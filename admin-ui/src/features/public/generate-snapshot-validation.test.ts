@@ -5,6 +5,8 @@ import {
   findForbiddenKeys,
   resolveRemoteBaseUrl,
   validateSnapshotPayload,
+  validateWarmFloorSnapshotPayload,
+  WARM_FLOOR_V1_SEED,
 } from "../../../scripts/generate-snapshot.js";
 
 describe("generate-snapshot validation", () => {
@@ -73,6 +75,17 @@ describe("generate-snapshot validation", () => {
     ).toEqual({
       ok: false,
       reason: "forbidden internal keys: riskPercent",
+    });
+  });
+
+  it("accepts the warm-floor v1 seed payload", () => {
+    expect(validateWarmFloorSnapshotPayload(WARM_FLOOR_V1_SEED)).toEqual({ ok: true });
+  });
+
+  it("rejects warm-floor payloads without water/electric sections", () => {
+    expect(validateWarmFloorSnapshotPayload({ version: "warm-floor-v1" })).toEqual({
+      ok: false,
+      reason: "water must be an object",
     });
   });
 });

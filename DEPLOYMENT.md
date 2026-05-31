@@ -251,6 +251,8 @@ During `npm run build`, the `prebuild` step runs `admin-ui/scripts/generate-snap
 - **Production / Render** (when `PUBLIC_SNAPSHOT_BASE_URL` or `VITE_API_BASE_URL` is set): fetches `GET /api/public/catalog/plumbing/snapshot` from the backend, validates the public whitelist payload, and writes `admin-ui/src/features/public/generated/plumbing.snapshot.json`. If fetch or validation fails, the build **must fail** (no Python/seed fallback).
 - **Local build** (neither env var set): deterministic seed fallback via `tools/generate_plumbing_snapshot.py` (fresh SQLite seeded with global defaults).
 
+The same prebuild step also writes `admin-ui/src/features/public/generated/warm-floor.snapshot.json` from the in-repo v1 seed (no public warm-floor API yet). Plumbing remote/local behavior is unchanged.
+
 Set at least one of:
 
 ```env

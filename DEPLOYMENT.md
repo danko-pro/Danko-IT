@@ -236,7 +236,29 @@ Frontend Static Site:
 VITE_API_BASE_URL=https://api.danko39.ru
 ```
 
+Optional override for prebuild snapshot fetch only (same host as backend is typical):
+
+```env
+PUBLIC_SNAPSHOT_BASE_URL=https://api.danko39.ru
+```
+
 `VITE_API_BASE_URL` is a Vite build-time variable. After changing it in Render Static Site settings, rebuild/redeploy the frontend. Production frontend builds must never fall back to `localhost` or `127.0.0.1`; if `VITE_API_BASE_URL` is missing in production, the app fails loudly instead of sending users' browsers to a local backend.
+
+### Plumbing snapshot at prebuild (Render Static Site)
+
+During `npm run build`, the `prebuild` step runs `admin-ui/scripts/generate-snapshot.js`:
+
+- **Production / Render** (when `PUBLIC_SNAPSHOT_BASE_URL` or `VITE_API_BASE_URL` is set): fetches `GET /api/public/catalog/plumbing/snapshot` from the backend, validates the public whitelist payload, and writes `admin-ui/src/features/public/generated/plumbing.snapshot.json`. If fetch or validation fails, the build **must fail** (no Python/seed fallback).
+- **Local build** (neither env var set): deterministic seed fallback via `tools/generate_plumbing_snapshot.py` (fresh SQLite seeded with global defaults).
+
+Set at least one of:
+
+```env
+VITE_API_BASE_URL=https://<backend-host>
+PUBLIC_SNAPSHOT_BASE_URL=https://<backend-host>
+```
+
+On Render Static Site, `VITE_API_BASE_URL` alone is enough — prebuild reuses it for the snapshot fetch.
 
 For Render frontend and backend on different `onrender.com` domains, admin session cookies must be cross-site cookies:
 
@@ -355,6 +377,8 @@ admin-ui/dist
 ```env
 VITE_API_BASE_URL=https://api.danko39.ru
 ```
+
+Prebuild pulls the plumbing catalog snapshot from `GET /api/public/catalog/plumbing/snapshot` on that backend (or set `PUBLIC_SNAPSHOT_BASE_URL` to the same host). Local builds without these env vars use the Python seed generator instead.
 
 5. Add custom domains:
 

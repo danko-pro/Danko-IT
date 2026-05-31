@@ -449,7 +449,9 @@ flowchart LR
   - **Проверка:** `pytest tests/test_public_plumbing_snapshot_whitelist.py` — JSON не содержит `technical_title`, `*_price` (разбивка), `coefficient`, `source`, `note`, `risk_percent`.
   - **Критерий:** whitelist-тест зелёный; **Откат:** revert.
 - **Шаг A7.2 — генератор снапшота** `admin-ui/scripts/generate-snapshot.js` → `admin-ui/src/features/public/generated/plumbing.snapshot.json`; шаг `prebuild` в `package.json`.
-  - **Проверка:** `npm run prebuild` создаёт/обновляет файл; `npm run build` зелёный со встроенным снапшотом.
+  - **Production (Render Static Site):** при `PUBLIC_SNAPSHOT_BASE_URL` или `VITE_API_BASE_URL` — prebuild делает `GET /api/public/catalog/plumbing/snapshot`, валидирует whitelist-payload и пишет JSON; при ошибке fetch/валидации сборка падает (без Python-fallback).
+  - **Local/dev:** без env — детерминированный seed через `tools/generate_plumbing_snapshot.py`.
+  - **Проверка:** `npm run prebuild` создаёт/обновляет файл; `npm run build` зелёный со встроенным снапшотом; на Render env `VITE_API_BASE_URL=https://<backend-host>` (или `PUBLIC_SNAPSHOT_BASE_URL`).
   - **Критерий:** снапшот генерируется и встраивается; **Откат:** revert.
 - **DoD A7:** публичный снапшот собирается на backend (резерв запечён, whitelist), генерируется на сборке, встраивается в бандл.
 

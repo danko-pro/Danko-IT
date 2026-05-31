@@ -296,7 +296,7 @@ Restart/redeploy is idempotent (no duplicate users)
 Password is never logged; only email and created/updated/skipped result are logged
 ```
 
-After the first successful login, remove `ADMIN_BOOTSTRAP_PASSWORD` from Render env and redeploy the backend. Without the password env var, startup will not overwrite the stored password on each restart. You can keep `ADMIN_BOOTSTRAP_EMAIL` (and optional `ADMIN_BOOTSTRAP_DISPLAY_NAME`) if you still want role/display-name reconciliation on startup.
+After the first successful login, you can remove `ADMIN_BOOTSTRAP_PASSWORD` from Render env and redeploy the backend. Without the password env var, startup skips bootstrap entirely, so it will not overwrite the stored password or reconcile role/display name on each restart. Set both `ADMIN_BOOTSTRAP_EMAIL` and `ADMIN_BOOTSTRAP_PASSWORD` again only when you intentionally want to reprovision that admin account.
 
 Render Postgres can show a connection string as `postgresql://...`. The application uses SQLAlchemy async runtime, so production `DATABASE_URL` should use the async driver form:
 

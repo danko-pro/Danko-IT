@@ -15,6 +15,7 @@ from sqlalchemy import insert, select, text
 
 from supply_bot.admin_api.auth import SESSION_COOKIE_NAME, read_admin_session_token
 from supply_bot.admin_api.auth_rate_limit import LoginRateLimiter
+from supply_bot.admin_api.bootstrap import bootstrap_admin_from_env
 from supply_bot.admin_api.public_rate_limit import PublicLeadRateLimiter
 from supply_bot.admin_api.route_registry import register_admin_routes
 from supply_bot.config import Settings, load_settings
@@ -260,6 +261,7 @@ def _build_admin_lifespan(
         app.state.file_storage = file_storage
         app.state.database_runtime = database_runtime
         app.state.user_auth_repository = SqlAlchemyUserAuthRepository(database_runtime.session_factory)
+        await bootstrap_admin_from_env(app.state.user_auth_repository)
         app.state.catalog_repository = catalog_repository
         app.state.request_repository = request_repository
         app.state.notification_repository = notification_repository

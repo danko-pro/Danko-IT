@@ -11,6 +11,7 @@ from supply_bot.storage_estimates.repository import (
     _rows_to_dicts,
 )
 from supply_bot.storage_estimates.tables import (
+    estimate_public_warm_floor_configs,
     estimate_warm_floor_configs,
     estimate_warm_floor_rooms,
 )
@@ -36,8 +37,71 @@ _WARM_FLOOR_CONFIG_COLUMNS = (
     estimate_warm_floor_configs.c.updated_at,
 )
 
+_PUBLIC_WARM_FLOOR_CONFIG_COLUMNS = tuple(
+    column for column in estimate_public_warm_floor_configs.c if column.name != "owner_user_id"
+)
+_PUBLIC_WARM_FLOOR_BLOCKED = {"config_key", "owner_user_id", "created_at", "updated_at"}
+
 
 class SqlAlchemyEstimateWarmFloorRepository(SqlAlchemyEstimateRepository):
+    async def get_public_warm_floor_config(self) -> dict[str, Any] | None:
+        async with self._session_factory() as session:
+            result = await session.execute(
+                select(*_PUBLIC_WARM_FLOOR_CONFIG_COLUMNS).where(
+                    self._owner_clause(estimate_public_warm_floor_configs),
+                    estimate_public_warm_floor_configs.c.config_key == "global",
+                )
+            )
+            return _row_to_dict(result.fetchone())
+
+    async def ensure_public_warm_floor_config(self, defaults: dict[str, Any]) -> dict[str, Any]:
+        async with self._session_factory() as session:
+            async with session.begin():
+                result = await session.execute(
+                    select(estimate_public_warm_floor_configs.c.config_key).where(
+                        self._owner_clause(estimate_public_warm_floor_configs),
+                        estimate_public_warm_floor_configs.c.config_key == "global",
+                    )
+                )
+                if result.scalar_one_or_none() is None:
+                    values = {
+                        key: value
+                        for key, value in defaults.items()
+                        if key in estimate_public_warm_floor_configs.c and key not in {"owner_user_id"}
+                    }
+                    await session.execute(
+                        insert(estimate_public_warm_floor_configs).values(
+                            owner_user_id=self._catalog_write_owner_value(),
+                            **values,
+                        )
+                    )
+        return await self.get_public_warm_floor_config() or dict(defaults)
+
+    async def update_public_warm_floor_config(
+        self,
+        updates: dict[str, Any],
+        *,
+        defaults: dict[str, Any],
+    ) -> dict[str, Any]:
+        values = {
+            key: value
+            for key, value in updates.items()
+            if key in estimate_public_warm_floor_configs.c and key not in _PUBLIC_WARM_FLOOR_BLOCKED
+        }
+        await self.ensure_public_warm_floor_config(defaults)
+        if values:
+            async with self._session_factory() as session:
+                async with session.begin():
+                    await session.execute(
+                        update(estimate_public_warm_floor_configs)
+                        .where(
+                            self._owner_clause(estimate_public_warm_floor_configs),
+                            estimate_public_warm_floor_configs.c.config_key == "global",
+                        )
+                        .values(**values, updated_at=func.current_timestamp())
+                    )
+        return await self.get_public_warm_floor_config() or dict(defaults)
+
     async def get_estimate_warm_floor_config(self, project_id: int) -> dict[str, Any] | None:
         self._required_owner_user_id()
         async with self._session_factory() as session:

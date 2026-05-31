@@ -29,6 +29,10 @@ def get_plumbing_catalog_storage(request: Request) -> SqlAlchemyEstimateRuntimeR
     return request.app.state.estimate_repository.for_owner(None)
 
 
+def get_global_estimate_catalog_storage(request: Request) -> SqlAlchemyEstimateRuntimeRepository:
+    return request.app.state.estimate_repository.for_owner(None)
+
+
 def normalize_optional_text(value: str | None) -> str | None:
     normalized = str(value or "").strip()
     return normalized or None

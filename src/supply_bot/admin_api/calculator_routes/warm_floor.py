@@ -1,17 +1,25 @@
 ﻿from typing import Any
 
-from fastapi import FastAPI, Request
+from fastapi import Depends, FastAPI, Request
 
+from supply_bot.admin_api.auth import AdminSession
 from supply_bot.admin_api.calculator_routes.shared import (
     get_calculator_route_storage,
+    get_global_estimate_catalog_storage,
     load_estimate_project_payload,
 )
+from supply_bot.admin_api.deps import require_admin_role_session
 from supply_bot.admin_api.error_mapping import resolve_application_result
+from supply_bot.admin_api.schemas.calculator_warm_floor_public import PublicWarmFloorConfigPayload
 from supply_bot.estimates.application.update_warm_floor import (
     UpdateWarmFloorCommand,
     UpdateWarmFloorMaterialItemCommand,
     UpdateWarmFloorRoomCommand,
     UpdateWarmFloorUseCase,
+)
+from supply_bot.estimates.application.warm_floor_snapshot import (
+    DEFAULT_PUBLIC_WARM_FLOOR_CONFIG,
+    BuildWarmFloorSnapshotUseCase,
 )
 
 
@@ -20,6 +28,35 @@ def register_calculator_warm_floor_routes(
     *,
     calculator_warm_floor_update_payload_model,
 ) -> None:
+    @app.get("/api/calculator/warm-floor/config")
+    async def get_calculator_public_warm_floor_config(
+        request: Request,
+        _session: AdminSession = Depends(require_admin_role_session),
+    ) -> dict[str, Any]:
+        storage_obj = get_global_estimate_catalog_storage(request)
+        return await storage_obj.ensure_public_warm_floor_config(DEFAULT_PUBLIC_WARM_FLOOR_CONFIG)
+
+    @app.patch("/api/calculator/warm-floor/config")
+    async def update_calculator_public_warm_floor_config(
+        request: Request,
+        payload: PublicWarmFloorConfigPayload,
+        _session: AdminSession = Depends(require_admin_role_session),
+    ) -> dict[str, Any]:
+        storage_obj = get_global_estimate_catalog_storage(request)
+        updates = payload.model_dump(exclude_unset=True, exclude_none=True)
+        return await storage_obj.update_public_warm_floor_config(
+            updates,
+            defaults=DEFAULT_PUBLIC_WARM_FLOOR_CONFIG,
+        )
+
+    @app.get("/api/calculator/warm-floor/snapshot/preview")
+    async def calculator_public_warm_floor_snapshot_preview(
+        request: Request,
+        _session: AdminSession = Depends(require_admin_role_session),
+    ) -> dict[str, Any]:
+        storage_obj = get_global_estimate_catalog_storage(request)
+        return await BuildWarmFloorSnapshotUseCase(storage_obj).build_internal()
+
     @app.patch("/api/calculator/projects/{project_id}/warm-floor")
     async def update_calculator_warm_floor(
         request: Request,

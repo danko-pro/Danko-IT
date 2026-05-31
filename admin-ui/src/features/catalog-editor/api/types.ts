@@ -162,3 +162,40 @@ export type PlumbingSnapshotPreview = {
   items: PlumbingSnapshotItem[];
   zones: PlumbingSnapshotZone[];
 };
+
+export type PublicWarmFloorConfigDto = {
+  config_key: string;
+  version: string;
+  water_labor_rate_per_m2: number;
+  pipe_meters_per_m2: number;
+  max_circuit_area_m2: number;
+  pump_room_threshold: number;
+  pump_circuit_threshold: number;
+  pipe_price_per_meter: number;
+  chase_labor_per_meter: number;
+  small_loop_fittings_material: number;
+  small_loop_control_head_material: number;
+  small_loop_connection_labor: number;
+  manifold_labor: number;
+  manifold_material: number;
+  pump_labor: number;
+  pump_material: number;
+  electric_mat_price_per_m2: number;
+  electric_breaker_material: number;
+  thermostat_material: number;
+  electric_wire_material: number;
+  electric_installation_labor: number;
+  created_at?: string;
+  updated_at?: string;
+};
+
+export type PublicWarmFloorRateField = Exclude<
+  keyof PublicWarmFloorConfigDto,
+  "config_key" | "version" | "created_at" | "updated_at"
+>;
+
+export type WarmFloorSnapshotPreview = {
+  version: string;
+  water: Record<string, number>;
+  electric: Record<string, number>;
+};

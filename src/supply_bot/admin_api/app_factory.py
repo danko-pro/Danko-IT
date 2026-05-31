@@ -30,6 +30,8 @@ from supply_bot.storage_catalog import SqlAlchemyCatalogRepository
 from supply_bot.storage_dashboard import SqlAlchemyDashboardReadModel
 from supply_bot.storage_estimates.plumbing_seed import ensure_global_plumbing_defaults
 from supply_bot.storage_estimates.runtime_repository import SqlAlchemyEstimateRuntimeRepository
+from supply_bot.storage_estimates.tables import estimate_public_warm_floor_configs
+from supply_bot.storage_estimates.warm_floor_seed import ensure_global_warm_floor_defaults
 from supply_bot.storage_notifications import SqlAlchemyTelegramNotificationRepository
 from supply_bot.storage_projects import SqlAlchemyProjectWorkspaceRepository
 from supply_bot.storage_public_leads import SqlAlchemyPublicLeadRepository
@@ -44,6 +46,7 @@ PUBLIC_ADMIN_API_PATHS = (
     "/api/auth/logout",
     "/api/public/leads",
     "/api/public/catalog/plumbing/snapshot",
+    "/api/public/catalog/warm-floor/snapshot",
 )
 
 SYSTEM_PROJECT_OWNER_EMAIL_DOMAIN = "system.local"
@@ -244,12 +247,15 @@ def _build_admin_lifespan(
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         if database_runtime.backend == "sqlite":
             await database_runtime.create_metadata(metadata)
+        else:
+            await _ensure_public_warm_floor_runtime_schema(database_runtime)
         await _ensure_system_project_owner(database_runtime, owner_id=system_project_owner_id)
         await storage.initialize()
         if database_runtime.backend == "sqlite":
             await _claim_legacy_estimate_runtime_owner(database_runtime, owner_id=system_project_owner_id)
         # Глобальные дефолты каталога сантехники (owner_user_id = NULL) — идемпотентный seed (A5).
         await ensure_global_plumbing_defaults(database_runtime.session_factory)
+        await ensure_global_warm_floor_defaults(database_runtime.session_factory)
         await storage.ensure_runtime_settings(
             delivery_start=settings.default_delivery_start.strftime("%H:%M"),
             delivery_end=settings.default_delivery_end.strftime("%H:%M"),
@@ -278,6 +284,14 @@ def _build_admin_lifespan(
             await database_runtime.dispose()
 
     return lifespan
+
+
+async def _ensure_public_warm_floor_runtime_schema(database_runtime: DatabaseRuntime) -> None:
+    async with database_runtime.engine.begin() as connection:
+        await connection.run_sync(
+            lambda sync_connection: estimate_public_warm_floor_configs.create(sync_connection, checkfirst=True)
+        )
+
 
 async def _claim_legacy_estimate_runtime_owner(
     database_runtime: DatabaseRuntime,

@@ -282,7 +282,11 @@ export function PublicEstimate() {
     onRoomWindowCountBlur,
     addRoom,
     removeRoom,
-  } = useEstimateRooms({ onRoomRemoved: purgeRoomFromRelatedState });
+  } = useEstimateRooms();
+  const handleRemoveRoom = useCallback(
+    (roomId: string) => removeRoom(roomId, purgeRoomFromRelatedState),
+    [removeRoom, purgeRoomFromRelatedState],
+  );
   const warmFloorRoomInputs = useMemo(
     () =>
       rooms.map((room, index) => {
@@ -775,7 +779,7 @@ export function PublicEstimate() {
             onRoomDoorCountBlur={onRoomDoorCountBlur}
             onRoomWindowCountChange={onRoomWindowCountChange}
             onRoomWindowCountBlur={onRoomWindowCountBlur}
-            onRemoveRoom={removeRoom}
+            onRemoveRoom={handleRemoveRoom}
             onAddRoom={addRoom}
           />
 

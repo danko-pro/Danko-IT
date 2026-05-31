@@ -58,11 +58,7 @@ function createEstimateRoom(existingRooms: EstimateRoomDraft[]): EstimateRoomDra
   });
 }
 
-export function useEstimateRooms({
-  onRoomRemoved,
-}: {
-  onRoomRemoved: (roomId: string) => void;
-}): {
+export function useEstimateRooms(): {
   ceilingHeightInput: string;
   rooms: EstimateRoomDraft[];
   roomInputs: EstimateRoomInput[];
@@ -83,7 +79,7 @@ export function useEstimateRooms({
   onRoomWindowCountBlur: (roomId: string, event: ChangeEvent<HTMLInputElement>) => void;
 
   addRoom: () => void;
-  removeRoom: (roomId: string) => void;
+  removeRoom: (roomId: string, onRoomRemoved?: (roomId: string) => void) => void;
 } {
   const [ceilingHeightInput, setCeilingHeightInput] = useState("2.7");
   const [rooms, setRooms] = useState<EstimateRoomDraft[]>(() => initialRooms.map(normalizeEstimateRoomDraft));
@@ -184,17 +180,14 @@ export function useEstimateRooms({
     );
   }, []);
 
-  const finalizeRoomRemove = useCallback(
-    (roomId: string) => {
-      setRooms((currentRooms) =>
-        currentRooms.length > 1 ? currentRooms.filter((room) => room.id !== roomId) : currentRooms,
-      );
-      onRoomRemoved(roomId);
-      setRemovingRoomIds((current) => current.filter((id) => id !== roomId));
-      delete geometryRemoveTimeoutsRef.current[roomId];
-    },
-    [onRoomRemoved],
-  );
+  const finalizeRoomRemove = useCallback((roomId: string, onRoomRemoved?: (roomId: string) => void) => {
+    setRooms((currentRooms) =>
+      currentRooms.length > 1 ? currentRooms.filter((room) => room.id !== roomId) : currentRooms,
+    );
+    onRoomRemoved?.(roomId);
+    setRemovingRoomIds((current) => current.filter((id) => id !== roomId));
+    delete geometryRemoveTimeoutsRef.current[roomId];
+  }, []);
 
   const addRoom = useCallback(() => {
     let newRoomId = "";
@@ -214,7 +207,7 @@ export function useEstimateRooms({
   }, []);
 
   const removeRoom = useCallback(
-    (roomId: string) => {
+    (roomId: string, onRoomRemoved?: (roomId: string) => void) => {
       if (rooms.length <= 1 || removingRoomIds.includes(roomId)) {
         return;
       }
@@ -222,14 +215,14 @@ export function useEstimateRooms({
       const removeDelayMs = getGeometryRowRemoveDelayMs();
 
       if (removeDelayMs === 0) {
-        finalizeRoomRemove(roomId);
+        finalizeRoomRemove(roomId, onRoomRemoved);
         return;
       }
 
       setRemovingRoomIds((current) => (current.includes(roomId) ? current : [...current, roomId]));
 
       geometryRemoveTimeoutsRef.current[roomId] = window.setTimeout(() => {
-        finalizeRoomRemove(roomId);
+        finalizeRoomRemove(roomId, onRoomRemoved);
       }, removeDelayMs);
     },
     [finalizeRoomRemove, removingRoomIds, rooms.length],

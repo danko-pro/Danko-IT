@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { calculateCeiling } from "./public-estimate-ceiling";
 import { calculateCompletion, type CompletionOptions } from "./public-estimate-completion";
 import {
@@ -20,16 +20,10 @@ import {
 import { calculateHomeGoods, createDefaultHomeGoodsOptions, type HomeGoodsOptions } from "./public-estimate-home-goods";
 import { calculateDoors, type DoorOptions } from "./public-estimate-doors";
 import { calculateElectric, type ElectricOptions } from "./public-estimate-electric";
-import {
-  calculateEstimateGeometryTotals,
-  calculateEstimateRoomGeometry,
-  parseEstimateDecimal,
-  parseEstimateInteger,
-} from "./public-estimate-geometry";
+import { parseEstimateDecimal, parseEstimateInteger } from "./public-estimate-geometry";
 import {
   estimateNumericFieldProps,
   estimateTextFieldProps,
-  normalizeEstimateCeilingHeightOnBlur,
   normalizeEstimateCountOnBlur,
   normalizeEstimateDecimalOnBlur,
   normalizeEstimateQuantityOnBlur,
@@ -65,7 +59,6 @@ import {
   flooringLayoutOptions,
   flooringPlinthOptions,
   flooringPreparationOptions,
-  GEOMETRY_ROW_REMOVE_MS,
   GEOMETRY_STEP_HINT,
   getDefaultCeilingLightSettings,
   getDefaultFlooringCovering,
@@ -73,23 +66,17 @@ import {
   getDefaultFlooringPreparation,
   getDefaultWallsCovering,
   getDefaultWallsPreparation,
-  initialRooms,
   wallsCoveringOptions,
   wallsPreparationOptions,
 } from "./estimate/defaults";
 import {
-  buildNewRoomName,
-  inferRoomTypeFromName,
   normalizeAppliancesOptionsDraft,
-  normalizeEstimateRoomDraft,
   normalizeLooseFurnitureOptionsDraft,
-  normalizeRoom,
   type AppliancesOptionsDraft,
   type CeilingRoomDraft,
   type CompletionOptionsDraft,
   type ElectricRoomDraft,
   type EstimateObjectMeta,
-  type EstimateRoomDraft,
   type FlooringOptionsDraft,
   type FlooringRoomDraft,
   type LooseFurnitureOptionsDraft,
@@ -117,6 +104,7 @@ import {
 } from "./estimate/summary";
 import { estimateNavigationItems, formatEstimateStep, getEstimateSectionClassName } from "./sections/registry";
 import { useEstimateNavigation } from "./estimate/useEstimateNavigation";
+import { useEstimateRooms } from "./estimate/useEstimateRooms";
 import { FlooringSection } from "./sections/flooring/FlooringSection";
 import { GeometrySection } from "./sections/geometry/GeometrySection";
 import { ObjectSection } from "./sections/object/ObjectSection";
@@ -137,22 +125,6 @@ import { DoorsSection } from "./sections/doors/DoorsSection";
 import { ElectricSection } from "./sections/electric/ElectricSection";
 import { PlumbingSection } from "./sections/plumbing/PlumbingSection";
 import { WallsSection } from "./sections/walls/WallsSection";
-
-function getGeometryRowRemoveDelayMs(): number {
-  if (typeof window === "undefined") {
-    return GEOMETRY_ROW_REMOVE_MS;
-  }
-
-  return window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : GEOMETRY_ROW_REMOVE_MS;
-}
-
-function prefersReducedEstimateMotion(): boolean {
-  if (typeof window === "undefined") {
-    return false;
-  }
-
-  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-}
 
 function createDefaultAppliancesOptionsDraft(): AppliancesOptionsDraft {
   const base = createDefaultAppliancesOptions();
@@ -182,17 +154,6 @@ function createDefaultLooseFurnitureOptionsDraft(): LooseFurnitureOptionsDraft {
   return { packageLevel: base.packageLevel, items };
 }
 
-function createEstimateRoom(existingRooms: EstimateRoomDraft[]): EstimateRoomDraft {
-  return normalizeEstimateRoomDraft({
-    id: `room-${Date.now()}-${Math.random().toString(16).slice(2)}`,
-    name: buildNewRoomName(existingRooms),
-    type: "other",
-    area: "",
-    doorCount: "1",
-    windowCount: "0",
-  });
-}
-
 export function PublicEstimate() {
   const [objectMeta, setObjectMeta] = useState<EstimateObjectMeta>({
     address: "",
@@ -200,8 +161,6 @@ export function PublicEstimate() {
     apartmentNumber: "",
     contact: "",
   });
-  const [ceilingHeightInput, setCeilingHeightInput] = useState("2.7");
-  const [rooms, setRooms] = useState<EstimateRoomDraft[]>(() => initialRooms.map(normalizeEstimateRoomDraft));
   const [warmFloorMode, setWarmFloorMode] = useState<WarmFloorMode>("water");
   const [warmFloorRooms, setWarmFloorRooms] = useState<Record<string, WarmFloorRoomDraft>>({});
   const [flooringRooms, setFlooringRooms] = useState<Record<string, FlooringRoomDraft>>({});
@@ -267,18 +226,63 @@ export function PublicEstimate() {
     toggleMobileVolumesExpanded,
     scrollToEstimateSection,
   } = useEstimateNavigation();
-  const pendingAddedRoomIdRef = useRef<string | null>(null);
-  const geometryRemoveTimeoutsRef = useRef<Record<string, number>>({});
-  const [enteringRoomIds, setEnteringRoomIds] = useState<string[]>([]);
-  const [removingRoomIds, setRemovingRoomIds] = useState<string[]>([]);
+  const purgeRoomFromRelatedState = useCallback((roomId: string) => {
+    setWarmFloorRooms((currentRooms) => {
+      const nextRooms = { ...currentRooms };
 
-  const ceilingHeight = useMemo(() => parseEstimateDecimal(ceilingHeightInput), [ceilingHeightInput]);
-  const roomInputs = useMemo(() => rooms.map(normalizeRoom), [rooms]);
-  const roomGeometries = useMemo(
-    () => roomInputs.map((room) => calculateEstimateRoomGeometry(room, ceilingHeight)),
-    [roomInputs, ceilingHeight],
-  );
-  const totals = useMemo(() => calculateEstimateGeometryTotals(roomGeometries), [roomGeometries]);
+      delete nextRooms[roomId];
+
+      return nextRooms;
+    });
+    setFlooringRooms((currentRooms) => {
+      const nextRooms = { ...currentRooms };
+
+      delete nextRooms[roomId];
+
+      return nextRooms;
+    });
+    setWallsRooms((currentRooms) => {
+      const nextRooms = { ...currentRooms };
+
+      delete nextRooms[roomId];
+
+      return nextRooms;
+    });
+    setCeilingRooms((currentRooms) => {
+      const nextRooms = { ...currentRooms };
+
+      delete nextRooms[roomId];
+
+      return nextRooms;
+    });
+    setElectricRooms((currentRooms) => {
+      const nextRooms = { ...currentRooms };
+
+      delete nextRooms[roomId];
+
+      return nextRooms;
+    });
+  }, []);
+  const {
+    ceilingHeightInput,
+    rooms,
+    roomInputs,
+    roomGeometries,
+    totals,
+    enteringRoomIds,
+    removingRoomIds,
+    onCeilingHeightChange,
+    onCeilingHeightBlur,
+    onRoomNameChange,
+    onRoomAreaChange,
+    onRoomAreaBlur,
+    onRoomDoorCountChange,
+    onRoomDoorCountBlur,
+    onRoomWindowCountChange,
+    onRoomWindowCountBlur,
+    addRoom,
+    removeRoom,
+  } = useEstimateRooms({ onRoomRemoved: purgeRoomFromRelatedState });
   const warmFloorRoomInputs = useMemo(
     () =>
       rooms.map((room, index) => {
@@ -477,68 +481,6 @@ export function PublicEstimate() {
   const estimateTotalItems = buildEstimateTotalItems(estimateResult.totals);
   const packageClassification = classifyEstimatePackage(estimateResult.totals.pricePerSquareMeter);
 
-  useEffect(() => {
-    return () => {
-      Object.values(geometryRemoveTimeoutsRef.current).forEach((timeoutId) => window.clearTimeout(timeoutId));
-    };
-  }, []);
-
-  useLayoutEffect(() => {
-    if (!enteringRoomIds.length) {
-      return;
-    }
-
-    if (prefersReducedEstimateMotion()) {
-      setEnteringRoomIds([]);
-      return;
-    }
-
-    let outerFrame = 0;
-    let innerFrame = 0;
-
-    outerFrame = window.requestAnimationFrame(() => {
-      innerFrame = window.requestAnimationFrame(() => {
-        setEnteringRoomIds([]);
-      });
-    });
-
-    return () => {
-      if (outerFrame) {
-        window.cancelAnimationFrame(outerFrame);
-      }
-
-      if (innerFrame) {
-        window.cancelAnimationFrame(innerFrame);
-      }
-    };
-  }, [enteringRoomIds]);
-
-  useEffect(() => {
-    const roomId = pendingAddedRoomIdRef.current;
-
-    if (!roomId) {
-      return;
-    }
-
-    const row = document.querySelector<HTMLElement>(`[data-estimate-room-id="${roomId}"]`);
-
-    if (!row) {
-      return;
-    }
-
-    pendingAddedRoomIdRef.current = null;
-
-    const nameInput = row.querySelector<HTMLInputElement>(".public-estimate-room-name input");
-    const prefersReducedMotion = prefersReducedEstimateMotion();
-
-    nameInput?.focus({ preventScroll: true });
-    nameInput?.select();
-    row.scrollIntoView({
-      block: prefersReducedMotion ? "nearest" : "center",
-      behavior: prefersReducedMotion ? "auto" : "smooth",
-    });
-  }, [rooms]);
-
   const warmFloorModeLabel = warmFloorMode === "water" ? "Водяной" : "Электрический";
   const warmFloorConnectionLabel =
     warmFloorMode === "electric"
@@ -598,28 +540,6 @@ export function PublicEstimate() {
 
   function closeSpecModal() {
     setSpecModal(null);
-  }
-
-  function updateRoom(roomId: string, patch: Partial<EstimateRoomDraft>) {
-    setRooms((currentRooms) =>
-      currentRooms.map((room) => {
-        if (room.id !== roomId) {
-          return room;
-        }
-
-        const nextRoom = normalizeEstimateRoomDraft({ ...room, ...patch });
-
-        if ("name" in patch) {
-          const inferredType = inferRoomTypeFromName(nextRoom.name);
-
-          if (inferredType !== null) {
-            nextRoom.type = inferredType;
-          }
-        }
-
-        return nextRoom;
-      }),
-    );
   }
 
   function updateWarmFloorRoom(roomId: string, patch: WarmFloorRoomDraft) {
@@ -779,89 +699,6 @@ export function PublicEstimate() {
     window.print();
   }
 
-  function purgeRoomFromRelatedState(roomId: string) {
-    setWarmFloorRooms((currentRooms) => {
-      const nextRooms = { ...currentRooms };
-
-      delete nextRooms[roomId];
-
-      return nextRooms;
-    });
-    setFlooringRooms((currentRooms) => {
-      const nextRooms = { ...currentRooms };
-
-      delete nextRooms[roomId];
-
-      return nextRooms;
-    });
-    setWallsRooms((currentRooms) => {
-      const nextRooms = { ...currentRooms };
-
-      delete nextRooms[roomId];
-
-      return nextRooms;
-    });
-    setCeilingRooms((currentRooms) => {
-      const nextRooms = { ...currentRooms };
-
-      delete nextRooms[roomId];
-
-      return nextRooms;
-    });
-    setElectricRooms((currentRooms) => {
-      const nextRooms = { ...currentRooms };
-
-      delete nextRooms[roomId];
-
-      return nextRooms;
-    });
-  }
-
-  function finalizeRoomRemove(roomId: string) {
-    setRooms((currentRooms) =>
-      currentRooms.length > 1 ? currentRooms.filter((room) => room.id !== roomId) : currentRooms,
-    );
-    purgeRoomFromRelatedState(roomId);
-    setRemovingRoomIds((current) => current.filter((id) => id !== roomId));
-    delete geometryRemoveTimeoutsRef.current[roomId];
-  }
-
-  function addRoom() {
-    let newRoomId = "";
-
-    setRooms((currentRooms) => {
-      const newRoom = createEstimateRoom(currentRooms);
-
-      newRoomId = newRoom.id;
-      pendingAddedRoomIdRef.current = newRoom.id;
-
-      return [...currentRooms, newRoom];
-    });
-
-    if (!prefersReducedEstimateMotion() && newRoomId) {
-      setEnteringRoomIds((current) => (current.includes(newRoomId) ? current : [...current, newRoomId]));
-    }
-  }
-
-  function removeRoom(roomId: string) {
-    if (rooms.length <= 1 || removingRoomIds.includes(roomId)) {
-      return;
-    }
-
-    const removeDelayMs = getGeometryRowRemoveDelayMs();
-
-    if (removeDelayMs === 0) {
-      finalizeRoomRemove(roomId);
-      return;
-    }
-
-    setRemovingRoomIds((current) => (current.includes(roomId) ? current : [...current, roomId]));
-
-    geometryRemoveTimeoutsRef.current[roomId] = window.setTimeout(() => {
-      finalizeRoomRemove(roomId);
-    }, removeDelayMs);
-  }
-
   return (
     <main className="public-landing public-estimate-page">
       <header className="public-estimate-header">
@@ -925,35 +762,19 @@ export function PublicEstimate() {
             geometryStepHint={GEOMETRY_STEP_HINT}
             ceilingHeightInput={ceilingHeightInput}
             numberFieldProps={estimateNumericFieldProps}
-            onCeilingHeightChange={(event) =>
-              setCeilingHeightInput(sanitizeEstimateDecimalInput(event.target.value))
-            }
-            onCeilingHeightBlur={(event) =>
-              setCeilingHeightInput(normalizeEstimateCeilingHeightOnBlur(event.target.value))
-            }
+            onCeilingHeightChange={onCeilingHeightChange}
+            onCeilingHeightBlur={onCeilingHeightBlur}
             rooms={rooms}
             roomGeometries={roomGeometries}
             enteringRoomIds={enteringRoomIds}
             removingRoomIds={removingRoomIds}
-            onRoomNameChange={(roomId, event) => updateRoom(roomId, { name: event.target.value })}
-            onRoomAreaChange={(roomId, event) =>
-              updateRoom(roomId, { area: sanitizeEstimateDecimalInput(event.target.value) })
-            }
-            onRoomAreaBlur={(roomId, event) =>
-              updateRoom(roomId, { area: normalizeEstimateDecimalOnBlur(event.target.value) })
-            }
-            onRoomDoorCountChange={(roomId, event) =>
-              updateRoom(roomId, { doorCount: sanitizeEstimateIntegerInput(event.target.value) })
-            }
-            onRoomDoorCountBlur={(roomId, event) =>
-              updateRoom(roomId, { doorCount: normalizeEstimateCountOnBlur(event.target.value) })
-            }
-            onRoomWindowCountChange={(roomId, event) =>
-              updateRoom(roomId, { windowCount: sanitizeEstimateIntegerInput(event.target.value) })
-            }
-            onRoomWindowCountBlur={(roomId, event) =>
-              updateRoom(roomId, { windowCount: normalizeEstimateCountOnBlur(event.target.value) })
-            }
+            onRoomNameChange={onRoomNameChange}
+            onRoomAreaChange={onRoomAreaChange}
+            onRoomAreaBlur={onRoomAreaBlur}
+            onRoomDoorCountChange={onRoomDoorCountChange}
+            onRoomDoorCountBlur={onRoomDoorCountBlur}
+            onRoomWindowCountChange={onRoomWindowCountChange}
+            onRoomWindowCountBlur={onRoomWindowCountBlur}
             onRemoveRoom={removeRoom}
             onAddRoom={addRoom}
           />

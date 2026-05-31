@@ -31,17 +31,6 @@ import { buildPublicEstimateResult } from "./estimate/engine";
 import { type EstimateSection, type EstimateSectionId } from "./public-estimate-model";
 import { classifyEstimatePackage } from "./public-estimate-package";
 import {
-  calculatePlumbing,
-  dishwasherPackageLabels,
-  getDishwasherZonePackageTotal,
-  getInstallRelocationZoneTotal,
-  getKitchenSinkZonePackageTotal,
-  getShowerZonePackageTotal,
-  kitchenSinkPackageLabels,
-  showerPackageLabels,
-  type PlumbingOptions,
-} from "./public-estimate-plumbing";
-import {
   doorPackageOptions,
   flooringCoveringOptions,
   flooringLayoutOptions,
@@ -69,8 +58,6 @@ import {
   buildEstimateTotalItems,
   buildHomeGoodsSummaryItems,
   buildLooseFurnitureSummaryItems,
-  buildPlumbingCompositionItems,
-  buildPlumbingSummaryItems,
   buildVolumeSummaryItems,
 } from "./estimate/summary";
 import { estimateNavigationItems, formatEstimateStep, getEstimateSectionClassName } from "./sections/registry";
@@ -81,6 +68,7 @@ import { useFlooringEstimate } from "./estimate/useFlooringEstimate";
 import { useWallsEstimate } from "./estimate/useWallsEstimate";
 import { useCeilingEstimate } from "./estimate/useCeilingEstimate";
 import { useElectricEstimate } from "./estimate/useElectricEstimate";
+import { usePlumbingEstimate } from "./estimate/usePlumbingEstimate";
 import { FlooringSection } from "./sections/flooring/FlooringSection";
 import { GeometrySection } from "./sections/geometry/GeometrySection";
 import { ObjectSection } from "./sections/object/ObjectSection";
@@ -136,22 +124,6 @@ export function PublicEstimate() {
     complexName: "",
     apartmentNumber: "",
     contact: "",
-  });
-  const [plumbingOptions, setPlumbingOptions] = useState<PlumbingOptions>({
-    includeBathroomSet: true,
-    includeBath: true,
-    includeHygienicShower: true,
-    includeElectricTowelRail: false,
-    includeKitchenSink: true,
-    kitchenSinkPackageLevel: "b",
-    includeDishwasherOutput: true,
-    dishwasherPackageLevel: "b",
-    includeShowerZone: false,
-    showerPackageLevel: "b",
-    includeInstallRelocation: false,
-    includeWasherOutput: true,
-    includeWaterNode: true,
-    includeLeakProtection: false,
   });
   const [doorOptions, setDoorOptions] = useState<DoorOptions>({
     packageType: "invisible_19000",
@@ -260,6 +232,33 @@ export function PublicEstimate() {
     onElectricKitchenOutputsChange,
     onElectricSwitchboardChange,
   } = useElectricEstimate({ rooms, roomInputs, ceilingResult });
+  const {
+    plumbingOptions,
+    plumbingResult,
+    plumbingCompositionItems,
+    plumbingSummaryItems,
+    kitchenSinkPackageLabels,
+    dishwasherPackageLabels,
+    showerPackageLabels,
+    getKitchenSinkZonePackageTotal,
+    getDishwasherZonePackageTotal,
+    getShowerZonePackageTotal,
+    getInstallRelocationZoneTotal,
+    onIncludeBathroomSetChange,
+    onIncludeBathChange,
+    onIncludeHygienicShowerChange,
+    onIncludeElectricTowelRailChange,
+    onIncludeKitchenSinkChange,
+    onKitchenSinkPackageLevelChange,
+    onIncludeDishwasherOutputChange,
+    onDishwasherPackageLevelChange,
+    onIncludeShowerZoneChange,
+    onShowerPackageLevelChange,
+    onIncludeInstallRelocationChange,
+    onIncludeWasherOutputChange,
+    onIncludeWaterNodeChange,
+    onIncludeLeakProtectionChange,
+  } = usePlumbingEstimate({ rooms, roomInputs });
   const purgeRoomFromRelatedState = useCallback(
     (roomId: string) => {
       removeWarmFloorRoom(roomId);
@@ -273,20 +272,6 @@ export function PublicEstimate() {
   const handleRemoveRoom = useCallback(
     (roomId: string) => removeRoom(roomId, purgeRoomFromRelatedState),
     [removeRoom, purgeRoomFromRelatedState],
-  );
-  const plumbingRoomInputs = useMemo(
-    () =>
-      rooms.map((room, index) => ({
-        roomId: room.id,
-        roomName: room.name.trim() || "Помещение",
-        roomType: room.type,
-        area: roomInputs[index]?.area ?? 0,
-      })),
-    [roomInputs, rooms],
-  );
-  const plumbingResult = useMemo(
-    () => calculatePlumbing(plumbingRoomInputs, plumbingOptions),
-    [plumbingOptions, plumbingRoomInputs],
   );
   const doorRoomInputs = useMemo(
     () =>
@@ -365,8 +350,6 @@ export function PublicEstimate() {
   const estimateTotalItems = buildEstimateTotalItems(estimateResult.totals);
   const packageClassification = classifyEstimatePackage(estimateResult.totals.pricePerSquareMeter);
 
-  const plumbingCompositionItems = buildPlumbingCompositionItems(plumbingResult);
-  const plumbingSummaryItems = buildPlumbingSummaryItems(plumbingResult);
   const doorCompositionItems = buildDoorCompositionItems(doorsResult, doorOptions);
   const doorSummaryItems = buildDoorSummaryItems(doorsResult);
   const completionSummaryItems = buildCompletionSummaryItems(completionResult);
@@ -408,13 +391,6 @@ export function PublicEstimate() {
 
   function closeSpecModal() {
     setSpecModal(null);
-  }
-
-  function updatePlumbingOptions(patch: Partial<PlumbingOptions>) {
-    setPlumbingOptions((currentOptions) => ({
-      ...currentOptions,
-      ...patch,
-    }));
   }
 
   function updateDoorOptions(patch: Partial<DoorOptions>) {
@@ -670,20 +646,20 @@ export function PublicEstimate() {
             getDishwasherZonePackageTotal={getDishwasherZonePackageTotal}
             getShowerZonePackageTotal={getShowerZonePackageTotal}
             getInstallRelocationZoneTotal={getInstallRelocationZoneTotal}
-            onIncludeBathroomSetChange={(checked) => updatePlumbingOptions({ includeBathroomSet: checked })}
-            onIncludeBathChange={(checked) => updatePlumbingOptions({ includeBath: checked })}
-            onIncludeHygienicShowerChange={(checked) => updatePlumbingOptions({ includeHygienicShower: checked })}
-            onIncludeElectricTowelRailChange={(checked) => updatePlumbingOptions({ includeElectricTowelRail: checked })}
-            onIncludeKitchenSinkChange={(checked) => updatePlumbingOptions({ includeKitchenSink: checked })}
-            onKitchenSinkPackageLevelChange={(level) => updatePlumbingOptions({ kitchenSinkPackageLevel: level })}
-            onIncludeDishwasherOutputChange={(checked) => updatePlumbingOptions({ includeDishwasherOutput: checked })}
-            onDishwasherPackageLevelChange={(level) => updatePlumbingOptions({ dishwasherPackageLevel: level })}
-            onIncludeShowerZoneChange={(checked) => updatePlumbingOptions({ includeShowerZone: checked })}
-            onShowerPackageLevelChange={(level) => updatePlumbingOptions({ showerPackageLevel: level })}
-            onIncludeInstallRelocationChange={(checked) => updatePlumbingOptions({ includeInstallRelocation: checked })}
-            onIncludeWasherOutputChange={(checked) => updatePlumbingOptions({ includeWasherOutput: checked })}
-            onIncludeWaterNodeChange={(checked) => updatePlumbingOptions({ includeWaterNode: checked })}
-            onIncludeLeakProtectionChange={(checked) => updatePlumbingOptions({ includeLeakProtection: checked })}
+            onIncludeBathroomSetChange={onIncludeBathroomSetChange}
+            onIncludeBathChange={onIncludeBathChange}
+            onIncludeHygienicShowerChange={onIncludeHygienicShowerChange}
+            onIncludeElectricTowelRailChange={onIncludeElectricTowelRailChange}
+            onIncludeKitchenSinkChange={onIncludeKitchenSinkChange}
+            onKitchenSinkPackageLevelChange={onKitchenSinkPackageLevelChange}
+            onIncludeDishwasherOutputChange={onIncludeDishwasherOutputChange}
+            onDishwasherPackageLevelChange={onDishwasherPackageLevelChange}
+            onIncludeShowerZoneChange={onIncludeShowerZoneChange}
+            onShowerPackageLevelChange={onShowerPackageLevelChange}
+            onIncludeInstallRelocationChange={onIncludeInstallRelocationChange}
+            onIncludeWasherOutputChange={onIncludeWasherOutputChange}
+            onIncludeWaterNodeChange={onIncludeWaterNodeChange}
+            onIncludeLeakProtectionChange={onIncludeLeakProtectionChange}
             onOpenSectionSpec={() => openSectionSpec("plumbing")}
           />
 

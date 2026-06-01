@@ -334,6 +334,14 @@ select.ce-cell-input { appearance: none; cursor: pointer; }
 .ce-flooring-assembly-table .ce-readonly { padding: 0 7px; line-height: 34px; }
 .ce-flooring-assembly-table .ce-total-cell { font-size: 12px; white-space: nowrap; }
 .ce-flooring-assembly-table .ce-row-delete { display: block; margin: 0 auto; }
+.ce-flooring-assembly-section-row td {
+  height: 26px !important; padding: 5px 8px !important;
+  border-top: 1px solid rgba(76,141,255,.35);
+  border-bottom: 1px solid rgba(76,141,255,.18);
+  background: rgba(76,141,255,.08) !important;
+  color: var(--ce-accent); font-size: 11px; font-weight: 650;
+  text-transform: uppercase; letter-spacing: .04em;
+}
 .ce-flooring-assembly-summary {
   display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px;
   margin-bottom: 10px; padding: 10px; border-radius: 8px;

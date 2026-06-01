@@ -3,7 +3,9 @@ from __future__ import annotations
 from typing import Any
 
 from sqlalchemy import delete, func, insert, select, update
+from sqlalchemy.exc import IntegrityError
 
+from supply_bot.application.errors import ConflictError
 from supply_bot.storage_estimates.repository import (
     SqlAlchemyEstimateRepository,
     _bool_int,
@@ -252,10 +254,13 @@ class SqlAlchemyEstimateFlooringRepository(SqlAlchemyEstimateRepository):
             return _rows_to_dicts(result.fetchall())
 
     async def _create_catalog_item(self, table, values: dict[str, Any]) -> int:
-        async with self._session_factory() as session:
-            async with session.begin():
-                result = await session.execute(insert(table).values(**values))
-                return int(result.inserted_primary_key[0])
+        try:
+            async with self._session_factory() as session:
+                async with session.begin():
+                    result = await session.execute(insert(table).values(**values))
+                    return int(result.inserted_primary_key[0])
+        except IntegrityError as exc:
+            raise ConflictError("Flooring catalog item with this title or code already exists") from exc
 
     async def _get_global_catalog_item(self, table, item_id: int) -> dict[str, Any] | None:
         async with self._session_factory() as session:

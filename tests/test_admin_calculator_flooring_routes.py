@@ -114,6 +114,27 @@ class AdminCalculatorFlooringRouteTests(AdminProjectsRouteCase):
                     ).status_code,
                     403,
                 )
+                self.assertEqual(
+                    client.post(
+                        "/api/calculator/flooring/coverings",
+                        json=_minimal_covering_kwargs(title="Тест без админа"),
+                    ).status_code,
+                    403,
+                )
+                self.assertEqual(
+                    client.post(
+                        "/api/calculator/flooring/preparations",
+                        json={"title": "Тест без админа", "labor_price_per_m2": 100},
+                    ).status_code,
+                    403,
+                )
+                self.assertEqual(
+                    client.post(
+                        "/api/calculator/flooring/layouts",
+                        json={"title": "Тест без админа", "labor_price_per_m2": 100},
+                    ).status_code,
+                    403,
+                )
                 self.assertEqual(client.get("/api/calculator/flooring/assembly-items").status_code, 403)
                 self.assertEqual(
                     client.post(
@@ -200,6 +221,86 @@ class AdminCalculatorFlooringRouteTests(AdminProjectsRouteCase):
                     },
                 )
                 self.assertEqual(response.status_code, 400)
+
+    def test_create_flooring_catalog_rows_are_global_and_snapshot_visible(self) -> None:
+        with TemporaryDirectory() as tmp_dir:
+            self._root = Path(tmp_dir)
+            suffix = uuid4().hex
+            covering_title = f"Тест покрытие {suffix}"
+            preparation_title = f"Тест подготовка {suffix}"
+            layout_title = f"Тест укладка {suffix}"
+
+            with self._build_client() as client:
+                self._login_admin(client)
+
+                covering = client.post(
+                    "/api/calculator/flooring/coverings",
+                    json=_minimal_covering_kwargs(
+                        title=covering_title,
+                        material_price_per_m2=3456,
+                        labor_price_per_m2=0,
+                        underlay_mode="none",
+                    ),
+                )
+                self.assertEqual(covering.status_code, 200)
+                self.assertEqual(covering.json()["title"], covering_title)
+
+                preparation = client.post(
+                    "/api/calculator/flooring/preparations",
+                    json={
+                        "title": preparation_title,
+                        "labor_price_per_m2": 456,
+                        "material_price_per_m2": 0,
+                    },
+                )
+                self.assertEqual(preparation.status_code, 200)
+                self.assertEqual(preparation.json()["title"], preparation_title)
+
+                layout = client.post(
+                    "/api/calculator/flooring/layouts",
+                    json={
+                        "title": layout_title,
+                        "labor_price_per_m2": 2345,
+                        "labor_multiplier": 1.2,
+                        "extra_waste_percent": 7,
+                    },
+                )
+                self.assertEqual(layout.status_code, 200)
+                self.assertEqual(layout.json()["title"], layout_title)
+
+                snapshot = client.get("/api/public/catalog/flooring/snapshot")
+                self.assertEqual(snapshot.status_code, 200)
+                payload = snapshot.json()
+
+                custom_covering = next(item for item in payload["coverings"] if item["title"] == covering_title)
+                self.assertEqual(custom_covering["materialPricePerM2"], 3456)
+                custom_preparation = next(
+                    item for item in payload["preparations"] if item["title"] == preparation_title
+                )
+                self.assertEqual(custom_preparation["laborPricePerM2"], 456)
+                custom_layout = next(item for item in payload["layouts"] if item["title"] == layout_title)
+                self.assertEqual(custom_layout["laborPricePerM2"], 2345)
+                self.assertEqual(custom_layout["laborFactor"], 1.2)
+
+    def test_duplicate_flooring_catalog_title_returns_conflict(self) -> None:
+        with TemporaryDirectory() as tmp_dir:
+            self._root = Path(tmp_dir)
+            title = f"Тест дубль {uuid4().hex}"
+
+            with self._build_client() as client:
+                self._login_admin(client)
+                first = client.post(
+                    "/api/calculator/flooring/coverings",
+                    json=_minimal_covering_kwargs(title=title),
+                )
+                self.assertEqual(first.status_code, 200)
+
+                duplicate = client.post(
+                    "/api/calculator/flooring/coverings",
+                    json=_minimal_covering_kwargs(title=title),
+                )
+                self.assertEqual(duplicate.status_code, 409)
+                self.assertIn("already exists", duplicate.json()["detail"])
 
     def test_negative_material_price_is_rejected(self) -> None:
         with TemporaryDirectory() as tmp_dir:

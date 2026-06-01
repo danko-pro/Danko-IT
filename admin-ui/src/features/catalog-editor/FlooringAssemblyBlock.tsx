@@ -24,8 +24,6 @@ import {
   type FlooringAssemblyLibrarySection,
 } from "./flooring-assembly";
 
-const ASSEMBLY_ROW_KINDS: CoveringAssemblyRowKind[] = ["work", "material", "consumable", "tool"];
-
 const FLOORING_ASSEMBLY_TARGETS: FlooringAssemblyTarget[] = ["covering", "preparation", "layout"];
 
 const FLOORING_ASSEMBLY_TARGET_LABELS: Record<FlooringAssemblyTarget, string> = {
@@ -35,7 +33,7 @@ const FLOORING_ASSEMBLY_TARGET_LABELS: Record<FlooringAssemblyTarget, string> = 
 };
 
 const FLOORING_ASSEMBLY_TARGET_LIBRARY_SECTIONS: Record<FlooringAssemblyTarget, FlooringAssemblyLibrarySection[]> = {
-  covering: ["covering", "work", "consumable", "tool"],
+  covering: ["covering", "consumable", "tool"],
   preparation: ["work"],
   layout: ["work"],
 };
@@ -94,7 +92,8 @@ export function FlooringAssemblyBlock({
     [rows],
   );
   const availableLibrarySections = FLOORING_ASSEMBLY_TARGET_LIBRARY_SECTIONS[target];
-  const availableRowKinds: CoveringAssemblyRowKind[] = target === "covering" ? ASSEMBLY_ROW_KINDS : ["work"];
+  const availableRowKinds: CoveringAssemblyRowKind[] =
+    target === "covering" ? ["material", "consumable", "tool"] : ["work"];
   const rowLibraryDatalistId = `flooring-assembly-row-library-${target}`;
   const availableRowLibraryItems = useMemo(
     () => libraryItemsFromCatalog.filter((item) => availableLibrarySections.includes(item.section)),
@@ -355,13 +354,6 @@ export function FlooringAssemblyBlock({
               onClick={() => addRow({ kind: "material", unit: "m2", formula: "flat_per_m2", consumptionPerM2: 1 })}
             >
               + Материал
-            </button>
-            <button
-              type="button"
-              className="ce-btn ce-btn-sm"
-              onClick={() => addRow({ kind: "work", unit: "m2", formula: "flat_per_m2", consumptionPerM2: 1 })}
-            >
-              + Работа
             </button>
             <button
               type="button"

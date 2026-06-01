@@ -64,6 +64,7 @@ class UpdateFlooringPreparationCommand:
 class UpdateFlooringLayoutCommand:
     layout_id: int
     title: str | None
+    labor_price_per_m2: float | int
     labor_multiplier: float | int
     extra_waste_percent: float | int
     note: str | None
@@ -173,6 +174,7 @@ class UpdateFlooringLayoutUseCase:
         self._storage = storage
 
     async def execute(self, command: UpdateFlooringLayoutCommand) -> dict[str, Any]:
+        _reject_negative(command.labor_price_per_m2, field_label="labor_price_per_m2")
         _reject_negative(command.labor_multiplier, field_label="labor_multiplier")
         _reject_negative(command.extra_waste_percent, field_label="extra_waste_percent")
 
@@ -180,6 +182,7 @@ class UpdateFlooringLayoutUseCase:
         updated = await self._storage.update_estimate_flooring_layout(
             command.layout_id,
             title=title,
+            labor_price_per_m2=clamp_non_negative(command.labor_price_per_m2),
             labor_multiplier=clamp_minimum(command.labor_multiplier, 0.1),
             extra_waste_percent=clamp_non_negative(command.extra_waste_percent),
             note=normalize_optional_text(command.note),

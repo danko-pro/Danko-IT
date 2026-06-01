@@ -208,6 +208,7 @@ estimate_flooring_layouts = Table(
     Column("id", Integer, primary_key=True, autoincrement=True),
     Column("owner_user_id", Integer, ForeignKey("app_users.id", ondelete="CASCADE"), nullable=True),
     Column("title", Text, nullable=False),
+    Column("labor_price_per_m2", Float, nullable=False, server_default=text("0")),
     Column("labor_multiplier", Float, nullable=False, server_default=text("1")),
     Column("extra_waste_percent", Float, nullable=False, server_default=text("0")),
     Column("note", Text, nullable=True),

@@ -61,6 +61,7 @@ class CreateFlooringPreparationCommand:
 @dataclass(frozen=True)
 class CreateFlooringLayoutCommand:
     title: str | None
+    labor_price_per_m2: float | int
     labor_multiplier: float | int
     extra_waste_percent: float | int
     note: str | None
@@ -110,6 +111,7 @@ class FlooringCatalogCreateStorage(Protocol):
         self,
         *,
         title: str,
+        labor_price_per_m2: float,
         labor_multiplier: float,
         extra_waste_percent: float,
         note: str | None,
@@ -179,6 +181,7 @@ class CreateFlooringLayoutUseCase:
         title = _normalize_required_text(command.title, error_message="Floor layout title is required")
         return await self._storage.create_estimate_flooring_layout(
             title=title,
+            labor_price_per_m2=clamp_non_negative(command.labor_price_per_m2),
             labor_multiplier=clamp_minimum(command.labor_multiplier, 0.1),
             extra_waste_percent=clamp_non_negative(command.extra_waste_percent),
             note=normalize_optional_text(command.note),

@@ -1,4 +1,4 @@
-// Маппинг REST DTO каталога полов ↔ draft catalog-editor и строки preview из flooring-v1 snapshot.
+// Маппинг REST DTO каталога полов ↔ draft catalog-editor и строки preview из flooring-v2 snapshot.
 // Без сетевых вызовов и React — покрывается unit-тестами.
 
 import type { FlooringSnapshot } from "../../public/public-flooring-snapshot";
@@ -154,6 +154,7 @@ export function dtoToFlooringLayoutDraft(dto: FlooringLayoutDto): FlooringLayout
   return {
     id: normalizeNum(dto.id),
     title: normalizeText(dto.title),
+    laborPricePerM2: normalizeNum(dto.labor_price_per_m2),
     laborFactor: normalizeNum(dto.labor_multiplier) > 0 ? normalizeNum(dto.labor_multiplier) : 1,
     additionalWastePercent: normalizeNum(dto.extra_waste_percent),
     note: normalizeText(dto.note),
@@ -211,7 +212,7 @@ export function coveringDraftToPayload(draft: FlooringCoveringDraft): FlooringCo
   return {
     title: draft.title,
     material_price_per_m2: normalizeNum(draft.materialPricePerM2),
-    labor_price_per_m2: normalizeNum(draft.laborPricePerM2),
+    labor_price_per_m2: 0,
     base_waste_percent: normalizeNum(draft.baseWastePercent),
     underlay_mode: draft.underlayMode || "none",
     underlay_consumption_per_m2: normalizeNum(draft.underlayConsumptionPerM2),
@@ -254,6 +255,7 @@ export function preparationDraftToPayload(draft: FlooringPreparationDraft): Floo
 export function layoutDraftToPayload(draft: FlooringLayoutDraft): FlooringLayoutCreatePayload {
   return {
     title: draft.title,
+    labor_price_per_m2: normalizeNum(draft.laborPricePerM2),
     labor_multiplier: draft.laborFactor > 0 ? draft.laborFactor : 1,
     extra_waste_percent: normalizeNum(draft.additionalWastePercent),
     note: draft.note.trim() || null,
@@ -318,7 +320,6 @@ export function snapshotToDisplayRows(snapshot: FlooringSnapshot): FlooringSnaps
     rows.push(
       snapshotItemToRow("coverings", item, [
         "materialPricePerM2",
-        "laborPricePerM2",
         "baseWastePercent",
         "underlayPricePerM2",
         "adhesivePricePerM2",
@@ -333,7 +334,7 @@ export function snapshotToDisplayRows(snapshot: FlooringSnapshot): FlooringSnaps
     rows.push(snapshotItemToRow("preparations", item, ["laborPricePerM2", "materialPricePerM2"]));
   }
   for (const item of snapshot.layouts) {
-    rows.push(snapshotItemToRow("layouts", item, ["laborFactor", "additionalWastePercent"]));
+    rows.push(snapshotItemToRow("layouts", item, ["laborPricePerM2", "laborFactor", "additionalWastePercent"]));
   }
   for (const item of snapshot.plinthTypes) {
     rows.push(

@@ -25,10 +25,11 @@ function expectCodesPresent(items: Array<{ code: string }>, expectedCodes: strin
 }
 
 describe("flooring snapshot", () => {
-  it("loads and validates the generated v1 snapshot", () => {
+  it("loads and validates the generated v2 snapshot", () => {
     const snapshot = loadFlooringSnapshot();
-    expect(snapshot.version).toBe("flooring-v1");
+    expect(snapshot.version).toBe("flooring-v2");
     expect(snapshot.coverings.find((item) => item.code === "laminate")?.materialPricePerM2).toBe(930);
+    expect(snapshot.layouts.find((item) => item.code === "straight")?.laborPricePerM2).toBe(1000);
     expect(snapshot.globalAddons.thresholdPrice).toBe(900);
   });
 
@@ -76,6 +77,20 @@ describe("flooring snapshot", () => {
       ok: false,
       reason: "forbidden internal keys: note",
     });
+  });
+
+  it("keeps flooring-v1 payloads valid for legacy fallback", () => {
+    const legacyPayload = {
+      ...flooringSnapshotData,
+      version: "flooring-v1",
+      coverings: flooringSnapshotData.coverings.map((item) => ({
+        ...item,
+        laborPricePerM2: item.code === "laminate" ? 1000 : 0,
+      })),
+      layouts: flooringSnapshotData.layouts.map(({ laborPricePerM2: _legacy, ...item }) => item),
+    };
+
+    expect(validateFlooringSnapshot(legacyPayload)).toEqual({ ok: true });
   });
 
   it("matches exported hardcoded rate tables from public-estimate-flooring", () => {

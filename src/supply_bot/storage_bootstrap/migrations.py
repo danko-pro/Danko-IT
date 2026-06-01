@@ -181,6 +181,13 @@ async def apply_storage_migrations(connection_factory: ConnectionFactory) -> Non
             column="custom_consumables_json",
             definition="TEXT NOT NULL DEFAULT ''",
         )
+        await _ensure_column(
+            db,
+            table="estimate_flooring_layouts",
+            column="labor_price_per_m2",
+            definition="REAL NOT NULL DEFAULT 0",
+        )
+        await _backfill_flooring_layout_labor_rates(db)
         await db.execute(
             """
             CREATE TABLE IF NOT EXISTS estimate_flooring_room_zones (
@@ -331,6 +338,31 @@ async def _ensure_column(
     if column in existing:
         return
     await db.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
+
+
+async def _backfill_flooring_layout_labor_rates(db: aiosqlite.Connection) -> None:
+    """Заполняет работу укладки после добавления labor_price_per_m2 в старых БД."""
+
+    for title, labor_price_per_m2 in (
+        ("Прямая", 1000),
+        ("Крупный формат", 2000),
+        ("Клеевая", 800),
+        ("Плавающая", 1000),
+        ("Разбежка", 1100),
+        ("Диагональ", 1300),
+        ("Ёлка", 1600),
+        ("Елка", 1600),
+        ("Сложная", 1800),
+    ):
+        await db.execute(
+            """
+            UPDATE estimate_flooring_layouts
+            SET labor_price_per_m2 = ?
+            WHERE title = ?
+              AND COALESCE(labor_price_per_m2, 0) = 0
+            """,
+            (labor_price_per_m2, title),
+        )
 
 
 __all__ = ["apply_storage_migrations"]

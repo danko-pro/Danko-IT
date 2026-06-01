@@ -5,7 +5,7 @@ import {
   buildSnapshotUrl,
   buildWarmFloorSnapshotUrl,
   findForbiddenKeys,
-  FLOORING_V1_SEED,
+  FLOORING_V2_SEED,
   resolveRemoteBaseUrl,
   validateFlooringSnapshotPayload,
   validateSnapshotPayload,
@@ -99,15 +99,26 @@ describe("generate-snapshot validation", () => {
     });
   });
 
-  it("accepts the flooring v1 seed payload", () => {
-    expect(validateFlooringSnapshotPayload(FLOORING_V1_SEED)).toEqual({ ok: true });
+  it("accepts the flooring v2 seed payload", () => {
+    expect(validateFlooringSnapshotPayload(FLOORING_V2_SEED)).toEqual({ ok: true });
+  });
+
+  it("accepts legacy flooring v1 payloads", () => {
+    const legacyPayload = {
+      ...FLOORING_V2_SEED,
+      version: "flooring-v1",
+      coverings: FLOORING_V2_SEED.coverings.map((item) => ({ ...item, laborPricePerM2: 1000 })),
+      layouts: FLOORING_V2_SEED.layouts.map(({ laborPricePerM2: _legacy, ...item }) => item),
+    };
+
+    expect(validateFlooringSnapshotPayload(legacyPayload)).toEqual({ ok: true });
   });
 
   it("rejects flooring payloads missing required catalog codes", () => {
     expect(
       validateFlooringSnapshotPayload({
-        ...FLOORING_V1_SEED,
-        coverings: FLOORING_V1_SEED.coverings.filter((item) => item.code !== "porcelain"),
+        ...FLOORING_V2_SEED,
+        coverings: FLOORING_V2_SEED.coverings.filter((item) => item.code !== "porcelain"),
       }),
     ).toEqual({
       ok: false,
@@ -118,9 +129,9 @@ describe("generate-snapshot validation", () => {
   it("rejects flooring payloads with forbidden internal keys", () => {
     expect(
       validateFlooringSnapshotPayload({
-        ...FLOORING_V1_SEED,
+        ...FLOORING_V2_SEED,
         globalAddons: {
-          ...FLOORING_V1_SEED.globalAddons,
+          ...FLOORING_V2_SEED.globalAddons,
           note: "internal",
         },
       }),

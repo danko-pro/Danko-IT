@@ -86,6 +86,7 @@ export function emptyLayoutDraft(): FlooringLayoutDraft {
   return {
     id: 0,
     title: "",
+    laborPricePerM2: 0,
     laborFactor: 1,
     additionalWastePercent: 0,
     note: "",

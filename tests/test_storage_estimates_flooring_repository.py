@@ -80,6 +80,7 @@ class SqlAlchemyEstimateFlooringRepositoryTest(unittest.IsolatedAsyncioTestCase)
         )
         layout_id = await owner_1.create_estimate_flooring_layout(
             title="Диагональ",
+            labor_price_per_m2=1200,
             labor_multiplier=1.2,
             extra_waste_percent=3,
         )

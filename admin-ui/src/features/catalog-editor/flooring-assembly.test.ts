@@ -409,7 +409,6 @@ describe("getRecommendedFlatFieldEntries", () => {
     const entries = getRecommendedFlatFieldEntries(aggregates.recommendedFlatFields);
     expect(entries.map((e) => e.label)).toEqual([
       "Материал покрытия",
-      "Работа",
       "Клей",
       "Грунт",
       "СВП",
@@ -429,7 +428,7 @@ describe("getKeramogranit120x60Preset", () => {
     const preset = getKeramogranit120x60Preset();
     expect(preset.length).toBeGreaterThan(0);
     expect(preset.some((row) => row.kind === "material")).toBe(true);
-    expect(preset.some((row) => row.kind === "work")).toBe(true);
+    expect(preset.some((row) => row.kind === "work")).toBe(false);
     expect(preset.some((row) => row.kind === "consumable")).toBe(true);
     expect(preset.every((row) => row.formula)).toBe(true);
     const glue = preset.find((row) => row.title.includes("Клей"));
@@ -443,7 +442,7 @@ describe("applyAggregatesToCoveringDraft", () => {
     const draft = applyAggregatesToCoveringDraft(aggregates, emptyDraft());
 
     expect(draft.materialPricePerM2).toBe(aggregates.recommendedFlatFields.materialPricePerM2);
-    expect(draft.laborPricePerM2).toBe(aggregates.recommendedFlatFields.laborPricePerM2);
+    expect(draft.laborPricePerM2).toBe(0);
     expect(draft.instrumentPricePerM2).toBe(aggregates.toolPerM2);
     expect(draft.gluePricePerUnit).toBe(aggregates.recommendedFlatFields.adhesivePricePerM2);
     expect(draft.glueConsumptionPerM2).toBe(1);
@@ -463,7 +462,7 @@ describe("formatCoveringSaveFeedback", () => {
     const message = formatCoveringSaveFeedback("Керамогранит", draft, "create");
     expect(message).toContain("Покрытие «Керамогранит» создано в БД");
     expect(message).toMatch(/материал 2[\s\u00a0]900 ₽\/м²/);
-    expect(message).toMatch(/работа 2[\s\u00a0]000 ₽\/м²/);
+    expect(message).not.toMatch(/работа 2[\s\u00a0]000 ₽\/м²/);
     expect(message).toContain("инструмент 40 ₽/м²");
     expect(message).toContain("Строки «Состав покрытия» не сохраняются");
   });

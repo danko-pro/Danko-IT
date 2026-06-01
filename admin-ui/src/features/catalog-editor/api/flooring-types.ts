@@ -1,4 +1,4 @@
-// DTO/payload-контракты REST API каталога полов и публичного flooring-v1 snapshot.
+// DTO/payload-контракты REST API каталога полов и публичного flooring-v2 snapshot.
 // Имена полей API — snake_case (как у backend); draft-модель редактора — camelCase в flooring-mappers.ts.
 
 import type { FlooringSnapshot } from "../../public/public-flooring-snapshot";
@@ -56,6 +56,7 @@ export type FlooringPreparationDto = {
 export type FlooringLayoutDto = {
   id: number;
   title: string;
+  labor_price_per_m2: number;
   labor_multiplier: number;
   extra_waste_percent: number;
   note?: string | null;
@@ -143,6 +144,7 @@ export type FlooringPreparationCreatePayload = {
 
 export type FlooringLayoutCreatePayload = {
   title: string;
+  labor_price_per_m2: number;
   labor_multiplier: number;
   extra_waste_percent: number;
   note: string | null;
@@ -168,7 +170,7 @@ export type FlooringPreparationUpdatePayload = FlooringPreparationCreatePayload;
 export type FlooringLayoutUpdatePayload = FlooringLayoutCreatePayload;
 export type FlooringAssemblyItemUpdatePayload = FlooringAssemblyItemPayload;
 
-/** Публичный ответ GET /api/public/catalog/flooring/snapshot (контракт flooring-v1). */
+/** Публичный ответ GET /api/public/catalog/flooring/snapshot (контракт flooring-v2 + legacy v1 fallback). */
 export type PublicFlooringSnapshotResponse = FlooringSnapshot;
 
 // --- Draft-модель catalog-editor (будущая вкладка «Полы») ---
@@ -220,6 +222,7 @@ export type FlooringPreparationDraft = {
 export type FlooringLayoutDraft = {
   id: number;
   title: string;
+  laborPricePerM2: number;
   laborFactor: number;
   additionalWastePercent: number;
   note: string;

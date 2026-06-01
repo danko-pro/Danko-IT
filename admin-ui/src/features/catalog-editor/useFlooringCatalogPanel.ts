@@ -232,6 +232,7 @@ export function useFlooringCatalogPanel() {
         layoutDraftToPayload({
           ...emptyLayoutDraft(),
           title,
+          laborPricePerM2: aggregates.worksPerM2,
           laborFactor: coefficient,
           additionalWastePercent: 0,
         }),

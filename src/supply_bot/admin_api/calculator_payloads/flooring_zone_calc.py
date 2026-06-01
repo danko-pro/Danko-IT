@@ -53,7 +53,9 @@ def calculate_flooring_zone(
     total_waste = base_waste + extra_waste
     purchase_area = effective_area * (1 + total_waste / 100.0)
     material_price = float(covering["material_price_per_m2"]) if covering else 0.0
-    base_labor = float(covering["labor_price_per_m2"]) if covering else 0.0
+    layout_labor = float(layout.get("labor_price_per_m2") or 0.0) if layout else 0.0
+    covering_labor = float(covering["labor_price_per_m2"]) if covering else 0.0
+    base_labor = layout_labor or covering_labor
     layout_multiplier = float(layout["labor_multiplier"]) if layout else 1.0
     labor_with_coef = base_labor * layout_multiplier
     prep_work = prep_material = prep_primer_qty = prep_primer_cost = 0.0

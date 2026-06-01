@@ -695,6 +695,7 @@ export function FlooringCatalogPanel() {
   const [savingLayout, setSavingLayout] = useState(false);
   const [savingAssembly, setSavingAssembly] = useState(false);
   const [assemblyRowsCount, setAssemblyRowsCount] = useState(0);
+  const [flooringView, setFlooringView] = useState<"catalog" | "library">("catalog");
 
   const reloadSnapshot = useCallback(async () => {
     setLoading(true);
@@ -1140,6 +1141,13 @@ export function FlooringCatalogPanel() {
           <button type="button" className="ce-btn" onClick={() => void reloadSnapshot()} disabled={loading}>
             {loading ? "Обновление…" : "Обновить snapshot"}
           </button>
+          <button
+            type="button"
+            className={flooringView === "library" ? "ce-btn ce-btn-primary" : "ce-btn"}
+            onClick={() => setFlooringView((view) => (view === "library" ? "catalog" : "library"))}
+          >
+            {flooringView === "library" ? "К каталогу полов" : "Библиотека кубиков"}
+          </button>
         </div>
         {statusMessage ? (
           <div className="ce-save-status">
@@ -1175,6 +1183,7 @@ export function FlooringCatalogPanel() {
         <strong>{layoutRows.length}</strong>
       </div>
 
+      {flooringView === "library" ? (
       <section className="ce-flooring-section">
         <h3 className="ce-flooring-section-title">Библиотека кубиков</h3>
         <div className="ce-table-wrap ce-flooring-table-wrap">
@@ -1338,7 +1347,10 @@ export function FlooringCatalogPanel() {
           </div>
         </CatalogForm>
       </section>
+      ) : null}
 
+      {flooringView === "catalog" ? (
+        <>
       <section className="ce-flooring-section">
         <h3 className="ce-flooring-section-title">Покрытия</h3>
         <div className="ce-table-wrap ce-flooring-table-wrap">
@@ -1627,6 +1639,8 @@ export function FlooringCatalogPanel() {
           </div>
         </CatalogForm>
       </section>
+        </>
+      ) : null}
     </>
   );
 }

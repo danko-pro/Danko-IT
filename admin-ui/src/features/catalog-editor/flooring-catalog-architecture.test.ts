@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import flooringAssemblyBlockSource from "./FlooringAssemblyBlock.tsx?raw";
 import flooringAssemblyLibraryPanelSource from "./FlooringAssemblyLibraryPanel.tsx?raw";
 import flooringCatalogEditFormsSource from "./FlooringCatalogEditForms.tsx?raw";
+import flooringCatalogModelSource from "./flooring-catalog-model.ts?raw";
 import flooringCatalogPanelSource from "./FlooringCatalogPanel.tsx?raw";
 import flooringCatalogSectionsSource from "./FlooringCatalogSections.tsx?raw";
 import useFlooringCatalogPanelSource from "./useFlooringCatalogPanel.ts?raw";
@@ -12,6 +13,7 @@ const REQUIRED_FLOORING_CATALOG_MODULES = [
   "FlooringAssemblyLibraryPanel.tsx",
   "FlooringCatalogSections.tsx",
   "FlooringCatalogEditForms.tsx",
+  "flooring-catalog-model.ts",
   "useFlooringCatalogPanel.ts",
 ] as const;
 
@@ -21,6 +23,7 @@ const flooringCatalogModulePaths = Object.keys(
     "./FlooringAssemblyLibraryPanel.tsx",
     "./FlooringCatalogSections.tsx",
     "./FlooringCatalogEditForms.tsx",
+    "./flooring-catalog-model.ts",
     "./useFlooringCatalogPanel.ts",
   ]),
 );
@@ -60,6 +63,12 @@ describe("flooring catalog editor architecture", () => {
     expect(useFlooringCatalogPanelSource).toContain("listFlooringAssemblyItems");
     expect(useFlooringCatalogPanelSource).toContain("createFlooringCovering");
     expect(useFlooringCatalogPanelSource).toContain("updateFlooringLayout");
+  });
+
+  it("keeps pure catalog helpers in flooring-catalog-model", () => {
+    expect(flooringCatalogModelSource).toContain("export function emptyCoveringDraft");
+    expect(flooringCatalogModelSource).toContain("export function snapshotRatesMatchRow");
+    expect(flooringCatalogModelSource).toContain("export function consumablesSummaryPerM2");
   });
 
   it("keeps assembly builder, library, tables, and edit forms separated", () => {

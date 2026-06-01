@@ -277,4 +277,29 @@ select.ce-cell-input { appearance: none; cursor: pointer; }
 .ce-flooring-field { display: flex; flex-direction: column; gap: 4px; font-size: 12px; }
 .ce-flooring-field-label { color: var(--ce-muted); }
 .ce-flooring-field .ce-input { width: 100%; }
+
+/* --- Локальная сборка покрытия (FA1 spike) --- */
+.ce-flooring-assembly {
+  margin-top: 12px; padding: 12px; border: 1px dashed rgba(76,141,255,.45); border-radius: 10px;
+  background: rgba(76,141,255,.04);
+}
+.ce-flooring-assembly-head {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.ce-flooring-assembly-title { margin: 0; font-size: 14px; font-weight: 650; }
+.ce-flooring-assembly-hint { margin: 4px 0 0; font-size: 11px; color: var(--ce-muted); line-height: 1.4; }
+.ce-flooring-assembly-toolbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.ce-flooring-assembly-table-wrap { margin-bottom: 10px; max-height: none; }
+.ce-flooring-assembly-table { min-width: 960px; }
+.ce-flooring-assembly-summary {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px;
+  margin-bottom: 10px; padding: 10px; border-radius: 8px;
+  background: var(--ce-panel-2); border: 1px solid var(--ce-border);
+}
+.ce-flooring-assembly-summary-item { font-size: 12px; }
+.ce-flooring-assembly-summary-label { display: block; color: var(--ce-muted); font-size: 11px; }
+.ce-flooring-assembly-summary-value { font-weight: 600; color: var(--ce-ok); }
+.ce-flooring-assembly-actions { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
+.ce-flooring-assembly-check { display: inline-flex; align-items: center; justify-content: center; padding: 0 8px; }
 `;

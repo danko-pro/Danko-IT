@@ -36,6 +36,15 @@ import type {
   FlooringSnapshotDisplayRow,
   PublicFlooringSnapshotResponse,
 } from "./api/flooring-types";
+import {
+  aggregateCoveringAssembly,
+  applyAggregatesToCoveringDraft,
+  createEmptyAssemblyRow,
+  getKeramogranit120x60Preset,
+  type CoveringAssemblyAggregates,
+  type CoveringAssemblyRow,
+  type CoveringAssemblyRowKind,
+} from "./flooring-assembly";
 
 const SNAPSHOT_MISSING_WARNING =
   "Позиция создана в БД. В public snapshot она появится после backend mapping/F5c/F6.";
@@ -186,6 +195,256 @@ function FormField({ label, children }: FormFieldProps) {
       <span className="ce-flooring-field-label">{label}</span>
       {children}
     </label>
+  );
+}
+
+const ASSEMBLY_KIND_OPTIONS: { value: CoveringAssemblyRowKind; label: string }[] = [
+  { value: "work", label: "Работа" },
+  { value: "material", label: "Материал" },
+  { value: "consumable", label: "Расходник" },
+  { value: "tool", label: "Инструмент" },
+];
+
+type CoveringAssemblyBlockProps = {
+  onApplyAggregates: (aggregates: CoveringAssemblyAggregates) => void;
+  formatMoney: (value: number) => string;
+};
+
+function CoveringAssemblyBlock({ onApplyAggregates, formatMoney }: CoveringAssemblyBlockProps) {
+  const [rows, setRows] = useState<CoveringAssemblyRow[]>([]);
+
+  const aggregates = useMemo(() => aggregateCoveringAssembly(rows), [rows]);
+  const flat = aggregates.recommendedFlatFields;
+  const totalPerM2 =
+    flat.materialPricePerM2 +
+    flat.laborPricePerM2 +
+    flat.adhesivePricePerM2 +
+    flat.primerPricePerM2 +
+    flat.svpPricePerM2 +
+    flat.groutPricePerM2 +
+    flat.toolConsumablesPerM2;
+
+  function updateRow(id: string, patch: Partial<CoveringAssemblyRow>) {
+    setRows((prev) => prev.map((row) => (row.id === id ? { ...row, ...patch } : row)));
+  }
+
+  function removeRow(id: string) {
+    setRows((prev) => prev.filter((row) => row.id !== id));
+  }
+
+  function updateRowNumber(id: string, field: "price" | "consumptionPerM2" | "packageSize" | "layerMm", value: string) {
+    updateRow(id, { [field]: normalizeNum(value) });
+  }
+
+  return (
+    <div className="ce-flooring-assembly">
+      <div className="ce-flooring-assembly-head">
+        <div>
+          <h4 className="ce-flooring-assembly-title">Сборка покрытия (локальный черновик)</h4>
+          <p className="ce-flooring-assembly-hint">
+            Экспериментальный блок: строки сборки не сохраняются в БД. Агрегаты можно перенести в форму
+            покрытия вручную.
+          </p>
+        </div>
+        <div className="ce-flooring-assembly-toolbar">
+          <button
+            type="button"
+            className="ce-btn ce-btn-sm"
+            onClick={() => setRows(getKeramogranit120x60Preset())}
+          >
+            Заполнить пример Керамогранит 120×60
+          </button>
+          <button
+            type="button"
+            className="ce-btn ce-btn-sm"
+            onClick={() => setRows((prev) => [...prev, createEmptyAssemblyRow()])}
+          >
+            Добавить строку
+          </button>
+        </div>
+      </div>
+
+      <div className="ce-table-wrap ce-flooring-assembly-table-wrap">
+        <table className="ce-table ce-flooring-assembly-table">
+          <thead>
+            <tr>
+              <th className="ce-col-select">Вкл</th>
+              <th className="ce-col-title">Название</th>
+              <th className="ce-col-select">Тип</th>
+              <th className="ce-col-select">Ед.</th>
+              <th className="ce-col-num">Цена</th>
+              <th className="ce-col-num">Расход/м²</th>
+              <th className="ce-col-num">Упак.</th>
+              <th className="ce-col-num">Слой мм</th>
+              <th className="ce-col-actions"> </th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.length === 0 ? (
+              <tr>
+                <td colSpan={9} className="ce-empty">
+                  Нет строк сборки. Загрузите пример или добавьте строку.
+                </td>
+              </tr>
+            ) : (
+              rows.map((row) => (
+                <tr key={row.id}>
+                  <td className="ce-flooring-assembly-check">
+                    <input
+                      type="checkbox"
+                      checked={row.enabled}
+                      onChange={(event) => updateRow(row.id, { enabled: event.target.checked })}
+                      aria-label={`Включить ${row.title || "строку"}`}
+                    />
+                  </td>
+                  <td>
+                    <input
+                      className="ce-cell-input"
+                      value={row.title}
+                      onChange={(event) => updateRow(row.id, { title: event.target.value })}
+                      placeholder="Название"
+                    />
+                  </td>
+                  <td>
+                    <select
+                      className="ce-cell-input"
+                      value={row.kind}
+                      onChange={(event) =>
+                        updateRow(row.id, { kind: event.target.value as CoveringAssemblyRowKind })
+                      }
+                    >
+                      {ASSEMBLY_KIND_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
+                  <td>
+                    <input
+                      className="ce-cell-input"
+                      value={row.unit}
+                      onChange={(event) => updateRow(row.id, { unit: event.target.value })}
+                    />
+                  </td>
+                  <td>
+                    <input
+                      className="ce-cell-input ce-num"
+                      type="number"
+                      step="0.01"
+                      value={row.price || ""}
+                      onChange={(event) => updateRowNumber(row.id, "price", event.target.value)}
+                    />
+                  </td>
+                  <td>
+                    <input
+                      className="ce-cell-input ce-num"
+                      type="number"
+                      step="0.01"
+                      value={row.consumptionPerM2 || ""}
+                      onChange={(event) => updateRowNumber(row.id, "consumptionPerM2", event.target.value)}
+                    />
+                  </td>
+                  <td>
+                    <input
+                      className="ce-cell-input ce-num"
+                      type="number"
+                      step="0.01"
+                      value={row.packageSize ?? ""}
+                      onChange={(event) => updateRowNumber(row.id, "packageSize", event.target.value)}
+                    />
+                  </td>
+                  <td>
+                    <input
+                      className="ce-cell-input ce-num"
+                      type="number"
+                      step="0.01"
+                      value={row.layerMm ?? ""}
+                      onChange={(event) => updateRowNumber(row.id, "layerMm", event.target.value)}
+                    />
+                  </td>
+                  <td>
+                    <button
+                      type="button"
+                      className="ce-row-delete"
+                      title="Удалить строку"
+                      onClick={() => removeRow(row.id)}
+                    >
+                      ×
+                    </button>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="ce-flooring-assembly-summary">
+        <div className="ce-flooring-assembly-summary-item">
+          <span className="ce-flooring-assembly-summary-label">Работы</span>
+          <span className="ce-flooring-assembly-summary-value">{formatMoney(aggregates.worksPerM2)} ₽/м²</span>
+        </div>
+        <div className="ce-flooring-assembly-summary-item">
+          <span className="ce-flooring-assembly-summary-label">Материал</span>
+          <span className="ce-flooring-assembly-summary-value">{formatMoney(aggregates.materialPerM2)} ₽/м²</span>
+        </div>
+        <div className="ce-flooring-assembly-summary-item">
+          <span className="ce-flooring-assembly-summary-label">Расходники</span>
+          <span className="ce-flooring-assembly-summary-value">{formatMoney(aggregates.consumablesPerM2)} ₽/м²</span>
+        </div>
+        <div className="ce-flooring-assembly-summary-item">
+          <span className="ce-flooring-assembly-summary-label">Инструмент</span>
+          <span className="ce-flooring-assembly-summary-value">{formatMoney(aggregates.toolPerM2)} ₽/м²</span>
+        </div>
+        <div className="ce-flooring-assembly-summary-item">
+          <span className="ce-flooring-assembly-summary-label">Итого</span>
+          <span className="ce-flooring-assembly-summary-value">{formatMoney(totalPerM2)} ₽/м²</span>
+        </div>
+      </div>
+
+      <div className="ce-flooring-assembly-summary">
+        <div className="ce-flooring-assembly-summary-item">
+          <span className="ce-flooring-assembly-summary-label">materialPricePerM2</span>
+          <span className="ce-flooring-assembly-summary-value">{formatMoney(flat.materialPricePerM2)}</span>
+        </div>
+        <div className="ce-flooring-assembly-summary-item">
+          <span className="ce-flooring-assembly-summary-label">laborPricePerM2</span>
+          <span className="ce-flooring-assembly-summary-value">{formatMoney(flat.laborPricePerM2)}</span>
+        </div>
+        <div className="ce-flooring-assembly-summary-item">
+          <span className="ce-flooring-assembly-summary-label">adhesivePricePerM2</span>
+          <span className="ce-flooring-assembly-summary-value">{formatMoney(flat.adhesivePricePerM2)}</span>
+        </div>
+        <div className="ce-flooring-assembly-summary-item">
+          <span className="ce-flooring-assembly-summary-label">primerPricePerM2</span>
+          <span className="ce-flooring-assembly-summary-value">{formatMoney(flat.primerPricePerM2)}</span>
+        </div>
+        <div className="ce-flooring-assembly-summary-item">
+          <span className="ce-flooring-assembly-summary-label">svpPricePerM2</span>
+          <span className="ce-flooring-assembly-summary-value">{formatMoney(flat.svpPricePerM2)}</span>
+        </div>
+        <div className="ce-flooring-assembly-summary-item">
+          <span className="ce-flooring-assembly-summary-label">groutPricePerM2</span>
+          <span className="ce-flooring-assembly-summary-value">{formatMoney(flat.groutPricePerM2)}</span>
+        </div>
+        <div className="ce-flooring-assembly-summary-item">
+          <span className="ce-flooring-assembly-summary-label">toolConsumablesPerM2</span>
+          <span className="ce-flooring-assembly-summary-value">{formatMoney(flat.toolConsumablesPerM2)}</span>
+        </div>
+      </div>
+
+      <div className="ce-flooring-assembly-actions">
+        <button
+          type="button"
+          className="ce-btn ce-btn-primary ce-btn-sm"
+          disabled={rows.length === 0}
+          onClick={() => onApplyAggregates(aggregates)}
+        >
+          Применить агрегаты в форму покрытия
+        </button>
+      </div>
+    </div>
   );
 }
 
@@ -710,6 +969,12 @@ export function FlooringCatalogPanel() {
               <option value="0">Нет</option>
             </select>
           </FormField>
+          <CoveringAssemblyBlock
+            formatMoney={formatMoney}
+            onApplyAggregates={(aggregates) =>
+              setCoveringDraft((prev) => applyAggregatesToCoveringDraft(aggregates, prev))
+            }
+          />
         </CatalogForm>
       </section>
 

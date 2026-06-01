@@ -90,15 +90,12 @@ export function FlooringCatalogPanel() {
     <>
       <div className="ce-toolbar">
         <div className="ce-toolbar-group">
-          <button type="button" className="ce-btn" onClick={() => void reloadSnapshot()} disabled={loading}>
-            {loading ? "Обновление…" : "Обновить snapshot"}
-          </button>
           <button
             type="button"
             className={flooringView === "library" ? "ce-btn ce-btn-primary" : "ce-btn"}
             onClick={() => setFlooringView((view) => (view === "library" ? "catalog" : "library"))}
           >
-            {flooringView === "library" ? "К каталогу полов" : "Библиотека кубиков"}
+            {flooringView === "library" ? "← К сборке и каталогу полов" : "Библиотека кубиков"}
           </button>
         </div>
         {statusMessage ? (
@@ -222,6 +219,16 @@ export function FlooringCatalogPanel() {
       </FlooringLayoutsSection>
         </>
       ) : null}
+
+      <div className="ce-service-toolbar">
+        <div className="ce-service-toolbar-copy">
+          <strong>Служебно</strong>
+          <span>Перечитать public snapshot, если данные были изменены вне этой страницы.</span>
+        </div>
+        <button type="button" className="ce-btn" onClick={() => void reloadSnapshot()} disabled={loading}>
+          {loading ? "Перечитываю…" : "Перечитать snapshot"}
+        </button>
+      </div>
     </>
   );
 }

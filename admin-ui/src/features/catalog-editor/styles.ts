@@ -90,6 +90,12 @@ export const CATALOG_EDITOR_STYLES = `
 
 .ce-meta { margin-bottom: 12px; color: var(--ce-muted); font-size: 12px; }
 .ce-meta strong { color: var(--ce-text); }
+.ce-service-toolbar {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  margin-top: 18px; padding-top: 12px; border-top: 1px solid var(--ce-border);
+}
+.ce-service-toolbar-copy { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; color: var(--ce-muted); font-size: 12px; }
+.ce-service-toolbar-copy strong { color: var(--ce-text); font-size: 12px; }
 
 .ce-note {
   display: flex; align-items: center; gap: 10px; flex-wrap: wrap;

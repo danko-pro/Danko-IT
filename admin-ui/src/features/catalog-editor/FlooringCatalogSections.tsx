@@ -56,16 +56,23 @@ export function FlooringCoveringsSection({
                   <td className="ce-readonly">{consumablesSummaryPerM2(row.rates)}</td>
                   <td className="ce-col-actions">
                     <div className="ce-row-actions">
-                      <button type="button" className="ce-row-action" disabled={!row.catalogId} onClick={() => onEdit(row)}>
-                        Редактировать
+                      <button
+                        type="button"
+                        className="ce-row-action"
+                        disabled={!row.catalogId}
+                        title="Редактировать"
+                        onClick={() => onEdit(row)}
+                      >
+                        Изм.
                       </button>
                       <button
                         type="button"
                         className="ce-row-action ce-row-action-danger"
                         disabled={!row.catalogId}
+                        title="Удалить"
                         onClick={() => onDelete(row)}
                       >
-                        Удалить
+                        Удал.
                       </button>
                     </div>
                   </td>
@@ -125,16 +132,23 @@ export function FlooringPreparationsSection({
                   <td className="ce-num ce-readonly">{formatMoney(row.rates.materialPricePerM2)}</td>
                   <td className="ce-col-actions">
                     <div className="ce-row-actions">
-                      <button type="button" className="ce-row-action" disabled={!row.catalogId} onClick={() => onEdit(row)}>
-                        Редактировать
+                      <button
+                        type="button"
+                        className="ce-row-action"
+                        disabled={!row.catalogId}
+                        title="Редактировать"
+                        onClick={() => onEdit(row)}
+                      >
+                        Изм.
                       </button>
                       <button
                         type="button"
                         className="ce-row-action ce-row-action-danger"
                         disabled={!row.catalogId}
+                        title="Удалить"
                         onClick={() => onDelete(row)}
                       >
-                        Удалить
+                        Удал.
                       </button>
                     </div>
                   </td>
@@ -197,16 +211,23 @@ export function FlooringLayoutsSection({
                   <td className="ce-num ce-readonly">{formatPercent(row.rates.additionalWastePercent)}</td>
                   <td className="ce-col-actions">
                     <div className="ce-row-actions">
-                      <button type="button" className="ce-row-action" disabled={!row.catalogId} onClick={() => onEdit(row)}>
-                        Редактировать
+                      <button
+                        type="button"
+                        className="ce-row-action"
+                        disabled={!row.catalogId}
+                        title="Редактировать"
+                        onClick={() => onEdit(row)}
+                      >
+                        Изм.
                       </button>
                       <button
                         type="button"
                         className="ce-row-action ce-row-action-danger"
                         disabled={!row.catalogId}
+                        title="Удалить"
                         onClick={() => onDelete(row)}
                       >
-                        Удалить
+                        Удал.
                       </button>
                     </div>
                   </td>

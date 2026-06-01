@@ -3,7 +3,10 @@ import { describe, expect, it } from "vitest";
 import {
   aggregateCoveringAssembly,
   applyAggregatesToCoveringDraft,
+  calculateAssemblyRowTotal,
+  getAssemblyKindLabel,
   getKeramogranit120x60Preset,
+  getRecommendedFlatFieldEntries,
   type CoveringAssemblyRow,
 } from "./flooring-assembly";
 import type { FlooringCoveringDraft } from "./api/flooring-types";
@@ -113,6 +116,63 @@ describe("aggregateCoveringAssembly", () => {
     ]);
     expect(aggregates.toolPerM2).toBe(50);
     expect(aggregates.recommendedFlatFields.toolConsumablesPerM2).toBe(50);
+  });
+});
+
+describe("getAssemblyKindLabel", () => {
+  it("возвращает русские подписи типов", () => {
+    expect(getAssemblyKindLabel("work")).toBe("Работа");
+    expect(getAssemblyKindLabel("material")).toBe("Материал");
+    expect(getAssemblyKindLabel("consumable")).toBe("Расходник");
+    expect(getAssemblyKindLabel("tool")).toBe("Инструмент");
+  });
+});
+
+describe("calculateAssemblyRowTotal", () => {
+  it("для work/material/tool возвращает price", () => {
+    expect(calculateAssemblyRowTotal(makeRow({ id: "w", kind: "work", price: 2000 }))).toBe(2000);
+    expect(calculateAssemblyRowTotal(makeRow({ id: "m", kind: "material", price: 2900 }))).toBe(2900);
+    expect(calculateAssemblyRowTotal(makeRow({ id: "t", kind: "tool", price: 40 }))).toBe(40);
+  });
+
+  it("для consumable без фасовки: price × consumptionPerM2", () => {
+    expect(
+      calculateAssemblyRowTotal(
+        makeRow({ id: "c", kind: "consumable", price: 300, consumptionPerM2: 1.5 }),
+      ),
+    ).toBe(450);
+  });
+
+  it("для consumable с фасовкой: (price / packageSize) × consumptionPerM2", () => {
+    expect(
+      calculateAssemblyRowTotal(
+        makeRow({
+          id: "c",
+          kind: "consumable",
+          price: 600,
+          packageSize: 25,
+          consumptionPerM2: 1.5,
+        }),
+      ),
+    ).toBe((600 / 25) * 1.5);
+  });
+});
+
+describe("getRecommendedFlatFieldEntries", () => {
+  it("возвращает человекочитаемые подписи полей", () => {
+    const aggregates = aggregateCoveringAssembly(getKeramogranit120x60Preset());
+    const entries = getRecommendedFlatFieldEntries(aggregates.recommendedFlatFields);
+    expect(entries.map((e) => e.label)).toEqual([
+      "Материал покрытия",
+      "Работа",
+      "Клей",
+      "Грунт",
+      "СВП",
+      "Затирка",
+      "Инструмент",
+    ]);
+    expect(entries.find((e) => e.label === "Материал покрытия")?.valuePerM2).toBe(2900);
+    expect(entries.find((e) => e.label === "Клей")?.valuePerM2).toBe(450);
   });
 });
 

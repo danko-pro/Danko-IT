@@ -312,95 +312,17 @@ select.ce-cell-input { appearance: none; cursor: pointer; }
 .ce-flooring-assembly-title { margin: 0; font-size: 14px; font-weight: 650; }
 .ce-flooring-assembly-hint { margin: 4px 0 0; font-size: 11px; color: var(--ce-muted); line-height: 1.4; }
 .ce-flooring-assembly-toolbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.ce-flooring-assembly-list {
-  display: grid;
-  gap: 10px;
-  margin-bottom: 10px;
-}
-.ce-flooring-assembly-card {
-  display: grid;
-  gap: 10px;
-  padding: 10px;
-  border: 1px solid var(--ce-border);
-  border-radius: 10px;
-  background: rgba(15, 17, 21, .42);
-}
-.ce-flooring-assembly-card-head {
-  display: grid;
-  grid-template-columns: minmax(110px, auto) 1fr auto;
-  align-items: center;
-  gap: 10px;
-}
-.ce-flooring-assembly-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  color: var(--ce-muted);
-  font-size: 12px;
-  white-space: nowrap;
-}
-.ce-flooring-assembly-toggle input {
-  width: 16px;
-  height: 16px;
-  margin: 0;
-}
-.ce-flooring-assembly-card-total {
-  display: inline-flex;
-  align-items: baseline;
-  justify-content: flex-end;
-  gap: 8px;
-  min-width: 0;
-}
-.ce-flooring-assembly-card-total span {
-  color: var(--ce-muted);
-  font-size: 11px;
-}
-.ce-flooring-assembly-card-total strong {
-  color: var(--ce-ok);
-  font-size: 14px;
-  white-space: nowrap;
-}
-.ce-flooring-assembly-delete {
-  width: auto;
-  padding: 0 10px;
-}
-.ce-flooring-assembly-card-grid {
-  display: grid;
-  grid-template-columns: minmax(220px, 1.6fr) minmax(130px, .85fr) minmax(190px, 1.1fr) minmax(72px, .45fr) repeat(4, minmax(100px, .65fr));
-  gap: 10px;
-}
-.ce-flooring-assembly-field {
-  display: grid;
-  gap: 4px;
-  min-width: 0;
-}
-.ce-flooring-assembly-field.is-muted {
-  opacity: .58;
-}
-.ce-flooring-assembly-field-label {
-  min-height: 14px;
-  color: var(--ce-muted);
-  font-size: 11px;
-  font-weight: 600;
-}
-.ce-flooring-assembly-field .ce-input {
-  width: 100%;
-  min-width: 0;
-  height: 34px;
-}
-.ce-flooring-assembly-field select.ce-input {
-  padding-right: 24px;
-}
-.ce-flooring-assembly-na {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 34px;
-  border: 1px dashed var(--ce-border);
-  border-radius: 8px;
-  color: var(--ce-muted);
-  font-size: 12px;
-}
+.ce-flooring-assembly-table-wrap { margin-bottom: 10px; max-height: none; }
+.ce-flooring-assembly-table { min-width: 1240px; width: 100%; table-layout: fixed; }
+.ce-flooring-assembly-table .ce-col-num { width: 88px; }
+.ce-flooring-assembly-table .ce-col-formula { width: 168px; }
+.ce-flooring-assembly-table .ce-col-title { width: auto; min-width: 160px; }
+.ce-flooring-assembly-table .ce-col-select { width: 96px; }
+.ce-flooring-assembly-table .ce-col-total { width: 96px; }
+.ce-flooring-assembly-table .ce-col-actions { width: 44px; }
+.ce-flooring-assembly-table .ce-cell-input { height: 34px; min-height: 34px; }
+.ce-flooring-assembly-table select.ce-cell-input { padding-right: 4px; font-size: 11px; }
+.ce-flooring-assembly-table .ce-cell-formula { font-size: 11px; }
 .ce-flooring-assembly-summary {
   display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px;
   margin-bottom: 10px; padding: 10px; border-radius: 8px;
@@ -411,21 +333,4 @@ select.ce-cell-input { appearance: none; cursor: pointer; }
 .ce-flooring-assembly-summary-value { font-weight: 600; color: var(--ce-ok); }
 .ce-flooring-assembly-actions { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
 .ce-flooring-assembly-check { display: inline-flex; align-items: center; justify-content: center; padding: 0 8px; }
-@media (max-width: 1180px) {
-  .ce-flooring-assembly-card-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-@media (max-width: 720px) {
-  .ce-flooring-assembly-card-head {
-    grid-template-columns: 1fr;
-    align-items: start;
-  }
-  .ce-flooring-assembly-card-total {
-    justify-content: flex-start;
-  }
-  .ce-flooring-assembly-card-grid {
-    grid-template-columns: 1fr;
-  }
-}
 `;

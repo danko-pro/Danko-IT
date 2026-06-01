@@ -1195,6 +1195,7 @@ export function FlooringCatalogPanel() {
                 <th>Отдел</th>
                 <th>Тип</th>
                 <th>Формула</th>
+                <th>Ед.</th>
                 <th className="ce-col-num">Цена</th>
                 <th className="ce-col-num">Расход</th>
                 <th className="ce-col-num">Фас./база</th>
@@ -1205,7 +1206,7 @@ export function FlooringCatalogPanel() {
             <tbody>
               {assemblyCatalog.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="ce-empty">
+                  <td colSpan={11} className="ce-empty">
                     Кубики ещё не добавлены.
                   </td>
                 </tr>
@@ -1217,6 +1218,7 @@ export function FlooringCatalogPanel() {
                     <td className="ce-readonly">{getFlooringAssemblyLibrarySectionLabel(item.section)}</td>
                     <td className="ce-readonly">{getAssemblyKindLabel(item.kind)}</td>
                     <td className="ce-readonly">{getAssemblyFormulaCompactLabel(item.formula)}</td>
+                    <td className="ce-readonly">{item.unit}</td>
                     <td className="ce-num ce-readonly">{formatMoney(normalizeNum(item.price))}</td>
                     <td className="ce-num ce-readonly">{normalizeNum(item.consumption_per_m2)}</td>
                     <td className="ce-num ce-readonly">{item.package_size ?? "—"}</td>
@@ -1233,119 +1235,157 @@ export function FlooringCatalogPanel() {
           </table>
         </div>
 
-        <CatalogForm
-          title={editingAssemblyId ? "Редактировать кубик" : "Добавить кубик"}
-          mode={editingAssemblyId ? "edit" : "create"}
-          submitting={editingAssemblyId ? savingAssembly : creatingAssembly}
-          onSubmit={() => void (editingAssemblyId ? handleUpdateAssemblyItem() : handleCreateAssemblyItem())}
-          onCancel={editingAssemblyId ? cancelAssemblyEdit : undefined}
+        <form
+          className="ce-flooring-library-form"
+          onSubmit={(event) => {
+            event.preventDefault();
+            void (editingAssemblyId ? handleUpdateAssemblyItem() : handleCreateAssemblyItem());
+          }}
         >
-          <div className="ce-flooring-form-fields">
-            <FormField label="Название">
-              <input
-                className="ce-input"
-                value={assemblyDraft.title}
-                onChange={(event) => setAssemblyDraft((prev) => ({ ...prev, title: event.target.value }))}
-                placeholder="Клей плиточный"
-              />
-            </FormField>
-            <FormField label="Отдел">
-              <select
-                className="ce-input"
-                value={assemblyDraft.section}
-                onChange={(event) =>
-                  setAssemblyDraft((prev) => ({
-                    ...prev,
-                    section: event.target.value as FlooringAssemblyLibrarySection,
-                  }))
-                }
-              >
-                {FLOORING_ASSEMBLY_LIBRARY_SECTIONS.map((section) => (
-                  <option key={section} value={section}>
-                    {getFlooringAssemblyLibrarySectionLabel(section)}
-                  </option>
-                ))}
-              </select>
-            </FormField>
-            <FormField label="Тип">
-              <select
-                className="ce-input"
-                value={assemblyDraft.kind}
-                onChange={(event) => {
-                  const kind = event.target.value as CoveringAssemblyRowKind;
-                  setAssemblyDraft((prev) => ({ ...prev, kind, formula: inferDefaultFormula(kind, { title: prev.title }) }));
-                }}
-              >
-                {ASSEMBLY_ROW_KINDS.map((kind) => (
-                  <option key={kind} value={kind}>
-                    {getAssemblyKindLabel(kind)}
-                  </option>
-                ))}
-              </select>
-            </FormField>
-            <FormField label="Формула">
-              <select
-                className="ce-input"
-                value={assemblyDraft.formula}
-                onChange={(event) =>
-                  setAssemblyDraft((prev) => ({
-                    ...prev,
-                    formula: event.target.value as FlooringAssemblyFormula,
-                  }))
-                }
-              >
-                {FLOORING_ASSEMBLY_FORMULAS.map((formula) => (
-                  <option key={formula} value={formula}>
-                    {getAssemblyFormulaLabel(formula)}
-                  </option>
-                ))}
-              </select>
-            </FormField>
-            <FormField label="Ед.">
-              <input
-                className="ce-input"
-                value={assemblyDraft.unit}
-                onChange={(event) => setAssemblyDraft((prev) => ({ ...prev, unit: event.target.value }))}
-              />
-            </FormField>
-            <FormField label="Цена">
-              <input
-                className="ce-input ce-num"
-                type="number"
-                step="0.01"
-                value={assemblyDraft.price || ""}
-                onChange={(event) => updateAssemblyNumber("price", event.target.value)}
-              />
-            </FormField>
-            <FormField label="Расход/коэф.">
-              <input
-                className="ce-input ce-num"
-                type="number"
-                step="0.01"
-                value={assemblyDraft.consumptionPerM2 || ""}
-                onChange={(event) => updateAssemblyNumber("consumptionPerM2", event.target.value)}
-              />
-            </FormField>
-            <FormField label="Фас./база">
-              <input
-                className="ce-input ce-num"
-                type="number"
-                step="0.01"
-                value={assemblyDraft.packageSize ?? ""}
-                onChange={(event) => updateAssemblyNumber("packageSize", event.target.value)}
-              />
-            </FormField>
-            <FormField label="Слой/слои">
-              <input
-                className="ce-input ce-num"
-                type="number"
-                step="0.01"
-                value={assemblyDraft.layerMm ?? ""}
-                onChange={(event) => updateAssemblyNumber("layerMm", event.target.value)}
-              />
-            </FormField>
+          <div className="ce-table-wrap ce-flooring-table-wrap">
+            <table className="ce-table ce-flooring-table">
+              <thead>
+                <tr>
+                  <th className="ce-col-id">Режим</th>
+                  <th className="ce-col-title">Название</th>
+                  <th>Отдел</th>
+                  <th>Тип</th>
+                  <th>Формула</th>
+                  <th>Ед.</th>
+                  <th className="ce-col-num">Цена</th>
+                  <th className="ce-col-num">Расход</th>
+                  <th className="ce-col-num">Фас./база</th>
+                  <th className="ce-col-num">Слой</th>
+                  <th className="ce-col-actions">Действия</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td className="ce-readonly">{editingAssemblyId ? "Редактирование" : "Новый кубик"}</td>
+                  <td>
+                    <input
+                      className="ce-cell-input"
+                      value={assemblyDraft.title}
+                      onChange={(event) => setAssemblyDraft((prev) => ({ ...prev, title: event.target.value }))}
+                      placeholder="Клей плиточный"
+                    />
+                  </td>
+                  <td>
+                    <select
+                      className="ce-cell-input"
+                      value={assemblyDraft.section}
+                      onChange={(event) =>
+                        setAssemblyDraft((prev) => ({
+                          ...prev,
+                          section: event.target.value as FlooringAssemblyLibrarySection,
+                        }))
+                      }
+                    >
+                      {FLOORING_ASSEMBLY_LIBRARY_SECTIONS.map((section) => (
+                        <option key={section} value={section}>
+                          {getFlooringAssemblyLibrarySectionLabel(section)}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
+                  <td>
+                    <select
+                      className="ce-cell-input"
+                      value={assemblyDraft.kind}
+                      onChange={(event) => {
+                        const kind = event.target.value as CoveringAssemblyRowKind;
+                        setAssemblyDraft((prev) => ({ ...prev, kind, formula: inferDefaultFormula(kind, { title: prev.title }) }));
+                      }}
+                    >
+                      {ASSEMBLY_ROW_KINDS.map((kind) => (
+                        <option key={kind} value={kind}>
+                          {getAssemblyKindLabel(kind)}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
+                  <td>
+                    <select
+                      className="ce-cell-input"
+                      value={assemblyDraft.formula}
+                      onChange={(event) =>
+                        setAssemblyDraft((prev) => ({
+                          ...prev,
+                          formula: event.target.value as FlooringAssemblyFormula,
+                        }))
+                      }
+                    >
+                      {FLOORING_ASSEMBLY_FORMULAS.map((formula) => (
+                        <option key={formula} value={formula}>
+                          {getAssemblyFormulaLabel(formula)}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
+                  <td>
+                    <input
+                      className="ce-cell-input"
+                      value={assemblyDraft.unit}
+                      onChange={(event) => setAssemblyDraft((prev) => ({ ...prev, unit: event.target.value }))}
+                    />
+                  </td>
+                  <td>
+                    <input
+                      className="ce-cell-input ce-num"
+                      type="number"
+                      step="0.01"
+                      value={assemblyDraft.price || ""}
+                      onChange={(event) => updateAssemblyNumber("price", event.target.value)}
+                    />
+                  </td>
+                  <td>
+                    <input
+                      className="ce-cell-input ce-num"
+                      type="number"
+                      step="0.01"
+                      value={assemblyDraft.consumptionPerM2 || ""}
+                      onChange={(event) => updateAssemblyNumber("consumptionPerM2", event.target.value)}
+                    />
+                  </td>
+                  <td>
+                    <input
+                      className="ce-cell-input ce-num"
+                      type="number"
+                      step="0.01"
+                      value={assemblyDraft.packageSize ?? ""}
+                      onChange={(event) => updateAssemblyNumber("packageSize", event.target.value)}
+                    />
+                  </td>
+                  <td>
+                    <input
+                      className="ce-cell-input ce-num"
+                      type="number"
+                      step="0.01"
+                      value={assemblyDraft.layerMm ?? ""}
+                      onChange={(event) => updateAssemblyNumber("layerMm", event.target.value)}
+                    />
+                  </td>
+                  <td>
+                    <div className="ce-toolbar-group ce-flooring-library-actions">
+                      {editingAssemblyId ? (
+                        <button type="button" className="ce-btn ce-btn-sm" disabled={savingAssembly} onClick={cancelAssemblyEdit}>
+                          Отмена
+                        </button>
+                      ) : null}
+                      <button
+                        type="submit"
+                        className="ce-btn ce-btn-primary ce-btn-sm"
+                        disabled={editingAssemblyId ? savingAssembly : creatingAssembly}
+                      >
+                        {editingAssemblyId ? (savingAssembly ? "Запись…" : "Сохранить") : creatingAssembly ? "Запись…" : "Создать"}
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
-        </CatalogForm>
+        </form>
       </section>
       ) : null}
 

@@ -576,6 +576,99 @@ flowchart LR
 - Унификация CRM layout names («Ёлка») с public enums — отдельное продуктовое решение после F1 contract.
 - Per-room zones в публичном калькуляторе — не в первом проходе.
 
+##### F.next. Flooring Assemblies — детальная сборка покрытий без изменения public UX
+
+> **Статус:** план (следующая итерация после F1–F5d). Треки F1–F5d выполнены: публичный `/estimate` читает `generated/flooring.snapshot.json`. Продуктовый код и public UX **не меняются** в рамках FA-трека — меняется только модель данных и сборка ставок в admin/DB → snapshot.
+
+**Ключевое решение**
+
+- Публичный калькулятор **не** переходит на модель «готовый пакет пола» вместо текущих селектов.
+- Public UI сохраняет per-room выбор: **покрытие → подготовка → способ укладки** (как сейчас в `FlooringSection.tsx`).
+- Детализация (материалы, работы, расходники, фасовки, расходы, коэффициенты) живёт в **админке и БД**.
+- Public snapshot по-прежнему отдаёт **агрегированные ставки**, совместимые с текущим `calculateFlooring` и контрактом `flooring-v1`.
+
+**Целевая модель assemblies (A / B / C)**
+
+**A. Покрытие / covering assembly**
+
+- Пример: `Керамогранит 120×60`.
+- Состоит из атомов:
+  - материал покрытия;
+  - работа укладки (базовая, до layout-factor);
+  - расходники: клей, СВП, затирка, инструмент, custom consumables;
+  - параметры: запас %, размер/формат, слой клея, фасовка мешка, расход на м².
+- Snapshot builder **агрегирует** в whitelist-поля covering (без raw consumption):
+
+| Агрегат snapshot | Источник в assembly |
+|---|---|
+| `materialPricePerM2` | материал покрытия × (1 + waste) |
+| `laborPricePerM2` | базовая работа укладки |
+| `baseWastePercent` | запас материала покрытия |
+| `adhesivePricePerM2`, `svpPricePerM2`, `groutPricePerM2`, `toolConsumablesPerM2`, … | расходники per m² |
+
+**B. Подготовка / preparation assembly**
+
+- Пример: `Грунтование + гидроизоляция`.
+- Состоит из атомов:
+  - одна или несколько **строк** работ подготовки;
+  - материалы подготовки (грунт, гидроизоляция, …);
+  - расход/фасовка per строка.
+- Snapshot builder агрегирует:
+  - `laborPricePerM2` — сумма работ;
+  - `materialPricePerM2` — сумма материалов;
+  - optional primer-поля — только если нужны для парити текущего контракта.
+
+**C. Способ укладки / layout assembly**
+
+- Пример: `Прямая`, `Крупный формат`, `Диагональ`, `Ёлка`.
+- Задаёт модификаторы, не заменяя covering/preparation:
+  - коэффициент работ (`laborFactor`);
+  - дополнительный запас (`additionalWastePercent`);
+  - возможные надбавки (internal → агрегат в snapshot при необходимости).
+- Snapshot builder агрегирует:
+  - `laborFactor`;
+  - `additionalWastePercent`.
+
+**Принцип слоёв**
+
+```mermaid
+flowchart TB
+  Admin["Admin: atoms / materials / works / consumables / formulas"]
+  DB[("estimate_flooring_* assemblies + atoms")]
+  Snap["Snapshot: flat rates flooring-v1"]
+  Pub["Public: calculateFlooring + текущие селекторы"]
+
+  Admin --> DB
+  DB --> Snap --> Pub
+```
+
+| Слой | Модель | Контракт |
+|---|---|---|
+| Admin / DB | Детальные assemblies: материалы, работы, расходники, фасовки, формулы расхода | Internal; CRUD в CatalogEditor «Полы» |
+| Snapshot | Плоские ставки `flooring-v1` | Whitelist без raw consumption; совместим с `getFlooringRates()` |
+| Public calculator | Без изменений | `calculateFlooring` + селекторы covering / preparation / layout per room |
+
+**Non-goals (FA-трек)**
+
+- Не менять текущий public UI (`FlooringSection.tsx`, селекторы, defaults room-mapping).
+- Не менять текущую формулу выбора и расчёта: помещение → покрытие → подготовка → укладка.
+- Не переносить детальные фасовки и raw consumption в public payload.
+- Не делать public runtime API (build-time snapshot остаётся единственным источником для `/estimate`).
+- Не ломать существующий snapshot contract без **version bump** (`flooring-v1` → `flooring-v2` только при явном решении).
+
+**План FA1–FA6 (следующие шаги)**
+
+| Шаг | Scope | Gate |
+|---|---|---|
+| **FA1** | Документировать DB-модель flooring atoms/assemblies (таблицы, связи, формулы агрегации) | ADR/схема в repo; согласование с F.risks R4/R5 |
+| **FA2** | Admin UI: covering assemblies (CRUD атомов, preview агрегата ₽/m²) | Редактирование covering в `/catalog-editor` без изменения public JSON shape |
+| **FA3** | Admin UI: preparation + layout assemblies | Аналогично FA2 для preparations/layouts |
+| **FA4** | Snapshot builder: сборка assemblies → текущий `flooring-v1` DTO | `GET …/flooring/snapshot` и `generate-snapshot.js` отдают тот же whitelist |
+| **FA5** | Migration/backfill: текущие flat-строки каталога → assemblies | Данные в БД; парити до FA6 |
+| **FA6** | Tests: парiti flat rates (pre-migration) vs assembly-generated rates | `test_flooring_snapshot_parity.py` + vitest golden-case без изменения expected totals |
+
+- **DoD FA-трека:** admin собирает covering/preparation/layout из атомов; snapshot и `calculateFlooring` не меняют public UX и totals (парiti FA6); whitelist без утечки internal.
+
 #### Этап A9 — Декомпозиция `PublicEstimate.tsx` (реестр секций + engine)
 
 **Статус: закрыт (as-built).** Подшаги A9.1–A9.6 и серия A9.7e–A9.7q-b выполнены; этап A9.8 зафиксировал целевую архитектуру и лёгкие architecture-guards в vitest. Дальнейшая декомпозиция JSX — не в scope A9 (см. A10, C2, DEBT-* в [§4.A.debt](#4adebt-зафиксированные-долги-a8a9-не-чинить-в-a9)).

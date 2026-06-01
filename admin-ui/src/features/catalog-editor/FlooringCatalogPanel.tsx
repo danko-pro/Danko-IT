@@ -699,19 +699,28 @@ export function FlooringCatalogPanel() {
   const reloadSnapshot = useCallback(async () => {
     setLoading(true);
     setError(null);
+    setWarningMessage(null);
     try {
-      const [data, assemblyItems, coverings, preparations, layouts] = await Promise.all([
+      const [data, coverings, preparations, layouts] = await Promise.all([
         fetchFlooringSnapshot(),
-        listFlooringAssemblyItems(),
         listFlooringCoverings(),
         listFlooringPreparations(),
         listFlooringLayouts(),
       ]);
       setSnapshot(data);
-      setAssemblyCatalog(assemblyItems);
       setCoveringCatalog(coverings);
       setPreparationCatalog(preparations);
       setLayoutCatalog(layouts);
+      try {
+        const assemblyItems = await listFlooringAssemblyItems();
+        setAssemblyCatalog(assemblyItems);
+      } catch (cause) {
+        setAssemblyCatalog([]);
+        const detail = cause instanceof Error ? cause.message : "неизвестная ошибка";
+        setWarningMessage(
+          `Библиотека кубиков не загрузилась: ${detail}. Перезапустите backend, если endpoint ещё не поднят.`,
+        );
+      }
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Не удалось загрузить snapshot полов.");
       setSnapshot(null);

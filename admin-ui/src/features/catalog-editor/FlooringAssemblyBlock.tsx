@@ -8,7 +8,6 @@ import {
   createAssemblyRowFromLibraryItem,
   createEmptyAssemblyRow,
   FLOORING_ASSEMBLY_FORMULAS,
-  filterFlooringAssemblyLibraryItems,
   getAssemblyFormulaCompactLabel,
   getAssemblyFormulaLabel,
   getAssemblyKindLabel,
@@ -33,12 +32,6 @@ const FLOORING_ASSEMBLY_TARGET_LABELS: Record<FlooringAssemblyTarget, string> = 
   covering: "Покрытие",
   preparation: "Подготовка",
   layout: "Укладка",
-};
-
-const FLOORING_ASSEMBLY_TARGET_DEFAULT_SECTION: Record<FlooringAssemblyTarget, FlooringAssemblyLibrarySection> = {
-  covering: "covering",
-  preparation: "work",
-  layout: "work",
 };
 
 const FLOORING_ASSEMBLY_TARGET_LIBRARY_SECTIONS: Record<FlooringAssemblyTarget, FlooringAssemblyLibrarySection[]> = {
@@ -74,7 +67,6 @@ export function FlooringAssemblyBlock({
 }: CoveringAssemblyBlockProps) {
   const [rows, setRows] = useState<CoveringAssemblyRow[]>([]);
   const [applyStatus, setApplyStatus] = useState<string | null>(null);
-  const [librarySection, setLibrarySection] = useState<FlooringAssemblyLibrarySection>("covering");
   const [libraryItemId, setLibraryItemId] = useState("");
   const [entryTitle, setEntryTitle] = useState("");
   const [creating, setCreating] = useState(false);
@@ -108,11 +100,8 @@ export function FlooringAssemblyBlock({
     () => libraryItemsFromCatalog.filter((item) => availableLibrarySections.includes(item.section)),
     [availableLibrarySections, libraryItemsFromCatalog],
   );
-  const libraryItems = useMemo(
-    () => filterFlooringAssemblyLibraryItems(libraryItemsFromCatalog, librarySection),
-    [libraryItemsFromCatalog, librarySection],
-  );
-  const selectedLibraryItem = libraryItems.find((item) => item.id === libraryItemId) ?? libraryItems[0];
+  const selectedLibraryItem =
+    availableRowLibraryItems.find((item) => item.id === libraryItemId) ?? availableRowLibraryItems[0];
 
   useEffect(() => {
     if (selectedLibraryItem && selectedLibraryItem.id !== libraryItemId) {
@@ -135,15 +124,9 @@ export function FlooringAssemblyBlock({
     setRows((prev) => [...prev, createAssemblyRowFromLibraryItem(selectedLibraryItem)]);
   }
 
-  function changeLibrarySection(section: FlooringAssemblyLibrarySection) {
-    const items = filterFlooringAssemblyLibraryItems(libraryItemsFromCatalog, section);
-    setLibrarySection(section);
-    setLibraryItemId(items[0]?.id ?? "");
-  }
-
   function changeTarget(nextTarget: FlooringAssemblyTarget) {
     onTargetChange(nextTarget);
-    changeLibrarySection(FLOORING_ASSEMBLY_TARGET_DEFAULT_SECTION[nextTarget]);
+    setLibraryItemId("");
     setRows([]);
     setEntryTitle("");
     setApplyStatus(null);
@@ -427,26 +410,15 @@ export function FlooringAssemblyBlock({
           onChange={(event) => setEntryTitle(event.target.value)}
           placeholder={`Название: ${FLOORING_ASSEMBLY_TARGET_LABELS[target].toLowerCase()}`}
         />
-        <span className="ce-flooring-assembly-library-label">Кубики</span>
-        <select
-          className="ce-input ce-flooring-assembly-library-select"
-          value={librarySection}
-          onChange={(event) => changeLibrarySection(event.target.value as FlooringAssemblyLibrarySection)}
-        >
-          {availableLibrarySections.map((section) => (
-            <option key={section} value={section}>
-              {getFlooringAssemblyLibrarySectionLabel(section)}
-            </option>
-          ))}
-        </select>
+        <span className="ce-flooring-assembly-library-label">Кубик</span>
         <select
           className="ce-input ce-flooring-assembly-library-item"
           value={selectedLibraryItem?.id ?? ""}
           onChange={(event) => setLibraryItemId(event.target.value)}
         >
-          {libraryItems.map((item) => (
+          {availableRowLibraryItems.map((item) => (
             <option key={item.id} value={item.id}>
-              {item.title}
+              {getFlooringAssemblyLibrarySectionLabel(item.section)} · {item.title}
             </option>
           ))}
         </select>

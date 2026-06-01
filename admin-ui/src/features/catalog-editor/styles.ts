@@ -312,17 +312,41 @@ select.ce-cell-input { appearance: none; cursor: pointer; }
   display: flex; flex-direction: column; gap: 8px;
 }
 .ce-flooring-form-fields {
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 8px;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(165px, 1fr)); gap: 0;
 }
-.ce-flooring-field { display: flex; flex-direction: column; gap: 3px; font-size: 11px; }
-.ce-flooring-field-label { color: var(--ce-muted); line-height: 1.25; }
+.ce-flooring-field {
+  display: flex; flex-direction: column; min-width: 0; gap: 0; font-size: 11px;
+}
+.ce-flooring-field:not(.ce-flooring-field-note) {
+  background: var(--ce-panel);
+  border-left: 1px solid var(--ce-border);
+  border-top: 1px solid var(--ce-border);
+  box-shadow: inset -1px -1px 0 var(--ce-border);
+}
+.ce-flooring-field-label {
+  padding: 6px 8px 5px;
+  background: var(--ce-panel-2);
+  border-bottom: 1px solid var(--ce-border);
+  color: var(--ce-muted); line-height: 1.2;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
 .ce-flooring-field .ce-input { width: 100%; }
-.ce-flooring-field-note { grid-column: 1 / -1; }
+.ce-flooring-field-note { grid-column: 1 / -1; margin-top: 8px; }
+.ce-flooring-field-note .ce-flooring-field-label {
+  padding: 0 0 4px;
+  background: transparent;
+  border-bottom: 0;
+}
 .ce-flooring-field .ce-input {
-  height: 32px; min-height: 32px; padding: 0 9px; border-radius: 7px; font-size: 12px;
+  height: 32px; min-height: 32px; padding: 0 9px; border: 0; border-radius: 0;
+  background: transparent; font-size: 12px;
+}
+.ce-flooring-field .ce-input:focus {
+  box-shadow: inset 0 0 0 1px var(--ce-accent);
 }
 .ce-flooring-field textarea.ce-input {
   min-height: 42px; padding-top: 6px; resize: vertical; line-height: 1.3;
+  border: 1px solid var(--ce-border); border-radius: 7px; background: var(--ce-panel);
 }
 .ce-flooring-form .ce-table-wrap {
   border-radius: 8px; margin-bottom: 8px;

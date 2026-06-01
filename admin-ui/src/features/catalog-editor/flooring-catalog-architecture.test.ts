@@ -44,6 +44,11 @@ describe("flooring catalog editor architecture", () => {
     expect(sourceLines(flooringCatalogPanelSource).length).toBeLessThanOrEqual(260);
   });
 
+  it("keeps flooring catalog controller and assembly builder within module budgets", () => {
+    expect(sourceLines(useFlooringCatalogPanelSource).length).toBeLessThanOrEqual(620);
+    expect(sourceLines(flooringAssemblyBlockSource).length).toBeLessThanOrEqual(650);
+  });
+
   it("keeps flooring catalog submodules present", () => {
     for (const moduleFile of REQUIRED_FLOORING_CATALOG_MODULES) {
       expect(flooringCatalogModulePaths).toContain(`./${moduleFile}`);

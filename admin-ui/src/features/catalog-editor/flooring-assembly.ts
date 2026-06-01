@@ -72,6 +72,14 @@ const FORMULA_LABELS: Record<FlooringAssemblyFormula, string> = {
   piece_consumption: "Штуки × расход",
 };
 
+const FORMULA_COMPACT_LABELS: Record<FlooringAssemblyFormula, string> = {
+  flat_per_m2: "₽/м²",
+  unit_consumption: "Цена × расход",
+  package_consumption: "Фас. × расход",
+  layer_consumption: "Слой × расход",
+  piece_consumption: "Шт. × расход",
+};
+
 export const FLOORING_ASSEMBLY_FORMULAS: FlooringAssemblyFormula[] = [
   "flat_per_m2",
   "unit_consumption",
@@ -103,6 +111,10 @@ export function getAssemblyKindLabel(kind: CoveringAssemblyRowKind): string {
 
 export function getAssemblyFormulaLabel(formula: FlooringAssemblyFormula): string {
   return FORMULA_LABELS[formula];
+}
+
+export function getAssemblyFormulaCompactLabel(formula: FlooringAssemblyFormula): string {
+  return FORMULA_COMPACT_LABELS[formula];
 }
 
 export function inferDefaultFormula(

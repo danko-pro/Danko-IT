@@ -20,13 +20,12 @@ import {
   type CoveringAssemblyAggregates,
   type CoveringAssemblyRow,
   type CoveringAssemblyRowKind,
+  type FlooringAssemblyTarget,
   type FlooringAssemblyFormula,
   type FlooringAssemblyLibrarySection,
 } from "./flooring-assembly";
 
 const ASSEMBLY_ROW_KINDS: CoveringAssemblyRowKind[] = ["work", "material", "consumable", "tool"];
-
-export type FlooringAssemblyTarget = "covering" | "preparation" | "layout";
 
 const FLOORING_ASSEMBLY_TARGETS: FlooringAssemblyTarget[] = ["covering", "preparation", "layout"];
 

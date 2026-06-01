@@ -6,6 +6,8 @@ import type { FlooringCoveringDraft } from "./api/flooring-types";
 
 export type CoveringAssemblyRowKind = "work" | "material" | "consumable" | "tool";
 
+export type FlooringAssemblyTarget = "covering" | "preparation" | "layout";
+
 export type FlooringAssemblyLibrarySection = "covering" | "work" | "preparation" | "consumable" | "tool";
 
 export type FlooringAssemblyFormula =

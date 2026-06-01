@@ -3,6 +3,9 @@
 
 import { fetchJson } from "../../../shared/utils";
 import type {
+  FlooringAssemblyItemDto,
+  FlooringAssemblyItemPayload,
+  FlooringAssemblyItemUpdatePayload,
   FlooringCoveringCreatePayload,
   FlooringCoveringDto,
   FlooringCoveringUpdatePayload,
@@ -34,6 +37,10 @@ export async function listFlooringLayouts(): Promise<FlooringLayoutDto[]> {
   return fetchJson<FlooringLayoutDto[]>(`${FLOORING_API}/layouts`);
 }
 
+export async function listFlooringAssemblyItems(): Promise<FlooringAssemblyItemDto[]> {
+  return fetchJson<FlooringAssemblyItemDto[]>(`${FLOORING_API}/assembly-items`);
+}
+
 export async function createFlooringCovering(
   payload: FlooringCoveringCreatePayload,
 ): Promise<FlooringCoveringDto> {
@@ -54,6 +61,15 @@ export async function createFlooringPreparation(
 
 export async function createFlooringLayout(payload: FlooringLayoutCreatePayload): Promise<FlooringLayoutDto> {
   return fetchJson<FlooringLayoutDto>(`${FLOORING_API}/layouts`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function createFlooringAssemblyItem(
+  payload: FlooringAssemblyItemPayload,
+): Promise<FlooringAssemblyItemDto> {
+  return fetchJson<FlooringAssemblyItemDto>(`${FLOORING_API}/assembly-items`, {
     method: "POST",
     body: JSON.stringify(payload),
   });
@@ -84,6 +100,16 @@ export async function updateFlooringLayout(
   payload: FlooringLayoutUpdatePayload,
 ): Promise<FlooringLayoutDto> {
   return fetchJson<FlooringLayoutDto>(`${FLOORING_API}/layouts/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function updateFlooringAssemblyItem(
+  id: number,
+  payload: FlooringAssemblyItemUpdatePayload,
+): Promise<FlooringAssemblyItemDto> {
+  return fetchJson<FlooringAssemblyItemDto>(`${FLOORING_API}/assembly-items/${id}`, {
     method: "PATCH",
     body: JSON.stringify(payload),
   });

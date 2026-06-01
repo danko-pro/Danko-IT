@@ -3,6 +3,9 @@
 
 import type { FlooringSnapshot } from "../../public/public-flooring-snapshot";
 import type {
+  FlooringAssemblyItemDraft,
+  FlooringAssemblyItemDto,
+  FlooringAssemblyItemPayload,
   FlooringConsumableDraft,
   FlooringCoveringConsumableRates,
   FlooringCoveringCreatePayload,
@@ -157,6 +160,24 @@ export function dtoToFlooringLayoutDraft(dto: FlooringLayoutDto): FlooringLayout
   };
 }
 
+export function dtoToFlooringAssemblyItemDraft(dto: FlooringAssemblyItemDto): FlooringAssemblyItemDraft {
+  return {
+    id: normalizeNum(dto.id),
+    sourceCode: normalizeText(dto.source_code),
+    section: dto.section,
+    title: normalizeText(dto.title),
+    kind: dto.kind,
+    formula: dto.formula,
+    unit: normalizeText(dto.unit) || "pcs",
+    price: normalizeNum(dto.price),
+    consumptionPerM2: normalizeNum(dto.consumption_per_m2),
+    packageSize: dto.package_size === null || dto.package_size === undefined ? null : normalizeNum(dto.package_size),
+    layerMm: dto.layer_mm === null || dto.layer_mm === undefined ? null : normalizeNum(dto.layer_mm),
+    note: normalizeText(dto.note),
+    sortOrder: normalizeNum(dto.sort_order) || 100,
+  };
+}
+
 export function coveringDraftToUpdatePayload(draft: FlooringCoveringDraft): FlooringCoveringUpdatePayload {
   return coveringDraftToPayload(draft);
 }
@@ -167,6 +188,23 @@ export function preparationDraftToUpdatePayload(draft: FlooringPreparationDraft)
 
 export function layoutDraftToUpdatePayload(draft: FlooringLayoutDraft): FlooringLayoutUpdatePayload {
   return layoutDraftToPayload(draft);
+}
+
+export function assemblyItemDraftToPayload(draft: FlooringAssemblyItemDraft): FlooringAssemblyItemPayload {
+  return {
+    source_code: draft.sourceCode.trim() || null,
+    section: draft.section,
+    title: draft.title,
+    kind: draft.kind,
+    formula: draft.formula,
+    unit: draft.unit || "pcs",
+    price: normalizeNum(draft.price),
+    consumption_per_m2: normalizeNum(draft.consumptionPerM2),
+    package_size: draft.packageSize === null ? null : normalizeNum(draft.packageSize),
+    layer_mm: draft.layerMm === null ? null : normalizeNum(draft.layerMm),
+    note: draft.note.trim() || null,
+    sort_order: normalizeNum(draft.sortOrder) || 100,
+  };
 }
 
 export function coveringDraftToPayload(draft: FlooringCoveringDraft): FlooringCoveringCreatePayload {

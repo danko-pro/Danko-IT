@@ -20,6 +20,12 @@ from supply_bot.estimates.application.create_flooring_catalog import (
     CreateFlooringPreparationCommand,
     CreateFlooringPreparationUseCase,
 )
+from supply_bot.estimates.application.flooring_assembly_catalog import (
+    CreateFlooringAssemblyItemUseCase,
+    FlooringAssemblyItemCommand,
+    UpdateFlooringAssemblyItemCommand,
+    UpdateFlooringAssemblyItemUseCase,
+)
 from supply_bot.estimates.application.update_flooring import (
     UpdateFlooringCommand,
     UpdateFlooringGlobalItemCommand,
@@ -40,11 +46,73 @@ from supply_bot.estimates.application.update_flooring_catalog import (
 def register_calculator_flooring_routes(
     app: FastAPI,
     *,
+    calculator_flooring_assembly_item_payload_model,
     calculator_flooring_covering_payload_model,
     calculator_flooring_preparation_payload_model,
     calculator_flooring_layout_payload_model,
     calculator_flooring_update_payload_model,
 ) -> None:
+    @app.get("/api/calculator/flooring/assembly-items")
+    async def list_calculator_flooring_assembly_items(
+        request: Request,
+        _session: AdminSession = Depends(require_admin_role_session),
+    ) -> list[dict[str, Any]]:
+        storage_obj = get_global_estimate_catalog_storage(request)
+        return await storage_obj.list_estimate_flooring_assembly_items()
+
+    @app.post("/api/calculator/flooring/assembly-items")
+    async def create_calculator_flooring_assembly_item(
+        request: Request,
+        payload: calculator_flooring_assembly_item_payload_model,
+        _session: AdminSession = Depends(require_admin_role_session),
+    ) -> dict[str, Any]:
+        storage_obj = get_global_estimate_catalog_storage(request)
+        command = FlooringAssemblyItemCommand(
+            source_code=payload.source_code,
+            section=payload.section,
+            title=payload.title,
+            kind=payload.kind,
+            formula=payload.formula,
+            unit=payload.unit,
+            price=payload.price,
+            consumption_per_m2=payload.consumption_per_m2,
+            package_size=payload.package_size,
+            layer_mm=payload.layer_mm,
+            note=payload.note,
+            sort_order=payload.sort_order,
+        )
+        item_id = await resolve_application_result(CreateFlooringAssemblyItemUseCase(storage_obj).execute(command))
+        return await load_created_catalog_item(
+            storage_obj.list_estimate_flooring_assembly_items,
+            created_id=item_id,
+            detail="Flooring assembly item was not created",
+        )
+
+    @app.patch("/api/calculator/flooring/assembly-items/{item_id}")
+    async def update_calculator_flooring_assembly_item(
+        request: Request,
+        item_id: int,
+        payload: calculator_flooring_assembly_item_payload_model,
+        _session: AdminSession = Depends(require_admin_role_session),
+    ) -> dict[str, Any]:
+        storage_obj = get_global_estimate_catalog_storage(request)
+        command = UpdateFlooringAssemblyItemCommand(
+            source_code=payload.source_code,
+            section=payload.section,
+            title=payload.title,
+            kind=payload.kind,
+            formula=payload.formula,
+            unit=payload.unit,
+            price=payload.price,
+            consumption_per_m2=payload.consumption_per_m2,
+            package_size=payload.package_size,
+            layer_mm=payload.layer_mm,
+            note=payload.note,
+            sort_order=payload.sort_order,
+            item_id=item_id,
+        )
+        return await resolve_application_result(UpdateFlooringAssemblyItemUseCase(storage_obj).execute(command))
+
     @app.get("/api/calculator/flooring/coverings")
     async def list_calculator_flooring_coverings(
         request: Request,

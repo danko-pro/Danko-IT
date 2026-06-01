@@ -13,6 +13,7 @@ from supply_bot.storage_estimates.repository import (
 )
 from supply_bot.storage_estimates.tables import (
     estimate_flooring_configs,
+    estimate_flooring_assembly_items,
     estimate_flooring_coverings,
     estimate_flooring_layouts,
     estimate_flooring_preparations,
@@ -22,6 +23,25 @@ from supply_bot.storage_estimates.tables import (
 
 
 class SqlAlchemyEstimateFlooringRepository(SqlAlchemyEstimateRepository):
+    async def list_estimate_flooring_assembly_items(self) -> list[dict[str, Any]]:
+        return await self._list_catalog(
+            estimate_flooring_assembly_items,
+            estimate_flooring_assembly_items.c.section,
+            estimate_flooring_assembly_items.c.sort_order,
+            estimate_flooring_assembly_items.c.title,
+            estimate_flooring_assembly_items.c.id,
+        )
+
+    async def create_estimate_flooring_assembly_item(self, **values: Any) -> int:
+        values["owner_user_id"] = self._catalog_write_owner_value()
+        return await self._create_catalog_item(estimate_flooring_assembly_items, values)
+
+    async def get_estimate_flooring_assembly_item(self, item_id: int) -> dict[str, Any] | None:
+        return await self._get_global_catalog_item(estimate_flooring_assembly_items, item_id)
+
+    async def update_estimate_flooring_assembly_item(self, item_id: int, **values: Any) -> bool:
+        return await self._update_global_catalog_item(estimate_flooring_assembly_items, item_id, values)
+
     async def list_estimate_flooring_coverings(self) -> list[dict[str, Any]]:
         return await self._list_catalog(
             estimate_flooring_coverings,

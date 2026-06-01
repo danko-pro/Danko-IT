@@ -50,6 +50,21 @@ class CalculatorFlooringLayoutPayload(BaseModel):
     note: str | None = None
 
 
+class CalculatorFlooringAssemblyItemPayload(BaseModel):
+    source_code: str | None = None
+    section: str
+    title: str
+    kind: str
+    formula: str
+    unit: str = "pcs"
+    price: float = 0
+    consumption_per_m2: float = 0
+    package_size: float | None = None
+    layer_mm: float | None = None
+    note: str | None = None
+    sort_order: int | None = None
+
+
 class CalculatorFlooringRoomZonePayload(BaseModel):
     covering_id: int | None = None
     preparation_id: int | None = None

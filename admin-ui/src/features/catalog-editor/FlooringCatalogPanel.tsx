@@ -1,21 +1,26 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import {
+  createFlooringAssemblyItem,
   createFlooringCovering,
   createFlooringLayout,
   createFlooringPreparation,
   fetchFlooringSnapshot,
+  listFlooringAssemblyItems,
   listFlooringCoverings,
   listFlooringLayouts,
   listFlooringPreparations,
+  updateFlooringAssemblyItem,
   updateFlooringCovering,
   updateFlooringLayout,
   updateFlooringPreparation,
 } from "./api/flooring-client";
 import {
+  assemblyItemDraftToPayload,
   attachCatalogIdsToDisplayRows,
   coveringDraftToPayload,
   coveringDraftToUpdatePayload,
+  dtoToFlooringAssemblyItemDraft,
   dtoToFlooringCoveringDraft,
   dtoToFlooringLayoutDraft,
   dtoToFlooringPreparationDraft,
@@ -27,6 +32,8 @@ import {
   snapshotToDisplayRows,
 } from "./api/flooring-mappers";
 import type {
+  FlooringAssemblyItemDraft,
+  FlooringAssemblyItemDto,
   FlooringCoveringDraft,
   FlooringCoveringDto,
   FlooringLayoutDraft,
@@ -40,15 +47,16 @@ import {
   aggregateCoveringAssembly,
   applyAggregatesToCoveringDraft,
   calculateAssemblyRowTotal,
+  createAssemblyLibraryItemFromCatalogItem,
   createAssemblyRowFromLibraryItem,
   createEmptyAssemblyRow,
   FLOORING_ASSEMBLY_LIBRARY_SECTIONS,
   FLOORING_ASSEMBLY_FORMULAS,
+  filterFlooringAssemblyLibraryItems,
   formatCoveringSaveFeedback,
   getAssemblyFormulaCompactLabel,
   getAssemblyFormulaLabel,
   getAssemblyKindLabel,
-  getFlooringAssemblyLibraryItems,
   getFlooringAssemblyLibrarySectionLabel,
   getFormulaFieldVisibility,
   getKeramogranit120x60Preset,
@@ -144,6 +152,24 @@ function emptyLayoutDraft(): FlooringLayoutDraft {
   };
 }
 
+function emptyAssemblyItemDraft(): FlooringAssemblyItemDraft {
+  return {
+    id: 0,
+    sourceCode: "",
+    section: "consumable",
+    title: "",
+    kind: "consumable",
+    formula: "unit_consumption",
+    unit: "pcs",
+    price: 0,
+    consumptionPerM2: 0,
+    packageSize: null,
+    layerMm: null,
+    note: "",
+    sortOrder: 100,
+  };
+}
+
 function snapshotHasTitle(
   snapshot: PublicFlooringSnapshotResponse,
   section: "coverings" | "preparations" | "layouts",
@@ -174,10 +200,10 @@ function CatalogForm({ title, mode, submitting, onSubmit, onCancel, children }: 
     mode === "edit"
       ? submitting
         ? "Запись в БД…"
-        : "Сохранить покрытие в БД"
+        : "Сохранить в БД"
       : submitting
         ? "Запись в БД…"
-        : "Создать покрытие в БД";
+        : "Создать в БД";
 
   return (
     <form
@@ -225,16 +251,17 @@ const ASSEMBLY_APPLY_STATUS =
   "Расчёт перенесён в поля формы. Чтобы он попал в БД, нажмите «Создать покрытие в БД» или «Сохранить покрытие в БД».";
 
 type CoveringAssemblyBlockProps = {
+  libraryItems: ReturnType<typeof createAssemblyLibraryItemFromCatalogItem>[];
   onApplyAggregates: (aggregates: CoveringAssemblyAggregates) => void;
   onRowsChange?: (rows: CoveringAssemblyRow[]) => void;
   formatMoney: (value: number) => string;
 };
 
-function CoveringAssemblyBlock({ onApplyAggregates, onRowsChange, formatMoney }: CoveringAssemblyBlockProps) {
+function CoveringAssemblyBlock({ libraryItems: libraryItemsFromCatalog, onApplyAggregates, onRowsChange, formatMoney }: CoveringAssemblyBlockProps) {
   const [rows, setRows] = useState<CoveringAssemblyRow[]>([]);
   const [applyStatus, setApplyStatus] = useState<string | null>(null);
   const [librarySection, setLibrarySection] = useState<FlooringAssemblyLibrarySection>("covering");
-  const [libraryItemId, setLibraryItemId] = useState("covering-porcelain-120x60");
+  const [libraryItemId, setLibraryItemId] = useState("");
 
   useEffect(() => {
     onRowsChange?.(rows);
@@ -258,8 +285,20 @@ function CoveringAssemblyBlock({ onApplyAggregates, onRowsChange, formatMoney }:
     () => rows.filter((row) => row.kind === "consumable" || row.kind === "tool"),
     [rows],
   );
-  const libraryItems = useMemo(() => getFlooringAssemblyLibraryItems(librarySection), [librarySection]);
+  const libraryItems = useMemo(
+    () => filterFlooringAssemblyLibraryItems(libraryItemsFromCatalog, librarySection),
+    [libraryItemsFromCatalog, librarySection],
+  );
   const selectedLibraryItem = libraryItems.find((item) => item.id === libraryItemId) ?? libraryItems[0];
+
+  useEffect(() => {
+    if (selectedLibraryItem && selectedLibraryItem.id !== libraryItemId) {
+      setLibraryItemId(selectedLibraryItem.id);
+    }
+    if (!selectedLibraryItem && libraryItemId) {
+      setLibraryItemId("");
+    }
+  }, [libraryItemId, selectedLibraryItem]);
 
   function addRow(partial: Partial<CoveringAssemblyRow>) {
     setApplyStatus(null);
@@ -273,7 +312,7 @@ function CoveringAssemblyBlock({ onApplyAggregates, onRowsChange, formatMoney }:
   }
 
   function changeLibrarySection(section: FlooringAssemblyLibrarySection) {
-    const items = getFlooringAssemblyLibraryItems(section);
+    const items = filterFlooringAssemblyLibraryItems(libraryItemsFromCatalog, section);
     setLibrarySection(section);
     setLibraryItemId(items[0]?.id ?? "");
   }
@@ -635,7 +674,9 @@ export function FlooringCatalogPanel() {
   const [coveringDraft, setCoveringDraft] = useState(emptyCoveringDraft);
   const [preparationDraft, setPreparationDraft] = useState(emptyPreparationDraft);
   const [layoutDraft, setLayoutDraft] = useState(emptyLayoutDraft);
+  const [assemblyDraft, setAssemblyDraft] = useState(emptyAssemblyItemDraft);
 
+  const [assemblyCatalog, setAssemblyCatalog] = useState<FlooringAssemblyItemDto[]>([]);
   const [coveringCatalog, setCoveringCatalog] = useState<FlooringCoveringDto[]>([]);
   const [preparationCatalog, setPreparationCatalog] = useState<FlooringPreparationDto[]>([]);
   const [layoutCatalog, setLayoutCatalog] = useState<FlooringLayoutDto[]>([]);
@@ -643,32 +684,38 @@ export function FlooringCatalogPanel() {
   const [editingCoveringId, setEditingCoveringId] = useState<number | null>(null);
   const [editingPreparationId, setEditingPreparationId] = useState<number | null>(null);
   const [editingLayoutId, setEditingLayoutId] = useState<number | null>(null);
+  const [editingAssemblyId, setEditingAssemblyId] = useState<number | null>(null);
 
+  const [creatingAssembly, setCreatingAssembly] = useState(false);
   const [creatingCovering, setCreatingCovering] = useState(false);
   const [creatingPreparation, setCreatingPreparation] = useState(false);
   const [creatingLayout, setCreatingLayout] = useState(false);
   const [savingCovering, setSavingCovering] = useState(false);
   const [savingPreparation, setSavingPreparation] = useState(false);
   const [savingLayout, setSavingLayout] = useState(false);
+  const [savingAssembly, setSavingAssembly] = useState(false);
   const [assemblyRowsCount, setAssemblyRowsCount] = useState(0);
 
   const reloadSnapshot = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const [data, coverings, preparations, layouts] = await Promise.all([
+      const [data, assemblyItems, coverings, preparations, layouts] = await Promise.all([
         fetchFlooringSnapshot(),
+        listFlooringAssemblyItems(),
         listFlooringCoverings(),
         listFlooringPreparations(),
         listFlooringLayouts(),
       ]);
       setSnapshot(data);
+      setAssemblyCatalog(assemblyItems);
       setCoveringCatalog(coverings);
       setPreparationCatalog(preparations);
       setLayoutCatalog(layouts);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Не удалось загрузить snapshot полов.");
       setSnapshot(null);
+      setAssemblyCatalog([]);
       setCoveringCatalog([]);
       setPreparationCatalog([]);
       setLayoutCatalog([]);
@@ -693,6 +740,10 @@ export function FlooringCatalogPanel() {
   const coveringRows = useMemo(() => filterRows(displayRows, "coverings"), [displayRows]);
   const preparationRows = useMemo(() => filterRows(displayRows, "preparations"), [displayRows]);
   const layoutRows = useMemo(() => filterRows(displayRows, "layouts"), [displayRows]);
+  const assemblyLibraryItems = useMemo(
+    () => assemblyCatalog.map(createAssemblyLibraryItemFromCatalogItem),
+    [assemblyCatalog],
+  );
 
   function updateCoveringNumber(field: keyof FlooringCoveringDraft, value: string) {
     setCoveringDraft((prev) => ({ ...prev, [field]: normalizeNum(value) }));
@@ -704,6 +755,76 @@ export function FlooringCatalogPanel() {
 
   function updateLayoutNumber(field: keyof FlooringLayoutDraft, value: string) {
     setLayoutDraft((prev) => ({ ...prev, [field]: normalizeNum(value) }));
+  }
+
+  function updateAssemblyNumber(
+    field: "price" | "consumptionPerM2" | "packageSize" | "layerMm" | "sortOrder",
+    value: string,
+  ) {
+    setAssemblyDraft((prev) => ({ ...prev, [field]: value === "" ? null : normalizeNum(value) }));
+  }
+
+  function beginEditAssemblyItem(item: FlooringAssemblyItemDto) {
+    setEditingAssemblyId(item.id);
+    setAssemblyDraft(dtoToFlooringAssemblyItemDraft(item));
+    setError(null);
+    setStatusMessage(null);
+    setWarningMessage(null);
+  }
+
+  function cancelAssemblyEdit() {
+    setEditingAssemblyId(null);
+    setAssemblyDraft(emptyAssemblyItemDraft());
+  }
+
+  async function reloadAssemblyCatalog() {
+    const items = await listFlooringAssemblyItems();
+    setAssemblyCatalog(items);
+  }
+
+  async function handleCreateAssemblyItem() {
+    const title = assemblyDraft.title.trim();
+    if (!title) {
+      setError("Укажите название кубика.");
+      return;
+    }
+    setCreatingAssembly(true);
+    setError(null);
+    setStatusMessage(null);
+    setWarningMessage(null);
+    try {
+      await createFlooringAssemblyItem(assemblyItemDraftToPayload({ ...assemblyDraft, title }));
+      await reloadAssemblyCatalog();
+      setStatusMessage(`Кубик «${title}» создан в библиотеке.`);
+      setAssemblyDraft(emptyAssemblyItemDraft());
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Не удалось создать кубик.");
+    } finally {
+      setCreatingAssembly(false);
+    }
+  }
+
+  async function handleUpdateAssemblyItem() {
+    if (editingAssemblyId === null) return;
+    const title = assemblyDraft.title.trim();
+    if (!title) {
+      setError("Укажите название кубика.");
+      return;
+    }
+    setSavingAssembly(true);
+    setError(null);
+    setStatusMessage(null);
+    setWarningMessage(null);
+    try {
+      await updateFlooringAssemblyItem(editingAssemblyId, assemblyItemDraftToPayload({ ...assemblyDraft, title }));
+      await reloadAssemblyCatalog();
+      setStatusMessage(`Кубик «${title}» сохранён в библиотеке.`);
+      cancelAssemblyEdit();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Не удалось сохранить кубик.");
+    } finally {
+      setSavingAssembly(false);
+    }
   }
 
   async function handleCreateCovering() {
@@ -1046,6 +1167,170 @@ export function FlooringCatalogPanel() {
       </div>
 
       <section className="ce-flooring-section">
+        <h3 className="ce-flooring-section-title">Библиотека кубиков</h3>
+        <div className="ce-table-wrap ce-flooring-table-wrap">
+          <table className="ce-table ce-flooring-table">
+            <thead>
+              <tr>
+                <th className="ce-col-id">Код</th>
+                <th className="ce-col-title">Название</th>
+                <th>Отдел</th>
+                <th>Тип</th>
+                <th>Формула</th>
+                <th className="ce-col-num">Цена</th>
+                <th className="ce-col-num">Расход</th>
+                <th className="ce-col-num">Фас./база</th>
+                <th className="ce-col-num">Слой</th>
+                <th className="ce-col-actions">Действия</th>
+              </tr>
+            </thead>
+            <tbody>
+              {assemblyCatalog.length === 0 ? (
+                <tr>
+                  <td colSpan={10} className="ce-empty">
+                    Кубики ещё не добавлены.
+                  </td>
+                </tr>
+              ) : (
+                assemblyCatalog.map((item) => (
+                  <tr key={item.id}>
+                    <td className="ce-col-id ce-mono ce-readonly">{item.source_code}</td>
+                    <td className="ce-readonly">{item.title}</td>
+                    <td className="ce-readonly">{getFlooringAssemblyLibrarySectionLabel(item.section)}</td>
+                    <td className="ce-readonly">{getAssemblyKindLabel(item.kind)}</td>
+                    <td className="ce-readonly">{getAssemblyFormulaCompactLabel(item.formula)}</td>
+                    <td className="ce-num ce-readonly">{formatMoney(normalizeNum(item.price))}</td>
+                    <td className="ce-num ce-readonly">{normalizeNum(item.consumption_per_m2)}</td>
+                    <td className="ce-num ce-readonly">{item.package_size ?? "—"}</td>
+                    <td className="ce-num ce-readonly">{item.layer_mm ?? "—"}</td>
+                    <td>
+                      <button type="button" className="ce-btn ce-btn-sm" onClick={() => beginEditAssemblyItem(item)}>
+                        Редактировать
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        <CatalogForm
+          title={editingAssemblyId ? "Редактировать кубик" : "Добавить кубик"}
+          mode={editingAssemblyId ? "edit" : "create"}
+          submitting={editingAssemblyId ? savingAssembly : creatingAssembly}
+          onSubmit={() => void (editingAssemblyId ? handleUpdateAssemblyItem() : handleCreateAssemblyItem())}
+          onCancel={editingAssemblyId ? cancelAssemblyEdit : undefined}
+        >
+          <div className="ce-flooring-form-fields">
+            <FormField label="Название">
+              <input
+                className="ce-input"
+                value={assemblyDraft.title}
+                onChange={(event) => setAssemblyDraft((prev) => ({ ...prev, title: event.target.value }))}
+                placeholder="Клей плиточный"
+              />
+            </FormField>
+            <FormField label="Отдел">
+              <select
+                className="ce-input"
+                value={assemblyDraft.section}
+                onChange={(event) =>
+                  setAssemblyDraft((prev) => ({
+                    ...prev,
+                    section: event.target.value as FlooringAssemblyLibrarySection,
+                  }))
+                }
+              >
+                {FLOORING_ASSEMBLY_LIBRARY_SECTIONS.map((section) => (
+                  <option key={section} value={section}>
+                    {getFlooringAssemblyLibrarySectionLabel(section)}
+                  </option>
+                ))}
+              </select>
+            </FormField>
+            <FormField label="Тип">
+              <select
+                className="ce-input"
+                value={assemblyDraft.kind}
+                onChange={(event) => {
+                  const kind = event.target.value as CoveringAssemblyRowKind;
+                  setAssemblyDraft((prev) => ({ ...prev, kind, formula: inferDefaultFormula(kind, { title: prev.title }) }));
+                }}
+              >
+                {ASSEMBLY_ROW_KINDS.map((kind) => (
+                  <option key={kind} value={kind}>
+                    {getAssemblyKindLabel(kind)}
+                  </option>
+                ))}
+              </select>
+            </FormField>
+            <FormField label="Формула">
+              <select
+                className="ce-input"
+                value={assemblyDraft.formula}
+                onChange={(event) =>
+                  setAssemblyDraft((prev) => ({
+                    ...prev,
+                    formula: event.target.value as FlooringAssemblyFormula,
+                  }))
+                }
+              >
+                {FLOORING_ASSEMBLY_FORMULAS.map((formula) => (
+                  <option key={formula} value={formula}>
+                    {getAssemblyFormulaLabel(formula)}
+                  </option>
+                ))}
+              </select>
+            </FormField>
+            <FormField label="Ед.">
+              <input
+                className="ce-input"
+                value={assemblyDraft.unit}
+                onChange={(event) => setAssemblyDraft((prev) => ({ ...prev, unit: event.target.value }))}
+              />
+            </FormField>
+            <FormField label="Цена">
+              <input
+                className="ce-input ce-num"
+                type="number"
+                step="0.01"
+                value={assemblyDraft.price || ""}
+                onChange={(event) => updateAssemblyNumber("price", event.target.value)}
+              />
+            </FormField>
+            <FormField label="Расход/коэф.">
+              <input
+                className="ce-input ce-num"
+                type="number"
+                step="0.01"
+                value={assemblyDraft.consumptionPerM2 || ""}
+                onChange={(event) => updateAssemblyNumber("consumptionPerM2", event.target.value)}
+              />
+            </FormField>
+            <FormField label="Фас./база">
+              <input
+                className="ce-input ce-num"
+                type="number"
+                step="0.01"
+                value={assemblyDraft.packageSize ?? ""}
+                onChange={(event) => updateAssemblyNumber("packageSize", event.target.value)}
+              />
+            </FormField>
+            <FormField label="Слой/слои">
+              <input
+                className="ce-input ce-num"
+                type="number"
+                step="0.01"
+                value={assemblyDraft.layerMm ?? ""}
+                onChange={(event) => updateAssemblyNumber("layerMm", event.target.value)}
+              />
+            </FormField>
+          </div>
+        </CatalogForm>
+      </section>
+
+      <section className="ce-flooring-section">
         <h3 className="ce-flooring-section-title">Покрытия</h3>
         <div className="ce-table-wrap ce-flooring-table-wrap">
           <table className="ce-table ce-flooring-table">
@@ -1159,6 +1444,7 @@ export function FlooringCatalogPanel() {
             </FormField>
           </div>
           <CoveringAssemblyBlock
+            libraryItems={assemblyLibraryItems}
             formatMoney={formatMoney}
             onRowsChange={(rows) => setAssemblyRowsCount(rows.length)}
             onApplyAggregates={(aggregates) =>

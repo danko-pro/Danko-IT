@@ -64,6 +64,41 @@ export type FlooringLayoutDto = {
   updated_at?: string;
 };
 
+export type FlooringAssemblySection = "covering" | "work" | "preparation" | "consumable" | "tool";
+
+export type FlooringAssemblyRowKind = "work" | "material" | "consumable" | "tool";
+
+export type FlooringAssemblyFormula =
+  | "flat_per_m2"
+  | "unit_consumption"
+  | "package_consumption"
+  | "layer_consumption"
+  | "piece_consumption"
+  | "kg_layer_consumption"
+  | "liquid_layers"
+  | "roll_meter_consumption"
+  | "sheet_area_consumption"
+  | "fixed_area_allocation";
+
+export type FlooringAssemblyItemDto = {
+  id: number;
+  source_code: string;
+  section: FlooringAssemblySection;
+  title: string;
+  kind: FlooringAssemblyRowKind;
+  formula: FlooringAssemblyFormula;
+  unit: string;
+  price: number;
+  consumption_per_m2: number;
+  package_size?: number | null;
+  layer_mm?: number | null;
+  note?: string | null;
+  is_active?: number;
+  sort_order?: number;
+  created_at?: string;
+  updated_at?: string;
+};
+
 export type FlooringCoveringConsumablePayload = {
   title: string;
   consumption_per_m2: number;
@@ -113,9 +148,25 @@ export type FlooringLayoutCreatePayload = {
   note: string | null;
 };
 
+export type FlooringAssemblyItemPayload = {
+  source_code?: string | null;
+  section: FlooringAssemblySection;
+  title: string;
+  kind: FlooringAssemblyRowKind;
+  formula: FlooringAssemblyFormula;
+  unit: string;
+  price: number;
+  consumption_per_m2: number;
+  package_size?: number | null;
+  layer_mm?: number | null;
+  note: string | null;
+  sort_order?: number | null;
+};
+
 export type FlooringCoveringUpdatePayload = FlooringCoveringCreatePayload;
 export type FlooringPreparationUpdatePayload = FlooringPreparationCreatePayload;
 export type FlooringLayoutUpdatePayload = FlooringLayoutCreatePayload;
+export type FlooringAssemblyItemUpdatePayload = FlooringAssemblyItemPayload;
 
 /** Публичный ответ GET /api/public/catalog/flooring/snapshot (контракт flooring-v1). */
 export type PublicFlooringSnapshotResponse = FlooringSnapshot;
@@ -172,6 +223,22 @@ export type FlooringLayoutDraft = {
   laborFactor: number;
   additionalWastePercent: number;
   note: string;
+};
+
+export type FlooringAssemblyItemDraft = {
+  id: number;
+  sourceCode: string;
+  section: FlooringAssemblySection;
+  title: string;
+  kind: FlooringAssemblyRowKind;
+  formula: FlooringAssemblyFormula;
+  unit: string;
+  price: number;
+  consumptionPerM2: number;
+  packageSize: number | null;
+  layerMm: number | null;
+  note: string;
+  sortOrder: number;
 };
 
 export type FlooringCoveringConsumableRates = {

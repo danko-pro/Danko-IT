@@ -6,12 +6,20 @@ import type { FlooringCoveringDraft } from "./api/flooring-types";
 
 export type CoveringAssemblyRowKind = "work" | "material" | "consumable" | "tool";
 
+export type FlooringAssemblyFormula =
+  | "flat_per_m2" // price already ₽/m²
+  | "unit_consumption" // price per unit × consumptionPerM2
+  | "package_consumption" // (price / packageSize) × consumptionPerM2
+  | "layer_consumption" // (price / packageSize) × consumptionPerM2 per 1mm × layerMm
+  | "piece_consumption"; // (price / packageSize if set else price) × consumptionPerM2
+
 export type CoveringAssemblyRow = {
   id: string;
   title: string;
   kind: CoveringAssemblyRowKind;
+  formula: FlooringAssemblyFormula;
   unit: string;
-  /** Цена за ед. (consumable) или ₽/м² (work, material, tool). */
+  /** Цена за ед. (consumable) или ₽/m² (work, material, tool). */
   price: number;
   consumptionPerM2: number;
   packageSize?: number;
@@ -43,12 +51,34 @@ export type CoveringAssemblyRecommendedField = {
   valuePerM2: number;
 };
 
+export type FormulaFieldVisibility = {
+  consumption: boolean;
+  packageSize: boolean;
+  layerMm: boolean;
+};
+
 const ASSEMBLY_KIND_LABELS: Record<CoveringAssemblyRowKind, string> = {
   work: "Работа",
   material: "Материал",
   consumable: "Расходник",
   tool: "Инструмент",
 };
+
+const FORMULA_LABELS: Record<FlooringAssemblyFormula, string> = {
+  flat_per_m2: "₽/м² напрямую",
+  unit_consumption: "Цена × расход",
+  package_consumption: "Фасовка × расход",
+  layer_consumption: "Слой × фасовка × расход",
+  piece_consumption: "Штуки × расход",
+};
+
+export const FLOORING_ASSEMBLY_FORMULAS: FlooringAssemblyFormula[] = [
+  "flat_per_m2",
+  "unit_consumption",
+  "package_consumption",
+  "layer_consumption",
+  "piece_consumption",
+];
 
 const RECOMMENDED_FLAT_FIELD_LABELS: {
   key: keyof CoveringAssemblyFlatFields;
@@ -63,25 +93,81 @@ const RECOMMENDED_FLAT_FIELD_LABELS: {
   { key: "toolConsumablesPerM2", label: "Инструмент" },
 ];
 
+function formatMoneyRu(value: number): string {
+  return normalizeNum(value).toLocaleString("ru-RU");
+}
+
 export function getAssemblyKindLabel(kind: CoveringAssemblyRowKind): string {
   return ASSEMBLY_KIND_LABELS[kind];
+}
+
+export function getAssemblyFormulaLabel(formula: FlooringAssemblyFormula): string {
+  return FORMULA_LABELS[formula];
+}
+
+export function inferDefaultFormula(
+  kind: CoveringAssemblyRowKind,
+  partial?: Partial<CoveringAssemblyRow>,
+): FlooringAssemblyFormula {
+  if (partial?.formula) {
+    return partial.formula;
+  }
+  if (kind === "work" || kind === "material" || kind === "tool") {
+    return "flat_per_m2";
+  }
+  const title = (partial?.title ?? "").trim().toLowerCase();
+  if (title.includes("клей") || title.includes("адгез") || title.includes("glue")) {
+    return "layer_consumption";
+  }
+  if (title.includes("грунт") || title.includes("primer")) {
+    return "package_consumption";
+  }
+  if (title.includes("свп") || title.includes("крест") || title.includes("spacer")) {
+    return "piece_consumption";
+  }
+  if (title.includes("затир") || title.includes("grout")) {
+    return "package_consumption";
+  }
+  return "unit_consumption";
+}
+
+export function getFormulaFieldVisibility(formula: FlooringAssemblyFormula): FormulaFieldVisibility {
+  switch (formula) {
+    case "flat_per_m2":
+      return { consumption: false, packageSize: false, layerMm: false };
+    case "unit_consumption":
+      return { consumption: true, packageSize: false, layerMm: false };
+    case "package_consumption":
+      return { consumption: true, packageSize: true, layerMm: false };
+    case "layer_consumption":
+      return { consumption: true, packageSize: true, layerMm: true };
+    case "piece_consumption":
+      return { consumption: true, packageSize: true, layerMm: false };
+  }
 }
 
 /** Итого ₽/m² по строке (без учёта enabled — для отображения в таблице). */
 export function calculateAssemblyRowTotal(row: CoveringAssemblyRow): number {
   const price = normalizeNum(row.price);
-  if (row.kind === "work" || row.kind === "material" || row.kind === "tool") {
-    return price;
+  const consumption = normalizeNum(row.consumptionPerM2);
+  const packageSize = normalizeNum(row.packageSize);
+  const layerMm = normalizeNum(row.layerMm);
+
+  switch (row.formula) {
+    case "flat_per_m2":
+      return price;
+    case "unit_consumption":
+      return price * consumption;
+    case "package_consumption":
+      return packageSize > 0 ? (price / packageSize) * consumption : price * consumption;
+    case "layer_consumption":
+      if (packageSize > 0 && layerMm > 0) {
+        return (price / packageSize) * consumption * layerMm;
+      }
+      return price * consumption;
+    case "piece_consumption":
+      return packageSize > 0 ? (price / packageSize) * consumption : price * consumption;
   }
-  if (row.kind === "consumable") {
-    const consumption = normalizeNum(row.consumptionPerM2);
-    const packageSize = normalizeNum(row.packageSize);
-    if (packageSize > 0) {
-      return (price / packageSize) * consumption;
-    }
-    return price * consumption;
-  }
-  return 0;
 }
 
 export function getRecommendedFlatFieldEntries(
@@ -96,10 +182,7 @@ export function getRecommendedFlatFieldEntries(
 /**
  * Правила агрегации:
  * - disabled-строки игнорируются;
- * - work: сумма price (уже ₽/m²);
- * - material: сумма price (₽/m²);
- * - consumable: price × consumptionPerM2; если задан packageSize — (price / packageSize) × consumptionPerM2;
- * - tool: сумма price (₽/m²);
+ * - итог по строке считается через formula (calculateAssemblyRowTotal);
  * - consumable маппится в adhesive/primer/svp/grout по ключевым словам title; прочее + tool → toolConsumablesPerM2.
  */
 export function aggregateCoveringAssembly(rows: CoveringAssemblyRow[]): CoveringAssemblyAggregates {
@@ -183,6 +266,7 @@ export function getKeramogranit120x60Preset(): CoveringAssemblyRow[] {
       id: "preset-material",
       title: "Керамогранит 120×60",
       kind: "material",
+      formula: "flat_per_m2",
       unit: "m2",
       price: 2900,
       consumptionPerM2: 1,
@@ -192,6 +276,7 @@ export function getKeramogranit120x60Preset(): CoveringAssemblyRow[] {
       id: "preset-work-lay",
       title: "Укладка крупноформатной плитки",
       kind: "work",
+      formula: "flat_per_m2",
       unit: "m2",
       price: 2000,
       consumptionPerM2: 1,
@@ -201,17 +286,22 @@ export function getKeramogranit120x60Preset(): CoveringAssemblyRow[] {
       id: "preset-glue",
       title: "Клей плиточный",
       kind: "consumable",
+      formula: "layer_consumption",
       unit: "kg",
-      price: 300,
+      price: 600,
+      packageSize: 25,
       consumptionPerM2: 1.5,
+      layerMm: 5,
       enabled: true,
     },
     {
       id: "preset-primer",
       title: "Грунтовка глубокого проникновения",
       kind: "consumable",
+      formula: "package_consumption",
       unit: "l",
-      price: 125,
+      price: 1250,
+      packageSize: 10,
       consumptionPerM2: 0.2,
       enabled: true,
     },
@@ -219,6 +309,7 @@ export function getKeramogranit120x60Preset(): CoveringAssemblyRow[] {
       id: "preset-svp",
       title: "СВП 2 мм",
       kind: "consumable",
+      formula: "piece_consumption",
       unit: "pcs",
       price: 30,
       consumptionPerM2: 4,
@@ -228,8 +319,10 @@ export function getKeramogranit120x60Preset(): CoveringAssemblyRow[] {
       id: "preset-grout",
       title: "Затирка эпоксидная",
       kind: "consumable",
+      formula: "package_consumption",
       unit: "kg",
       price: 180,
+      packageSize: 5,
       consumptionPerM2: 0.5,
       enabled: true,
     },
@@ -237,6 +330,7 @@ export function getKeramogranit120x60Preset(): CoveringAssemblyRow[] {
       id: "preset-tool",
       title: "Инструмент и расходники",
       kind: "tool",
+      formula: "flat_per_m2",
       unit: "m2",
       price: 40,
       consumptionPerM2: 1,
@@ -273,10 +367,12 @@ export function applyAggregatesToCoveringDraft(
 }
 
 export function createEmptyAssemblyRow(partial?: Partial<CoveringAssemblyRow>): CoveringAssemblyRow {
+  const kind = partial?.kind ?? "consumable";
   return {
     id: partial?.id ?? `row-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
     title: partial?.title ?? "",
-    kind: partial?.kind ?? "consumable",
+    kind,
+    formula: partial?.formula ?? inferDefaultFormula(kind, partial),
     unit: partial?.unit ?? "pcs",
     price: partial?.price ?? 0,
     consumptionPerM2: partial?.consumptionPerM2 ?? 0,
@@ -284,4 +380,35 @@ export function createEmptyAssemblyRow(partial?: Partial<CoveringAssemblyRow>): 
     layerMm: partial?.layerMm,
     enabled: partial?.enabled ?? true,
   };
+}
+
+/** Человекочитаемый итог сохранения покрытия в БД (без строк «Состав покрытия»). */
+export function formatCoveringSaveFeedback(
+  title: string,
+  draft: FlooringCoveringDraft,
+  mode: "create" | "update",
+  options?: { assemblyRowsRemain?: boolean },
+): string {
+  const verb = mode === "create" ? "создано" : "сохранено";
+  const rateParts: string[] = [];
+
+  if (normalizeNum(draft.materialPricePerM2) > 0) {
+    rateParts.push(`материал ${formatMoneyRu(draft.materialPricePerM2)} ₽/м²`);
+  }
+  if (normalizeNum(draft.laborPricePerM2) > 0) {
+    rateParts.push(`работа ${formatMoneyRu(draft.laborPricePerM2)} ₽/м²`);
+  }
+  if (normalizeNum(draft.instrumentPricePerM2) > 0) {
+    rateParts.push(`инструмент ${formatMoneyRu(draft.instrumentPricePerM2)} ₽/м²`);
+  }
+
+  const rates =
+    rateParts.length > 0 ? `: ${rateParts.join(", ")}` : "";
+  let message = `Покрытие «${title}» ${verb} в БД${rates}. Строки «Состав покрытия» не сохраняются — только поля формы.`;
+
+  if (options?.assemblyRowsRemain) {
+    message += " Черновик состава в форме не изменён.";
+  }
+
+  return message;
 }

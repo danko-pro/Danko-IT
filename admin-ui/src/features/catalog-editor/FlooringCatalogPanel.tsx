@@ -41,12 +41,18 @@ import {
   applyAggregatesToCoveringDraft,
   calculateAssemblyRowTotal,
   createEmptyAssemblyRow,
+  FLOORING_ASSEMBLY_FORMULAS,
+  formatCoveringSaveFeedback,
+  getAssemblyFormulaLabel,
   getAssemblyKindLabel,
+  getFormulaFieldVisibility,
   getKeramogranit120x60Preset,
   getRecommendedFlatFieldEntries,
+  inferDefaultFormula,
   type CoveringAssemblyAggregates,
   type CoveringAssemblyRow,
   type CoveringAssemblyRowKind,
+  type FlooringAssemblyFormula,
 } from "./flooring-assembly";
 
 const SNAPSHOT_MISSING_WARNING =
@@ -208,12 +214,17 @@ const ASSEMBLY_APPLY_STATUS =
 
 type CoveringAssemblyBlockProps = {
   onApplyAggregates: (aggregates: CoveringAssemblyAggregates) => void;
+  onRowsChange?: (rows: CoveringAssemblyRow[]) => void;
   formatMoney: (value: number) => string;
 };
 
-function CoveringAssemblyBlock({ onApplyAggregates, formatMoney }: CoveringAssemblyBlockProps) {
+function CoveringAssemblyBlock({ onApplyAggregates, onRowsChange, formatMoney }: CoveringAssemblyBlockProps) {
   const [rows, setRows] = useState<CoveringAssemblyRow[]>([]);
   const [applyStatus, setApplyStatus] = useState<string | null>(null);
+
+  useEffect(() => {
+    onRowsChange?.(rows);
+  }, [rows, onRowsChange]);
 
   const aggregates = useMemo(() => aggregateCoveringAssembly(rows), [rows]);
   const recommendedEntries = useMemo(
@@ -228,7 +239,16 @@ function CoveringAssemblyBlock({ onApplyAggregates, formatMoney }: CoveringAssem
 
   function updateRow(id: string, patch: Partial<CoveringAssemblyRow>) {
     setApplyStatus(null);
-    setRows((prev) => prev.map((row) => (row.id === id ? { ...row, ...patch } : row)));
+    setRows((prev) =>
+      prev.map((row) => {
+        if (row.id !== id) return row;
+        const next = { ...row, ...patch };
+        if (patch.kind !== undefined && patch.formula === undefined) {
+          next.formula = inferDefaultFormula(patch.kind, { title: next.title });
+        }
+        return next;
+      }),
+    );
   }
 
   function removeRow(id: string) {
@@ -284,6 +304,7 @@ function CoveringAssemblyBlock({ onApplyAggregates, formatMoney }: CoveringAssem
             <tr>
               <th className="ce-col-select">Вкл.</th>
               <th className="ce-col-select">Тип</th>
+              <th className="ce-col-formula">Формула</th>
               <th className="ce-col-title">Название</th>
               <th className="ce-col-select">Ед.</th>
               <th className="ce-col-num">Цена</th>
@@ -295,7 +316,9 @@ function CoveringAssemblyBlock({ onApplyAggregates, formatMoney }: CoveringAssem
             </tr>
           </thead>
           <tbody>
-              {rows.map((row) => (
+              {rows.map((row) => {
+                const fieldVisibility = getFormulaFieldVisibility(row.formula);
+                return (
                 <tr key={row.id} className={row.enabled ? undefined : "ce-flooring-assembly-row-off"}>
                   <td className="ce-flooring-assembly-check">
                     <input
@@ -316,6 +339,21 @@ function CoveringAssemblyBlock({ onApplyAggregates, formatMoney }: CoveringAssem
                       {ASSEMBLY_ROW_KINDS.map((kind) => (
                         <option key={kind} value={kind}>
                           {getAssemblyKindLabel(kind)}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
+                  <td>
+                    <select
+                      className="ce-cell-input ce-cell-formula"
+                      value={row.formula}
+                      onChange={(event) =>
+                        updateRow(row.id, { formula: event.target.value as FlooringAssemblyFormula })
+                      }
+                    >
+                      {FLOORING_ASSEMBLY_FORMULAS.map((formula) => (
+                        <option key={formula} value={formula}>
+                          {getAssemblyFormulaLabel(formula)}
                         </option>
                       ))}
                     </select>
@@ -345,31 +383,43 @@ function CoveringAssemblyBlock({ onApplyAggregates, formatMoney }: CoveringAssem
                     />
                   </td>
                   <td>
-                    <input
-                      className="ce-cell-input ce-num"
-                      type="number"
-                      step="0.01"
-                      value={row.consumptionPerM2 || ""}
-                      onChange={(event) => updateRowNumber(row.id, "consumptionPerM2", event.target.value)}
-                    />
+                    {fieldVisibility.consumption ? (
+                      <input
+                        className="ce-cell-input ce-num"
+                        type="number"
+                        step="0.01"
+                        value={row.consumptionPerM2 || ""}
+                        onChange={(event) => updateRowNumber(row.id, "consumptionPerM2", event.target.value)}
+                      />
+                    ) : (
+                      <span className="ce-readonly ce-na">—</span>
+                    )}
                   </td>
                   <td>
-                    <input
-                      className="ce-cell-input ce-num"
-                      type="number"
-                      step="0.01"
-                      value={row.packageSize ?? ""}
-                      onChange={(event) => updateRowNumber(row.id, "packageSize", event.target.value)}
-                    />
+                    {fieldVisibility.packageSize ? (
+                      <input
+                        className="ce-cell-input ce-num"
+                        type="number"
+                        step="0.01"
+                        value={row.packageSize ?? ""}
+                        onChange={(event) => updateRowNumber(row.id, "packageSize", event.target.value)}
+                      />
+                    ) : (
+                      <span className="ce-readonly ce-na">—</span>
+                    )}
                   </td>
                   <td>
-                    <input
-                      className="ce-cell-input ce-num"
-                      type="number"
-                      step="0.01"
-                      value={row.layerMm ?? ""}
-                      onChange={(event) => updateRowNumber(row.id, "layerMm", event.target.value)}
-                    />
+                    {fieldVisibility.layerMm ? (
+                      <input
+                        className="ce-cell-input ce-num"
+                        type="number"
+                        step="0.01"
+                        value={row.layerMm ?? ""}
+                        onChange={(event) => updateRowNumber(row.id, "layerMm", event.target.value)}
+                      />
+                    ) : (
+                      <span className="ce-readonly ce-na">—</span>
+                    )}
                   </td>
                   <td className="ce-num ce-readonly ce-total-cell">
                     {formatMoney(calculateAssemblyRowTotal(row))}
@@ -385,7 +435,8 @@ function CoveringAssemblyBlock({ onApplyAggregates, formatMoney }: CoveringAssem
                     </button>
                   </td>
                 </tr>
-              ))}
+                );
+              })}
           </tbody>
         </table>
       </div>
@@ -484,6 +535,7 @@ export function FlooringCatalogPanel() {
   const [savingCovering, setSavingCovering] = useState(false);
   const [savingPreparation, setSavingPreparation] = useState(false);
   const [savingLayout, setSavingLayout] = useState(false);
+  const [assemblyRowsCount, setAssemblyRowsCount] = useState(0);
 
   const reloadSnapshot = useCallback(async () => {
     setLoading(true);
@@ -545,18 +597,24 @@ export function FlooringCatalogPanel() {
       setError("Укажите название покрытия.");
       return;
     }
+    const draftToSave = { ...coveringDraft, title };
+    const assemblyRemain = assemblyRowsCount > 0;
     setCreatingCovering(true);
     setError(null);
     setStatusMessage(null);
     setWarningMessage(null);
     try {
-      await createFlooringCovering(coveringDraftToPayload({ ...coveringDraft, title }));
+      await createFlooringCovering(coveringDraftToPayload(draftToSave));
       const fresh = await fetchFlooringSnapshot();
       setSnapshot(fresh);
+      const saveFeedback = formatCoveringSaveFeedback(title, draftToSave, "create", {
+        assemblyRowsRemain: assemblyRemain,
+      });
       if (!snapshotHasTitle(fresh, "coverings", title)) {
         setWarningMessage(SNAPSHOT_MISSING_WARNING);
+        setStatusMessage(saveFeedback);
       } else {
-        setStatusMessage(`Покрытие «${title}» создано.`);
+        setStatusMessage(saveFeedback);
       }
       setCoveringDraft(emptyCoveringDraft());
     } catch (cause) {
@@ -692,6 +750,7 @@ export function FlooringCatalogPanel() {
       setError("Укажите название покрытия.");
       return;
     }
+    const draftToSave = { ...coveringDraft, title };
     setSavingCovering(true);
     setError(null);
     setStatusMessage(null);
@@ -700,17 +759,19 @@ export function FlooringCatalogPanel() {
       const before = snapshot;
       await updateFlooringCovering(
         editingCoveringId,
-        coveringDraftToUpdatePayload({ ...coveringDraft, title }),
+        coveringDraftToUpdatePayload(draftToSave),
       );
       const fresh = await fetchFlooringSnapshot();
       setSnapshot(fresh);
       const freshCatalog = await listFlooringCoverings();
       setCoveringCatalog(freshCatalog);
+      const saveFeedback = formatCoveringSaveFeedback(title, draftToSave, "update", {
+        assemblyRowsRemain: assemblyRowsCount > 0,
+      });
       if (before && snapshotRatesMatchRow("coverings", title, before, fresh)) {
-        setStatusMessage(SNAPSHOT_MAPPING_DELAY_STATUS);
-      } else {
-        setStatusMessage(`Покрытие «${title}» сохранено.`);
+        setWarningMessage(SNAPSHOT_MAPPING_DELAY_STATUS);
       }
+      setStatusMessage(saveFeedback);
       cancelCoveringEdit();
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Не удалось сохранить покрытие.");
@@ -984,6 +1045,7 @@ export function FlooringCatalogPanel() {
           </div>
           <CoveringAssemblyBlock
             formatMoney={formatMoney}
+            onRowsChange={(rows) => setAssemblyRowsCount(rows.length)}
             onApplyAggregates={(aggregates) =>
               setCoveringDraft((prev) => applyAggregatesToCoveringDraft(aggregates, prev))
             }

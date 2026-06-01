@@ -46,6 +46,11 @@ import type {
 import { FlooringAssemblyBlock, type FlooringAssemblyTarget } from "./FlooringAssemblyBlock";
 import { FlooringAssemblyLibraryPanel } from "./FlooringAssemblyLibraryPanel";
 import {
+  FlooringCoveringEditForm,
+  FlooringLayoutEditForm,
+  FlooringPreparationEditForm,
+} from "./FlooringCatalogEditForms";
+import {
   FlooringCoveringsSection,
   FlooringLayoutsSection,
   FlooringPreparationsSection,
@@ -173,65 +178,6 @@ function snapshotHasTitle(
         ? snapshot.preparations
         : snapshot.layouts;
   return list.some((item) => item.title.trim().toLowerCase() === normalized);
-}
-
-type CatalogFormProps = {
-  title: string;
-  mode: "create" | "edit";
-  submitting: boolean;
-  onSubmit: () => void;
-  onCancel?: () => void;
-  children: React.ReactNode;
-};
-
-function CatalogForm({ title, mode, submitting, onSubmit, onCancel, children }: CatalogFormProps) {
-  const submitLabel =
-    mode === "edit"
-      ? submitting
-        ? "Запись в БД…"
-        : "Сохранить в БД"
-      : submitting
-        ? "Запись в БД…"
-        : "Создать в БД";
-
-  return (
-    <form
-      className="ce-flooring-form"
-      onSubmit={(event) => {
-        event.preventDefault();
-        onSubmit();
-      }}
-    >
-      <div className="ce-flooring-form-head">
-        <strong>{title}</strong>
-        <div className="ce-toolbar-group">
-          {mode === "edit" && onCancel ? (
-            <button type="button" className="ce-btn ce-btn-sm" disabled={submitting} onClick={onCancel}>
-              Отмена
-            </button>
-          ) : null}
-          <button type="submit" className="ce-btn ce-btn-primary ce-btn-sm" disabled={submitting}>
-            {submitLabel}
-          </button>
-        </div>
-      </div>
-      <div className="ce-flooring-form-content">{children}</div>
-    </form>
-  );
-}
-
-type FormFieldProps = {
-  label: string;
-  children: React.ReactNode;
-};
-
-function FormField({ label, children }: FormFieldProps) {
-  return (
-    <label className="ce-flooring-field">
-      <span className="ce-flooring-field-label">{label}</span>
-      {children}
-    </label>
-  );
 }
 
 export function FlooringCatalogPanel() {
@@ -805,72 +751,14 @@ export function FlooringCatalogPanel() {
       >
 
         {editingCoveringId !== null ? (
-        <CatalogForm
-          title="Редактировать покрытие"
-          mode="edit"
-          submitting={savingCovering}
-          onSubmit={() => void handleUpdateCovering()}
-          onCancel={cancelCoveringEdit}
-        >
-          <div className="ce-flooring-form-fields">
-            <FormField label="Название">
-              <input
-                className="ce-input"
-                value={coveringDraft.title}
-                onChange={(event) => setCoveringDraft((prev) => ({ ...prev, title: event.target.value }))}
-                placeholder="Керамогранит"
-              />
-            </FormField>
-            <FormField label="Материал ₽/м²">
-              <input
-                className="ce-input ce-num"
-                type="number"
-                step="0.01"
-                value={coveringDraft.materialPricePerM2 || ""}
-                onChange={(event) => updateCoveringNumber("materialPricePerM2", event.target.value)}
-              />
-            </FormField>
-            <FormField label="Работа ₽/м²">
-              <input
-                className="ce-input ce-num"
-                type="number"
-                step="0.01"
-                value={coveringDraft.laborPricePerM2 || ""}
-                onChange={(event) => updateCoveringNumber("laborPricePerM2", event.target.value)}
-              />
-            </FormField>
-            <FormField label="Отход %">
-              <input
-                className="ce-input ce-num"
-                type="number"
-                step="0.01"
-                value={coveringDraft.baseWastePercent || ""}
-                onChange={(event) => updateCoveringNumber("baseWastePercent", event.target.value)}
-              />
-            </FormField>
-            <FormField label="Инструмент ₽/м²">
-              <input
-                className="ce-input ce-num"
-                type="number"
-                step="0.01"
-                value={coveringDraft.instrumentPricePerM2 || ""}
-                onChange={(event) => updateCoveringNumber("instrumentPricePerM2", event.target.value)}
-              />
-            </FormField>
-            <FormField label="Нужен плинтус">
-              <select
-                className="ce-input"
-                value={coveringDraft.needsPlinth ? "1" : "0"}
-                onChange={(event) =>
-                  setCoveringDraft((prev) => ({ ...prev, needsPlinth: event.target.value === "1" }))
-                }
-              >
-                <option value="1">Да</option>
-                <option value="0">Нет</option>
-              </select>
-            </FormField>
-          </div>
-        </CatalogForm>
+          <FlooringCoveringEditForm
+            draft={coveringDraft}
+            submitting={savingCovering}
+            onSubmit={() => void handleUpdateCovering()}
+            onCancel={cancelCoveringEdit}
+            onDraftChange={setCoveringDraft}
+            onNumberChange={updateCoveringNumber}
+          />
         ) : null}
       </FlooringCoveringsSection>
 
@@ -882,42 +770,14 @@ export function FlooringCatalogPanel() {
       >
 
         {editingPreparationId !== null ? (
-        <CatalogForm
-          title="Редактировать подготовку"
-          mode="edit"
-          submitting={savingPreparation}
-          onSubmit={() => void handleUpdatePreparation()}
-          onCancel={cancelPreparationEdit}
-        >
-          <div className="ce-flooring-form-fields">
-          <FormField label="Название">
-            <input
-              className="ce-input"
-              value={preparationDraft.title}
-              onChange={(event) => setPreparationDraft((prev) => ({ ...prev, title: event.target.value }))}
-              placeholder="Грунтование"
-            />
-          </FormField>
-          <FormField label="Работа ₽/м²">
-            <input
-              className="ce-input ce-num"
-              type="number"
-              step="0.01"
-              value={preparationDraft.laborPricePerM2 || ""}
-              onChange={(event) => updatePreparationNumber("laborPricePerM2", event.target.value)}
-            />
-          </FormField>
-          <FormField label="Материал ₽/м²">
-            <input
-              className="ce-input ce-num"
-              type="number"
-              step="0.01"
-              value={preparationDraft.materialPricePerM2 || ""}
-              onChange={(event) => updatePreparationNumber("materialPricePerM2", event.target.value)}
-            />
-          </FormField>
-          </div>
-        </CatalogForm>
+          <FlooringPreparationEditForm
+            draft={preparationDraft}
+            submitting={savingPreparation}
+            onSubmit={() => void handleUpdatePreparation()}
+            onCancel={cancelPreparationEdit}
+            onDraftChange={setPreparationDraft}
+            onNumberChange={updatePreparationNumber}
+          />
         ) : null}
       </FlooringPreparationsSection>
 
@@ -929,43 +789,14 @@ export function FlooringCatalogPanel() {
       >
 
         {editingLayoutId !== null ? (
-        <CatalogForm
-          title="Редактировать укладку"
-          mode="edit"
-          submitting={savingLayout}
-          onSubmit={() => void handleUpdateLayout()}
-          onCancel={cancelLayoutEdit}
-        >
-          <div className="ce-flooring-form-fields">
-          <FormField label="Название">
-            <input
-              className="ce-input"
-              value={layoutDraft.title}
-              onChange={(event) => setLayoutDraft((prev) => ({ ...prev, title: event.target.value }))}
-              placeholder="Прямая"
-            />
-          </FormField>
-          <FormField label="Коэф. работы">
-            <input
-              className="ce-input ce-num"
-              type="number"
-              step="0.01"
-              min={0}
-              value={layoutDraft.laborFactor || ""}
-              onChange={(event) => updateLayoutNumber("laborFactor", event.target.value)}
-            />
-          </FormField>
-          <FormField label="Доп. отход %">
-            <input
-              className="ce-input ce-num"
-              type="number"
-              step="0.01"
-              value={layoutDraft.additionalWastePercent || ""}
-              onChange={(event) => updateLayoutNumber("additionalWastePercent", event.target.value)}
-            />
-          </FormField>
-          </div>
-        </CatalogForm>
+          <FlooringLayoutEditForm
+            draft={layoutDraft}
+            submitting={savingLayout}
+            onSubmit={() => void handleUpdateLayout()}
+            onCancel={cancelLayoutEdit}
+            onDraftChange={setLayoutDraft}
+            onNumberChange={updateLayoutNumber}
+          />
         ) : null}
       </FlooringLayoutsSection>
         </>

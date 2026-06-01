@@ -343,5 +343,8 @@ select.ce-cell-input { appearance: none; cursor: pointer; }
 .ce-flooring-assembly-summary-label { display: block; color: var(--ce-muted); font-size: 11px; }
 .ce-flooring-assembly-summary-value { font-weight: 600; color: var(--ce-ok); }
 .ce-flooring-assembly-actions { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
-.ce-flooring-assembly-check { display: inline-flex; align-items: center; justify-content: center; padding: 0 8px; }
+.ce-flooring-assembly-check { padding: 0; text-align: center; }
+.ce-flooring-assembly-check input {
+  display: block; width: 14px; height: 14px; margin: 0 auto;
+}
 `;

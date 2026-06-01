@@ -325,6 +325,11 @@ function CoveringAssemblyBlock({
   );
   const availableLibrarySections = FLOORING_ASSEMBLY_TARGET_LIBRARY_SECTIONS[target];
   const availableRowKinds: CoveringAssemblyRowKind[] = target === "covering" ? ASSEMBLY_ROW_KINDS : ["work"];
+  const rowLibraryDatalistId = `flooring-assembly-row-library-${target}`;
+  const availableRowLibraryItems = useMemo(
+    () => libraryItemsFromCatalog.filter((item) => availableLibrarySections.includes(item.section)),
+    [availableLibrarySections, libraryItemsFromCatalog],
+  );
   const libraryItems = useMemo(
     () => filterFlooringAssemblyLibraryItems(libraryItemsFromCatalog, librarySection),
     [libraryItemsFromCatalog, librarySection],
@@ -378,6 +383,38 @@ function CoveringAssemblyBlock({
         return next;
       }),
     );
+  }
+
+  function findLibraryItemByTitle(value: string) {
+    const normalized = value.trim().toLowerCase();
+    if (!normalized) return undefined;
+    return availableRowLibraryItems.find((item) => item.title.trim().toLowerCase() === normalized);
+  }
+
+  function applyLibraryItemToRow(id: string, item: ReturnType<typeof createAssemblyLibraryItemFromCatalogItem>) {
+    const libraryRow = createAssemblyRowFromLibraryItem(item);
+    setApplyStatus(null);
+    setEntryTitle((value) => value.trim() || item.title);
+    setRows((prev) =>
+      prev.map((row) =>
+        row.id === id
+          ? {
+              ...libraryRow,
+              id: row.id,
+              enabled: row.enabled,
+            }
+          : row,
+      ),
+    );
+  }
+
+  function updateRowTitleFromInput(id: string, value: string) {
+    const libraryItem = findLibraryItemByTitle(value);
+    if (libraryItem) {
+      applyLibraryItemToRow(id, libraryItem);
+      return;
+    }
+    updateRow(id, { title: value });
   }
 
   function removeRow(id: string) {
@@ -450,9 +487,10 @@ function CoveringAssemblyBlock({
         <td>
           <input
             className="ce-cell-input"
+            list={rowLibraryDatalistId}
             value={row.title}
-            onChange={(event) => updateRow(row.id, { title: event.target.value })}
-            placeholder="Название"
+            onChange={(event) => updateRowTitleFromInput(row.id, event.target.value)}
+            placeholder="Название или кубик из базы"
           />
         </td>
         <td>
@@ -639,6 +677,15 @@ function CoveringAssemblyBlock({
         </button>
         <span className="ce-flooring-assembly-library-hint">После добавления строку можно править в таблице.</span>
       </div>
+      <datalist id={rowLibraryDatalistId}>
+        {availableRowLibraryItems.map((item) => (
+          <option
+            key={item.id}
+            value={item.title}
+            label={`${getFlooringAssemblyLibrarySectionLabel(item.section)} · ${getAssemblyFormulaCompactLabel(item.row.formula)}`}
+          />
+        ))}
+      </datalist>
 
       {rows.length === 0 ? (
         <div className="ce-flooring-assembly-empty">

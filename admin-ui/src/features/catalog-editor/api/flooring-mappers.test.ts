@@ -2,11 +2,13 @@ import { describe, expect, it } from "vitest";
 
 import type { FlooringSnapshot } from "../../public/public-flooring-snapshot";
 import {
+  assemblyItemDraftToPayload,
   attachCatalogIdsToDisplayRows,
   consumablePricePerM2,
   coveringDtoToConsumableRates,
   coveringDraftToPayload,
   coveringDraftToUpdatePayload,
+  dtoToFlooringAssemblyItemDraft,
   dtoToFlooringCoveringDraft,
   dtoToFlooringLayoutDraft,
   dtoToFlooringPreparationDraft,
@@ -17,7 +19,12 @@ import {
   preparationDraftToUpdatePayload,
   snapshotToDisplayRows,
 } from "./flooring-mappers";
-import type { FlooringCoveringDto, FlooringLayoutDto, FlooringPreparationDto } from "./flooring-types";
+import type {
+  FlooringAssemblyItemDto,
+  FlooringCoveringDto,
+  FlooringLayoutDto,
+  FlooringPreparationDto,
+} from "./flooring-types";
 
 function makeCoveringDto(overrides: Partial<FlooringCoveringDto> = {}): FlooringCoveringDto {
   return {
@@ -71,6 +78,25 @@ function makeLayoutDto(overrides: Partial<FlooringLayoutDto> = {}): FlooringLayo
     labor_multiplier: 1.1,
     extra_waste_percent: 5,
     note: null,
+    ...overrides,
+  };
+}
+
+function makeAssemblyItemDto(overrides: Partial<FlooringAssemblyItemDto> = {}): FlooringAssemblyItemDto {
+  return {
+    id: 4,
+    source_code: "consumable-tile-glue",
+    section: "consumable",
+    title: "Клей плиточный",
+    kind: "consumable",
+    formula: "kg_layer_consumption",
+    unit: "kg",
+    price: 600,
+    consumption_per_m2: 1.5,
+    package_size: 25,
+    layer_mm: 5,
+    note: null,
+    sort_order: 70,
     ...overrides,
   };
 }
@@ -175,6 +201,18 @@ describe("dtoToFlooringLayoutDraft", () => {
   });
 });
 
+describe("dtoToFlooringAssemblyItemDraft", () => {
+  it("маппит кубик библиотеки полов", () => {
+    const draft = dtoToFlooringAssemblyItemDraft(makeAssemblyItemDto());
+    expect(draft.sourceCode).toBe("consumable-tile-glue");
+    expect(draft.section).toBe("consumable");
+    expect(draft.kind).toBe("consumable");
+    expect(draft.formula).toBe("kg_layer_consumption");
+    expect(draft.packageSize).toBe(25);
+    expect(draft.layerMm).toBe(5);
+  });
+});
+
 describe("draft payloads", () => {
   it("update payload совпадает с create payload", () => {
     const coveringDraft = dtoToFlooringCoveringDraft(makeCoveringDto());
@@ -200,6 +238,16 @@ describe("draft payloads", () => {
     expect(payload.labor_multiplier).toBe(1.1);
     expect(payload.extra_waste_percent).toBe(5);
     expect(payload.note).toBeNull();
+  });
+
+  it("assemblyItemDraftToPayload сохраняет snake_case поля", () => {
+    const draft = dtoToFlooringAssemblyItemDraft(makeAssemblyItemDto({ note: "  test  " }));
+    const payload = assemblyItemDraftToPayload(draft);
+    expect(payload.source_code).toBe("consumable-tile-glue");
+    expect(payload.consumption_per_m2).toBe(1.5);
+    expect(payload.package_size).toBe(25);
+    expect(payload.layer_mm).toBe(5);
+    expect(payload.note).toBe("test");
   });
 });
 

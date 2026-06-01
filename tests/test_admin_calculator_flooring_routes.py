@@ -112,6 +112,92 @@ class AdminCalculatorFlooringRouteTests(AdminProjectsRouteCase):
                     ).status_code,
                     403,
                 )
+                self.assertEqual(client.get("/api/calculator/flooring/assembly-items").status_code, 403)
+                self.assertEqual(
+                    client.post(
+                        "/api/calculator/flooring/assembly-items",
+                        json={
+                            "section": "consumable",
+                            "title": "Tile glue",
+                            "kind": "consumable",
+                            "formula": "kg_layer_consumption",
+                        },
+                    ).status_code,
+                    403,
+                )
+
+    def test_flooring_assembly_items_are_db_backed(self) -> None:
+        with TemporaryDirectory() as tmp_dir:
+            self._root = Path(tmp_dir)
+            with self._build_client() as client:
+                self._login_admin(client)
+
+                seeded = client.get("/api/calculator/flooring/assembly-items")
+                self.assertEqual(seeded.status_code, 200)
+                seeded_payload = seeded.json()
+                self.assertTrue(any(item["source_code"] == "consumable-tile-glue" for item in seeded_payload))
+
+                create = client.post(
+                    "/api/calculator/flooring/assembly-items",
+                    json={
+                        "source_code": "test-glue",
+                        "section": "consumable",
+                        "title": "Test glue",
+                        "kind": "consumable",
+                        "formula": "kg_layer_consumption",
+                        "unit": "kg",
+                        "price": 500,
+                        "consumption_per_m2": 1.2,
+                        "package_size": 25,
+                        "layer_mm": 4,
+                        "sort_order": 500,
+                    },
+                )
+                self.assertEqual(create.status_code, 200)
+                created = create.json()
+                self.assertEqual(created["source_code"], "test-glue")
+                self.assertEqual(created["price"], 500)
+
+                patch = client.patch(
+                    f"/api/calculator/flooring/assembly-items/{created['id']}",
+                    json={
+                        "source_code": "test-glue",
+                        "section": "consumable",
+                        "title": "Test glue updated",
+                        "kind": "consumable",
+                        "formula": "kg_layer_consumption",
+                        "unit": "kg",
+                        "price": 650,
+                        "consumption_per_m2": 1.5,
+                        "package_size": 25,
+                        "layer_mm": 5,
+                        "sort_order": 500,
+                    },
+                )
+                self.assertEqual(patch.status_code, 200)
+                self.assertEqual(patch.json()["title"], "Test glue updated")
+                self.assertEqual(patch.json()["price"], 650)
+
+                readback = client.get("/api/calculator/flooring/assembly-items")
+                self.assertEqual(readback.status_code, 200)
+                self.assertTrue(any(item["title"] == "Test glue updated" for item in readback.json()))
+
+    def test_flooring_assembly_item_validation(self) -> None:
+        with TemporaryDirectory() as tmp_dir:
+            self._root = Path(tmp_dir)
+            with self._build_client() as client:
+                self._login_admin(client)
+                response = client.post(
+                    "/api/calculator/flooring/assembly-items",
+                    json={
+                        "section": "bad",
+                        "title": "Invalid",
+                        "kind": "consumable",
+                        "formula": "kg_layer_consumption",
+                        "price": -1,
+                    },
+                )
+                self.assertEqual(response.status_code, 400)
 
     def test_negative_material_price_is_rejected(self) -> None:
         with TemporaryDirectory() as tmp_dir:

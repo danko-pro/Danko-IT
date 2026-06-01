@@ -1,5 +1,5 @@
-// Локальный прототип «сборки покрытия»: агрегация строк work/material/consumable/tool
-// в плоские ₽/м² поля covering draft. Без backend и без public snapshot.
+// Агрегация строк work/material/consumable/tool в плоские ₽/м² поля covering draft.
+// Сами строки состава остаются черновиком формы; библиотека кубиков может приходить из backend.
 
 import { normalizeNum } from "./api/flooring-mappers";
 import type { FlooringCoveringDraft } from "./api/flooring-types";
@@ -302,6 +302,43 @@ export function getFlooringAssemblyLibraryItems(
   section: FlooringAssemblyLibrarySection,
 ): FlooringAssemblyLibraryItem[] {
   return FLOORING_ASSEMBLY_LIBRARY_ITEMS.filter((item) => item.section === section);
+}
+
+export function filterFlooringAssemblyLibraryItems(
+  items: FlooringAssemblyLibraryItem[],
+  section: FlooringAssemblyLibrarySection,
+): FlooringAssemblyLibraryItem[] {
+  return items.filter((item) => item.section === section);
+}
+
+export function createAssemblyLibraryItemFromCatalogItem(item: {
+  id: number;
+  source_code: string;
+  section: FlooringAssemblyLibrarySection;
+  title: string;
+  kind: CoveringAssemblyRowKind;
+  formula: FlooringAssemblyFormula;
+  unit: string;
+  price: number;
+  consumption_per_m2: number;
+  package_size?: number | null;
+  layer_mm?: number | null;
+}): FlooringAssemblyLibraryItem {
+  return {
+    id: String(item.id),
+    section: item.section,
+    title: item.title,
+    row: {
+      title: item.title,
+      kind: item.kind,
+      formula: item.formula,
+      unit: item.unit || "pcs",
+      price: normalizeNum(item.price),
+      consumptionPerM2: normalizeNum(item.consumption_per_m2),
+      packageSize: item.package_size ?? undefined,
+      layerMm: item.layer_mm ?? undefined,
+    },
+  };
 }
 
 export function getAssemblyFormulaLabel(formula: FlooringAssemblyFormula): string {

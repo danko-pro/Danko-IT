@@ -54,12 +54,17 @@ export function FlooringCoveringsSection({
                   <td className="ce-num ce-readonly">{formatMoney(row.rates.materialPricePerM2)}</td>
                   <td className="ce-num ce-readonly">{formatPercent(row.rates.baseWastePercent)}</td>
                   <td className="ce-readonly">{consumablesSummaryPerM2(row.rates)}</td>
-                  <td>
-                    <div className="ce-toolbar-group">
-                      <button type="button" className="ce-btn ce-btn-sm" disabled={!row.catalogId} onClick={() => onEdit(row)}>
+                  <td className="ce-col-actions">
+                    <div className="ce-row-actions">
+                      <button type="button" className="ce-row-action" disabled={!row.catalogId} onClick={() => onEdit(row)}>
                         Редактировать
                       </button>
-                      <button type="button" className="ce-row-delete" disabled={!row.catalogId} onClick={() => onDelete(row)}>
+                      <button
+                        type="button"
+                        className="ce-row-action ce-row-action-danger"
+                        disabled={!row.catalogId}
+                        onClick={() => onDelete(row)}
+                      >
                         Удалить
                       </button>
                     </div>
@@ -118,12 +123,17 @@ export function FlooringPreparationsSection({
                   <td className="ce-readonly">{row.title}</td>
                   <td className="ce-num ce-readonly">{formatMoney(row.rates.laborPricePerM2)}</td>
                   <td className="ce-num ce-readonly">{formatMoney(row.rates.materialPricePerM2)}</td>
-                  <td>
-                    <div className="ce-toolbar-group">
-                      <button type="button" className="ce-btn ce-btn-sm" disabled={!row.catalogId} onClick={() => onEdit(row)}>
+                  <td className="ce-col-actions">
+                    <div className="ce-row-actions">
+                      <button type="button" className="ce-row-action" disabled={!row.catalogId} onClick={() => onEdit(row)}>
                         Редактировать
                       </button>
-                      <button type="button" className="ce-row-delete" disabled={!row.catalogId} onClick={() => onDelete(row)}>
+                      <button
+                        type="button"
+                        className="ce-row-action ce-row-action-danger"
+                        disabled={!row.catalogId}
+                        onClick={() => onDelete(row)}
+                      >
                         Удалить
                       </button>
                     </div>
@@ -185,12 +195,17 @@ export function FlooringLayoutsSection({
                   <td className="ce-num ce-readonly">{formatMoney(row.rates.laborPricePerM2)}</td>
                   <td className="ce-num ce-readonly">{row.rates.laborFactor}</td>
                   <td className="ce-num ce-readonly">{formatPercent(row.rates.additionalWastePercent)}</td>
-                  <td>
-                    <div className="ce-toolbar-group">
-                      <button type="button" className="ce-btn ce-btn-sm" disabled={!row.catalogId} onClick={() => onEdit(row)}>
+                  <td className="ce-col-actions">
+                    <div className="ce-row-actions">
+                      <button type="button" className="ce-row-action" disabled={!row.catalogId} onClick={() => onEdit(row)}>
                         Редактировать
                       </button>
-                      <button type="button" className="ce-row-delete" disabled={!row.catalogId} onClick={() => onDelete(row)}>
+                      <button
+                        type="button"
+                        className="ce-row-action ce-row-action-danger"
+                        disabled={!row.catalogId}
+                        onClick={() => onDelete(row)}
+                      >
                         Удалить
                       </button>
                     </div>

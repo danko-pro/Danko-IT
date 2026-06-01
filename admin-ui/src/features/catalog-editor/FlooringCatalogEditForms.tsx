@@ -50,11 +50,12 @@ function CatalogForm({ title, mode, submitting, onSubmit, onCancel, children }: 
 type FormFieldProps = {
   label: string;
   children: ReactNode;
+  className?: string;
 };
 
-function FormField({ label, children }: FormFieldProps) {
+function FormField({ label, children, className }: FormFieldProps) {
   return (
-    <label className="ce-flooring-field">
+    <label className={className ? `ce-flooring-field ${className}` : "ce-flooring-field"}>
       <span className="ce-flooring-field-label">{label}</span>
       {children}
     </label>
@@ -250,7 +251,7 @@ export function FlooringCoveringEditForm({
             <option value="0">Нет</option>
           </select>
         </FormField>
-        <FormField label="Примечание">
+        <FormField label="Примечание" className="ce-flooring-field-note">
           <textarea
             className="ce-input"
             value={draft.note}
@@ -453,7 +454,7 @@ export function FlooringPreparationEditForm({
             onChange={(event) => onNumberChange("primerPricePerUnit", event.target.value)}
           />
         </FormField>
-        <FormField label="Примечание">
+        <FormField label="Примечание" className="ce-flooring-field-note">
           <textarea
             className="ce-input"
             value={draft.note}
@@ -522,7 +523,7 @@ export function FlooringLayoutEditForm({
             onChange={(event) => onNumberChange("additionalWastePercent", event.target.value)}
           />
         </FormField>
-        <FormField label="Примечание">
+        <FormField label="Примечание" className="ce-flooring-field-note">
           <textarea
             className="ce-input"
             value={draft.note}

@@ -317,11 +317,12 @@ select.ce-cell-input { appearance: none; cursor: pointer; }
 .ce-flooring-field { display: flex; flex-direction: column; gap: 3px; font-size: 11px; }
 .ce-flooring-field-label { color: var(--ce-muted); line-height: 1.25; }
 .ce-flooring-field .ce-input { width: 100%; }
+.ce-flooring-field-note { grid-column: 1 / -1; }
 .ce-flooring-field .ce-input {
   height: 32px; min-height: 32px; padding: 0 9px; border-radius: 7px; font-size: 12px;
 }
 .ce-flooring-field textarea.ce-input {
-  padding-top: 6px; resize: vertical; line-height: 1.3;
+  min-height: 42px; padding-top: 6px; resize: vertical; line-height: 1.3;
 }
 .ce-flooring-form .ce-table-wrap {
   border-radius: 8px; margin-bottom: 8px;

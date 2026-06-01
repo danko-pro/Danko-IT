@@ -139,12 +139,17 @@ select.ce-cell-input { appearance: none; cursor: pointer; }
 .ce-num { text-align: right; }
 .ce-num.ce-cell-input { text-align: right; }
 .ce-readonly { padding: 0 10px; color: var(--ce-muted); font-size: 12px; }
+.ce-na {
+  display: block; width: 100%; height: 34px; line-height: 34px;
+  text-align: center; color: var(--ce-muted); user-select: none;
+}
 .ce-total-cell { color: var(--ce-ok); font-weight: 600; }
 
 .ce-col-id { min-width: 150px; }
 .ce-col-title { min-width: 200px; }
 .ce-col-tech { min-width: 220px; }
 .ce-col-select { min-width: 110px; }
+.ce-col-formula { min-width: 168px; }
 .ce-col-num { min-width: 92px; text-align: right; }
 .ce-col-total { min-width: 90px; }
 .ce-col-actions { width: 44px; text-align: center; }
@@ -308,7 +313,16 @@ select.ce-cell-input { appearance: none; cursor: pointer; }
 .ce-flooring-assembly-hint { margin: 4px 0 0; font-size: 11px; color: var(--ce-muted); line-height: 1.4; }
 .ce-flooring-assembly-toolbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .ce-flooring-assembly-table-wrap { margin-bottom: 10px; max-height: none; }
-.ce-flooring-assembly-table { min-width: 1080px; width: 100%; }
+.ce-flooring-assembly-table { min-width: 1240px; width: 100%; table-layout: fixed; }
+.ce-flooring-assembly-table .ce-col-num { width: 88px; }
+.ce-flooring-assembly-table .ce-col-formula { width: 168px; }
+.ce-flooring-assembly-table .ce-col-title { width: auto; min-width: 160px; }
+.ce-flooring-assembly-table .ce-col-select { width: 96px; }
+.ce-flooring-assembly-table .ce-col-total { width: 96px; }
+.ce-flooring-assembly-table .ce-col-actions { width: 44px; }
+.ce-flooring-assembly-table .ce-cell-input { height: 34px; min-height: 34px; }
+.ce-flooring-assembly-table select.ce-cell-input { padding-right: 4px; font-size: 11px; }
+.ce-flooring-assembly-table .ce-cell-formula { font-size: 11px; }
 .ce-flooring-assembly-summary {
   display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px;
   margin-bottom: 10px; padding: 10px; border-radius: 8px;

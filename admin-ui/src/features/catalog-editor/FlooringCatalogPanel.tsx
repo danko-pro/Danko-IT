@@ -289,6 +289,8 @@ function CoveringAssemblyBlock({ onApplyAggregates, onRowsChange, formatMoney }:
 
   function renderAssemblyRow(row: CoveringAssemblyRow) {
     const fieldVisibility = getFormulaFieldVisibility(row.formula);
+    const showsFlatCoefficient =
+      row.formula === "flat_per_m2" && (row.kind === "material" || row.kind === "work");
     return (
       <tr key={row.id} className={row.enabled ? undefined : "ce-flooring-assembly-row-off"}>
         <td className="ce-flooring-assembly-check">
@@ -363,6 +365,16 @@ function CoveringAssemblyBlock({ onApplyAggregates, onRowsChange, formatMoney }:
               value={row.consumptionPerM2 || ""}
               onChange={(event) => updateRowNumber(row.id, "consumptionPerM2", event.target.value)}
             />
+          ) : showsFlatCoefficient ? (
+            <input
+              className="ce-cell-input ce-num"
+              type="number"
+              step="0.01"
+              value={row.consumptionPerM2 || ""}
+              placeholder="1"
+              title={row.kind === "material" ? "Коэффициент запаса материала" : "Коэффициент сложности работы"}
+              onChange={(event) => updateRowNumber(row.id, "consumptionPerM2", event.target.value)}
+            />
           ) : (
             <span className="ce-readonly ce-na">—</span>
           )}
@@ -424,14 +436,14 @@ function CoveringAssemblyBlock({ onApplyAggregates, onRowsChange, formatMoney }:
             <button
               type="button"
               className="ce-btn ce-btn-sm"
-              onClick={() => addRow({ kind: "material", unit: "m2", formula: "flat_per_m2" })}
+              onClick={() => addRow({ kind: "material", unit: "m2", formula: "flat_per_m2", consumptionPerM2: 1 })}
             >
               + Материал
             </button>
             <button
               type="button"
               className="ce-btn ce-btn-sm"
-              onClick={() => addRow({ kind: "work", unit: "m2", formula: "flat_per_m2" })}
+              onClick={() => addRow({ kind: "work", unit: "m2", formula: "flat_per_m2", consumptionPerM2: 1 })}
             >
               + Работа
             </button>
@@ -471,7 +483,7 @@ function CoveringAssemblyBlock({ onApplyAggregates, onRowsChange, formatMoney }:
               <th className="ce-col-title">Название</th>
               <th className="ce-col-unit">Ед.</th>
               <th className="ce-col-num">Цена</th>
-              <th className="ce-col-num">Расход</th>
+              <th className="ce-col-num">Коэф./расх.</th>
               <th className="ce-col-num">Фас.</th>
               <th className="ce-col-num">Слой</th>
               <th className="ce-col-total">Итого</th>

@@ -191,6 +191,24 @@ describe("calculateAssemblyRowTotal", () => {
     ).toBe(40);
   });
 
+  it("flat_per_m2 учитывает коэффициент для материала и работы", () => {
+    expect(
+      calculateAssemblyRowTotal(
+        makeRow({ id: "m", kind: "material", formula: "flat_per_m2", price: 1000, consumptionPerM2: 1.1 }),
+      ),
+    ).toBe(1100);
+    expect(
+      calculateAssemblyRowTotal(
+        makeRow({ id: "w", kind: "work", formula: "flat_per_m2", price: 2000, consumptionPerM2: 1.25 }),
+      ),
+    ).toBe(2500);
+    expect(
+      calculateAssemblyRowTotal(
+        makeRow({ id: "t", kind: "tool", formula: "flat_per_m2", price: 40, consumptionPerM2: 2 }),
+      ),
+    ).toBe(40);
+  });
+
   it("unit_consumption: price × consumptionPerM2", () => {
     expect(
       calculateAssemblyRowTotal(

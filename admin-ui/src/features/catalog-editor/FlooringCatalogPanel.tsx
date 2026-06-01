@@ -166,7 +166,13 @@ type CatalogFormProps = {
 
 function CatalogForm({ title, mode, submitting, onSubmit, onCancel, children }: CatalogFormProps) {
   const submitLabel =
-    mode === "edit" ? (submitting ? "Сохранение…" : "Сохранить") : submitting ? "Создание…" : "Создать";
+    mode === "edit"
+      ? submitting
+        ? "Запись в БД…"
+        : "Сохранить покрытие в БД"
+      : submitting
+        ? "Запись в БД…"
+        : "Создать покрытие в БД";
 
   return (
     <form
@@ -211,7 +217,7 @@ function FormField({ label, children }: FormFieldProps) {
 const ASSEMBLY_ROW_KINDS: CoveringAssemblyRowKind[] = ["work", "material", "consumable", "tool"];
 
 const ASSEMBLY_APPLY_STATUS =
-  "Итог состава перенесён в поля покрытия. Нажмите «Создать» или «Сохранить», чтобы записать в БД.";
+  "Расчёт перенесён в поля формы. Чтобы он попал в БД, нажмите «Создать покрытие в БД» или «Сохранить покрытие в БД».";
 
 type CoveringAssemblyBlockProps = {
   onApplyAggregates: (aggregates: CoveringAssemblyAggregates) => void;
@@ -428,7 +434,7 @@ function CoveringAssemblyBlock({ onApplyAggregates, onRowsChange, formatMoney }:
         <div>
           <h4 className="ce-flooring-assembly-title">Состав покрытия</h4>
           <p className="ce-flooring-assembly-hint">
-            Локальный черновик: строки не сохраняются отдельно, итог можно перенести в поля покрытия.
+            Локальный черновик: строки не сохраняются отдельно, расчёт переносится в поля формы покрытия.
           </p>
         </div>
         {rows.length > 0 ? (
@@ -559,7 +565,7 @@ function CoveringAssemblyBlock({ onApplyAggregates, onRowsChange, formatMoney }:
                 setApplyStatus(ASSEMBLY_APPLY_STATUS);
               }}
             >
-              Перенести итог в поля покрытия
+              Перенести расчёт в поля формы
             </button>
           </div>
         </>

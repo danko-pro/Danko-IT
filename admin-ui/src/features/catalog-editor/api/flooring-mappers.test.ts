@@ -75,6 +75,7 @@ function makeLayoutDto(overrides: Partial<FlooringLayoutDto> = {}): FlooringLayo
   return {
     id: 3,
     title: "Прямая",
+    labor_price_per_m2: 1000,
     labor_multiplier: 1.1,
     extra_waste_percent: 5,
     note: null,
@@ -102,13 +103,12 @@ function makeAssemblyItemDto(overrides: Partial<FlooringAssemblyItemDto> = {}): 
 }
 
 const MINI_SNAPSHOT: FlooringSnapshot = {
-  version: "flooring-v1",
+  version: "flooring-v2",
   coverings: [
     {
       code: "porcelain",
       title: "Керамогранит",
       materialPricePerM2: 2900,
-      laborPricePerM2: 2000,
       baseWastePercent: 10,
       underlayPricePerM2: 0,
       adhesivePricePerM2: 450,
@@ -119,7 +119,7 @@ const MINI_SNAPSHOT: FlooringSnapshot = {
     },
   ],
   preparations: [{ code: "primer", title: "Грунтование", laborPricePerM2: 250, materialPricePerM2: 120 }],
-  layouts: [{ code: "straight", title: "Прямая", laborFactor: 1.1, additionalWastePercent: 5 }],
+  layouts: [{ code: "straight", title: "Прямая", laborPricePerM2: 1000, laborFactor: 1.1, additionalWastePercent: 5 }],
   plinthTypes: [
     { code: "none", title: "Без плинтуса", materialPricePerMeter: 0, laborPricePerMeter: 0, factor: 1 },
   ],
@@ -189,8 +189,9 @@ describe("dtoToFlooringPreparationDraft", () => {
 });
 
 describe("dtoToFlooringLayoutDraft", () => {
-  it("маппит laborFactor и additionalWastePercent", () => {
+  it("маппит laborPricePerM2, laborFactor и additionalWastePercent", () => {
     const draft = dtoToFlooringLayoutDraft(makeLayoutDto());
+    expect(draft.laborPricePerM2).toBe(1000);
     expect(draft.laborFactor).toBe(1.1);
     expect(draft.additionalWastePercent).toBe(5);
   });
@@ -227,14 +228,15 @@ describe("draft payloads", () => {
     const draft = dtoToFlooringCoveringDraft(makeCoveringDto({ note: "  заметка  " }));
     const payload = coveringDraftToPayload(draft);
     expect(payload.material_price_per_m2).toBe(2900);
-    expect(payload.labor_price_per_m2).toBe(2000);
+    expect(payload.labor_price_per_m2).toBe(0);
     expect(payload.note).toBe("заметка");
     expect(payload.custom_consumables[0].title).toBe("Прокладка");
   });
 
-  it("layoutDraftToPayload отдаёт labor_multiplier и extra_waste_percent", () => {
+  it("layoutDraftToPayload отдаёт labor_price_per_m2, labor_multiplier и extra_waste_percent", () => {
     const draft = dtoToFlooringLayoutDraft(makeLayoutDto());
     const payload = layoutDraftToPayload(draft);
+    expect(payload.labor_price_per_m2).toBe(1000);
     expect(payload.labor_multiplier).toBe(1.1);
     expect(payload.extra_waste_percent).toBe(5);
     expect(payload.note).toBeNull();
@@ -272,9 +274,10 @@ describe("snapshotToDisplayRows", () => {
     expect(rows[0]).toMatchObject({
       section: "coverings",
       code: "porcelain",
-      rates: { materialPricePerM2: 2900, laborPricePerM2: 2000 },
+      rates: { materialPricePerM2: 2900 },
     });
     expect(rows.find((row) => row.section === "layouts")?.rates).toEqual({
+      laborPricePerM2: 1000,
       laborFactor: 1.1,
       additionalWastePercent: 5,
     });

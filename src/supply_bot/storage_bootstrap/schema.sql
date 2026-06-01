@@ -450,6 +450,7 @@ CREATE TABLE IF NOT EXISTS estimate_flooring_preparations (
 CREATE TABLE IF NOT EXISTS estimate_flooring_layouts (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     title TEXT NOT NULL UNIQUE,
+    labor_price_per_m2 REAL NOT NULL DEFAULT 0,
     labor_multiplier REAL NOT NULL DEFAULT 1,
     extra_waste_percent REAL NOT NULL DEFAULT 0,
     note TEXT,

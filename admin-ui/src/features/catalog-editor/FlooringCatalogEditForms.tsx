@@ -98,15 +98,6 @@ export function FlooringCoveringEditForm({
             onChange={(event) => onNumberChange("materialPricePerM2", event.target.value)}
           />
         </FormField>
-        <FormField label="Работа ₽/м²">
-          <input
-            className="ce-input ce-num"
-            type="number"
-            step="0.01"
-            value={draft.laborPricePerM2 || ""}
-            onChange={(event) => onNumberChange("laborPricePerM2", event.target.value)}
-          />
-        </FormField>
         <FormField label="Отход %">
           <input
             className="ce-input ce-num"
@@ -217,6 +208,16 @@ export function FlooringLayoutEditForm({
             value={draft.title}
             onChange={(event) => onDraftChange((prev) => ({ ...prev, title: event.target.value }))}
             placeholder="Прямая"
+          />
+        </FormField>
+        <FormField label="Работа ₽/м²">
+          <input
+            className="ce-input ce-num"
+            type="number"
+            step="0.01"
+            min={0}
+            value={draft.laborPricePerM2 || ""}
+            onChange={(event) => onNumberChange("laborPricePerM2", event.target.value)}
           />
         </FormField>
         <FormField label="Коэф. работы">

@@ -280,7 +280,6 @@ const RECOMMENDED_FLAT_FIELD_LABELS: {
   label: string;
 }[] = [
   { key: "materialPricePerM2", label: "Материал покрытия" },
-  { key: "laborPricePerM2", label: "Работа" },
   { key: "adhesivePricePerM2", label: "Клей" },
   { key: "primerPricePerM2", label: "Грунт" },
   { key: "svpPricePerM2", label: "СВП" },
@@ -547,16 +546,6 @@ export function getKeramogranit120x60Preset(): CoveringAssemblyRow[] {
       enabled: true,
     },
     {
-      id: "preset-work-lay",
-      title: "Укладка крупноформатной плитки",
-      kind: "work",
-      formula: "flat_per_m2",
-      unit: "m2",
-      price: 2000,
-      consumptionPerM2: 1,
-      enabled: true,
-    },
-    {
       id: "preset-glue",
       title: "Клей плиточный",
       kind: "consumable",
@@ -627,7 +616,7 @@ export function applyAggregatesToCoveringDraft(
   return {
     ...draft,
     materialPricePerM2: flat.materialPricePerM2,
-    laborPricePerM2: flat.laborPricePerM2,
+    laborPricePerM2: 0,
     instrumentPricePerM2: aggregates.toolPerM2,
     glueConsumptionPerM2: flat.adhesivePricePerM2 > 0 ? 1 : draft.glueConsumptionPerM2,
     gluePricePerUnit: flat.adhesivePricePerM2 > 0 ? flat.adhesivePricePerM2 : draft.gluePricePerUnit,
@@ -676,9 +665,6 @@ export function formatCoveringSaveFeedback(
 
   if (normalizeNum(draft.materialPricePerM2) > 0) {
     rateParts.push(`материал ${formatMoneyRu(draft.materialPricePerM2)} ₽/м²`);
-  }
-  if (normalizeNum(draft.laborPricePerM2) > 0) {
-    rateParts.push(`работа ${formatMoneyRu(draft.laborPricePerM2)} ₽/м²`);
   }
   if (normalizeNum(draft.instrumentPricePerM2) > 0) {
     rateParts.push(`инструмент ${formatMoneyRu(draft.instrumentPricePerM2)} ₽/м²`);

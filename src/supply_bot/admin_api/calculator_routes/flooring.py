@@ -279,6 +279,7 @@ def register_calculator_flooring_routes(
         storage_obj = get_calculator_route_storage(request)
         command = CreateFlooringLayoutCommand(
             title=payload.title,
+            labor_price_per_m2=payload.labor_price_per_m2,
             labor_multiplier=payload.labor_multiplier,
             extra_waste_percent=payload.extra_waste_percent,
             note=payload.note,
@@ -302,6 +303,7 @@ def register_calculator_flooring_routes(
         command = UpdateFlooringLayoutCommand(
             layout_id=layout_id,
             title=payload.title,
+            labor_price_per_m2=payload.labor_price_per_m2,
             labor_multiplier=payload.labor_multiplier,
             extra_waste_percent=payload.extra_waste_percent,
             note=payload.note,

@@ -113,7 +113,8 @@ function createRoomResult(room: FlooringRoomInput): FlooringRoomResult {
   const layout = flooringLayoutRates[room.layoutType];
   const totalWastePercent = covering.baseWastePercent + layout.additionalWastePercent;
   const purchaseArea = area * (1 + totalWastePercent / 100);
-  const laborWithFactor = covering.laborPricePerM2 * layout.laborFactor;
+  const baseLaborPricePerM2 = layout.laborPricePerM2 ?? covering.laborPricePerM2 ?? 0;
+  const laborWithFactor = baseLaborPricePerM2 * layout.laborFactor;
   const materialCost = purchaseArea * covering.materialPricePerM2;
   const installationCost = area * laborWithFactor;
   const preparationLaborCost = area * preparation.laborPricePerM2;

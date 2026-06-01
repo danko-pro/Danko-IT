@@ -29,7 +29,7 @@ from supply_bot.estimates.application.flooring_snapshot import (
 from supply_bot.storage_estimates.runtime_repository import SqlAlchemyEstimateRuntimeRepository
 from tests.admin_projects_routes_case import AdminProjectsRouteCase
 
-_F1_SNAPSHOT_PATH = (
+_FLOORING_SNAPSHOT_PATH = (
     Path(__file__).resolve().parents[1]
     / "admin-ui"
     / "src"
@@ -141,14 +141,15 @@ async def _seed_f1_complete_global_catalog(repo: SqlAlchemyEstimateRuntimeReposi
             primer_unit="л",
             primer_price_per_unit=0,
         )
-    for title, factor, waste in (
-        ("Прямая", 1.1, 5),
-        ("Крупный формат", 1.2, 10),
-        ("Клеевая", 1.25, 5),
-        ("Плавающая", 1.0, 3),
+    for title, labor, factor, waste in (
+        ("Прямая", 1000, 1.1, 5),
+        ("Крупный формат", 2000, 1.2, 10),
+        ("Клеевая", 800, 1.25, 5),
+        ("Плавающая", 1000, 1.0, 3),
     ):
         await repo.create_estimate_flooring_layout(
             title=title,
+            labor_price_per_m2=labor,
             labor_multiplier=factor,
             extra_waste_percent=waste,
         )
@@ -173,23 +174,32 @@ class FlooringSnapshotRepositoryTests(unittest.IsolatedAsyncioTestCase):
         await _seed_f1_complete_global_catalog(self.repository)
         coverings = await self.repository.list_estimate_flooring_coverings()
         laminate_row = next(item for item in coverings if item["title"] == "Ламинат")
+        layouts = await self.repository.list_estimate_flooring_layouts()
+        straight_layout = next(item for item in layouts if item["title"] == "Прямая")
         async with self.repository._session_factory() as session:
             from sqlalchemy import update
 
-            from supply_bot.storage_estimates.tables import estimate_flooring_coverings
+            from supply_bot.storage_estimates.tables import estimate_flooring_coverings, estimate_flooring_layouts
 
             await session.execute(
                 update(estimate_flooring_coverings)
                 .where(estimate_flooring_coverings.c.id == laminate_row["id"])
                 .values(material_price_per_m2=1111, labor_price_per_m2=2222, underlay_mode="none")
             )
+            await session.execute(
+                update(estimate_flooring_layouts)
+                .where(estimate_flooring_layouts.c.id == straight_layout["id"])
+                .values(labor_price_per_m2=1234)
+            )
             await session.commit()
 
         payload = await BuildFlooringSnapshotUseCase(self.repository).build_public()
         laminate = next(item for item in payload["coverings"] if item["code"] == "laminate")
         self.assertEqual(laminate["materialPricePerM2"], 1111)
-        self.assertEqual(laminate["laborPricePerM2"], 2222)
+        self.assertNotIn("laborPricePerM2", laminate)
         self.assertEqual(laminate["underlayPricePerM2"], 0)
+        straight = next(item for item in payload["layouts"] if item["code"] == "straight")
+        self.assertEqual(straight["laborPricePerM2"], 1234)
         self.assertEqual({item["code"] for item in payload["coverings"]}, EXPECTED_COVERING_CODES)
 
     async def test_custom_global_row_appears_with_stable_code(self) -> None:
@@ -235,7 +245,7 @@ class PublicFlooringSnapshotWhitelistTests(AdminProjectsRouteCase):
                 self.assertEqual(response.status_code, 200)
                 payload = response.json()
 
-                self.assertEqual(payload["version"], "flooring-v1")
+                self.assertEqual(payload["version"], "flooring-v2")
                 self.assertIn("coverings", payload)
                 self.assertIn("preparations", payload)
                 self.assertIn("layouts", payload)
@@ -256,7 +266,7 @@ class PublicFlooringSnapshotWhitelistTests(AdminProjectsRouteCase):
                 leaked = present_keys & PUBLIC_FLOORING_FORBIDDEN_KEYS
                 self.assertEqual(leaked, set(), f"Публичный снапшот раскрыл internal-поля: {sorted(leaked)}")
 
-    def test_public_snapshot_matches_f1_golden_numbers(self) -> None:
+    def test_public_snapshot_matches_generated_golden_numbers(self) -> None:
         with TemporaryDirectory() as tmp_dir:
             self._root = Path(tmp_dir)
             with self._build_client() as client:
@@ -264,11 +274,14 @@ class PublicFlooringSnapshotWhitelistTests(AdminProjectsRouteCase):
 
                 self.assertEqual(payload, DEFAULT_PUBLIC_FLOORING_SNAPSHOT)
 
-                f1_snapshot = json.loads(_F1_SNAPSHOT_PATH.read_text(encoding="utf-8"))
-                self.assertEqual(payload, f1_snapshot)
+                generated_snapshot = json.loads(_FLOORING_SNAPSHOT_PATH.read_text(encoding="utf-8"))
+                self.assertEqual(payload, generated_snapshot)
 
                 laminate = next(item for item in payload["coverings"] if item["code"] == "laminate")
                 self.assertEqual(laminate["materialPricePerM2"], 930)
+                self.assertNotIn("laborPricePerM2", laminate)
+                straight = next(item for item in payload["layouts"] if item["code"] == "straight")
+                self.assertEqual(straight["laborPricePerM2"], 1000)
                 self.assertEqual(payload["globalAddons"]["thresholdPrice"], 900)
                 self.assertEqual(payload["globalAddons"]["demolitionPricePerM2"], 150)
 
@@ -308,7 +321,12 @@ class PublicFlooringSnapshotWhitelistTests(AdminProjectsRouteCase):
             for index, title in enumerate(("Без подготовки", "Грунтование", "Наливной пол", "Гидроизоляция"))
         ]
         layouts = [
-            {"title": title, "labor_multiplier": 1.1 + index * 0.05, "extra_waste_percent": index + 1}
+            {
+                "title": title,
+                "labor_price_per_m2": 700 + index,
+                "labor_multiplier": 1.1 + index * 0.05,
+                "extra_waste_percent": index + 1,
+            }
             for index, title in enumerate(("Прямая", "Крупный формат", "Клеевая", "Плавающая"))
         ]
         payload = build_public_flooring_snapshot_from_catalog(coverings, preparations, layouts)
@@ -323,6 +341,29 @@ class PublicFlooringSnapshotWhitelistTests(AdminProjectsRouteCase):
         self.assertEqual(
             next(item for item in payload["layouts"] if item["code"] == "glue")["additionalWastePercent"],
             3,
+        )
+        self.assertEqual(
+            next(item for item in payload["layouts"] if item["code"] == "glue")["laborPricePerM2"],
+            702,
+        )
+
+    def test_known_layout_zero_labor_falls_back_to_default_v2_rate(self) -> None:
+        coverings = [
+            {"title": title, "material_price_per_m2": 1000, "labor_price_per_m2": 0, "base_waste_percent": 8, "underlay_mode": "none"}
+            for title in ("Керамогранит", "Кварцвинил", "Ламинат", "Ковролин", "Инженерная доска")
+        ]
+        preparations = [
+            {"title": title, "labor_price_per_m2": 100, "material_price_per_m2": 200}
+            for title in ("Без подготовки", "Грунтование", "Наливной пол", "Гидроизоляция")
+        ]
+        layouts = [
+            {"title": title, "labor_price_per_m2": 0, "labor_multiplier": 1, "extra_waste_percent": 0}
+            for title in ("Прямая", "Крупный формат", "Клеевая", "Плавающая")
+        ]
+        payload = build_public_flooring_snapshot_from_catalog(coverings, preparations, layouts)
+        self.assertEqual(
+            next(item for item in payload["layouts"] if item["code"] == "straight")["laborPricePerM2"],
+            DEFAULT_PUBLIC_FLOORING_SNAPSHOT["layouts"][0]["laborPricePerM2"],
         )
 
 

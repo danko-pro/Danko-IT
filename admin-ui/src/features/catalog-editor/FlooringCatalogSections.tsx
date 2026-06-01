@@ -32,7 +32,6 @@ export function FlooringCoveringsSection({
               <th className="ce-col-id">Код</th>
               <th className="ce-col-title">Название</th>
               <th className="ce-col-num">Материал ₽/м²</th>
-              <th className="ce-col-num">Работа ₽/м²</th>
               <th className="ce-col-num">Отход %</th>
               <th className="ce-col-tech">Расходники</th>
               <th className="ce-col-actions">Действия</th>
@@ -41,7 +40,7 @@ export function FlooringCoveringsSection({
           <tbody>
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={7} className="ce-empty">
+                <td colSpan={6} className="ce-empty">
                   Покрытия не найдены в snapshot.
                 </td>
               </tr>
@@ -51,7 +50,6 @@ export function FlooringCoveringsSection({
                   <td className="ce-col-id ce-mono ce-readonly">{row.code}</td>
                   <td className="ce-readonly">{row.title}</td>
                   <td className="ce-num ce-readonly">{formatMoney(row.rates.materialPricePerM2)}</td>
-                  <td className="ce-num ce-readonly">{formatMoney(row.rates.laborPricePerM2)}</td>
                   <td className="ce-num ce-readonly">{formatPercent(row.rates.baseWastePercent)}</td>
                   <td className="ce-readonly">{consumablesSummaryPerM2(row.rates)}</td>
                   <td>
@@ -137,6 +135,7 @@ export type FlooringLayoutsSectionProps = FormatterProps & {
 export function FlooringLayoutsSection({
   rows,
   onEdit,
+  formatMoney,
   formatPercent,
   children,
 }: FlooringLayoutsSectionProps) {
@@ -149,6 +148,7 @@ export function FlooringLayoutsSection({
             <tr>
               <th className="ce-col-id">Код</th>
               <th className="ce-col-title">Название</th>
+              <th className="ce-col-num">Работа ₽/м²</th>
               <th className="ce-col-num">Коэф. работы</th>
               <th className="ce-col-num">Доп. отход %</th>
               <th className="ce-col-actions">Действия</th>
@@ -157,7 +157,7 @@ export function FlooringLayoutsSection({
           <tbody>
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={5} className="ce-empty">
+                <td colSpan={6} className="ce-empty">
                   Укладки не найдены в snapshot.
                 </td>
               </tr>
@@ -166,6 +166,7 @@ export function FlooringLayoutsSection({
                 <tr key={row.code}>
                   <td className="ce-col-id ce-mono ce-readonly">{row.code}</td>
                   <td className="ce-readonly">{row.title}</td>
+                  <td className="ce-num ce-readonly">{formatMoney(row.rates.laborPricePerM2)}</td>
                   <td className="ce-num ce-readonly">{row.rates.laborFactor}</td>
                   <td className="ce-num ce-readonly">{formatPercent(row.rates.additionalWastePercent)}</td>
                   <td>

@@ -10,7 +10,8 @@ export type FlooringCoveringSnapshotItem = {
   code: FlooringCoveringType;
   title: string;
   materialPricePerM2: number;
-  laborPricePerM2: number;
+  /** Legacy flooring-v1 fallback. In flooring-v2 labor belongs to layout. */
+  laborPricePerM2?: number;
   baseWastePercent: number;
   underlayPricePerM2: number;
   adhesivePricePerM2: number;
@@ -30,6 +31,7 @@ export type FlooringPreparationSnapshotItem = {
 export type FlooringLayoutSnapshotItem = {
   code: FlooringLayoutType;
   title: string;
+  laborPricePerM2?: number;
   laborFactor: number;
   additionalWastePercent: number;
 };
@@ -95,7 +97,6 @@ const EXPECTED_PLINTH_CODES: FlooringPlinthType[] = ["none", "duropolymer", "pai
 
 const COVERING_RATE_KEYS: (keyof FlooringCoveringRates)[] = [
   "materialPricePerM2",
-  "laborPricePerM2",
   "baseWastePercent",
   "underlayPricePerM2",
   "adhesivePricePerM2",
@@ -105,9 +106,16 @@ const COVERING_RATE_KEYS: (keyof FlooringCoveringRates)[] = [
   "toolConsumablesPerM2",
 ];
 
+const LEGACY_COVERING_RATE_KEYS: (keyof FlooringCoveringRates)[] = [
+  ...COVERING_RATE_KEYS,
+  "laborPricePerM2",
+];
+
 const PREPARATION_RATE_KEYS: (keyof FlooringPreparationRates)[] = ["laborPricePerM2", "materialPricePerM2"];
 
-const LAYOUT_RATE_KEYS: (keyof FlooringLayoutRates)[] = ["laborFactor", "additionalWastePercent"];
+const LAYOUT_RATE_KEYS: (keyof FlooringLayoutRates)[] = ["laborPricePerM2", "laborFactor", "additionalWastePercent"];
+
+const LEGACY_LAYOUT_RATE_KEYS: (keyof FlooringLayoutRates)[] = ["laborFactor", "additionalWastePercent"];
 
 const PLINTH_RATE_KEYS: (keyof FlooringPlinthRates)[] = [
   "materialPricePerMeter",
@@ -247,7 +255,11 @@ export function validateFlooringSnapshot(payload: unknown) {
     return { ok: false as const, reason: "version must be a non-empty string" };
   }
 
-  const coveringsValidation = validateCatalogItems(payload.coverings, "coverings", COVERING_RATE_KEYS);
+  const isLegacyV1 = payload.version === "flooring-v1";
+  const coveringRateKeys = isLegacyV1 ? LEGACY_COVERING_RATE_KEYS : COVERING_RATE_KEYS;
+  const layoutRateKeys = isLegacyV1 ? LEGACY_LAYOUT_RATE_KEYS : LAYOUT_RATE_KEYS;
+
+  const coveringsValidation = validateCatalogItems(payload.coverings, "coverings", coveringRateKeys);
   if (!coveringsValidation.ok) {
     return coveringsValidation;
   }
@@ -261,7 +273,7 @@ export function validateFlooringSnapshot(payload: unknown) {
     return preparationsValidation;
   }
 
-  const layoutsValidation = validateCatalogItems(payload.layouts, "layouts", LAYOUT_RATE_KEYS);
+  const layoutsValidation = validateCatalogItems(payload.layouts, "layouts", layoutRateKeys);
   if (!layoutsValidation.ok) {
     return layoutsValidation;
   }
@@ -324,11 +336,12 @@ export function loadFlooringSnapshot(): FlooringSnapshot {
 
 export function getFlooringSnapshotRates(): FlooringSnapshotRates {
   const snapshot = loadFlooringSnapshot();
+  const isLegacyV1 = snapshot.version === "flooring-v1";
 
   return {
     flooringCoveringRates: catalogItemsToRecord(
       snapshot.coverings,
-      COVERING_RATE_KEYS,
+      isLegacyV1 ? LEGACY_COVERING_RATE_KEYS : COVERING_RATE_KEYS,
     ) as Record<FlooringCoveringType, FlooringCoveringRates>,
     flooringPreparationRates: catalogItemsToRecord(
       snapshot.preparations,
@@ -336,7 +349,7 @@ export function getFlooringSnapshotRates(): FlooringSnapshotRates {
     ) as Record<FlooringPreparationType, FlooringPreparationRates>,
     flooringLayoutRates: catalogItemsToRecord(
       snapshot.layouts,
-      LAYOUT_RATE_KEYS,
+      isLegacyV1 ? LEGACY_LAYOUT_RATE_KEYS : LAYOUT_RATE_KEYS,
     ) as Record<FlooringLayoutType, FlooringLayoutRates>,
     flooringPlinthRates: catalogItemsToRecord(
       snapshot.plinthTypes,

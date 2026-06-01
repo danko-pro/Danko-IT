@@ -43,15 +43,16 @@ async def _ensure_f1_global_catalog(repo) -> None:
             )
 
     existing_layouts = {row["title"] for row in await repo.list_estimate_flooring_layouts()}
-    for title, factor, waste in (
-        ("Прямая", 1.1, 5),
-        ("Крупный формат", 1.2, 10),
-        ("Клеевая", 1.25, 5),
-        ("Плавающая", 1.0, 3),
+    for title, labor, factor, waste in (
+        ("Прямая", 1000, 1.1, 5),
+        ("Крупный формат", 2000, 1.2, 10),
+        ("Клеевая", 800, 1.25, 5),
+        ("Плавающая", 1000, 1.0, 3),
     ):
         if title not in existing_layouts:
             await repo.create_estimate_flooring_layout(
                 title=title,
+                labor_price_per_m2=labor,
                 labor_multiplier=factor,
                 extra_waste_percent=waste,
             )

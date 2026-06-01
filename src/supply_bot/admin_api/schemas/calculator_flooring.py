@@ -45,6 +45,7 @@ class CalculatorFlooringPreparationPayload(BaseModel):
 
 class CalculatorFlooringLayoutPayload(BaseModel):
     title: str
+    labor_price_per_m2: float = 0
     labor_multiplier: float = 1
     extra_waste_percent: float = 0
     note: str | None = None

@@ -290,7 +290,7 @@ select.ce-cell-input { appearance: none; cursor: pointer; }
 
 /* --- Локальная сборка покрытия (FA1 spike) --- */
 .ce-flooring-assembly {
-  width: 100%; padding: 14px; border: 1px solid rgba(76,141,255,.35); border-radius: 10px;
+  width: 100%; margin-bottom: 20px; padding: 14px; border: 1px solid rgba(76,141,255,.35); border-radius: 10px;
   background: rgba(76,141,255,.04);
 }
 .ce-flooring-assembly-empty {

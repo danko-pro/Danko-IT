@@ -247,17 +247,46 @@ function FormField({ label, children }: FormFieldProps) {
 
 const ASSEMBLY_ROW_KINDS: CoveringAssemblyRowKind[] = ["work", "material", "consumable", "tool"];
 
+type FlooringAssemblyTarget = "covering" | "preparation" | "layout";
+
+const FLOORING_ASSEMBLY_TARGETS: FlooringAssemblyTarget[] = ["covering", "preparation", "layout"];
+
+const FLOORING_ASSEMBLY_TARGET_LABELS: Record<FlooringAssemblyTarget, string> = {
+  covering: "Покрытие",
+  preparation: "Подготовка",
+  layout: "Укладка",
+};
+
+const FLOORING_ASSEMBLY_TARGET_DEFAULT_SECTION: Record<FlooringAssemblyTarget, FlooringAssemblyLibrarySection> = {
+  covering: "covering",
+  preparation: "preparation",
+  layout: "work",
+};
+
 const ASSEMBLY_APPLY_STATUS =
-  "Расчёт перенесён в поля формы. Чтобы он попал в БД, нажмите «Создать покрытие в БД» или «Сохранить покрытие в БД».";
+  "Расчёт перенесён в выбранную форму ниже. Чтобы он попал в БД, нажмите «Создать» или «Сохранить» в нужном разделе.";
 
 type CoveringAssemblyBlockProps = {
   libraryItems: ReturnType<typeof createAssemblyLibraryItemFromCatalogItem>[];
-  onApplyAggregates: (aggregates: CoveringAssemblyAggregates) => void;
+  target: FlooringAssemblyTarget;
+  onTargetChange: (target: FlooringAssemblyTarget) => void;
+  onApplyAggregates: (
+    target: FlooringAssemblyTarget,
+    aggregates: CoveringAssemblyAggregates,
+    rows: CoveringAssemblyRow[],
+  ) => void;
   onRowsChange?: (rows: CoveringAssemblyRow[]) => void;
   formatMoney: (value: number) => string;
 };
 
-function CoveringAssemblyBlock({ libraryItems: libraryItemsFromCatalog, onApplyAggregates, onRowsChange, formatMoney }: CoveringAssemblyBlockProps) {
+function CoveringAssemblyBlock({
+  libraryItems: libraryItemsFromCatalog,
+  target,
+  onTargetChange,
+  onApplyAggregates,
+  onRowsChange,
+  formatMoney,
+}: CoveringAssemblyBlockProps) {
   const [rows, setRows] = useState<CoveringAssemblyRow[]>([]);
   const [applyStatus, setApplyStatus] = useState<string | null>(null);
   const [librarySection, setLibrarySection] = useState<FlooringAssemblyLibrarySection>("covering");
@@ -315,6 +344,12 @@ function CoveringAssemblyBlock({ libraryItems: libraryItemsFromCatalog, onApplyA
     const items = filterFlooringAssemblyLibraryItems(libraryItemsFromCatalog, section);
     setLibrarySection(section);
     setLibraryItemId(items[0]?.id ?? "");
+  }
+
+  function changeTarget(nextTarget: FlooringAssemblyTarget) {
+    onTargetChange(nextTarget);
+    changeLibrarySection(FLOORING_ASSEMBLY_TARGET_DEFAULT_SECTION[nextTarget]);
+    setApplyStatus(null);
   }
 
   function updateRow(id: string, patch: Partial<CoveringAssemblyRow>) {
@@ -492,9 +527,9 @@ function CoveringAssemblyBlock({ libraryItems: libraryItemsFromCatalog, onApplyA
     <div className="ce-flooring-assembly">
       <div className="ce-flooring-assembly-head">
         <div>
-          <h4 className="ce-flooring-assembly-title">Состав покрытия</h4>
+          <h4 className="ce-flooring-assembly-title">Сборка строки каталога</h4>
           <p className="ce-flooring-assembly-hint">
-            Локальный черновик: строки не сохраняются отдельно, расчёт переносится в поля формы покрытия.
+            Выберите, что собираем: покрытие, подготовку или укладку. Кубики остаются в библиотеке, итог переносится в форму ниже.
           </p>
         </div>
         {rows.length > 0 ? (
@@ -532,7 +567,19 @@ function CoveringAssemblyBlock({ libraryItems: libraryItemsFromCatalog, onApplyA
       </div>
 
       <div className="ce-flooring-assembly-library">
-        <span className="ce-flooring-assembly-library-label">Библиотека кубиков</span>
+        <span className="ce-flooring-assembly-library-label">Собираем</span>
+        <select
+          className="ce-input ce-flooring-assembly-library-select"
+          value={target}
+          onChange={(event) => changeTarget(event.target.value as FlooringAssemblyTarget)}
+        >
+          {FLOORING_ASSEMBLY_TARGETS.map((item) => (
+            <option key={item} value={item}>
+              {FLOORING_ASSEMBLY_TARGET_LABELS[item]}
+            </option>
+          ))}
+        </select>
+        <span className="ce-flooring-assembly-library-label">Кубики</span>
         <select
           className="ce-input ce-flooring-assembly-library-select"
           value={librarySection}
@@ -587,7 +634,7 @@ function CoveringAssemblyBlock({ libraryItems: libraryItemsFromCatalog, onApplyA
             </tr>
           </thead>
           <tbody>
-              {baseRows.length > 0 ? renderSectionRow("База покрытия") : null}
+              {baseRows.length > 0 ? renderSectionRow("База строки") : null}
               {baseRows.map(renderAssemblyRow)}
               {accessoryRows.length > 0 ? renderSectionRow("Расходники и инструмент") : null}
               {accessoryRows.map(renderAssemblyRow)}
@@ -624,11 +671,12 @@ function CoveringAssemblyBlock({ libraryItems: libraryItemsFromCatalog, onApplyA
               </span>
             </div>
             <div className="ce-flooring-assembly-summary-item ce-flooring-assembly-summary-total">
-              <span className="ce-flooring-assembly-summary-label">Итого покрытия</span>
+              <span className="ce-flooring-assembly-summary-label">Итого сборки</span>
               <span className="ce-flooring-assembly-summary-value">{formatMoney(totalPerM2)} ₽/м²</span>
             </div>
           </div>
 
+          {target === "covering" ? (
           <div className="ce-flooring-assembly-summary ce-flooring-assembly-recommended">
             {recommendedEntries.map((entry) => (
               <div key={entry.label} className="ce-flooring-assembly-summary-item">
@@ -639,6 +687,7 @@ function CoveringAssemblyBlock({ libraryItems: libraryItemsFromCatalog, onApplyA
               </div>
             ))}
           </div>
+          ) : null}
 
           <div className="ce-flooring-assembly-actions">
             {applyStatus ? (
@@ -651,11 +700,11 @@ function CoveringAssemblyBlock({ libraryItems: libraryItemsFromCatalog, onApplyA
               type="button"
               className="ce-btn ce-btn-primary ce-btn-sm"
               onClick={() => {
-                onApplyAggregates(aggregates);
+                onApplyAggregates(target, aggregates, rows);
                 setApplyStatus(ASSEMBLY_APPLY_STATUS);
               }}
             >
-              Перенести расчёт в поля формы
+              Перенести расчёт в форму «{FLOORING_ASSEMBLY_TARGET_LABELS[target]}»
             </button>
           </div>
         </>
@@ -695,6 +744,7 @@ export function FlooringCatalogPanel() {
   const [savingLayout, setSavingLayout] = useState(false);
   const [savingAssembly, setSavingAssembly] = useState(false);
   const [assemblyRowsCount, setAssemblyRowsCount] = useState(0);
+  const [assemblyTarget, setAssemblyTarget] = useState<FlooringAssemblyTarget>("covering");
   const [flooringView, setFlooringView] = useState<"catalog" | "library">("catalog");
 
   const reloadSnapshot = useCallback(async () => {
@@ -754,6 +804,60 @@ export function FlooringCatalogPanel() {
     () => assemblyCatalog.map(createAssemblyLibraryItemFromCatalogItem),
     [assemblyCatalog],
   );
+
+  function getAssemblyDefaultTitle(rows: CoveringAssemblyRow[]): string {
+    const enabledRows = rows.filter((row) => row.enabled);
+    return (
+      enabledRows.find((row) => row.kind === "material")?.title.trim() ||
+      enabledRows.find((row) => row.kind === "work")?.title.trim() ||
+      enabledRows[0]?.title.trim() ||
+      ""
+    );
+  }
+
+  function applyAssemblyToTarget(
+    target: FlooringAssemblyTarget,
+    aggregates: CoveringAssemblyAggregates,
+    rows: CoveringAssemblyRow[],
+  ) {
+    const defaultTitle = getAssemblyDefaultTitle(rows);
+    if (target === "covering") {
+      setCoveringDraft((prev) => {
+        const next = applyAggregatesToCoveringDraft(aggregates, prev);
+        return {
+          ...next,
+          title: next.title.trim() || defaultTitle || next.title,
+        };
+      });
+      return;
+    }
+
+    if (target === "preparation") {
+      setPreparationDraft((prev) => ({
+        ...prev,
+        title: prev.title.trim() || defaultTitle || prev.title,
+        laborPricePerM2: aggregates.worksPerM2,
+        materialPricePerM2: aggregates.materialPerM2 + aggregates.consumablesPerM2 + aggregates.toolPerM2,
+      }));
+      return;
+    }
+
+    const enabledRows = rows.filter((row) => row.enabled);
+    const workRow = enabledRows.find((row) => row.kind === "work");
+    const materialRow = enabledRows.find((row) => row.kind === "material");
+    const laborFactor = workRow && workRow.consumptionPerM2 > 0 ? workRow.consumptionPerM2 : layoutDraft.laborFactor;
+    const additionalWastePercent =
+      materialRow && materialRow.consumptionPerM2 > 1
+        ? Math.round((materialRow.consumptionPerM2 - 1) * 10000) / 100
+        : layoutDraft.additionalWastePercent;
+
+    setLayoutDraft((prev) => ({
+      ...prev,
+      title: prev.title.trim() || defaultTitle || prev.title,
+      laborFactor,
+      additionalWastePercent,
+    }));
+  }
 
   function updateCoveringNumber(field: keyof FlooringCoveringDraft, value: string) {
     setCoveringDraft((prev) => ({ ...prev, [field]: normalizeNum(value) }));
@@ -844,7 +948,7 @@ export function FlooringCatalogPanel() {
       return;
     }
     const draftToSave = { ...coveringDraft, title };
-    const assemblyRemain = assemblyRowsCount > 0;
+    const assemblyRemain = assemblyTarget === "covering" && assemblyRowsCount > 0;
     setCreatingCovering(true);
     setError(null);
     setStatusMessage(null);
@@ -1012,7 +1116,7 @@ export function FlooringCatalogPanel() {
       const freshCatalog = await listFlooringCoverings();
       setCoveringCatalog(freshCatalog);
       const saveFeedback = formatCoveringSaveFeedback(title, draftToSave, "update", {
-        assemblyRowsRemain: assemblyRowsCount > 0,
+        assemblyRowsRemain: assemblyTarget === "covering" && assemblyRowsCount > 0,
       });
       if (before && snapshotRatesMatchRow("coverings", title, before, fresh)) {
         setWarningMessage(SNAPSHOT_MAPPING_DELAY_STATUS);
@@ -1391,6 +1495,15 @@ export function FlooringCatalogPanel() {
 
       {flooringView === "catalog" ? (
         <>
+      <CoveringAssemblyBlock
+        libraryItems={assemblyLibraryItems}
+        target={assemblyTarget}
+        onTargetChange={setAssemblyTarget}
+        formatMoney={formatMoney}
+        onRowsChange={(rows) => setAssemblyRowsCount(rows.length)}
+        onApplyAggregates={applyAssemblyToTarget}
+      />
+
       <section className="ce-flooring-section">
         <h3 className="ce-flooring-section-title">Покрытия</h3>
         <div className="ce-table-wrap ce-flooring-table-wrap">
@@ -1504,14 +1617,6 @@ export function FlooringCatalogPanel() {
               </select>
             </FormField>
           </div>
-          <CoveringAssemblyBlock
-            libraryItems={assemblyLibraryItems}
-            formatMoney={formatMoney}
-            onRowsChange={(rows) => setAssemblyRowsCount(rows.length)}
-            onApplyAggregates={(aggregates) =>
-              setCoveringDraft((prev) => applyAggregatesToCoveringDraft(aggregates, prev))
-            }
-          />
         </CatalogForm>
       </section>
 

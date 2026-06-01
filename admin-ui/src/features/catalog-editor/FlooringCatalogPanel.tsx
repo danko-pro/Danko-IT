@@ -43,6 +43,7 @@ import {
   createEmptyAssemblyRow,
   FLOORING_ASSEMBLY_FORMULAS,
   formatCoveringSaveFeedback,
+  getAssemblyFormulaCompactLabel,
   getAssemblyFormulaLabel,
   getAssemblyKindLabel,
   getFormulaFieldVisibility,
@@ -302,17 +303,17 @@ function CoveringAssemblyBlock({ onApplyAggregates, onRowsChange, formatMoney }:
         <table className="ce-table ce-flooring-assembly-table">
           <thead>
             <tr>
-              <th className="ce-col-select">Вкл.</th>
-              <th className="ce-col-select">Тип</th>
+              <th className="ce-col-check">Вкл.</th>
+              <th className="ce-col-kind">Тип</th>
               <th className="ce-col-formula">Формула</th>
               <th className="ce-col-title">Название</th>
-              <th className="ce-col-select">Ед.</th>
+              <th className="ce-col-unit">Ед.</th>
               <th className="ce-col-num">Цена</th>
-              <th className="ce-col-num">Расход на м²</th>
-              <th className="ce-col-num">Фасовка</th>
-              <th className="ce-col-num">Слой мм</th>
-              <th className="ce-col-total">Итого ₽/м²</th>
-              <th className="ce-col-actions">Действие</th>
+              <th className="ce-col-num">Расход</th>
+              <th className="ce-col-num">Фас.</th>
+              <th className="ce-col-num">Слой</th>
+              <th className="ce-col-total">Итого</th>
+              <th className="ce-col-actions">×</th>
             </tr>
           </thead>
           <tbody>
@@ -330,7 +331,7 @@ function CoveringAssemblyBlock({ onApplyAggregates, onRowsChange, formatMoney }:
                   </td>
                   <td>
                     <select
-                      className="ce-cell-input"
+                      className="ce-cell-input ce-cell-select"
                       value={row.kind}
                       onChange={(event) =>
                         updateRow(row.id, { kind: event.target.value as CoveringAssemblyRowKind })
@@ -345,15 +346,16 @@ function CoveringAssemblyBlock({ onApplyAggregates, onRowsChange, formatMoney }:
                   </td>
                   <td>
                     <select
-                      className="ce-cell-input ce-cell-formula"
+                      className="ce-cell-input ce-cell-select ce-cell-formula"
                       value={row.formula}
                       onChange={(event) =>
                         updateRow(row.id, { formula: event.target.value as FlooringAssemblyFormula })
                       }
+                      title={getAssemblyFormulaLabel(row.formula)}
                     >
                       {FLOORING_ASSEMBLY_FORMULAS.map((formula) => (
                         <option key={formula} value={formula}>
-                          {getAssemblyFormulaLabel(formula)}
+                          {getAssemblyFormulaCompactLabel(formula)}
                         </option>
                       ))}
                     </select>
@@ -368,7 +370,7 @@ function CoveringAssemblyBlock({ onApplyAggregates, onRowsChange, formatMoney }:
                   </td>
                   <td>
                     <input
-                      className="ce-cell-input"
+                      className="ce-cell-input ce-cell-unit"
                       value={row.unit}
                       onChange={(event) => updateRow(row.id, { unit: event.target.value })}
                     />

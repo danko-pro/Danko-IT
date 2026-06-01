@@ -312,17 +312,28 @@ select.ce-cell-input { appearance: none; cursor: pointer; }
 .ce-flooring-assembly-title { margin: 0; font-size: 14px; font-weight: 650; }
 .ce-flooring-assembly-hint { margin: 4px 0 0; font-size: 11px; color: var(--ce-muted); line-height: 1.4; }
 .ce-flooring-assembly-toolbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.ce-flooring-assembly-table-wrap { margin-bottom: 10px; max-height: none; }
-.ce-flooring-assembly-table { min-width: 1240px; width: 100%; table-layout: fixed; }
-.ce-flooring-assembly-table .ce-col-num { width: 88px; }
-.ce-flooring-assembly-table .ce-col-formula { width: 168px; }
-.ce-flooring-assembly-table .ce-col-title { width: auto; min-width: 160px; }
-.ce-flooring-assembly-table .ce-col-select { width: 96px; }
-.ce-flooring-assembly-table .ce-col-total { width: 96px; }
-.ce-flooring-assembly-table .ce-col-actions { width: 44px; }
-.ce-flooring-assembly-table .ce-cell-input { height: 34px; min-height: 34px; }
-.ce-flooring-assembly-table select.ce-cell-input { padding-right: 4px; font-size: 11px; }
-.ce-flooring-assembly-table .ce-cell-formula { font-size: 11px; }
+.ce-flooring-assembly-table-wrap { margin-bottom: 10px; max-height: none; border-radius: 8px; }
+.ce-flooring-assembly-table { min-width: 1080px; width: 100%; table-layout: fixed; }
+.ce-flooring-assembly-table thead th { padding: 8px 7px; }
+.ce-flooring-assembly-table tbody td { height: 34px; }
+.ce-flooring-assembly-table .ce-col-check { width: 44px; text-align: center; }
+.ce-flooring-assembly-table .ce-col-kind { width: 100px; }
+.ce-flooring-assembly-table .ce-col-formula { width: 126px; }
+.ce-flooring-assembly-table .ce-col-title { width: auto; min-width: 220px; }
+.ce-flooring-assembly-table .ce-col-unit { width: 58px; }
+.ce-flooring-assembly-table .ce-col-num { width: 82px; }
+.ce-flooring-assembly-table .ce-col-total { width: 86px; }
+.ce-flooring-assembly-table .ce-col-actions { width: 38px; text-align: center; }
+.ce-flooring-assembly-table .ce-cell-input {
+  height: 34px; min-height: 34px; padding: 0 7px; font-size: 12px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.ce-flooring-assembly-table .ce-cell-select { padding-right: 16px; font-size: 11px; }
+.ce-flooring-assembly-table .ce-cell-formula { font-size: 10px; font-weight: 600; }
+.ce-flooring-assembly-table .ce-cell-unit { text-align: center; }
+.ce-flooring-assembly-table .ce-readonly { padding: 0 7px; line-height: 34px; }
+.ce-flooring-assembly-table .ce-total-cell { font-size: 12px; white-space: nowrap; }
+.ce-flooring-assembly-table .ce-row-delete { display: block; margin: 0 auto; }
 .ce-flooring-assembly-summary {
   display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px;
   margin-bottom: 10px; padding: 10px; border-radius: 8px;

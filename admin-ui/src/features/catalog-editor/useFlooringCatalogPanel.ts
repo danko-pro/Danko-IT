@@ -65,6 +65,7 @@ import {
   snapshotHasTitle,
   snapshotRatesMatchRow,
 } from "./flooring-catalog-model";
+import { createFlooringCatalogDeleteActions } from "./flooring-delete-actions";
 
 export function useFlooringCatalogPanel() {
   const [snapshot, setSnapshot] = useState<PublicFlooringSnapshotResponse | null>(null);
@@ -509,6 +510,33 @@ export function useFlooringCatalogPanel() {
     }
   }
 
+  const {
+    handleDeleteAssemblyItem,
+    handleDeleteCovering,
+    handleDeletePreparation,
+    handleDeleteLayout,
+  } = createFlooringCatalogDeleteActions({
+    coveringCatalog,
+    preparationCatalog,
+    layoutCatalog,
+    editingAssemblyId,
+    editingCoveringId,
+    editingPreparationId,
+    editingLayoutId,
+    setSnapshot,
+    setCoveringCatalog,
+    setPreparationCatalog,
+    setLayoutCatalog,
+    setError,
+    setStatusMessage,
+    setWarningMessage,
+    reloadAssemblyCatalog,
+    cancelAssemblyEdit,
+    cancelCoveringEdit,
+    cancelPreparationEdit,
+    cancelLayoutEdit,
+  });
+
   return {
     snapshot,
     loading,
@@ -551,6 +579,7 @@ export function useFlooringCatalogPanel() {
     cancelAssemblyEdit,
     handleCreateAssemblyItem,
     handleUpdateAssemblyItem,
+    handleDeleteAssemblyItem,
     beginEditCovering,
     beginEditPreparation,
     beginEditLayout,
@@ -560,6 +589,9 @@ export function useFlooringCatalogPanel() {
     handleUpdateCovering,
     handleUpdatePreparation,
     handleUpdateLayout,
+    handleDeleteCovering,
+    handleDeletePreparation,
+    handleDeleteLayout,
     setAssemblyRowsCount,
     formatMoney,
     formatPercent,

@@ -10,6 +10,7 @@ type FormatterProps = {
 export type FlooringCoveringsSectionProps = FormatterProps & {
   rows: FlooringSnapshotDisplayRow[];
   onEdit: (row: FlooringSnapshotDisplayRow) => void;
+  onDelete: (row: FlooringSnapshotDisplayRow) => void;
   consumablesSummaryPerM2: (rates: Record<string, number>) => string;
   children?: ReactNode;
 };
@@ -17,6 +18,7 @@ export type FlooringCoveringsSectionProps = FormatterProps & {
 export function FlooringCoveringsSection({
   rows,
   onEdit,
+  onDelete,
   formatMoney,
   formatPercent,
   consumablesSummaryPerM2,
@@ -53,9 +55,14 @@ export function FlooringCoveringsSection({
                   <td className="ce-num ce-readonly">{formatPercent(row.rates.baseWastePercent)}</td>
                   <td className="ce-readonly">{consumablesSummaryPerM2(row.rates)}</td>
                   <td>
-                    <button type="button" className="ce-btn ce-btn-sm" disabled={!row.catalogId} onClick={() => onEdit(row)}>
-                      Редактировать
-                    </button>
+                    <div className="ce-toolbar-group">
+                      <button type="button" className="ce-btn ce-btn-sm" disabled={!row.catalogId} onClick={() => onEdit(row)}>
+                        Редактировать
+                      </button>
+                      <button type="button" className="ce-row-delete" disabled={!row.catalogId} onClick={() => onDelete(row)}>
+                        Удалить
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))
@@ -72,12 +79,14 @@ export function FlooringCoveringsSection({
 export type FlooringPreparationsSectionProps = FormatterProps & {
   rows: FlooringSnapshotDisplayRow[];
   onEdit: (row: FlooringSnapshotDisplayRow) => void;
+  onDelete: (row: FlooringSnapshotDisplayRow) => void;
   children?: ReactNode;
 };
 
 export function FlooringPreparationsSection({
   rows,
   onEdit,
+  onDelete,
   formatMoney,
   children,
 }: FlooringPreparationsSectionProps) {
@@ -110,9 +119,14 @@ export function FlooringPreparationsSection({
                   <td className="ce-num ce-readonly">{formatMoney(row.rates.laborPricePerM2)}</td>
                   <td className="ce-num ce-readonly">{formatMoney(row.rates.materialPricePerM2)}</td>
                   <td>
-                    <button type="button" className="ce-btn ce-btn-sm" disabled={!row.catalogId} onClick={() => onEdit(row)}>
-                      Редактировать
-                    </button>
+                    <div className="ce-toolbar-group">
+                      <button type="button" className="ce-btn ce-btn-sm" disabled={!row.catalogId} onClick={() => onEdit(row)}>
+                        Редактировать
+                      </button>
+                      <button type="button" className="ce-row-delete" disabled={!row.catalogId} onClick={() => onDelete(row)}>
+                        Удалить
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))
@@ -129,12 +143,14 @@ export function FlooringPreparationsSection({
 export type FlooringLayoutsSectionProps = FormatterProps & {
   rows: FlooringSnapshotDisplayRow[];
   onEdit: (row: FlooringSnapshotDisplayRow) => void;
+  onDelete: (row: FlooringSnapshotDisplayRow) => void;
   children?: ReactNode;
 };
 
 export function FlooringLayoutsSection({
   rows,
   onEdit,
+  onDelete,
   formatMoney,
   formatPercent,
   children,
@@ -170,9 +186,14 @@ export function FlooringLayoutsSection({
                   <td className="ce-num ce-readonly">{row.rates.laborFactor}</td>
                   <td className="ce-num ce-readonly">{formatPercent(row.rates.additionalWastePercent)}</td>
                   <td>
-                    <button type="button" className="ce-btn ce-btn-sm" disabled={!row.catalogId} onClick={() => onEdit(row)}>
-                      Редактировать
-                    </button>
+                    <div className="ce-toolbar-group">
+                      <button type="button" className="ce-btn ce-btn-sm" disabled={!row.catalogId} onClick={() => onEdit(row)}>
+                        Редактировать
+                      </button>
+                      <button type="button" className="ce-row-delete" disabled={!row.catalogId} onClick={() => onDelete(row)}>
+                        Удалить
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))

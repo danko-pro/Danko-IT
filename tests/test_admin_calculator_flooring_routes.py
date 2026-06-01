@@ -302,6 +302,83 @@ class AdminCalculatorFlooringRouteTests(AdminProjectsRouteCase):
                 self.assertEqual(duplicate.status_code, 409)
                 self.assertIn("already exists", duplicate.json()["detail"])
 
+    def test_delete_flooring_catalog_rows_soft_deletes_global_items(self) -> None:
+        with TemporaryDirectory() as tmp_dir:
+            self._root = Path(tmp_dir)
+            suffix = uuid4().hex
+
+            with self._build_client() as client:
+                self._login_admin(client)
+
+                covering = client.post(
+                    "/api/calculator/flooring/coverings",
+                    json=_minimal_covering_kwargs(title=f"Удаляемое покрытие {suffix}"),
+                ).json()
+                preparation = client.post(
+                    "/api/calculator/flooring/preparations",
+                    json={"title": f"Удаляемая подготовка {suffix}", "labor_price_per_m2": 100},
+                ).json()
+                layout = client.post(
+                    "/api/calculator/flooring/layouts",
+                    json={"title": f"Удаляемая укладка {suffix}", "labor_price_per_m2": 100},
+                ).json()
+                assembly = client.post(
+                    "/api/calculator/flooring/assembly-items",
+                    json={
+                        "source_code": f"delete-test-{suffix}",
+                        "section": "work",
+                        "title": f"Удаляемый кубик {suffix}",
+                        "kind": "work",
+                        "formula": "flat_per_m2",
+                        "unit": "m2",
+                        "price": 100,
+                    },
+                ).json()
+
+                self.assertEqual(
+                    client.delete(f"/api/calculator/flooring/coverings/{covering['id']}").json(),
+                    {"id": covering["id"], "deleted": True},
+                )
+                self.assertEqual(
+                    client.delete(f"/api/calculator/flooring/preparations/{preparation['id']}").json(),
+                    {"id": preparation["id"], "deleted": True},
+                )
+                self.assertEqual(
+                    client.delete(f"/api/calculator/flooring/layouts/{layout['id']}").json(),
+                    {"id": layout["id"], "deleted": True},
+                )
+                self.assertEqual(
+                    client.delete(f"/api/calculator/flooring/assembly-items/{assembly['id']}").json(),
+                    {"id": assembly["id"], "deleted": True},
+                )
+
+                self.assertFalse(
+                    any(item["id"] == covering["id"] for item in client.get("/api/calculator/flooring/coverings").json())
+                )
+                self.assertFalse(
+                    any(
+                        item["id"] == preparation["id"]
+                        for item in client.get("/api/calculator/flooring/preparations").json()
+                    )
+                )
+                self.assertFalse(
+                    any(item["id"] == layout["id"] for item in client.get("/api/calculator/flooring/layouts").json())
+                )
+                self.assertFalse(
+                    any(
+                        item["id"] == assembly["id"]
+                        for item in client.get("/api/calculator/flooring/assembly-items").json()
+                    )
+                )
+
+    def test_delete_flooring_catalog_missing_row_returns_not_found(self) -> None:
+        with TemporaryDirectory() as tmp_dir:
+            self._root = Path(tmp_dir)
+
+            with self._build_client() as client:
+                self._login_admin(client)
+                self.assertEqual(client.delete("/api/calculator/flooring/coverings/999999").status_code, 404)
+
     def test_negative_material_price_is_rejected(self) -> None:
         with TemporaryDirectory() as tmp_dir:
             self._root = Path(tmp_dir)

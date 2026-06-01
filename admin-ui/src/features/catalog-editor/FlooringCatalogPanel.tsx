@@ -259,22 +259,29 @@ const FLOORING_ASSEMBLY_TARGET_LABELS: Record<FlooringAssemblyTarget, string> = 
 
 const FLOORING_ASSEMBLY_TARGET_DEFAULT_SECTION: Record<FlooringAssemblyTarget, FlooringAssemblyLibrarySection> = {
   covering: "covering",
-  preparation: "preparation",
+  preparation: "work",
   layout: "work",
 };
 
+const FLOORING_ASSEMBLY_TARGET_LIBRARY_SECTIONS: Record<FlooringAssemblyTarget, FlooringAssemblyLibrarySection[]> = {
+  covering: ["covering", "work", "consumable", "tool"],
+  preparation: ["work"],
+  layout: ["work"],
+};
+
 const ASSEMBLY_APPLY_STATUS =
-  "Расчёт перенесён в выбранную форму ниже. Чтобы он попал в БД, нажмите «Создать» или «Сохранить» в нужном разделе.";
+  "Строка создана в выбранном разделе. Проверьте её в таблице ниже.";
 
 type CoveringAssemblyBlockProps = {
   libraryItems: ReturnType<typeof createAssemblyLibraryItemFromCatalogItem>[];
   target: FlooringAssemblyTarget;
   onTargetChange: (target: FlooringAssemblyTarget) => void;
-  onApplyAggregates: (
+  onCreateFromAssembly: (
     target: FlooringAssemblyTarget,
+    title: string,
     aggregates: CoveringAssemblyAggregates,
     rows: CoveringAssemblyRow[],
-  ) => void;
+  ) => Promise<boolean>;
   onRowsChange?: (rows: CoveringAssemblyRow[]) => void;
   formatMoney: (value: number) => string;
 };
@@ -283,7 +290,7 @@ function CoveringAssemblyBlock({
   libraryItems: libraryItemsFromCatalog,
   target,
   onTargetChange,
-  onApplyAggregates,
+  onCreateFromAssembly,
   onRowsChange,
   formatMoney,
 }: CoveringAssemblyBlockProps) {
@@ -291,6 +298,8 @@ function CoveringAssemblyBlock({
   const [applyStatus, setApplyStatus] = useState<string | null>(null);
   const [librarySection, setLibrarySection] = useState<FlooringAssemblyLibrarySection>("covering");
   const [libraryItemId, setLibraryItemId] = useState("");
+  const [entryTitle, setEntryTitle] = useState("");
+  const [creating, setCreating] = useState(false);
 
   useEffect(() => {
     onRowsChange?.(rows);
@@ -314,6 +323,8 @@ function CoveringAssemblyBlock({
     () => rows.filter((row) => row.kind === "consumable" || row.kind === "tool"),
     [rows],
   );
+  const availableLibrarySections = FLOORING_ASSEMBLY_TARGET_LIBRARY_SECTIONS[target];
+  const availableRowKinds: CoveringAssemblyRowKind[] = target === "covering" ? ASSEMBLY_ROW_KINDS : ["work"];
   const libraryItems = useMemo(
     () => filterFlooringAssemblyLibraryItems(libraryItemsFromCatalog, librarySection),
     [libraryItemsFromCatalog, librarySection],
@@ -337,6 +348,7 @@ function CoveringAssemblyBlock({
   function addLibraryItem() {
     if (!selectedLibraryItem) return;
     setApplyStatus(null);
+    setEntryTitle((value) => value.trim() || selectedLibraryItem.title);
     setRows((prev) => [...prev, createAssemblyRowFromLibraryItem(selectedLibraryItem)]);
   }
 
@@ -349,6 +361,8 @@ function CoveringAssemblyBlock({
   function changeTarget(nextTarget: FlooringAssemblyTarget) {
     onTargetChange(nextTarget);
     changeLibrarySection(FLOORING_ASSEMBLY_TARGET_DEFAULT_SECTION[nextTarget]);
+    setRows([]);
+    setEntryTitle("");
     setApplyStatus(null);
   }
 
@@ -410,7 +424,7 @@ function CoveringAssemblyBlock({
               updateRow(row.id, { kind: event.target.value as CoveringAssemblyRowKind })
             }
           >
-            {ASSEMBLY_ROW_KINDS.map((kind) => (
+            {availableRowKinds.map((kind) => (
               <option key={kind} value={kind}>
                 {getAssemblyKindLabel(kind)}
               </option>
@@ -534,6 +548,8 @@ function CoveringAssemblyBlock({
         </div>
         {rows.length > 0 ? (
           <div className="ce-flooring-assembly-toolbar">
+            {target === "covering" ? (
+              <>
             <button
               type="button"
               className="ce-btn ce-btn-sm"
@@ -562,6 +578,16 @@ function CoveringAssemblyBlock({
             >
               + Инструмент
             </button>
+              </>
+            ) : (
+              <button
+                type="button"
+                className="ce-btn ce-btn-sm"
+                onClick={() => addRow({ kind: "work", unit: "m2", formula: "flat_per_m2", consumptionPerM2: 1 })}
+              >
+                + Работа
+              </button>
+            )}
           </div>
         ) : null}
       </div>
@@ -579,13 +605,19 @@ function CoveringAssemblyBlock({
             </option>
           ))}
         </select>
+        <input
+          className="ce-input ce-flooring-assembly-library-item"
+          value={entryTitle}
+          onChange={(event) => setEntryTitle(event.target.value)}
+          placeholder={`Название: ${FLOORING_ASSEMBLY_TARGET_LABELS[target].toLowerCase()}`}
+        />
         <span className="ce-flooring-assembly-library-label">Кубики</span>
         <select
           className="ce-input ce-flooring-assembly-library-select"
           value={librarySection}
           onChange={(event) => changeLibrarySection(event.target.value as FlooringAssemblyLibrarySection)}
         >
-          {FLOORING_ASSEMBLY_LIBRARY_SECTIONS.map((section) => (
+          {availableLibrarySections.map((section) => (
             <option key={section} value={section}>
               {getFlooringAssemblyLibrarySectionLabel(section)}
             </option>
@@ -610,10 +642,24 @@ function CoveringAssemblyBlock({
 
       {rows.length === 0 ? (
         <div className="ce-flooring-assembly-empty">
-          <p>Добавьте строки состава или загрузите пример.</p>
-          <button type="button" className="ce-btn ce-btn-sm" onClick={loadPreset}>
-            Загрузить пример Керамогранит 120×60
-          </button>
+          <p>
+            {target === "covering"
+              ? "Добавьте материал, работу и расходники покрытия или загрузите пример."
+              : "Добавьте рабочую строку из библиотеки или вручную."}
+          </p>
+          {target === "covering" ? (
+            <button type="button" className="ce-btn ce-btn-sm" onClick={loadPreset}>
+              Загрузить пример Керамогранит 120×60
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="ce-btn ce-btn-sm"
+              onClick={() => addRow({ kind: "work", unit: "m2", formula: "flat_per_m2", consumptionPerM2: 1 })}
+            >
+              + Работа
+            </button>
+          )}
         </div>
       ) : (
       <div className="ce-table-wrap ce-flooring-assembly-table-wrap">
@@ -699,12 +745,19 @@ function CoveringAssemblyBlock({
             <button
               type="button"
               className="ce-btn ce-btn-primary ce-btn-sm"
-              onClick={() => {
-                onApplyAggregates(target, aggregates, rows);
-                setApplyStatus(ASSEMBLY_APPLY_STATUS);
+              disabled={creating}
+              onClick={async () => {
+                setCreating(true);
+                const saved = await onCreateFromAssembly(target, entryTitle, aggregates, rows);
+                setCreating(false);
+                if (saved) {
+                  setApplyStatus(ASSEMBLY_APPLY_STATUS);
+                  setRows([]);
+                  setEntryTitle("");
+                }
               }}
             >
-              Перенести расчёт в форму «{FLOORING_ASSEMBLY_TARGET_LABELS[target]}»
+              {creating ? "Запись…" : `Добавить в ${FLOORING_ASSEMBLY_TARGET_LABELS[target]}`}
             </button>
           </div>
         </>
@@ -736,9 +789,6 @@ export function FlooringCatalogPanel() {
   const [editingAssemblyId, setEditingAssemblyId] = useState<number | null>(null);
 
   const [creatingAssembly, setCreatingAssembly] = useState(false);
-  const [creatingCovering, setCreatingCovering] = useState(false);
-  const [creatingPreparation, setCreatingPreparation] = useState(false);
-  const [creatingLayout, setCreatingLayout] = useState(false);
   const [savingCovering, setSavingCovering] = useState(false);
   const [savingPreparation, setSavingPreparation] = useState(false);
   const [savingLayout, setSavingLayout] = useState(false);
@@ -815,48 +865,98 @@ export function FlooringCatalogPanel() {
     );
   }
 
-  function applyAssemblyToTarget(
+  async function createAssemblyTargetRow(
     target: FlooringAssemblyTarget,
+    rawTitle: string,
     aggregates: CoveringAssemblyAggregates,
     rows: CoveringAssemblyRow[],
-  ) {
-    const defaultTitle = getAssemblyDefaultTitle(rows);
+  ): Promise<boolean> {
+    const title = rawTitle.trim() || getAssemblyDefaultTitle(rows);
+    if (!title) {
+      setError("Укажите название строки каталога.");
+      return false;
+    }
+    if (rows.filter((row) => row.enabled).length === 0) {
+      setError("Добавьте хотя бы одну строку сборки.");
+      return false;
+    }
+    if (target !== "covering" && rows.some((row) => row.enabled && row.kind !== "work")) {
+      setError("Для подготовки и укладки можно использовать только рабочие строки.");
+      return false;
+    }
+
+    setError(null);
+    setStatusMessage(null);
+    setWarningMessage(null);
+
     if (target === "covering") {
-      setCoveringDraft((prev) => {
-        const next = applyAggregatesToCoveringDraft(aggregates, prev);
-        return {
-          ...next,
-          title: next.title.trim() || defaultTitle || next.title,
-        };
-      });
-      return;
+      try {
+        const draft = applyAggregatesToCoveringDraft(aggregates, {
+          ...emptyCoveringDraft(),
+          title,
+        });
+        await createFlooringCovering(coveringDraftToPayload(draft));
+        const [fresh, freshCatalog] = await Promise.all([fetchFlooringSnapshot(), listFlooringCoverings()]);
+        setSnapshot(fresh);
+        setCoveringCatalog(freshCatalog);
+        if (!snapshotHasTitle(fresh, "coverings", title)) {
+          setWarningMessage(SNAPSHOT_MISSING_WARNING);
+        }
+        setStatusMessage(`Покрытие «${title}» создано из сборки.`);
+        return true;
+      } catch (cause) {
+        setError(cause instanceof Error ? cause.message : "Не удалось создать покрытие из сборки.");
+        return false;
+      }
     }
 
     if (target === "preparation") {
-      setPreparationDraft((prev) => ({
-        ...prev,
-        title: prev.title.trim() || defaultTitle || prev.title,
-        laborPricePerM2: aggregates.worksPerM2,
-        materialPricePerM2: aggregates.materialPerM2 + aggregates.consumablesPerM2 + aggregates.toolPerM2,
-      }));
-      return;
+      try {
+        await createFlooringPreparation(
+          preparationDraftToPayload({
+            ...emptyPreparationDraft(),
+            title,
+            laborPricePerM2: aggregates.worksPerM2,
+            materialPricePerM2: 0,
+          }),
+        );
+        const [fresh, freshCatalog] = await Promise.all([fetchFlooringSnapshot(), listFlooringPreparations()]);
+        setSnapshot(fresh);
+        setPreparationCatalog(freshCatalog);
+        if (!snapshotHasTitle(fresh, "preparations", title)) {
+          setWarningMessage(SNAPSHOT_MISSING_WARNING);
+        }
+        setStatusMessage(`Подготовка «${title}» создана из рабочей строки.`);
+        return true;
+      } catch (cause) {
+        setError(cause instanceof Error ? cause.message : "Не удалось создать подготовку из сборки.");
+        return false;
+      }
     }
 
-    const enabledRows = rows.filter((row) => row.enabled);
-    const workRow = enabledRows.find((row) => row.kind === "work");
-    const materialRow = enabledRows.find((row) => row.kind === "material");
-    const laborFactor = workRow && workRow.consumptionPerM2 > 0 ? workRow.consumptionPerM2 : layoutDraft.laborFactor;
-    const additionalWastePercent =
-      materialRow && materialRow.consumptionPerM2 > 1
-        ? Math.round((materialRow.consumptionPerM2 - 1) * 10000) / 100
-        : layoutDraft.additionalWastePercent;
-
-    setLayoutDraft((prev) => ({
-      ...prev,
-      title: prev.title.trim() || defaultTitle || prev.title,
-      laborFactor,
-      additionalWastePercent,
-    }));
+    const enabledRows = rows.filter((row) => row.enabled && row.kind === "work");
+    const coefficient = enabledRows.find((row) => row.consumptionPerM2 > 0)?.consumptionPerM2 ?? 1;
+    try {
+      await createFlooringLayout(
+        layoutDraftToPayload({
+          ...emptyLayoutDraft(),
+          title,
+          laborFactor: coefficient,
+          additionalWastePercent: 0,
+        }),
+      );
+      const [fresh, freshCatalog] = await Promise.all([fetchFlooringSnapshot(), listFlooringLayouts()]);
+      setSnapshot(fresh);
+      setLayoutCatalog(freshCatalog);
+      if (!snapshotHasTitle(fresh, "layouts", title)) {
+        setWarningMessage(SNAPSHOT_MISSING_WARNING);
+      }
+      setStatusMessage(`Укладка «${title}» создана из рабочей строки. По текущему snapshot-контракту сохраняется коэффициент ${coefficient}.`);
+      return true;
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Не удалось создать укладку из сборки.");
+      return false;
+    }
   }
 
   function updateCoveringNumber(field: keyof FlooringCoveringDraft, value: string) {
@@ -938,66 +1038,6 @@ export function FlooringCatalogPanel() {
       setError(cause instanceof Error ? cause.message : "Не удалось сохранить кубик.");
     } finally {
       setSavingAssembly(false);
-    }
-  }
-
-  async function handleCreateCovering() {
-    const title = coveringDraft.title.trim();
-    if (!title) {
-      setError("Укажите название покрытия.");
-      return;
-    }
-    const draftToSave = { ...coveringDraft, title };
-    const assemblyRemain = assemblyTarget === "covering" && assemblyRowsCount > 0;
-    setCreatingCovering(true);
-    setError(null);
-    setStatusMessage(null);
-    setWarningMessage(null);
-    try {
-      await createFlooringCovering(coveringDraftToPayload(draftToSave));
-      const fresh = await fetchFlooringSnapshot();
-      setSnapshot(fresh);
-      const saveFeedback = formatCoveringSaveFeedback(title, draftToSave, "create", {
-        assemblyRowsRemain: assemblyRemain,
-      });
-      if (!snapshotHasTitle(fresh, "coverings", title)) {
-        setWarningMessage(SNAPSHOT_MISSING_WARNING);
-        setStatusMessage(saveFeedback);
-      } else {
-        setStatusMessage(saveFeedback);
-      }
-      setCoveringDraft(emptyCoveringDraft());
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Не удалось создать покрытие.");
-    } finally {
-      setCreatingCovering(false);
-    }
-  }
-
-  async function handleCreatePreparation() {
-    const title = preparationDraft.title.trim();
-    if (!title) {
-      setError("Укажите название подготовки.");
-      return;
-    }
-    setCreatingPreparation(true);
-    setError(null);
-    setStatusMessage(null);
-    setWarningMessage(null);
-    try {
-      await createFlooringPreparation(preparationDraftToPayload({ ...preparationDraft, title }));
-      const fresh = await fetchFlooringSnapshot();
-      setSnapshot(fresh);
-      if (!snapshotHasTitle(fresh, "preparations", title)) {
-        setWarningMessage(SNAPSHOT_MISSING_WARNING);
-      } else {
-        setStatusMessage(`Подготовка «${title}» создана.`);
-      }
-      setPreparationDraft(emptyPreparationDraft());
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Не удалось создать подготовку.");
-    } finally {
-      setCreatingPreparation(false);
     }
   }
 
@@ -1192,33 +1232,6 @@ export function FlooringCatalogPanel() {
       setError(cause instanceof Error ? cause.message : "Не удалось сохранить укладку.");
     } finally {
       setSavingLayout(false);
-    }
-  }
-
-  async function handleCreateLayout() {
-    const title = layoutDraft.title.trim();
-    if (!title) {
-      setError("Укажите название укладки.");
-      return;
-    }
-    setCreatingLayout(true);
-    setError(null);
-    setStatusMessage(null);
-    setWarningMessage(null);
-    try {
-      await createFlooringLayout(layoutDraftToPayload({ ...layoutDraft, title }));
-      const fresh = await fetchFlooringSnapshot();
-      setSnapshot(fresh);
-      if (!snapshotHasTitle(fresh, "layouts", title)) {
-        setWarningMessage(SNAPSHOT_MISSING_WARNING);
-      } else {
-        setStatusMessage(`Укладка «${title}» создана.`);
-      }
-      setLayoutDraft(emptyLayoutDraft());
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Не удалось создать укладку.");
-    } finally {
-      setCreatingLayout(false);
     }
   }
 
@@ -1501,7 +1514,7 @@ export function FlooringCatalogPanel() {
         onTargetChange={setAssemblyTarget}
         formatMoney={formatMoney}
         onRowsChange={(rows) => setAssemblyRowsCount(rows.length)}
-        onApplyAggregates={applyAssemblyToTarget}
+        onCreateFromAssembly={createAssemblyTargetRow}
       />
 
       <section className="ce-flooring-section">
@@ -1552,12 +1565,13 @@ export function FlooringCatalogPanel() {
           </table>
         </div>
 
+        {editingCoveringId !== null ? (
         <CatalogForm
-          title={editingCoveringId ? "Редактировать покрытие" : "Добавить покрытие"}
-          mode={editingCoveringId ? "edit" : "create"}
-          submitting={editingCoveringId ? savingCovering : creatingCovering}
-          onSubmit={() => void (editingCoveringId ? handleUpdateCovering() : handleCreateCovering())}
-          onCancel={editingCoveringId ? cancelCoveringEdit : undefined}
+          title="Редактировать покрытие"
+          mode="edit"
+          submitting={savingCovering}
+          onSubmit={() => void handleUpdateCovering()}
+          onCancel={cancelCoveringEdit}
         >
           <div className="ce-flooring-form-fields">
             <FormField label="Название">
@@ -1618,6 +1632,7 @@ export function FlooringCatalogPanel() {
             </FormField>
           </div>
         </CatalogForm>
+        ) : null}
       </section>
 
       <section className="ce-flooring-section">
@@ -1664,12 +1679,13 @@ export function FlooringCatalogPanel() {
           </table>
         </div>
 
+        {editingPreparationId !== null ? (
         <CatalogForm
-          title={editingPreparationId ? "Редактировать подготовку" : "Добавить подготовку"}
-          mode={editingPreparationId ? "edit" : "create"}
-          submitting={editingPreparationId ? savingPreparation : creatingPreparation}
-          onSubmit={() => void (editingPreparationId ? handleUpdatePreparation() : handleCreatePreparation())}
-          onCancel={editingPreparationId ? cancelPreparationEdit : undefined}
+          title="Редактировать подготовку"
+          mode="edit"
+          submitting={savingPreparation}
+          onSubmit={() => void handleUpdatePreparation()}
+          onCancel={cancelPreparationEdit}
         >
           <div className="ce-flooring-form-fields">
           <FormField label="Название">
@@ -1700,6 +1716,7 @@ export function FlooringCatalogPanel() {
           </FormField>
           </div>
         </CatalogForm>
+        ) : null}
       </section>
 
       <section className="ce-flooring-section">
@@ -1746,12 +1763,13 @@ export function FlooringCatalogPanel() {
           </table>
         </div>
 
+        {editingLayoutId !== null ? (
         <CatalogForm
-          title={editingLayoutId ? "Редактировать укладку" : "Добавить укладку"}
-          mode={editingLayoutId ? "edit" : "create"}
-          submitting={editingLayoutId ? savingLayout : creatingLayout}
-          onSubmit={() => void (editingLayoutId ? handleUpdateLayout() : handleCreateLayout())}
-          onCancel={editingLayoutId ? cancelLayoutEdit : undefined}
+          title="Редактировать укладку"
+          mode="edit"
+          submitting={savingLayout}
+          onSubmit={() => void handleUpdateLayout()}
+          onCancel={cancelLayoutEdit}
         >
           <div className="ce-flooring-form-fields">
           <FormField label="Название">
@@ -1783,6 +1801,7 @@ export function FlooringCatalogPanel() {
           </FormField>
           </div>
         </CatalogForm>
+        ) : null}
       </section>
         </>
       ) : null}

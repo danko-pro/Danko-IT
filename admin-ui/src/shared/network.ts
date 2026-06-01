@@ -141,6 +141,12 @@ function localizeApiError(detail: string | undefined, status: number, statusText
   if (detail === "Password must contain at least 8 characters") {
     return "Пароль должен содержать минимум 8 символов.";
   }
+  if (detail?.includes("Flooring catalog item")) {
+    return "Позиция с таким названием или кодом уже есть в каталоге полов.";
+  }
+  if (detail?.includes("Catalog item") || detail?.includes("catalog item")) {
+    return "Позиция с таким названием или кодом уже есть в каталоге.";
+  }
   if (detail?.includes("already exists")) {
     return "Пользователь с такой почтой уже зарегистрирован.";
   }

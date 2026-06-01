@@ -114,3 +114,27 @@ export async function updateFlooringAssemblyItem(
     body: JSON.stringify(payload),
   });
 }
+
+export async function deleteFlooringCovering(id: number): Promise<{ id: number; deleted: boolean }> {
+  return fetchJson<{ id: number; deleted: boolean }>(`${FLOORING_API}/coverings/${id}`, {
+    method: "DELETE",
+  });
+}
+
+export async function deleteFlooringPreparation(id: number): Promise<{ id: number; deleted: boolean }> {
+  return fetchJson<{ id: number; deleted: boolean }>(`${FLOORING_API}/preparations/${id}`, {
+    method: "DELETE",
+  });
+}
+
+export async function deleteFlooringLayout(id: number): Promise<{ id: number; deleted: boolean }> {
+  return fetchJson<{ id: number; deleted: boolean }>(`${FLOORING_API}/layouts/${id}`, {
+    method: "DELETE",
+  });
+}
+
+export async function deleteFlooringAssemblyItem(id: number): Promise<{ id: number; deleted: boolean }> {
+  return fetchJson<{ id: number; deleted: boolean }>(`${FLOORING_API}/assembly-items/${id}`, {
+    method: "DELETE",
+  });
+}

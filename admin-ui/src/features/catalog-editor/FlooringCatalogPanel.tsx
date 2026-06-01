@@ -55,6 +55,7 @@ export function FlooringCatalogPanel() {
     cancelAssemblyEdit,
     handleCreateAssemblyItem,
     handleUpdateAssemblyItem,
+    handleDeleteAssemblyItem,
     beginEditCovering,
     beginEditPreparation,
     beginEditLayout,
@@ -64,6 +65,9 @@ export function FlooringCatalogPanel() {
     handleUpdateCovering,
     handleUpdatePreparation,
     handleUpdateLayout,
+    handleDeleteCovering,
+    handleDeletePreparation,
+    handleDeleteLayout,
     setAssemblyRowsCount,
     formatMoney,
     formatPercent,
@@ -140,6 +144,7 @@ export function FlooringCatalogPanel() {
           creatingAssembly={creatingAssembly}
           savingAssembly={savingAssembly}
           onBeginEditAssemblyItem={beginEditAssemblyItem}
+          onDeleteAssemblyItem={handleDeleteAssemblyItem}
           onCancelAssemblyEdit={cancelAssemblyEdit}
           onSubmitAssemblyItem={() => {
             void (editingAssemblyId ? handleUpdateAssemblyItem() : handleCreateAssemblyItem());
@@ -163,6 +168,7 @@ export function FlooringCatalogPanel() {
       <FlooringCoveringsSection
         rows={coveringRows}
         onEdit={beginEditCovering}
+        onDelete={handleDeleteCovering}
         formatMoney={formatMoney}
         formatPercent={formatPercent}
         consumablesSummaryPerM2={consumablesSummaryPerM2}
@@ -183,6 +189,7 @@ export function FlooringCatalogPanel() {
       <FlooringPreparationsSection
         rows={preparationRows}
         onEdit={beginEditPreparation}
+        onDelete={handleDeletePreparation}
         formatMoney={formatMoney}
         formatPercent={formatPercent}
       >
@@ -202,6 +209,7 @@ export function FlooringCatalogPanel() {
       <FlooringLayoutsSection
         rows={layoutRows}
         onEdit={beginEditLayout}
+        onDelete={handleDeleteLayout}
         formatMoney={formatMoney}
         formatPercent={formatPercent}
       >

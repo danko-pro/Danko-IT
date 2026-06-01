@@ -26,6 +26,7 @@ export type FlooringAssemblyLibraryPanelProps = {
   creatingAssembly: boolean;
   savingAssembly: boolean;
   onBeginEditAssemblyItem: (item: FlooringAssemblyItemDto) => void;
+  onDeleteAssemblyItem: (item: FlooringAssemblyItemDto) => void;
   onCancelAssemblyEdit: () => void;
   onSubmitAssemblyItem: () => void;
   onAssemblyDraftChange: Dispatch<SetStateAction<FlooringAssemblyItemDraft>>;
@@ -40,6 +41,7 @@ export function FlooringAssemblyLibraryPanel({
   creatingAssembly,
   savingAssembly,
   onBeginEditAssemblyItem,
+  onDeleteAssemblyItem,
   onCancelAssemblyEdit,
   onSubmitAssemblyItem,
   onAssemblyDraftChange,
@@ -92,9 +94,14 @@ export function FlooringAssemblyLibraryPanel({
                   <td className="ce-num ce-readonly">{item.package_size ?? "—"}</td>
                   <td className="ce-num ce-readonly">{item.layer_mm ?? "—"}</td>
                   <td>
-                    <button type="button" className="ce-btn ce-btn-sm" onClick={() => onBeginEditAssemblyItem(item)}>
-                      Редактировать
-                    </button>
+                    <div className="ce-toolbar-group">
+                      <button type="button" className="ce-btn ce-btn-sm" onClick={() => onBeginEditAssemblyItem(item)}>
+                        Редактировать
+                      </button>
+                      <button type="button" className="ce-row-delete" onClick={() => onDeleteAssemblyItem(item)}>
+                        Удалить
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))

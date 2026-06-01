@@ -158,6 +158,14 @@ export function getFormulaFieldVisibility(formula: FlooringAssemblyFormula): For
   }
 }
 
+function getFlatPerM2Coefficient(row: CoveringAssemblyRow): number {
+  if (row.kind !== "material" && row.kind !== "work") {
+    return 1;
+  }
+  const coefficient = normalizeNum(row.consumptionPerM2);
+  return coefficient > 0 ? coefficient : 1;
+}
+
 /** Итого ₽/m² по строке (без учёта enabled — для отображения в таблице). */
 export function calculateAssemblyRowTotal(row: CoveringAssemblyRow): number {
   const price = normalizeNum(row.price);
@@ -167,7 +175,7 @@ export function calculateAssemblyRowTotal(row: CoveringAssemblyRow): number {
 
   switch (row.formula) {
     case "flat_per_m2":
-      return price;
+      return price * getFlatPerM2Coefficient(row);
     case "unit_consumption":
       return price * consumption;
     case "package_consumption":

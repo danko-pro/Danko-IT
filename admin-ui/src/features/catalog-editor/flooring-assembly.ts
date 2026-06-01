@@ -11,7 +11,12 @@ export type FlooringAssemblyFormula =
   | "unit_consumption" // price per unit × consumptionPerM2
   | "package_consumption" // (price / packageSize) × consumptionPerM2
   | "layer_consumption" // (price / packageSize) × consumptionPerM2 per 1mm × layerMm
-  | "piece_consumption"; // (price / packageSize if set else price) × consumptionPerM2
+  | "piece_consumption" // (price / packageSize if set else price) × consumptionPerM2
+  | "kg_layer_consumption" // (bag price / kg per bag) × kg/m²/mm × layerMm
+  | "liquid_layers" // (can price / liters per can) × liters/m²/layer × layer count
+  | "roll_meter_consumption" // (roll price / meters per roll) × linear meters/m²
+  | "sheet_area_consumption" // (sheet price / sheet area) × m²/m²
+  | "fixed_area_allocation"; // fixed price / allocation area m²
 
 export type CoveringAssemblyRow = {
   id: string;
@@ -70,6 +75,11 @@ const FORMULA_LABELS: Record<FlooringAssemblyFormula, string> = {
   package_consumption: "Фасовка × расход",
   layer_consumption: "Слой × фасовка × расход",
   piece_consumption: "Штуки × расход",
+  kg_layer_consumption: "Кг/мешок × слой",
+  liquid_layers: "Литры × слои",
+  roll_meter_consumption: "Рулон/метры × расход",
+  sheet_area_consumption: "Лист/плита × расход",
+  fixed_area_allocation: "Фикс / площадь",
 };
 
 const FORMULA_COMPACT_LABELS: Record<FlooringAssemblyFormula, string> = {
@@ -78,6 +88,11 @@ const FORMULA_COMPACT_LABELS: Record<FlooringAssemblyFormula, string> = {
   package_consumption: "Фас. × расход",
   layer_consumption: "Слой × расход",
   piece_consumption: "Шт. × расход",
+  kg_layer_consumption: "Кг × слой",
+  liquid_layers: "Л × слои",
+  roll_meter_consumption: "Рулон",
+  sheet_area_consumption: "Лист",
+  fixed_area_allocation: "Фикс",
 };
 
 export const FLOORING_ASSEMBLY_FORMULAS: FlooringAssemblyFormula[] = [
@@ -86,6 +101,11 @@ export const FLOORING_ASSEMBLY_FORMULAS: FlooringAssemblyFormula[] = [
   "package_consumption",
   "layer_consumption",
   "piece_consumption",
+  "kg_layer_consumption",
+  "liquid_layers",
+  "roll_meter_consumption",
+  "sheet_area_consumption",
+  "fixed_area_allocation",
 ];
 
 const RECOMMENDED_FLAT_FIELD_LABELS: {
@@ -155,6 +175,16 @@ export function getFormulaFieldVisibility(formula: FlooringAssemblyFormula): For
       return { consumption: true, packageSize: true, layerMm: true };
     case "piece_consumption":
       return { consumption: true, packageSize: true, layerMm: false };
+    case "kg_layer_consumption":
+      return { consumption: true, packageSize: true, layerMm: true };
+    case "liquid_layers":
+      return { consumption: true, packageSize: true, layerMm: true };
+    case "roll_meter_consumption":
+      return { consumption: true, packageSize: true, layerMm: false };
+    case "sheet_area_consumption":
+      return { consumption: true, packageSize: true, layerMm: false };
+    case "fixed_area_allocation":
+      return { consumption: false, packageSize: true, layerMm: false };
   }
 }
 
@@ -187,6 +217,16 @@ export function calculateAssemblyRowTotal(row: CoveringAssemblyRow): number {
       return price * consumption;
     case "piece_consumption":
       return packageSize > 0 ? (price / packageSize) * consumption : price * consumption;
+    case "kg_layer_consumption":
+      return packageSize > 0 ? (price / packageSize) * consumption * Math.max(1, layerMm) : price * consumption;
+    case "liquid_layers":
+      return packageSize > 0 ? (price / packageSize) * consumption * Math.max(1, layerMm) : price * consumption;
+    case "roll_meter_consumption":
+      return packageSize > 0 ? (price / packageSize) * consumption : price * consumption;
+    case "sheet_area_consumption":
+      return packageSize > 0 ? (price / packageSize) * consumption : price * consumption;
+    case "fixed_area_allocation":
+      return packageSize > 0 ? price / packageSize : price;
   }
 }
 

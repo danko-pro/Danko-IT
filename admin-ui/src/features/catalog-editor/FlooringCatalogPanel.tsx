@@ -484,8 +484,8 @@ function CoveringAssemblyBlock({ onApplyAggregates, onRowsChange, formatMoney }:
               <th className="ce-col-unit">Ед.</th>
               <th className="ce-col-num">Цена</th>
               <th className="ce-col-num">Коэф./расх.</th>
-              <th className="ce-col-num">Фас.</th>
-              <th className="ce-col-num">Слой</th>
+              <th className="ce-col-num">Фас./база</th>
+              <th className="ce-col-num">Слой/слои</th>
               <th className="ce-col-total">Итого</th>
               <th className="ce-col-actions">×</th>
             </tr>

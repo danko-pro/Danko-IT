@@ -141,6 +141,8 @@ describe("getAssemblyFormulaLabel", () => {
   it("возвращает русские подписи формул", () => {
     expect(getAssemblyFormulaLabel("flat_per_m2")).toBe("₽/м² напрямую");
     expect(getAssemblyFormulaLabel("layer_consumption")).toBe("Слой × фасовка × расход");
+    expect(getAssemblyFormulaLabel("liquid_layers")).toBe("Литры × слои");
+    expect(getAssemblyFormulaLabel("sheet_area_consumption")).toBe("Лист/плита × расход");
   });
 });
 
@@ -174,6 +176,24 @@ describe("getFormulaFieldVisibility", () => {
       consumption: true,
       packageSize: true,
       layerMm: true,
+    });
+  });
+
+  it("показывает нужные поля для новых типов формул", () => {
+    expect(getFormulaFieldVisibility("liquid_layers")).toEqual({
+      consumption: true,
+      packageSize: true,
+      layerMm: true,
+    });
+    expect(getFormulaFieldVisibility("roll_meter_consumption")).toEqual({
+      consumption: true,
+      packageSize: true,
+      layerMm: false,
+    });
+    expect(getFormulaFieldVisibility("fixed_area_allocation")).toEqual({
+      consumption: false,
+      packageSize: true,
+      layerMm: false,
     });
   });
 });
@@ -281,6 +301,79 @@ describe("calculateAssemblyRowTotal", () => {
         }),
       ),
     ).toBe((3000 / 100) * 4);
+  });
+
+  it("kg_layer_consumption: (мешок / кг) × расход × слой", () => {
+    expect(
+      calculateAssemblyRowTotal(
+        makeRow({
+          id: "kg",
+          kind: "consumable",
+          formula: "kg_layer_consumption",
+          price: 600,
+          packageSize: 25,
+          consumptionPerM2: 1.5,
+          layerMm: 5,
+        }),
+      ),
+    ).toBe((600 / 25) * 1.5 * 5);
+  });
+
+  it("liquid_layers: (канистра / литры) × расход × слои", () => {
+    expect(
+      calculateAssemblyRowTotal(
+        makeRow({
+          id: "liquid",
+          kind: "consumable",
+          formula: "liquid_layers",
+          price: 1250,
+          packageSize: 10,
+          consumptionPerM2: 0.2,
+          layerMm: 2,
+        }),
+      ),
+    ).toBe((1250 / 10) * 0.2 * 2);
+  });
+
+  it("roll_meter_consumption и sheet_area_consumption используют размер упаковки как базу", () => {
+    expect(
+      calculateAssemblyRowTotal(
+        makeRow({
+          id: "roll",
+          kind: "consumable",
+          formula: "roll_meter_consumption",
+          price: 1500,
+          packageSize: 30,
+          consumptionPerM2: 0.6,
+        }),
+      ),
+    ).toBe((1500 / 30) * 0.6);
+    expect(
+      calculateAssemblyRowTotal(
+        makeRow({
+          id: "sheet",
+          kind: "material",
+          formula: "sheet_area_consumption",
+          price: 900,
+          packageSize: 3,
+          consumptionPerM2: 1.05,
+        }),
+      ),
+    ).toBe((900 / 3) * 1.05);
+  });
+
+  it("fixed_area_allocation распределяет фиксированную сумму на базовую площадь", () => {
+    expect(
+      calculateAssemblyRowTotal(
+        makeRow({
+          id: "fixed",
+          kind: "tool",
+          formula: "fixed_area_allocation",
+          price: 5000,
+          packageSize: 50,
+        }),
+      ),
+    ).toBe(100);
   });
 });
 

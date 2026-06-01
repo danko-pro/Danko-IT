@@ -38,6 +38,61 @@ export type CoveringAssemblyAggregates = {
   recommendedFlatFields: CoveringAssemblyFlatFields;
 };
 
+export type CoveringAssemblyRecommendedField = {
+  label: string;
+  valuePerM2: number;
+};
+
+const ASSEMBLY_KIND_LABELS: Record<CoveringAssemblyRowKind, string> = {
+  work: "Работа",
+  material: "Материал",
+  consumable: "Расходник",
+  tool: "Инструмент",
+};
+
+const RECOMMENDED_FLAT_FIELD_LABELS: {
+  key: keyof CoveringAssemblyFlatFields;
+  label: string;
+}[] = [
+  { key: "materialPricePerM2", label: "Материал покрытия" },
+  { key: "laborPricePerM2", label: "Работа" },
+  { key: "adhesivePricePerM2", label: "Клей" },
+  { key: "primerPricePerM2", label: "Грунт" },
+  { key: "svpPricePerM2", label: "СВП" },
+  { key: "groutPricePerM2", label: "Затирка" },
+  { key: "toolConsumablesPerM2", label: "Инструмент" },
+];
+
+export function getAssemblyKindLabel(kind: CoveringAssemblyRowKind): string {
+  return ASSEMBLY_KIND_LABELS[kind];
+}
+
+/** Итого ₽/m² по строке (без учёта enabled — для отображения в таблице). */
+export function calculateAssemblyRowTotal(row: CoveringAssemblyRow): number {
+  const price = normalizeNum(row.price);
+  if (row.kind === "work" || row.kind === "material" || row.kind === "tool") {
+    return price;
+  }
+  if (row.kind === "consumable") {
+    const consumption = normalizeNum(row.consumptionPerM2);
+    const packageSize = normalizeNum(row.packageSize);
+    if (packageSize > 0) {
+      return (price / packageSize) * consumption;
+    }
+    return price * consumption;
+  }
+  return 0;
+}
+
+export function getRecommendedFlatFieldEntries(
+  flat: CoveringAssemblyFlatFields,
+): CoveringAssemblyRecommendedField[] {
+  return RECOMMENDED_FLAT_FIELD_LABELS.map(({ key, label }) => ({
+    label,
+    valuePerM2: normalizeNum(flat[key]),
+  }));
+}
+
 /**
  * Правила агрегации:
  * - disabled-строки игнорируются;
@@ -66,33 +121,30 @@ export function aggregateCoveringAssembly(rows: CoveringAssemblyRow[]): Covering
   };
 
   for (const row of enabled) {
+    const value = calculateAssemblyRowTotal(row);
     if (row.kind === "work") {
-      const value = normalizeNum(row.price);
       worksPerM2 += value;
       flat.laborPricePerM2 += value;
       continue;
     }
     if (row.kind === "material") {
-      const value = normalizeNum(row.price);
       materialPerM2 += value;
       flat.materialPricePerM2 += value;
       continue;
     }
     if (row.kind === "tool") {
-      const value = normalizeNum(row.price);
       toolPerM2 += value;
       flat.toolConsumablesPerM2 += value;
       continue;
     }
     if (row.kind === "consumable") {
-      const perM2 = consumableRowPerM2(row);
-      consumablesPerM2 += perM2;
+      consumablesPerM2 += value;
       const bucket = classifyConsumableTitle(row.title);
-      if (bucket === "adhesive") flat.adhesivePricePerM2 += perM2;
-      else if (bucket === "primer") flat.primerPricePerM2 += perM2;
-      else if (bucket === "svp") flat.svpPricePerM2 += perM2;
-      else if (bucket === "grout") flat.groutPricePerM2 += perM2;
-      else flat.toolConsumablesPerM2 += perM2;
+      if (bucket === "adhesive") flat.adhesivePricePerM2 += value;
+      else if (bucket === "primer") flat.primerPricePerM2 += value;
+      else if (bucket === "svp") flat.svpPricePerM2 += value;
+      else if (bucket === "grout") flat.groutPricePerM2 += value;
+      else flat.toolConsumablesPerM2 += value;
     }
   }
 
@@ -103,16 +155,6 @@ export function aggregateCoveringAssembly(rows: CoveringAssemblyRow[]): Covering
     toolPerM2,
     recommendedFlatFields: flat,
   };
-}
-
-function consumableRowPerM2(row: CoveringAssemblyRow): number {
-  const price = normalizeNum(row.price);
-  const consumption = normalizeNum(row.consumptionPerM2);
-  const packageSize = normalizeNum(row.packageSize);
-  if (packageSize > 0) {
-    return (price / packageSize) * consumption;
-  }
-  return price * consumption;
 }
 
 type ConsumableBucket = "adhesive" | "primer" | "svp" | "grout" | "other";

@@ -271,6 +271,9 @@ select.ce-cell-input { appearance: none; cursor: pointer; }
   display: flex; align-items: center; justify-content: space-between; gap: 12px;
   margin-bottom: 10px;
 }
+.ce-flooring-form-content {
+  display: flex; flex-direction: column; gap: 12px;
+}
 .ce-flooring-form-fields {
   display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px;
 }
@@ -280,9 +283,23 @@ select.ce-cell-input { appearance: none; cursor: pointer; }
 
 /* --- Локальная сборка покрытия (FA1 spike) --- */
 .ce-flooring-assembly {
-  margin-top: 12px; padding: 12px; border: 1px dashed rgba(76,141,255,.45); border-radius: 10px;
+  width: 100%; padding: 14px; border: 1px solid rgba(76,141,255,.35); border-radius: 10px;
   background: rgba(76,141,255,.04);
 }
+.ce-flooring-assembly-empty {
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  padding: 28px 16px; text-align: center; color: var(--ce-muted);
+  border: 1px dashed var(--ce-border); border-radius: 8px; margin-bottom: 10px;
+}
+.ce-flooring-assembly-empty p { margin: 0; font-size: 13px; }
+.ce-flooring-assembly-row-off { opacity: 0.45; }
+.ce-flooring-assembly-recommended { border-style: dashed; }
+.ce-flooring-assembly-summary-total .ce-flooring-assembly-summary-value { font-size: 14px; }
+.ce-flooring-assembly-status {
+  flex: 1; min-width: 200px; display: inline-flex; align-items: center; gap: 8px;
+  font-size: 12px; color: var(--ce-muted); line-height: 1.4;
+}
+.ce-flooring-assembly-actions { align-items: center; justify-content: space-between; }
 .ce-flooring-assembly-head {
   display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap;
   margin-bottom: 10px;
@@ -291,7 +308,7 @@ select.ce-cell-input { appearance: none; cursor: pointer; }
 .ce-flooring-assembly-hint { margin: 4px 0 0; font-size: 11px; color: var(--ce-muted); line-height: 1.4; }
 .ce-flooring-assembly-toolbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .ce-flooring-assembly-table-wrap { margin-bottom: 10px; max-height: none; }
-.ce-flooring-assembly-table { min-width: 960px; }
+.ce-flooring-assembly-table { min-width: 1080px; width: 100%; }
 .ce-flooring-assembly-summary {
   display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px;
   margin-bottom: 10px; padding: 10px; border-radius: 8px;

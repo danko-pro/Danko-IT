@@ -285,6 +285,8 @@ select.ce-cell-input { appearance: none; cursor: pointer; }
 .ce-flooring-field { display: flex; flex-direction: column; gap: 4px; font-size: 12px; }
 .ce-flooring-field-label { color: var(--ce-muted); }
 .ce-flooring-field .ce-input { width: 100%; }
+.ce-flooring-library-form { margin-top: 10px; }
+.ce-flooring-library-actions { justify-content: center; gap: 6px; flex-wrap: nowrap; padding: 0 6px; }
 
 /* --- Локальная сборка покрытия (FA1 spike) --- */
 .ce-flooring-assembly {

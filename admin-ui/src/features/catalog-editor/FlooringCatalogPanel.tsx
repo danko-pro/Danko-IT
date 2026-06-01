@@ -46,6 +46,11 @@ import type {
 import { FlooringAssemblyBlock, type FlooringAssemblyTarget } from "./FlooringAssemblyBlock";
 import { FlooringAssemblyLibraryPanel } from "./FlooringAssemblyLibraryPanel";
 import {
+  FlooringCoveringsSection,
+  FlooringLayoutsSection,
+  FlooringPreparationsSection,
+} from "./FlooringCatalogSections";
+import {
   applyAggregatesToCoveringDraft,
   createAssemblyLibraryItemFromCatalogItem,
   formatCoveringSaveFeedback,
@@ -791,53 +796,13 @@ export function FlooringCatalogPanel() {
         onCreateFromAssembly={createAssemblyTargetRow}
       />
 
-      <section className="ce-flooring-section">
-        <h3 className="ce-flooring-section-title">Покрытия</h3>
-        <div className="ce-table-wrap ce-flooring-table-wrap">
-          <table className="ce-table ce-flooring-table">
-            <thead>
-              <tr>
-                <th className="ce-col-id">Код</th>
-                <th className="ce-col-title">Название</th>
-                <th className="ce-col-num">Материал ₽/м²</th>
-                <th className="ce-col-num">Работа ₽/м²</th>
-                <th className="ce-col-num">Отход %</th>
-                <th className="ce-col-tech">Расходники</th>
-                <th className="ce-col-actions">Действия</th>
-              </tr>
-            </thead>
-            <tbody>
-              {coveringRows.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="ce-empty">
-                    Покрытия не найдены в snapshot.
-                  </td>
-                </tr>
-              ) : (
-                coveringRows.map((row) => (
-                  <tr key={row.code}>
-                    <td className="ce-col-id ce-mono ce-readonly">{row.code}</td>
-                    <td className="ce-readonly">{row.title}</td>
-                    <td className="ce-num ce-readonly">{formatMoney(row.rates.materialPricePerM2)}</td>
-                    <td className="ce-num ce-readonly">{formatMoney(row.rates.laborPricePerM2)}</td>
-                    <td className="ce-num ce-readonly">{formatPercent(row.rates.baseWastePercent)}</td>
-                    <td className="ce-readonly">{consumablesSummaryPerM2(row.rates)}</td>
-                    <td>
-                      <button
-                        type="button"
-                        className="ce-btn ce-btn-sm"
-                        disabled={!row.catalogId}
-                        onClick={() => beginEditCovering(row)}
-                      >
-                        Редактировать
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+      <FlooringCoveringsSection
+        rows={coveringRows}
+        onEdit={beginEditCovering}
+        formatMoney={formatMoney}
+        formatPercent={formatPercent}
+        consumablesSummaryPerM2={consumablesSummaryPerM2}
+      >
 
         {editingCoveringId !== null ? (
         <CatalogForm
@@ -907,51 +872,14 @@ export function FlooringCatalogPanel() {
           </div>
         </CatalogForm>
         ) : null}
-      </section>
+      </FlooringCoveringsSection>
 
-      <section className="ce-flooring-section">
-        <h3 className="ce-flooring-section-title">Подготовка</h3>
-        <div className="ce-table-wrap ce-flooring-table-wrap">
-          <table className="ce-table ce-flooring-table">
-            <thead>
-              <tr>
-                <th className="ce-col-id">Код</th>
-                <th className="ce-col-title">Название</th>
-                <th className="ce-col-num">Работа ₽/м²</th>
-                <th className="ce-col-num">Материал ₽/м²</th>
-                <th className="ce-col-actions">Действия</th>
-              </tr>
-            </thead>
-            <tbody>
-              {preparationRows.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="ce-empty">
-                    Подготовки не найдены в snapshot.
-                  </td>
-                </tr>
-              ) : (
-                preparationRows.map((row) => (
-                  <tr key={row.code}>
-                    <td className="ce-col-id ce-mono ce-readonly">{row.code}</td>
-                    <td className="ce-readonly">{row.title}</td>
-                    <td className="ce-num ce-readonly">{formatMoney(row.rates.laborPricePerM2)}</td>
-                    <td className="ce-num ce-readonly">{formatMoney(row.rates.materialPricePerM2)}</td>
-                    <td>
-                      <button
-                        type="button"
-                        className="ce-btn ce-btn-sm"
-                        disabled={!row.catalogId}
-                        onClick={() => beginEditPreparation(row)}
-                      >
-                        Редактировать
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+      <FlooringPreparationsSection
+        rows={preparationRows}
+        onEdit={beginEditPreparation}
+        formatMoney={formatMoney}
+        formatPercent={formatPercent}
+      >
 
         {editingPreparationId !== null ? (
         <CatalogForm
@@ -991,51 +919,14 @@ export function FlooringCatalogPanel() {
           </div>
         </CatalogForm>
         ) : null}
-      </section>
+      </FlooringPreparationsSection>
 
-      <section className="ce-flooring-section">
-        <h3 className="ce-flooring-section-title">Укладка</h3>
-        <div className="ce-table-wrap ce-flooring-table-wrap">
-          <table className="ce-table ce-flooring-table">
-            <thead>
-              <tr>
-                <th className="ce-col-id">Код</th>
-                <th className="ce-col-title">Название</th>
-                <th className="ce-col-num">Коэф. работы</th>
-                <th className="ce-col-num">Доп. отход %</th>
-                <th className="ce-col-actions">Действия</th>
-              </tr>
-            </thead>
-            <tbody>
-              {layoutRows.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="ce-empty">
-                    Укладки не найдены в snapshot.
-                  </td>
-                </tr>
-              ) : (
-                layoutRows.map((row) => (
-                  <tr key={row.code}>
-                    <td className="ce-col-id ce-mono ce-readonly">{row.code}</td>
-                    <td className="ce-readonly">{row.title}</td>
-                    <td className="ce-num ce-readonly">{row.rates.laborFactor}</td>
-                    <td className="ce-num ce-readonly">{formatPercent(row.rates.additionalWastePercent)}</td>
-                    <td>
-                      <button
-                        type="button"
-                        className="ce-btn ce-btn-sm"
-                        disabled={!row.catalogId}
-                        onClick={() => beginEditLayout(row)}
-                      >
-                        Редактировать
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+      <FlooringLayoutsSection
+        rows={layoutRows}
+        onEdit={beginEditLayout}
+        formatMoney={formatMoney}
+        formatPercent={formatPercent}
+      >
 
         {editingLayoutId !== null ? (
         <CatalogForm
@@ -1076,7 +967,7 @@ export function FlooringCatalogPanel() {
           </div>
         </CatalogForm>
         ) : null}
-      </section>
+      </FlooringLayoutsSection>
         </>
       ) : null}
     </>

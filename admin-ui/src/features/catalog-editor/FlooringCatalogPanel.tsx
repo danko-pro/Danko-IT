@@ -165,7 +165,13 @@ type CatalogFormProps = {
 
 function CatalogForm({ title, mode, submitting, onSubmit, onCancel, children }: CatalogFormProps) {
   const submitLabel =
-    mode === "edit" ? (submitting ? "Сохранение…" : "Сохранить") : submitting ? "Создание…" : "Создать";
+    mode === "edit"
+      ? submitting
+        ? "Обновление…"
+        : "Обновить в БД"
+      : submitting
+        ? "Сохранение…"
+        : "Сохранить в БД";
 
   return (
     <form
@@ -210,7 +216,26 @@ function FormField({ label, children }: FormFieldProps) {
 const ASSEMBLY_ROW_KINDS: CoveringAssemblyRowKind[] = ["work", "material", "consumable", "tool"];
 
 const ASSEMBLY_APPLY_STATUS =
-  "Итог состава перенесён в поля покрытия. Нажмите «Создать» или «Сохранить», чтобы записать в БД.";
+  "Итог состава перенесён в поля покрытия. Нажмите «Сохранить в БД» или «Обновить в БД», чтобы записать итоговые ставки.";
+
+type AssemblyFieldProps = {
+  label: string;
+  children: React.ReactNode;
+  isMuted?: boolean;
+};
+
+function AssemblyField({ label, children, isMuted = false }: AssemblyFieldProps) {
+  return (
+    <label className={["ce-flooring-assembly-field", isMuted ? "is-muted" : ""].filter(Boolean).join(" ")}>
+      <span className="ce-flooring-assembly-field-label">{label}</span>
+      {children}
+    </label>
+  );
+}
+
+function AssemblyNotNeeded() {
+  return <span className="ce-flooring-assembly-na">Не требуется</span>;
+}
 
 type CoveringAssemblyBlockProps = {
   onApplyAggregates: (aggregates: CoveringAssemblyAggregates) => void;
@@ -298,39 +323,58 @@ function CoveringAssemblyBlock({ onApplyAggregates, onRowsChange, formatMoney }:
           </button>
         </div>
       ) : (
-      <div className="ce-table-wrap ce-flooring-assembly-table-wrap">
-        <table className="ce-table ce-flooring-assembly-table">
-          <thead>
-            <tr>
-              <th className="ce-col-select">Вкл.</th>
-              <th className="ce-col-select">Тип</th>
-              <th className="ce-col-formula">Формула</th>
-              <th className="ce-col-title">Название</th>
-              <th className="ce-col-select">Ед.</th>
-              <th className="ce-col-num">Цена</th>
-              <th className="ce-col-num">Расход на м²</th>
-              <th className="ce-col-num">Фасовка</th>
-              <th className="ce-col-num">Слой мм</th>
-              <th className="ce-col-total">Итого ₽/м²</th>
-              <th className="ce-col-actions">Действие</th>
-            </tr>
-          </thead>
-          <tbody>
-              {rows.map((row) => {
-                const fieldVisibility = getFormulaFieldVisibility(row.formula);
-                return (
-                <tr key={row.id} className={row.enabled ? undefined : "ce-flooring-assembly-row-off"}>
-                  <td className="ce-flooring-assembly-check">
+        <div className="ce-flooring-assembly-list">
+          {rows.map((row) => {
+            const fieldVisibility = getFormulaFieldVisibility(row.formula);
+            const rowTotal = calculateAssemblyRowTotal(row);
+
+            return (
+              <article
+                key={row.id}
+                className={[
+                  "ce-flooring-assembly-card",
+                  row.enabled ? "" : "ce-flooring-assembly-row-off",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
+              >
+                <div className="ce-flooring-assembly-card-head">
+                  <label className="ce-flooring-assembly-toggle">
                     <input
                       type="checkbox"
                       checked={row.enabled}
                       onChange={(event) => updateRow(row.id, { enabled: event.target.checked })}
                       aria-label={`Включить ${row.title || "строку"}`}
                     />
-                  </td>
-                  <td>
+                    <span>Включена</span>
+                  </label>
+                  <div className="ce-flooring-assembly-card-total">
+                    <span>Итого строки</span>
+                    <strong>{formatMoney(rowTotal)} ₽/м²</strong>
+                  </div>
+                  <button
+                    type="button"
+                    className="ce-row-delete ce-flooring-assembly-delete"
+                    title="Удалить строку"
+                    onClick={() => removeRow(row.id)}
+                  >
+                    Удалить
+                  </button>
+                </div>
+
+                <div className="ce-flooring-assembly-card-grid">
+                  <AssemblyField label="Название">
+                    <input
+                      className="ce-input"
+                      value={row.title}
+                      onChange={(event) => updateRow(row.id, { title: event.target.value })}
+                      placeholder="Например: Клей плиточный"
+                    />
+                  </AssemblyField>
+
+                  <AssemblyField label="Тип строки">
                     <select
-                      className="ce-cell-input"
+                      className="ce-input"
                       value={row.kind}
                       onChange={(event) =>
                         updateRow(row.id, { kind: event.target.value as CoveringAssemblyRowKind })
@@ -342,10 +386,11 @@ function CoveringAssemblyBlock({ onApplyAggregates, onRowsChange, formatMoney }:
                         </option>
                       ))}
                     </select>
-                  </td>
-                  <td>
+                  </AssemblyField>
+
+                  <AssemblyField label="Формула расхода">
                     <select
-                      className="ce-cell-input ce-cell-formula"
+                      className="ce-input"
                       value={row.formula}
                       onChange={(event) =>
                         updateRow(row.id, { formula: event.target.value as FlooringAssemblyFormula })
@@ -357,89 +402,72 @@ function CoveringAssemblyBlock({ onApplyAggregates, onRowsChange, formatMoney }:
                         </option>
                       ))}
                     </select>
-                  </td>
-                  <td>
+                  </AssemblyField>
+
+                  <AssemblyField label="Ед.">
                     <input
-                      className="ce-cell-input"
-                      value={row.title}
-                      onChange={(event) => updateRow(row.id, { title: event.target.value })}
-                      placeholder="Название"
-                    />
-                  </td>
-                  <td>
-                    <input
-                      className="ce-cell-input"
+                      className="ce-input"
                       value={row.unit}
                       onChange={(event) => updateRow(row.id, { unit: event.target.value })}
                     />
-                  </td>
-                  <td>
+                  </AssemblyField>
+
+                  <AssemblyField label="Цена">
                     <input
-                      className="ce-cell-input ce-num"
+                      className="ce-input ce-num"
                       type="number"
                       step="0.01"
                       value={row.price || ""}
                       onChange={(event) => updateRowNumber(row.id, "price", event.target.value)}
                     />
-                  </td>
-                  <td>
+                  </AssemblyField>
+
+                  <AssemblyField label="Расход" isMuted={!fieldVisibility.consumption}>
                     {fieldVisibility.consumption ? (
                       <input
-                        className="ce-cell-input ce-num"
+                        className="ce-input ce-num"
                         type="number"
                         step="0.01"
                         value={row.consumptionPerM2 || ""}
                         onChange={(event) => updateRowNumber(row.id, "consumptionPerM2", event.target.value)}
                       />
                     ) : (
-                      <span className="ce-readonly ce-na">—</span>
+                      <AssemblyNotNeeded />
                     )}
-                  </td>
-                  <td>
+                  </AssemblyField>
+
+                  <AssemblyField label="Фасовка" isMuted={!fieldVisibility.packageSize}>
                     {fieldVisibility.packageSize ? (
                       <input
-                        className="ce-cell-input ce-num"
+                        className="ce-input ce-num"
                         type="number"
                         step="0.01"
                         value={row.packageSize ?? ""}
                         onChange={(event) => updateRowNumber(row.id, "packageSize", event.target.value)}
                       />
                     ) : (
-                      <span className="ce-readonly ce-na">—</span>
+                      <AssemblyNotNeeded />
                     )}
-                  </td>
-                  <td>
+                  </AssemblyField>
+
+                  <AssemblyField label="Слой, мм" isMuted={!fieldVisibility.layerMm}>
                     {fieldVisibility.layerMm ? (
                       <input
-                        className="ce-cell-input ce-num"
+                        className="ce-input ce-num"
                         type="number"
                         step="0.01"
                         value={row.layerMm ?? ""}
                         onChange={(event) => updateRowNumber(row.id, "layerMm", event.target.value)}
                       />
                     ) : (
-                      <span className="ce-readonly ce-na">—</span>
+                      <AssemblyNotNeeded />
                     )}
-                  </td>
-                  <td className="ce-num ce-readonly ce-total-cell">
-                    {formatMoney(calculateAssemblyRowTotal(row))}
-                  </td>
-                  <td>
-                    <button
-                      type="button"
-                      className="ce-row-delete"
-                      title="Удалить строку"
-                      onClick={() => removeRow(row.id)}
-                    >
-                      ×
-                    </button>
-                  </td>
-                </tr>
-                );
-              })}
-          </tbody>
-        </table>
-      </div>
+                  </AssemblyField>
+                </div>
+              </article>
+            );
+          })}
+        </div>
       )}
 
       {rows.length > 0 ? (
@@ -480,7 +508,7 @@ function CoveringAssemblyBlock({ onApplyAggregates, onRowsChange, formatMoney }:
               <div key={entry.label} className="ce-flooring-assembly-summary-item">
                 <span className="ce-flooring-assembly-summary-label">{entry.label}</span>
                 <span className="ce-flooring-assembly-summary-value">
-                  {formatMoney(entry.valuePerM2)} ₽/m²
+                  {formatMoney(entry.valuePerM2)} ₽/м²
                 </span>
               </div>
             ))}

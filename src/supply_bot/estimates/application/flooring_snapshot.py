@@ -233,6 +233,10 @@ def _normalize_title(title: object) -> str:
     return normalize_text(str(title or "")).casefold()
 
 
+def _public_title(title: object) -> str:
+    return str(title or "").strip()
+
+
 def _public_number(value: object) -> float | int:
     if isinstance(value, bool):
         return 0
@@ -316,7 +320,7 @@ def _resolve_public_code(
 
 
 def _map_covering_row(row: Mapping[str, Any], *, used_codes: set[str]) -> dict[str, Any]:
-    title = normalize_text(str(row.get("title") or ""))
+    title = _public_title(row.get("title"))
     code = _resolve_public_code(title, section="coverings", known_titles=_COVERING_TITLE_TO_CODE, used_codes=used_codes)
     used_codes.add(code)
     consumables = _aggregate_covering_consumables(row)
@@ -330,7 +334,7 @@ def _map_covering_row(row: Mapping[str, Any], *, used_codes: set[str]) -> dict[s
 
 
 def _map_preparation_row(row: Mapping[str, Any], *, used_codes: set[str]) -> dict[str, Any]:
-    title = normalize_text(str(row.get("title") or ""))
+    title = _public_title(row.get("title"))
     code = _resolve_public_code(
         title,
         section="preparations",
@@ -347,7 +351,7 @@ def _map_preparation_row(row: Mapping[str, Any], *, used_codes: set[str]) -> dic
 
 
 def _map_layout_row(row: Mapping[str, Any], *, used_codes: set[str]) -> dict[str, Any]:
-    title = normalize_text(str(row.get("title") or ""))
+    title = _public_title(row.get("title"))
     code = _resolve_public_code(title, section="layouts", known_titles=_LAYOUT_TITLE_TO_CODE, used_codes=used_codes)
     used_codes.add(code)
     labor_multiplier = float(_public_number(row.get("labor_multiplier")))

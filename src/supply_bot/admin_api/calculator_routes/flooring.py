@@ -125,8 +125,9 @@ def register_calculator_flooring_routes(
     async def create_calculator_flooring_covering(
         request: Request,
         payload: calculator_flooring_covering_payload_model,
+        _session: AdminSession = Depends(require_admin_role_session),
     ) -> dict[str, Any]:
-        storage_obj = get_calculator_route_storage(request)
+        storage_obj = get_global_estimate_catalog_storage(request)
         command = CreateFlooringCoveringCommand(
             title=payload.title,
             material_price_per_m2=payload.material_price_per_m2,
@@ -222,8 +223,9 @@ def register_calculator_flooring_routes(
     async def create_calculator_flooring_preparation(
         request: Request,
         payload: calculator_flooring_preparation_payload_model,
+        _session: AdminSession = Depends(require_admin_role_session),
     ) -> dict[str, Any]:
-        storage_obj = get_calculator_route_storage(request)
+        storage_obj = get_global_estimate_catalog_storage(request)
         command = CreateFlooringPreparationCommand(
             title=payload.title,
             labor_price_per_m2=payload.labor_price_per_m2,
@@ -275,8 +277,9 @@ def register_calculator_flooring_routes(
     async def create_calculator_flooring_layout(
         request: Request,
         payload: calculator_flooring_layout_payload_model,
+        _session: AdminSession = Depends(require_admin_role_session),
     ) -> dict[str, Any]:
-        storage_obj = get_calculator_route_storage(request)
+        storage_obj = get_global_estimate_catalog_storage(request)
         command = CreateFlooringLayoutCommand(
             title=payload.title,
             labor_price_per_m2=payload.labor_price_per_m2,

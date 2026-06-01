@@ -6,6 +6,8 @@ import type { FlooringCoveringDraft } from "./api/flooring-types";
 
 export type CoveringAssemblyRowKind = "work" | "material" | "consumable" | "tool";
 
+export type FlooringAssemblyLibrarySection = "covering" | "work" | "preparation" | "consumable" | "tool";
+
 export type FlooringAssemblyFormula =
   | "flat_per_m2" // price already ₽/m²
   | "unit_consumption" // price per unit × consumptionPerM2
@@ -30,6 +32,13 @@ export type CoveringAssemblyRow = {
   packageSize?: number;
   layerMm?: number;
   enabled: boolean;
+};
+
+export type FlooringAssemblyLibraryItem = {
+  id: string;
+  section: FlooringAssemblyLibrarySection;
+  title: string;
+  row: Omit<CoveringAssemblyRow, "id" | "enabled">;
 };
 
 /** Плоские ₽/m² поля, совместимые с public flooring snapshot covering rates. */
@@ -82,6 +91,162 @@ const FORMULA_LABELS: Record<FlooringAssemblyFormula, string> = {
   fixed_area_allocation: "Фикс / площадь",
 };
 
+const LIBRARY_SECTION_LABELS: Record<FlooringAssemblyLibrarySection, string> = {
+  covering: "Покрытия",
+  work: "Работы",
+  preparation: "Подготовка",
+  consumable: "Расходники",
+  tool: "Инструмент",
+};
+
+export const FLOORING_ASSEMBLY_LIBRARY_SECTIONS: FlooringAssemblyLibrarySection[] = [
+  "covering",
+  "work",
+  "preparation",
+  "consumable",
+  "tool",
+];
+
+export const FLOORING_ASSEMBLY_LIBRARY_ITEMS: FlooringAssemblyLibraryItem[] = [
+  {
+    id: "covering-porcelain-120x60",
+    section: "covering",
+    title: "Керамогранит 120×60",
+    row: {
+      title: "Керамогранит 120×60",
+      kind: "material",
+      formula: "flat_per_m2",
+      unit: "m2",
+      price: 2900,
+      consumptionPerM2: 1.1,
+    },
+  },
+  {
+    id: "covering-laminate-33",
+    section: "covering",
+    title: "Ламинат 33 класс",
+    row: {
+      title: "Ламинат 33 класс",
+      kind: "material",
+      formula: "flat_per_m2",
+      unit: "m2",
+      price: 930,
+      consumptionPerM2: 1.08,
+    },
+  },
+  {
+    id: "work-porcelain-large",
+    section: "work",
+    title: "Укладка крупноформатного керамогранита",
+    row: {
+      title: "Укладка крупноформатного керамогранита",
+      kind: "work",
+      formula: "flat_per_m2",
+      unit: "m2",
+      price: 2000,
+      consumptionPerM2: 1.25,
+    },
+  },
+  {
+    id: "work-laminate",
+    section: "work",
+    title: "Укладка ламината",
+    row: {
+      title: "Укладка ламината",
+      kind: "work",
+      formula: "flat_per_m2",
+      unit: "m2",
+      price: 1000,
+      consumptionPerM2: 1,
+    },
+  },
+  {
+    id: "prep-primer",
+    section: "preparation",
+    title: "Грунт глубокого проникновения",
+    row: {
+      title: "Грунт глубокого проникновения",
+      kind: "consumable",
+      formula: "liquid_layers",
+      unit: "l",
+      price: 1250,
+      consumptionPerM2: 0.2,
+      packageSize: 10,
+      layerMm: 1,
+    },
+  },
+  {
+    id: "prep-waterproofing",
+    section: "preparation",
+    title: "Гидроизоляция обмазочная",
+    row: {
+      title: "Гидроизоляция обмазочная",
+      kind: "consumable",
+      formula: "liquid_layers",
+      unit: "l",
+      price: 3200,
+      consumptionPerM2: 0.7,
+      packageSize: 10,
+      layerMm: 2,
+    },
+  },
+  {
+    id: "consumable-tile-glue",
+    section: "consumable",
+    title: "Клей плиточный",
+    row: {
+      title: "Клей плиточный",
+      kind: "consumable",
+      formula: "kg_layer_consumption",
+      unit: "kg",
+      price: 600,
+      consumptionPerM2: 1.5,
+      packageSize: 25,
+      layerMm: 5,
+    },
+  },
+  {
+    id: "consumable-svp",
+    section: "consumable",
+    title: "СВП 2 мм",
+    row: {
+      title: "СВП 2 мм",
+      kind: "consumable",
+      formula: "piece_consumption",
+      unit: "pcs",
+      price: 30,
+      consumptionPerM2: 4,
+    },
+  },
+  {
+    id: "consumable-underlay-roll",
+    section: "consumable",
+    title: "Подложка рулонная",
+    row: {
+      title: "Подложка рулонная",
+      kind: "consumable",
+      formula: "roll_meter_consumption",
+      unit: "m",
+      price: 1500,
+      consumptionPerM2: 1,
+      packageSize: 30,
+    },
+  },
+  {
+    id: "tool-flooring",
+    section: "tool",
+    title: "Инструмент и мелкий расходник",
+    row: {
+      title: "Инструмент и мелкий расходник",
+      kind: "tool",
+      formula: "flat_per_m2",
+      unit: "m2",
+      price: 40,
+      consumptionPerM2: 1,
+    },
+  },
+];
+
 const FORMULA_COMPACT_LABELS: Record<FlooringAssemblyFormula, string> = {
   flat_per_m2: "₽/м²",
   unit_consumption: "Цена × расход",
@@ -127,6 +292,16 @@ function formatMoneyRu(value: number): string {
 
 export function getAssemblyKindLabel(kind: CoveringAssemblyRowKind): string {
   return ASSEMBLY_KIND_LABELS[kind];
+}
+
+export function getFlooringAssemblyLibrarySectionLabel(section: FlooringAssemblyLibrarySection): string {
+  return LIBRARY_SECTION_LABELS[section];
+}
+
+export function getFlooringAssemblyLibraryItems(
+  section: FlooringAssemblyLibrarySection,
+): FlooringAssemblyLibraryItem[] {
+  return FLOORING_ASSEMBLY_LIBRARY_ITEMS.filter((item) => item.section === section);
 }
 
 export function getAssemblyFormulaLabel(formula: FlooringAssemblyFormula): string {
@@ -440,6 +615,14 @@ export function createEmptyAssemblyRow(partial?: Partial<CoveringAssemblyRow>): 
     layerMm: partial?.layerMm,
     enabled: partial?.enabled ?? true,
   };
+}
+
+export function createAssemblyRowFromLibraryItem(item: FlooringAssemblyLibraryItem): CoveringAssemblyRow {
+  return createEmptyAssemblyRow({
+    ...item.row,
+    id: `library-${item.id}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    enabled: true,
+  });
 }
 
 /** Человекочитаемый итог сохранения покрытия в БД (без строк «Состав покрытия»). */

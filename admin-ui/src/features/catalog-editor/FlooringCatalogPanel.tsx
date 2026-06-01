@@ -40,12 +40,16 @@ import {
   aggregateCoveringAssembly,
   applyAggregatesToCoveringDraft,
   calculateAssemblyRowTotal,
+  createAssemblyRowFromLibraryItem,
   createEmptyAssemblyRow,
+  FLOORING_ASSEMBLY_LIBRARY_SECTIONS,
   FLOORING_ASSEMBLY_FORMULAS,
   formatCoveringSaveFeedback,
   getAssemblyFormulaCompactLabel,
   getAssemblyFormulaLabel,
   getAssemblyKindLabel,
+  getFlooringAssemblyLibraryItems,
+  getFlooringAssemblyLibrarySectionLabel,
   getFormulaFieldVisibility,
   getKeramogranit120x60Preset,
   getRecommendedFlatFieldEntries,
@@ -53,6 +57,7 @@ import {
   type CoveringAssemblyAggregates,
   type CoveringAssemblyRow,
   type CoveringAssemblyRowKind,
+  type FlooringAssemblyLibrarySection,
   type FlooringAssemblyFormula,
 } from "./flooring-assembly";
 
@@ -228,6 +233,8 @@ type CoveringAssemblyBlockProps = {
 function CoveringAssemblyBlock({ onApplyAggregates, onRowsChange, formatMoney }: CoveringAssemblyBlockProps) {
   const [rows, setRows] = useState<CoveringAssemblyRow[]>([]);
   const [applyStatus, setApplyStatus] = useState<string | null>(null);
+  const [librarySection, setLibrarySection] = useState<FlooringAssemblyLibrarySection>("covering");
+  const [libraryItemId, setLibraryItemId] = useState("covering-porcelain-120x60");
 
   useEffect(() => {
     onRowsChange?.(rows);
@@ -251,10 +258,24 @@ function CoveringAssemblyBlock({ onApplyAggregates, onRowsChange, formatMoney }:
     () => rows.filter((row) => row.kind === "consumable" || row.kind === "tool"),
     [rows],
   );
+  const libraryItems = useMemo(() => getFlooringAssemblyLibraryItems(librarySection), [librarySection]);
+  const selectedLibraryItem = libraryItems.find((item) => item.id === libraryItemId) ?? libraryItems[0];
 
   function addRow(partial: Partial<CoveringAssemblyRow>) {
     setApplyStatus(null);
     setRows((prev) => [...prev, createEmptyAssemblyRow(partial)]);
+  }
+
+  function addLibraryItem() {
+    if (!selectedLibraryItem) return;
+    setApplyStatus(null);
+    setRows((prev) => [...prev, createAssemblyRowFromLibraryItem(selectedLibraryItem)]);
+  }
+
+  function changeLibrarySection(section: FlooringAssemblyLibrarySection) {
+    const items = getFlooringAssemblyLibraryItems(section);
+    setLibrarySection(section);
+    setLibraryItemId(items[0]?.id ?? "");
   }
 
   function updateRow(id: string, patch: Partial<CoveringAssemblyRow>) {
@@ -469,6 +490,36 @@ function CoveringAssemblyBlock({ onApplyAggregates, onRowsChange, formatMoney }:
             </button>
           </div>
         ) : null}
+      </div>
+
+      <div className="ce-flooring-assembly-library">
+        <span className="ce-flooring-assembly-library-label">Библиотека кубиков</span>
+        <select
+          className="ce-input ce-flooring-assembly-library-select"
+          value={librarySection}
+          onChange={(event) => changeLibrarySection(event.target.value as FlooringAssemblyLibrarySection)}
+        >
+          {FLOORING_ASSEMBLY_LIBRARY_SECTIONS.map((section) => (
+            <option key={section} value={section}>
+              {getFlooringAssemblyLibrarySectionLabel(section)}
+            </option>
+          ))}
+        </select>
+        <select
+          className="ce-input ce-flooring-assembly-library-item"
+          value={selectedLibraryItem?.id ?? ""}
+          onChange={(event) => setLibraryItemId(event.target.value)}
+        >
+          {libraryItems.map((item) => (
+            <option key={item.id} value={item.id}>
+              {item.title}
+            </option>
+          ))}
+        </select>
+        <button type="button" className="ce-btn ce-btn-sm" onClick={addLibraryItem} disabled={!selectedLibraryItem}>
+          Добавить в состав
+        </button>
+        <span className="ce-flooring-assembly-library-hint">После добавления строку можно править в таблице.</span>
       </div>
 
       {rows.length === 0 ? (

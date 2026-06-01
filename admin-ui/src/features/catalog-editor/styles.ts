@@ -312,6 +312,15 @@ select.ce-cell-input { appearance: none; cursor: pointer; }
 .ce-flooring-assembly-title { margin: 0; font-size: 14px; font-weight: 650; }
 .ce-flooring-assembly-hint { margin: 4px 0 0; font-size: 11px; color: var(--ce-muted); line-height: 1.4; }
 .ce-flooring-assembly-toolbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.ce-flooring-assembly-library {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  margin-bottom: 10px; padding: 8px 10px; border-radius: 8px;
+  background: rgba(255,255,255,.025); border: 1px solid var(--ce-border);
+}
+.ce-flooring-assembly-library-label { font-size: 12px; color: var(--ce-muted); font-weight: 650; }
+.ce-flooring-assembly-library-select { width: 150px; }
+.ce-flooring-assembly-library-item { min-width: 280px; flex: 1; }
+.ce-flooring-assembly-library-hint { color: var(--ce-muted); font-size: 11px; line-height: 1.35; }
 .ce-flooring-assembly-table-wrap { margin-bottom: 10px; max-height: none; border-radius: 8px; }
 .ce-flooring-assembly-table { min-width: 1080px; width: 100%; table-layout: fixed; }
 .ce-flooring-assembly-table thead th { padding: 8px 7px; }

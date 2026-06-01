@@ -4,10 +4,14 @@ import {
   aggregateCoveringAssembly,
   applyAggregatesToCoveringDraft,
   calculateAssemblyRowTotal,
+  createAssemblyRowFromLibraryItem,
   createEmptyAssemblyRow,
+  FLOORING_ASSEMBLY_LIBRARY_ITEMS,
   formatCoveringSaveFeedback,
   getAssemblyFormulaLabel,
   getAssemblyKindLabel,
+  getFlooringAssemblyLibraryItems,
+  getFlooringAssemblyLibrarySectionLabel,
   getFormulaFieldVisibility,
   getKeramogranit120x60Preset,
   getRecommendedFlatFieldEntries,
@@ -134,6 +138,28 @@ describe("getAssemblyKindLabel", () => {
     expect(getAssemblyKindLabel("material")).toBe("Материал");
     expect(getAssemblyKindLabel("consumable")).toBe("Расходник");
     expect(getAssemblyKindLabel("tool")).toBe("Инструмент");
+  });
+});
+
+describe("flooring assembly library", () => {
+  it("разбивает кубики по отделам", () => {
+    expect(getFlooringAssemblyLibrarySectionLabel("covering")).toBe("Покрытия");
+    expect(getFlooringAssemblyLibraryItems("covering").some((item) => item.id === "covering-porcelain-120x60")).toBe(
+      true,
+    );
+    expect(getFlooringAssemblyLibraryItems("work").every((item) => item.section === "work")).toBe(true);
+    expect(getFlooringAssemblyLibraryItems("consumable").every((item) => item.section === "consumable")).toBe(true);
+  });
+
+  it("создаёт редактируемую строку из библиотечного кубика", () => {
+    const item = FLOORING_ASSEMBLY_LIBRARY_ITEMS.find((candidate) => candidate.id === "consumable-tile-glue");
+    expect(item).toBeDefined();
+    const row = createAssemblyRowFromLibraryItem(item!);
+    expect(row.id).toContain("library-consumable-tile-glue");
+    expect(row.enabled).toBe(true);
+    expect(row.kind).toBe("consumable");
+    expect(row.formula).toBe("kg_layer_consumption");
+    expect(calculateAssemblyRowTotal(row)).toBe((600 / 25) * 1.5 * 5);
   });
 });
 

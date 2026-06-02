@@ -179,6 +179,8 @@ select.ce-cell-input { appearance: none; cursor: pointer; }
 .ce-row-action:disabled { opacity: .45; cursor: not-allowed; }
 .ce-row-action-danger { color: var(--ce-danger); }
 .ce-row-action-danger:hover { border-color: rgba(255,93,93,.45); background: rgba(255,93,93,.1); }
+.ce-row-action-primary { color: var(--ce-accent); border-color: rgba(76,141,255,.45); }
+.ce-row-action-primary:hover { background: rgba(76,141,255,.12); }
 
 .ce-empty { padding: 32px; text-align: center; color: var(--ce-muted); }
 
@@ -285,8 +287,9 @@ select.ce-cell-input { appearance: none; cursor: pointer; }
 /* --- Вкладка «Полы» (F5b) --- */
 .ce-flooring-section { margin-bottom: 20px; }
 .ce-flooring-section-title { margin: 0 0 10px; font-size: 15px; font-weight: 650; }
-.ce-flooring-table-wrap { margin-bottom: 10px; max-height: none; overflow-x: hidden; }
-.ce-flooring-table { width: 100%; min-width: 0; table-layout: fixed; }
+.ce-flooring-table-wrap { margin-bottom: 10px; max-height: none; overflow-x: auto; }
+.ce-flooring-table { width: 100%; min-width: 1020px; table-layout: fixed; }
+.ce-flooring-table tbody td.ce-num { text-align: right; }
 .ce-flooring-table tbody td { height: 38px; }
 .ce-flooring-table .ce-readonly {
   padding: 0 10px; line-height: 38px;
@@ -298,7 +301,18 @@ select.ce-cell-input { appearance: none; cursor: pointer; }
 .ce-flooring-table .ce-col-tech { width: 28%; min-width: 0; }
 .ce-flooring-table .ce-col-actions {
   width: 108px; min-width: 108px; max-width: 108px;
-  text-align: left; white-space: nowrap;
+  text-align: center; white-space: nowrap; vertical-align: middle;
+}
+.ce-flooring-table .ce-cell-select {
+  padding-right: 18px; font-size: 11px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.ce-flooring-table .ce-cell-formula { font-size: 10px; font-weight: 600; }
+.ce-flooring-table .ce-cell-input {
+  height: 38px; min-height: 38px; font-size: 12px;
+}
+.ce-flooring-table .ce-na {
+  height: 38px; line-height: 38px; padding: 0 10px;
 }
 .ce-flooring-form {
   padding: 10px 12px; border: 1px solid var(--ce-border); border-radius: 10px;
@@ -358,7 +372,6 @@ select.ce-cell-input { appearance: none; cursor: pointer; }
   padding: 10px 12px; text-align: left;
 }
 .ce-flooring-library-form { margin-top: 10px; }
-.ce-flooring-library-actions { justify-content: center; gap: 6px; flex-wrap: nowrap; padding: 0 6px; }
 
 /* --- Локальная сборка покрытия (FA1 spike) --- */
 .ce-flooring-assembly {
@@ -395,7 +408,7 @@ select.ce-cell-input { appearance: none; cursor: pointer; }
 .ce-flooring-assembly-library-select { width: 150px; }
 .ce-flooring-assembly-library-item { min-width: 280px; flex: 1; }
 .ce-flooring-assembly-library-hint { color: var(--ce-muted); font-size: 11px; line-height: 1.35; }
-.ce-flooring-assembly-table-wrap { margin-bottom: 10px; max-height: none; border-radius: 8px; }
+.ce-flooring-assembly-table-wrap { margin-bottom: 10px; max-height: none; overflow-x: auto; border-radius: 8px; }
 .ce-flooring-assembly-table { min-width: 1080px; width: 100%; table-layout: fixed; }
 .ce-flooring-assembly-table thead th { padding: 8px 7px; }
 .ce-flooring-assembly-table tbody td { height: 34px; }
@@ -415,7 +428,12 @@ select.ce-cell-input { appearance: none; cursor: pointer; }
 .ce-flooring-assembly-table .ce-cell-formula { font-size: 10px; font-weight: 600; }
 .ce-flooring-assembly-table .ce-cell-unit { text-align: center; }
 .ce-flooring-assembly-table .ce-readonly { padding: 0 7px; line-height: 34px; }
+.ce-flooring-assembly-table .ce-na {
+  height: 34px; line-height: 34px; padding: 0 7px; text-align: center;
+}
+.ce-flooring-assembly-table tbody td.ce-num { text-align: right; }
 .ce-flooring-assembly-table .ce-total-cell { font-size: 12px; white-space: nowrap; }
+.ce-flooring-assembly-table .ce-col-actions { padding: 0; vertical-align: middle; }
 .ce-flooring-assembly-table .ce-row-delete { display: block; margin: 0 auto; }
 .ce-flooring-assembly-section-row td {
   height: 26px !important; padding: 5px 8px !important;
@@ -434,8 +452,11 @@ select.ce-cell-input { appearance: none; cursor: pointer; }
 .ce-flooring-assembly-summary-label { display: block; color: var(--ce-muted); font-size: 11px; }
 .ce-flooring-assembly-summary-value { font-weight: 600; color: var(--ce-ok); }
 .ce-flooring-assembly-actions { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
-.ce-flooring-assembly-check { padding: 0; text-align: center; }
+.ce-flooring-assembly-check {
+  padding: 0; text-align: center; vertical-align: middle;
+}
 .ce-flooring-assembly-check input {
   display: block; width: 14px; height: 14px; margin: 0 auto;
 }
+.ce-flooring-assembly { max-width: 100%; overflow-x: hidden; }
 `;

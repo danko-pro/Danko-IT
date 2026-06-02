@@ -6,6 +6,9 @@ from sqlalchemy import delete, func, insert, select, update
 from sqlalchemy.exc import IntegrityError
 
 from supply_bot.application.errors import ConflictError
+from supply_bot.estimates.application.flooring_catalog_assembly import (
+    validate_flooring_catalog_assembly_target_kind,
+)
 from supply_bot.storage_estimates.repository import (
     SqlAlchemyEstimateRepository,
     _bool_int,
@@ -14,6 +17,8 @@ from supply_bot.storage_estimates.repository import (
     _rows_to_dicts,
 )
 from supply_bot.storage_estimates.tables import (
+    estimate_flooring_catalog_assemblies,
+    estimate_flooring_catalog_assembly_rows,
     estimate_flooring_configs,
     estimate_flooring_assembly_items,
     estimate_flooring_coverings,
@@ -108,6 +113,79 @@ class SqlAlchemyEstimateFlooringRepository(SqlAlchemyEstimateRepository):
 
     async def delete_estimate_flooring_layout(self, layout_id: int) -> bool:
         return await self._delete_global_catalog_item(estimate_flooring_layouts, layout_id)
+
+    async def get_estimate_flooring_catalog_assembly(
+        self,
+        target_kind: str,
+        target_id: int,
+    ) -> dict[str, Any] | None:
+        target_kind = validate_flooring_catalog_assembly_target_kind(target_kind)
+        async with self._session_factory() as session:
+            assembly = await self._fetch_visible_catalog_assembly(session, target_kind, target_id)
+            if assembly is None:
+                return None
+            rows_result = await session.execute(
+                select(
+                    *(
+                        column
+                        for column in estimate_flooring_catalog_assembly_rows.c
+                        if column.name not in {"assembly_id", "created_at", "updated_at"}
+                    )
+                )
+                .where(estimate_flooring_catalog_assembly_rows.c.assembly_id == assembly["id"])
+                .order_by(
+                    estimate_flooring_catalog_assembly_rows.c.sort_order,
+                    estimate_flooring_catalog_assembly_rows.c.id,
+                )
+            )
+            assembly["rows"] = _rows_to_dicts(rows_result.fetchall())
+            return assembly
+
+    async def replace_estimate_flooring_catalog_assembly(
+        self,
+        target_kind: str,
+        target_id: int,
+        title: str,
+        rows: list[dict[str, Any]],
+    ) -> int:
+        target_kind = validate_flooring_catalog_assembly_target_kind(target_kind)
+        owner_value = self._catalog_write_owner_value()
+        async with self._session_factory() as session:
+            async with session.begin():
+                assembly_id = await self._upsert_catalog_assembly(
+                    session,
+                    target_kind=target_kind,
+                    target_id=target_id,
+                    title=title,
+                    owner_user_id=owner_value,
+                )
+                await session.execute(
+                    delete(estimate_flooring_catalog_assembly_rows).where(
+                        estimate_flooring_catalog_assembly_rows.c.assembly_id == assembly_id,
+                    )
+                )
+                for index, row in enumerate(rows, start=1):
+                    await session.execute(
+                        insert(estimate_flooring_catalog_assembly_rows).values(
+                            assembly_id=assembly_id,
+                            **self._catalog_assembly_row_values(row, index=index),
+                        )
+                    )
+                return assembly_id
+
+    async def delete_estimate_flooring_catalog_assembly(self, target_kind: str, target_id: int) -> bool:
+        target_kind = validate_flooring_catalog_assembly_target_kind(target_kind)
+        async with self._session_factory() as session:
+            async with session.begin():
+                assembly_id = await self._writable_catalog_assembly_id(session, target_kind, target_id)
+                if assembly_id is None:
+                    return False
+                result = await session.execute(
+                    delete(estimate_flooring_catalog_assemblies).where(
+                        estimate_flooring_catalog_assemblies.c.id == assembly_id,
+                    )
+                )
+                return bool(result.rowcount)
 
     async def get_estimate_flooring_config(self, project_id: int) -> dict[str, Any] | None:
         self._required_owner_user_id()
@@ -321,6 +399,91 @@ class SqlAlchemyEstimateFlooringRepository(SqlAlchemyEstimateRepository):
                     .values(is_active=0, updated_at=func.current_timestamp())
                 )
                 return bool(result.rowcount)
+
+    async def _fetch_visible_catalog_assembly(
+        self,
+        session,
+        target_kind: str,
+        target_id: int,
+    ) -> dict[str, Any] | None:
+        result = await session.execute(
+            select(
+                *(
+                    column
+                    for column in estimate_flooring_catalog_assemblies.c
+                    if column.name != "owner_user_id"
+                )
+            ).where(
+                self._visible_catalog_clause(estimate_flooring_catalog_assemblies),
+                estimate_flooring_catalog_assemblies.c.is_active == 1,
+                estimate_flooring_catalog_assemblies.c.target_kind == target_kind,
+                estimate_flooring_catalog_assemblies.c.target_id == target_id,
+            )
+        )
+        return _row_to_dict(result.fetchone())
+
+    async def _writable_catalog_assembly_id(
+        self,
+        session,
+        target_kind: str,
+        target_id: int,
+    ) -> int | None:
+        result = await session.execute(
+            select(estimate_flooring_catalog_assemblies.c.id).where(
+                self._owner_clause(estimate_flooring_catalog_assemblies),
+                estimate_flooring_catalog_assemblies.c.is_active == 1,
+                estimate_flooring_catalog_assemblies.c.target_kind == target_kind,
+                estimate_flooring_catalog_assemblies.c.target_id == target_id,
+            )
+        )
+        value = result.scalar_one_or_none()
+        return int(value) if value is not None else None
+
+    async def _upsert_catalog_assembly(
+        self,
+        session,
+        *,
+        target_kind: str,
+        target_id: int,
+        title: str,
+        owner_user_id: int | None,
+    ) -> int:
+        assembly_id = await self._writable_catalog_assembly_id(session, target_kind, target_id)
+        if assembly_id is not None:
+            await session.execute(
+                update(estimate_flooring_catalog_assemblies)
+                .where(estimate_flooring_catalog_assemblies.c.id == assembly_id)
+                .values(title=title, updated_at=func.current_timestamp())
+            )
+            return assembly_id
+        result = await session.execute(
+            insert(estimate_flooring_catalog_assemblies).values(
+                owner_user_id=owner_user_id,
+                target_kind=target_kind,
+                target_id=target_id,
+                title=title,
+            )
+        )
+        return int(result.inserted_primary_key[0])
+
+    def _catalog_assembly_row_values(self, row: dict[str, Any], *, index: int) -> dict[str, Any]:
+        assembly_item_id = row.get("assembly_item_id")
+        return {
+            "assembly_item_id": int(assembly_item_id) if assembly_item_id not in (None, "") else None,
+            "section": str(row["section"]),
+            "kind": str(row["kind"]),
+            "formula": str(row["formula"]),
+            "title": str(row["title"]),
+            "unit": str(row.get("unit") or "pcs"),
+            "price": float(row.get("price") or 0),
+            "consumption_per_m2": float(row.get("consumption_per_m2") or 0),
+            "package_size": _float_or_none(row.get("package_size")),
+            "layer_mm": _float_or_none(row.get("layer_mm")),
+            "sort_order": int(row.get("sort_order") or index * 10),
+            "is_enabled": _bool_int(bool(row.get("is_enabled", True))),
+            "public_category": str(row["public_category"]),
+            "public_title": row.get("public_title"),
+        }
 
     async def _list_project_rows(self, table, project_id: int, *columns: Any) -> list[dict[str, Any]]:
         self._required_owner_user_id()

@@ -263,3 +263,86 @@ export type FlooringSnapshotDisplayRow = {
   catalogId?: number;
   rates: Record<string, number>;
 };
+
+// --- Catalog assembly (GET/PUT/DELETE /api/calculator/flooring/{target_kind}/{target_id}/assembly) ---
+
+export type FlooringCatalogAssemblyTarget = "covering" | "preparation" | "layout";
+
+export type FlooringCatalogAssemblyPublicCategory = "materials" | "works" | "consumables" | "tools";
+
+export type FlooringCatalogAssemblyRowDto = {
+  id?: number;
+  assembly_item_id?: number | null;
+  section: FlooringAssemblySection;
+  kind: FlooringAssemblyRowKind;
+  formula: FlooringAssemblyFormula;
+  title: string;
+  unit: string;
+  price: number;
+  consumption_per_m2: number;
+  package_size?: number | null;
+  layer_mm?: number | null;
+  sort_order?: number;
+  is_enabled?: number | boolean;
+  public_category: string;
+  public_title?: string | null;
+};
+
+export type FlooringCatalogAssemblyDto = {
+  id?: number;
+  target_kind: FlooringCatalogAssemblyTarget;
+  target_id: number;
+  title: string;
+  version: string;
+  rows: FlooringCatalogAssemblyRowDto[];
+};
+
+export type FlooringCatalogAssemblyRowPayload = {
+  assembly_item_id?: number | null;
+  section: FlooringAssemblySection;
+  kind: FlooringAssemblyRowKind;
+  formula: FlooringAssemblyFormula;
+  title: string;
+  unit: string;
+  price: number;
+  consumption_per_m2: number;
+  package_size?: number | null;
+  layer_mm?: number | null;
+  sort_order?: number;
+  is_enabled: boolean;
+  public_category: string;
+  public_title?: string | null;
+};
+
+export type FlooringCatalogAssemblyPayload = {
+  title: string;
+  version?: string | null;
+  rows: FlooringCatalogAssemblyRowPayload[];
+};
+
+export type FlooringCatalogAssemblyRowDraft = {
+  id?: number;
+  assemblyItemId: number | null;
+  section: FlooringAssemblySection;
+  kind: FlooringAssemblyRowKind;
+  formula: FlooringAssemblyFormula;
+  title: string;
+  unit: string;
+  price: number;
+  consumptionPerM2: number;
+  packageSize: number | null;
+  layerMm: number | null;
+  sortOrder: number;
+  isEnabled: boolean;
+  publicCategory: string;
+  publicTitle: string | null;
+};
+
+export type FlooringCatalogAssemblyDraft = {
+  id?: number;
+  targetKind: FlooringCatalogAssemblyTarget;
+  targetId: number;
+  title: string;
+  version: string;
+  rows: FlooringCatalogAssemblyRowDraft[];
+};

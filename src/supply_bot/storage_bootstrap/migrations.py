@@ -16,6 +16,8 @@ ESTIMATE_OWNER_TABLES = (
     "estimate_flooring_preparations",
     "estimate_flooring_layouts",
     "estimate_flooring_assembly_items",
+    "estimate_flooring_catalog_assemblies",
+    "estimate_flooring_catalog_assembly_rows",
     "estimate_flooring_configs",
     "estimate_flooring_rooms",
     "estimate_flooring_room_zones",
@@ -174,6 +176,79 @@ async def apply_storage_migrations(connection_factory: ConnectionFactory) -> Non
             ON estimate_flooring_assembly_items(owner_user_id, source_code)
             WHERE owner_user_id IS NOT NULL
             """
+        )
+        await db.execute(
+            """
+            CREATE TABLE IF NOT EXISTS estimate_flooring_catalog_assemblies (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                owner_user_id INTEGER REFERENCES app_users(id) ON DELETE CASCADE,
+                target_kind TEXT NOT NULL,
+                target_id INTEGER NOT NULL,
+                title TEXT NOT NULL,
+                version TEXT NOT NULL DEFAULT 'flooring-assembly-v1',
+                is_active INTEGER NOT NULL DEFAULT 1,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            )
+            """
+        )
+        await db.execute(
+            "CREATE INDEX IF NOT EXISTS ix_estimate_flooring_catalog_assemblies_owner "
+            "ON estimate_flooring_catalog_assemblies(owner_user_id)"
+        )
+        await db.execute(
+            "CREATE INDEX IF NOT EXISTS ix_estimate_flooring_catalog_assemblies_target "
+            "ON estimate_flooring_catalog_assemblies(target_kind, target_id)"
+        )
+        await db.execute(
+            """
+            CREATE UNIQUE INDEX IF NOT EXISTS uq_estimate_flooring_catalog_assemblies_global_target
+            ON estimate_flooring_catalog_assemblies(target_kind, target_id)
+            WHERE owner_user_id IS NULL
+            """
+        )
+        await db.execute(
+            """
+            CREATE UNIQUE INDEX IF NOT EXISTS uq_estimate_flooring_catalog_assemblies_owner_target
+            ON estimate_flooring_catalog_assemblies(owner_user_id, target_kind, target_id)
+            WHERE owner_user_id IS NOT NULL
+            """
+        )
+        await db.execute(
+            """
+            CREATE TABLE IF NOT EXISTS estimate_flooring_catalog_assembly_rows (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                assembly_id INTEGER NOT NULL REFERENCES estimate_flooring_catalog_assemblies(id) ON DELETE CASCADE,
+                assembly_item_id INTEGER REFERENCES estimate_flooring_assembly_items(id) ON DELETE SET NULL,
+                section TEXT NOT NULL,
+                kind TEXT NOT NULL,
+                formula TEXT NOT NULL,
+                title TEXT NOT NULL,
+                unit TEXT NOT NULL DEFAULT 'pcs',
+                price REAL NOT NULL DEFAULT 0,
+                consumption_per_m2 REAL NOT NULL DEFAULT 0,
+                package_size REAL,
+                layer_mm REAL,
+                sort_order INTEGER NOT NULL DEFAULT 100,
+                is_enabled INTEGER NOT NULL DEFAULT 1,
+                public_category TEXT NOT NULL,
+                public_title TEXT,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            )
+            """
+        )
+        await db.execute(
+            "CREATE INDEX IF NOT EXISTS ix_estimate_flooring_catalog_assembly_rows_assembly "
+            "ON estimate_flooring_catalog_assembly_rows(assembly_id)"
+        )
+        await db.execute(
+            "CREATE INDEX IF NOT EXISTS ix_estimate_flooring_catalog_assembly_rows_item "
+            "ON estimate_flooring_catalog_assembly_rows(assembly_item_id)"
+        )
+        await db.execute(
+            "CREATE INDEX IF NOT EXISTS ix_estimate_flooring_catalog_assembly_rows_sort "
+            "ON estimate_flooring_catalog_assembly_rows(assembly_id, sort_order)"
         )
         await _ensure_column(
             db,

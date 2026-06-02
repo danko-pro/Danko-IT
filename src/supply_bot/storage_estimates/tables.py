@@ -239,6 +239,53 @@ estimate_flooring_assembly_items = Table(
     Column("updated_at", Text, nullable=False, server_default=text("CURRENT_TIMESTAMP")),
 )
 
+estimate_flooring_catalog_assemblies = Table(
+    "estimate_flooring_catalog_assemblies",
+    metadata,
+    Column("id", Integer, primary_key=True, autoincrement=True),
+    Column("owner_user_id", Integer, ForeignKey("app_users.id", ondelete="CASCADE"), nullable=True),
+    Column("target_kind", Text, nullable=False),
+    Column("target_id", Integer, nullable=False),
+    Column("title", Text, nullable=False),
+    Column("version", Text, nullable=False, server_default=text("'flooring-assembly-v1'")),
+    Column("is_active", Integer, nullable=False, server_default=text("1")),
+    Column("created_at", Text, nullable=False, server_default=text("CURRENT_TIMESTAMP")),
+    Column("updated_at", Text, nullable=False, server_default=text("CURRENT_TIMESTAMP")),
+)
+
+estimate_flooring_catalog_assembly_rows = Table(
+    "estimate_flooring_catalog_assembly_rows",
+    metadata,
+    Column("id", Integer, primary_key=True, autoincrement=True),
+    Column(
+        "assembly_id",
+        Integer,
+        ForeignKey("estimate_flooring_catalog_assemblies.id", ondelete="CASCADE"),
+        nullable=False,
+    ),
+    Column(
+        "assembly_item_id",
+        Integer,
+        ForeignKey("estimate_flooring_assembly_items.id", ondelete="SET NULL"),
+        nullable=True,
+    ),
+    Column("section", Text, nullable=False),
+    Column("kind", Text, nullable=False),
+    Column("formula", Text, nullable=False),
+    Column("title", Text, nullable=False),
+    Column("unit", Text, nullable=False, server_default=text("'pcs'")),
+    Column("price", Float, nullable=False, server_default=text("0")),
+    Column("consumption_per_m2", Float, nullable=False, server_default=text("0")),
+    Column("package_size", Float, nullable=True),
+    Column("layer_mm", Float, nullable=True),
+    Column("sort_order", Integer, nullable=False, server_default=text("100")),
+    Column("is_enabled", Integer, nullable=False, server_default=text("1")),
+    Column("public_category", Text, nullable=False),
+    Column("public_title", Text, nullable=True),
+    Column("created_at", Text, nullable=False, server_default=text("CURRENT_TIMESTAMP")),
+    Column("updated_at", Text, nullable=False, server_default=text("CURRENT_TIMESTAMP")),
+)
+
 estimate_flooring_configs = Table(
     "estimate_flooring_configs",
     metadata,
@@ -833,6 +880,42 @@ Index(
     unique=True,
     sqlite_where=estimate_flooring_assembly_items.c.owner_user_id.is_not(None),
     postgresql_where=estimate_flooring_assembly_items.c.owner_user_id.is_not(None),
+)
+Index("ix_estimate_flooring_catalog_assemblies_owner", estimate_flooring_catalog_assemblies.c.owner_user_id)
+Index(
+    "ix_estimate_flooring_catalog_assemblies_target",
+    estimate_flooring_catalog_assemblies.c.target_kind,
+    estimate_flooring_catalog_assemblies.c.target_id,
+)
+Index(
+    "uq_estimate_flooring_catalog_assemblies_global_target",
+    estimate_flooring_catalog_assemblies.c.target_kind,
+    estimate_flooring_catalog_assemblies.c.target_id,
+    unique=True,
+    sqlite_where=estimate_flooring_catalog_assemblies.c.owner_user_id.is_(None),
+    postgresql_where=estimate_flooring_catalog_assemblies.c.owner_user_id.is_(None),
+)
+Index(
+    "uq_estimate_flooring_catalog_assemblies_owner_target",
+    estimate_flooring_catalog_assemblies.c.owner_user_id,
+    estimate_flooring_catalog_assemblies.c.target_kind,
+    estimate_flooring_catalog_assemblies.c.target_id,
+    unique=True,
+    sqlite_where=estimate_flooring_catalog_assemblies.c.owner_user_id.is_not(None),
+    postgresql_where=estimate_flooring_catalog_assemblies.c.owner_user_id.is_not(None),
+)
+Index(
+    "ix_estimate_flooring_catalog_assembly_rows_assembly",
+    estimate_flooring_catalog_assembly_rows.c.assembly_id,
+)
+Index(
+    "ix_estimate_flooring_catalog_assembly_rows_item",
+    estimate_flooring_catalog_assembly_rows.c.assembly_item_id,
+)
+Index(
+    "ix_estimate_flooring_catalog_assembly_rows_sort",
+    estimate_flooring_catalog_assembly_rows.c.assembly_id,
+    estimate_flooring_catalog_assembly_rows.c.sort_order,
 )
 Index(
     "ix_estimate_flooring_rooms_owner_project",

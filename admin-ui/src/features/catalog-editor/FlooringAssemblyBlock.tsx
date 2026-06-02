@@ -53,6 +53,10 @@ type CoveringAssemblyBlockProps = {
   ) => Promise<boolean>;
   onRowsChange?: (rows: CoveringAssemblyRow[]) => void;
   formatMoney: (value: number) => string;
+  initialRows?: CoveringAssemblyRow[];
+  initialTitle?: string;
+  resetKey?: string;
+  loadingAssembly?: boolean;
 };
 
 export function FlooringAssemblyBlock({
@@ -62,12 +66,30 @@ export function FlooringAssemblyBlock({
   onCreateFromAssembly,
   onRowsChange,
   formatMoney,
+  initialRows = [],
+  initialTitle = "",
+  resetKey,
+  loadingAssembly = false,
 }: CoveringAssemblyBlockProps) {
   const [rows, setRows] = useState<CoveringAssemblyRow[]>([]);
   const [applyStatus, setApplyStatus] = useState<string | null>(null);
   const [libraryItemId, setLibraryItemId] = useState("");
   const [entryTitle, setEntryTitle] = useState("");
   const [creating, setCreating] = useState(false);
+
+  useEffect(() => {
+    if (resetKey === undefined) {
+      setRows([]);
+      setEntryTitle("");
+      setApplyStatus(null);
+      setLibraryItemId("");
+      return;
+    }
+    setRows(initialRows);
+    setEntryTitle(initialTitle);
+    setApplyStatus(null);
+    setLibraryItemId("");
+  }, [resetKey, initialRows, initialTitle]);
 
   useEffect(() => {
     onRowsChange?.(rows);
@@ -342,6 +364,7 @@ export function FlooringAssemblyBlock({
           <h4 className="ce-flooring-assembly-title">Сборка строки каталога</h4>
           <p className="ce-flooring-assembly-hint">
             Выберите, что собираем: покрытие, подготовку или укладку. Кубики остаются в библиотеке, итог переносится в форму ниже.
+            {loadingAssembly ? " Загрузка состава…" : null}
           </p>
         </div>
         {rows.length > 0 ? (

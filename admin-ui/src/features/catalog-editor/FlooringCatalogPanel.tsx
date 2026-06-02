@@ -172,24 +172,26 @@ export function FlooringCatalogPanel() {
 
       <FlooringCoveringsSection
         rows={coveringRows}
+        selectedId={editingCoveringId}
         onEdit={beginEditCovering}
         onDelete={handleDeleteCovering}
         formatMoney={formatMoney}
-        formatPercent={formatPercent}
         consumablesSummaryPerM2={consumablesSummaryPerM2}
-      >
-
-        {editingCoveringId !== null ? (
-          <FlooringCoveringEditForm
-            draft={coveringDraft}
-            submitting={savingCovering}
-            onSubmit={() => void handleUpdateCovering()}
-            onCancel={cancelCoveringEdit}
-            onDraftChange={setCoveringDraft}
-            onNumberChange={updateCoveringNumber}
-          />
-        ) : null}
-      </FlooringCoveringsSection>
+        editor={
+          editingCoveringId !== null ? (
+            <FlooringCoveringEditForm
+              draft={coveringDraft}
+              submitting={savingCovering}
+              onSubmit={() => void handleUpdateCovering()}
+              onCancel={cancelCoveringEdit}
+              onDraftChange={setCoveringDraft}
+              onNumberChange={updateCoveringNumber}
+              formatMoney={formatMoney}
+              formatPercent={formatPercent}
+            />
+          ) : null
+        }
+      />
 
       <FlooringPreparationsSection
         rows={preparationRows}

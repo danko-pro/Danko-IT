@@ -290,14 +290,14 @@ export function FlooringAssemblyBlock({
             onChange={(event) => updateRow(row.id, { unit: event.target.value })}
           />
         </td>
-        <td>
+        <td className="ce-num">
           <CatalogDecimalInput
             className="ce-cell-input ce-num"
             value={row.price}
             onCommit={(value) => updateRowNumber(row.id, "price", value)}
           />
         </td>
-        <td>
+        <td className="ce-num">
           {fieldVisibility.consumption ? (
             <CatalogDecimalInput
               className="ce-cell-input ce-num"
@@ -316,7 +316,7 @@ export function FlooringAssemblyBlock({
             <span className="ce-readonly ce-na">—</span>
           )}
         </td>
-        <td>
+        <td className="ce-num">
           {fieldVisibility.packageSize ? (
             <CatalogDecimalInput
               className="ce-cell-input ce-num"
@@ -328,7 +328,7 @@ export function FlooringAssemblyBlock({
             <span className="ce-readonly ce-na">—</span>
           )}
         </td>
-        <td>
+        <td className="ce-num">
           {fieldVisibility.layerMm ? (
             <CatalogDecimalInput
               className="ce-cell-input ce-num"
@@ -343,7 +343,7 @@ export function FlooringAssemblyBlock({
         <td className="ce-num ce-readonly ce-total-cell">
           {formatMoney(calculateAssemblyRowTotal(row))}
         </td>
-        <td>
+        <td className="ce-col-actions">
           <button
             type="button"
             className="ce-row-delete"

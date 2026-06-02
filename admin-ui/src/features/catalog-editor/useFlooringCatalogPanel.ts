@@ -21,7 +21,6 @@ import {
   dtoToFlooringLayoutDraft,
   dtoToFlooringPreparationDraft,
   layoutDraftToUpdatePayload,
-  normalizeNum,
   preparationDraftToUpdatePayload,
   snapshotToDisplayRows,
 } from "./api/flooring-mappers";
@@ -179,23 +178,27 @@ export function useFlooringCatalogPanel() {
     return createFlooringCatalogRowFromAssembly(assemblyCreateDeps, target, rawTitle, aggregates, rows);
   }
 
-  function updateCoveringNumber(field: keyof FlooringCoveringDraft, value: string) {
-    setCoveringDraft((prev) => ({ ...prev, [field]: normalizeNum(value) }));
+  function updateCoveringNumber(field: keyof FlooringCoveringDraft, value: number) {
+    setCoveringDraft((prev) => ({ ...prev, [field]: value }));
   }
 
-  function updatePreparationNumber(field: keyof FlooringPreparationDraft, value: string) {
-    setPreparationDraft((prev) => ({ ...prev, [field]: normalizeNum(value) }));
+  function updatePreparationNumber(field: keyof FlooringPreparationDraft, value: number) {
+    setPreparationDraft((prev) => ({ ...prev, [field]: value }));
   }
 
-  function updateLayoutNumber(field: keyof FlooringLayoutDraft, value: string) {
-    setLayoutDraft((prev) => ({ ...prev, [field]: normalizeNum(value) }));
+  function updateLayoutNumber(field: keyof FlooringLayoutDraft, value: number) {
+    setLayoutDraft((prev) => ({ ...prev, [field]: value }));
   }
 
   function updateAssemblyNumber(
     field: "price" | "consumptionPerM2" | "packageSize" | "layerMm" | "sortOrder",
-    value: string,
+    value: number | null,
   ) {
-    setAssemblyDraft((prev) => ({ ...prev, [field]: value === "" ? null : normalizeNum(value) }));
+    if (field === "packageSize" || field === "layerMm") {
+      setAssemblyDraft((prev) => ({ ...prev, [field]: value }));
+      return;
+    }
+    setAssemblyDraft((prev) => ({ ...prev, [field]: value ?? 0 }));
   }
 
   function beginEditAssemblyItem(item: FlooringAssemblyItemDto) {

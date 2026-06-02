@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 
-import { normalizeNum } from "./api/flooring-mappers";
+import { CatalogDecimalInput } from "./CatalogDecimalInput";
 import {
   aggregateCoveringAssembly,
   calculateAssemblyRowTotal,
@@ -204,8 +204,16 @@ export function FlooringAssemblyBlock({
     setRows((prev) => prev.filter((row) => row.id !== id));
   }
 
-  function updateRowNumber(id: string, field: "price" | "consumptionPerM2" | "packageSize" | "layerMm", value: string) {
-    updateRow(id, { [field]: normalizeNum(value) });
+  function updateRowNumber(
+    id: string,
+    field: "price" | "consumptionPerM2" | "packageSize" | "layerMm",
+    value: number | null,
+  ) {
+    if (field === "packageSize" || field === "layerMm") {
+      updateRow(id, { [field]: value ?? undefined });
+      return;
+    }
+    updateRow(id, { [field]: value ?? 0 });
   }
 
   function loadPreset() {
@@ -283,32 +291,26 @@ export function FlooringAssemblyBlock({
           />
         </td>
         <td>
-          <input
+          <CatalogDecimalInput
             className="ce-cell-input ce-num"
-            type="number"
-            step="0.01"
-            value={row.price || ""}
-            onChange={(event) => updateRowNumber(row.id, "price", event.target.value)}
+            value={row.price}
+            onCommit={(value) => updateRowNumber(row.id, "price", value)}
           />
         </td>
         <td>
           {fieldVisibility.consumption ? (
-            <input
+            <CatalogDecimalInput
               className="ce-cell-input ce-num"
-              type="number"
-              step="0.01"
-              value={row.consumptionPerM2 || ""}
-              onChange={(event) => updateRowNumber(row.id, "consumptionPerM2", event.target.value)}
+              value={row.consumptionPerM2}
+              onCommit={(value) => updateRowNumber(row.id, "consumptionPerM2", value)}
             />
           ) : showsFlatCoefficient ? (
-            <input
+            <CatalogDecimalInput
               className="ce-cell-input ce-num"
-              type="number"
-              step="0.01"
-              value={row.consumptionPerM2 || ""}
+              value={row.consumptionPerM2}
               placeholder="1"
               title={row.kind === "material" ? "Коэффициент запаса материала" : "Коэффициент сложности работы"}
-              onChange={(event) => updateRowNumber(row.id, "consumptionPerM2", event.target.value)}
+              onCommit={(value) => updateRowNumber(row.id, "consumptionPerM2", value)}
             />
           ) : (
             <span className="ce-readonly ce-na">—</span>
@@ -316,12 +318,11 @@ export function FlooringAssemblyBlock({
         </td>
         <td>
           {fieldVisibility.packageSize ? (
-            <input
+            <CatalogDecimalInput
               className="ce-cell-input ce-num"
-              type="number"
-              step="0.01"
-              value={row.packageSize ?? ""}
-              onChange={(event) => updateRowNumber(row.id, "packageSize", event.target.value)}
+              nullable
+              value={row.packageSize}
+              onCommit={(value) => updateRowNumber(row.id, "packageSize", value)}
             />
           ) : (
             <span className="ce-readonly ce-na">—</span>
@@ -329,12 +330,11 @@ export function FlooringAssemblyBlock({
         </td>
         <td>
           {fieldVisibility.layerMm ? (
-            <input
+            <CatalogDecimalInput
               className="ce-cell-input ce-num"
-              type="number"
-              step="0.01"
-              value={row.layerMm ?? ""}
-              onChange={(event) => updateRowNumber(row.id, "layerMm", event.target.value)}
+              nullable
+              value={row.layerMm}
+              onCommit={(value) => updateRowNumber(row.id, "layerMm", value)}
             />
           ) : (
             <span className="ce-readonly ce-na">—</span>

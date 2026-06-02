@@ -2,6 +2,7 @@ import type { Dispatch, FormEvent, SetStateAction } from "react";
 
 import { normalizeNum } from "./api/flooring-mappers";
 import type { FlooringAssemblyItemDraft, FlooringAssemblyItemDto } from "./api/flooring-types";
+import { CatalogDecimalInput } from "./CatalogDecimalInput";
 import {
   FLOORING_ASSEMBLY_FORMULAS,
   FLOORING_ASSEMBLY_LIBRARY_SECTIONS,
@@ -30,7 +31,7 @@ export type FlooringAssemblyLibraryPanelProps = {
   onCancelAssemblyEdit: () => void;
   onSubmitAssemblyItem: () => void;
   onAssemblyDraftChange: Dispatch<SetStateAction<FlooringAssemblyItemDraft>>;
-  onAssemblyNumberChange: (field: AssemblyNumberField, value: string) => void;
+  onAssemblyNumberChange: (field: AssemblyNumberField, value: number | null) => void;
   formatMoney: (value: number) => string;
 };
 
@@ -203,39 +204,33 @@ export function FlooringAssemblyLibraryPanel({
                   />
                 </td>
                 <td>
-                  <input
+                  <CatalogDecimalInput
                     className="ce-cell-input ce-num"
-                    type="number"
-                    step="0.01"
-                    value={assemblyDraft.price || ""}
-                    onChange={(event) => onAssemblyNumberChange("price", event.target.value)}
+                    value={assemblyDraft.price}
+                    onCommit={(value) => onAssemblyNumberChange("price", value)}
                   />
                 </td>
                 <td>
-                  <input
+                  <CatalogDecimalInput
                     className="ce-cell-input ce-num"
-                    type="number"
-                    step="0.01"
-                    value={assemblyDraft.consumptionPerM2 || ""}
-                    onChange={(event) => onAssemblyNumberChange("consumptionPerM2", event.target.value)}
+                    value={assemblyDraft.consumptionPerM2}
+                    onCommit={(value) => onAssemblyNumberChange("consumptionPerM2", value)}
                   />
                 </td>
                 <td>
-                  <input
+                  <CatalogDecimalInput
                     className="ce-cell-input ce-num"
-                    type="number"
-                    step="0.01"
-                    value={assemblyDraft.packageSize ?? ""}
-                    onChange={(event) => onAssemblyNumberChange("packageSize", event.target.value)}
+                    nullable
+                    value={assemblyDraft.packageSize}
+                    onCommit={(value) => onAssemblyNumberChange("packageSize", value)}
                   />
                 </td>
                 <td>
-                  <input
+                  <CatalogDecimalInput
                     className="ce-cell-input ce-num"
-                    type="number"
-                    step="0.01"
-                    value={assemblyDraft.layerMm ?? ""}
-                    onChange={(event) => onAssemblyNumberChange("layerMm", event.target.value)}
+                    nullable
+                    value={assemblyDraft.layerMm}
+                    onCommit={(value) => onAssemblyNumberChange("layerMm", value)}
                   />
                 </td>
                 <td>

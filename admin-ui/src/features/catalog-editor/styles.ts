@@ -327,6 +327,7 @@ select.ce-cell-input { appearance: none; cursor: pointer; }
   margin-top: 6px; padding: 8px 10px; border: 1px solid var(--ce-border); border-radius: 8px;
   background: var(--ce-panel-2);
 }
+.ce-flooring-covering-detail .ce-flooring-form { margin-top: 0; }
 .ce-flooring-form-head {
   display: flex; align-items: center; justify-content: space-between; gap: 10px;
   margin-bottom: 6px;
@@ -375,6 +376,126 @@ select.ce-cell-input { appearance: none; cursor: pointer; }
   .ce-flooring-form-note-wrap { grid-template-columns: 1fr; }
 }
 .ce-flooring-library-form { margin-top: 6px; }
+
+/* --- Покрытия: master-detail (UX5a) --- */
+.ce-flooring-coverings-workspace {
+  display: grid;
+  grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+}
+@media (max-width: 900px) {
+  .ce-flooring-coverings-workspace { grid-template-columns: 1fr; }
+}
+.ce-flooring-coverings-list {
+  display: flex; flex-direction: column; gap: 6px;
+  max-height: calc(100vh - 320px); overflow-y: auto;
+  padding: 6px; border: 1px solid var(--ce-border); border-radius: 8px;
+  background: var(--ce-panel);
+}
+.ce-flooring-coverings-empty {
+  padding: 24px 12px; text-align: center; color: var(--ce-muted); font-size: 12px;
+}
+.ce-flooring-covering-item {
+  display: flex; align-items: stretch; gap: 4px;
+  border: 1px solid var(--ce-border); border-radius: 8px;
+  background: var(--ce-panel-2); overflow: hidden;
+}
+.ce-flooring-covering-item.is-selected {
+  border-color: var(--ce-accent);
+  box-shadow: 0 0 0 1px rgba(76,141,255,.35);
+  background: var(--ce-accent-soft);
+}
+.ce-flooring-covering-item-main {
+  flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px;
+  padding: 8px 10px; border: 0; background: transparent; color: var(--ce-text);
+  text-align: left; cursor: pointer; font: inherit;
+}
+.ce-flooring-covering-item-main:disabled { opacity: .45; cursor: not-allowed; }
+.ce-flooring-covering-item-main:not(:disabled):hover { background: rgba(255,255,255,.02); }
+.ce-flooring-covering-item-title {
+  font-size: 13px; font-weight: 600; line-height: 1.3;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.ce-flooring-covering-item-code {
+  font-size: 10px; color: var(--ce-muted); line-height: 1.2;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.ce-flooring-covering-item-metrics {
+  display: grid; grid-template-columns: 1fr; gap: 2px; margin-top: 4px;
+  font-size: 11px; line-height: 1.3;
+}
+.ce-flooring-covering-item-metrics > span {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 6px;
+}
+.ce-flooring-covering-metric-label { color: var(--ce-muted); flex-shrink: 0; }
+.ce-flooring-covering-metric-value { color: var(--ce-text); text-align: right; min-width: 0; }
+.ce-flooring-covering-metric-total strong, .ce-flooring-covering-metric-total { color: var(--ce-ok); font-weight: 600; }
+.ce-flooring-covering-item-actions {
+  display: flex; flex-direction: column; justify-content: center; gap: 4px;
+  padding: 6px 6px 6px 0; flex-shrink: 0;
+}
+.ce-flooring-covering-detail {
+  min-width: 0; min-height: 120px;
+  border: 1px solid var(--ce-border); border-radius: 8px;
+  background: var(--ce-panel);
+}
+.ce-flooring-covering-detail:has(.ce-flooring-form) {
+  border: 0; background: transparent;
+}
+.ce-flooring-covering-detail-empty {
+  padding: 32px 16px; text-align: center; color: var(--ce-muted); font-size: 12px; line-height: 1.5;
+}
+.ce-flooring-form-summary-strip {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px;
+  margin-bottom: 4px; padding: 6px 8px; border-radius: 6px;
+  background: var(--ce-panel); border: 1px solid var(--ce-border);
+  font-size: 11px; color: var(--ce-muted); line-height: 1.3;
+}
+.ce-flooring-form-summary-chip strong { color: var(--ce-text); font-weight: 600; }
+.ce-flooring-form-summary-total strong { color: var(--ce-ok); }
+.ce-flooring-form-grid {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px 12px;
+}
+@media (max-width: 720px) {
+  .ce-flooring-form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 480px) {
+  .ce-flooring-form-grid { grid-template-columns: 1fr; }
+}
+.ce-flooring-form-field {
+  display: flex; flex-direction: column; gap: 4px; min-width: 0;
+}
+.ce-flooring-form-field-span-2 { grid-column: span 2; }
+@media (max-width: 720px) {
+  .ce-flooring-form-field-span-2 { grid-column: span 2; }
+}
+@media (max-width: 480px) {
+  .ce-flooring-form-field-span-2 { grid-column: span 1; }
+}
+.ce-flooring-form-field-label {
+  font-size: 11px; font-weight: 600; color: var(--ce-muted);
+}
+.ce-flooring-form-control {
+  height: 34px; min-height: 34px; padding: 0 8px;
+  border: 1px solid var(--ce-border); border-radius: 6px; background: var(--ce-panel);
+}
+.ce-flooring-form-control:focus { border-color: var(--ce-accent); background: var(--ce-bg); }
+.ce-flooring-consumables-table-wrap { max-height: none; overflow: visible; }
+.ce-flooring-consumables-table { min-width: 0; width: 100%; table-layout: fixed; }
+.ce-flooring-consumables-table .ce-col-title { width: 22%; }
+.ce-flooring-consumables-table .ce-col-num { width: 18%; }
+.ce-flooring-consumable-per-m2 { color: var(--ce-ok); font-weight: 600; }
+.ce-flooring-custom-consumables { margin-top: 2px; }
+.ce-flooring-custom-consumables-summary {
+  cursor: pointer; font-size: 12px; font-weight: 600; color: var(--ce-muted);
+  padding: 4px 0; list-style: none;
+}
+.ce-flooring-custom-consumables-summary::-webkit-details-marker { display: none; }
+.ce-flooring-custom-consumables-empty-hint { font-weight: 400; }
+.ce-flooring-form-note-wide { grid-template-columns: 1fr; }
+.ce-flooring-form-note-wide .ce-flooring-form-note-label { padding-top: 0; }
+.ce-flooring-form-note-wide .ce-flooring-form-note-input { min-height: 72px; width: 100%; }
 
 /* --- Локальная сборка покрытия (FA1 spike) --- */
 .ce-flooring-assembly {

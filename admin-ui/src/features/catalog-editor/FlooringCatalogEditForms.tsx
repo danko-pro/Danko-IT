@@ -1,6 +1,7 @@
 import type { Dispatch, ReactNode, SetStateAction } from "react";
 
 import type { FlooringCoveringDraft, FlooringLayoutDraft, FlooringPreparationDraft } from "./api/flooring-types";
+import { CatalogDecimalInput } from "./CatalogDecimalInput";
 
 type CatalogFormProps = {
   title: string;
@@ -62,17 +63,13 @@ function FormField({ label, children, className }: FormFieldProps) {
   );
 }
 
-function numericInputValue(value: number | null | undefined): string | number {
-  return value ? value : "";
-}
-
 export type FlooringCoveringEditFormProps = {
   draft: FlooringCoveringDraft;
   submitting: boolean;
   onSubmit: () => void;
   onCancel: () => void;
   onDraftChange: Dispatch<SetStateAction<FlooringCoveringDraft>>;
-  onNumberChange: (field: keyof FlooringCoveringDraft, value: string) => void;
+  onNumberChange: (field: keyof FlooringCoveringDraft, value: number) => void;
 };
 
 export function FlooringCoveringEditForm({
@@ -95,21 +92,17 @@ export function FlooringCoveringEditForm({
           />
         </FormField>
         <FormField label="Материал ₽/м²">
-          <input
+          <CatalogDecimalInput
             className="ce-input ce-num"
-            type="number"
-            step="0.01"
-            value={numericInputValue(draft.materialPricePerM2)}
-            onChange={(event) => onNumberChange("materialPricePerM2", event.target.value)}
+            value={draft.materialPricePerM2}
+            onCommit={(value) => onNumberChange("materialPricePerM2", value ?? 0)}
           />
         </FormField>
         <FormField label="Отход %">
-          <input
+          <CatalogDecimalInput
             className="ce-input ce-num"
-            type="number"
-            step="0.01"
-            value={numericInputValue(draft.baseWastePercent)}
-            onChange={(event) => onNumberChange("baseWastePercent", event.target.value)}
+            value={draft.baseWastePercent}
+            onCommit={(value) => onNumberChange("baseWastePercent", value ?? 0)}
           />
         </FormField>
         <FormField label="Подложка">
@@ -124,21 +117,17 @@ export function FlooringCoveringEditForm({
           </select>
         </FormField>
         <FormField label="Подложка расход/м²">
-          <input
+          <CatalogDecimalInput
             className="ce-input ce-num"
-            type="number"
-            step="0.01"
-            value={numericInputValue(draft.underlayConsumptionPerM2)}
-            onChange={(event) => onNumberChange("underlayConsumptionPerM2", event.target.value)}
+            value={draft.underlayConsumptionPerM2}
+            onCommit={(value) => onNumberChange("underlayConsumptionPerM2", value ?? 0)}
           />
         </FormField>
         <FormField label="Клей расход/м²">
-          <input
+          <CatalogDecimalInput
             className="ce-input ce-num"
-            type="number"
-            step="0.01"
-            value={numericInputValue(draft.glueConsumptionPerM2)}
-            onChange={(event) => onNumberChange("glueConsumptionPerM2", event.target.value)}
+            value={draft.glueConsumptionPerM2}
+            onCommit={(value) => onNumberChange("glueConsumptionPerM2", value ?? 0)}
           />
         </FormField>
         <FormField label="Клей ед.">
@@ -149,21 +138,17 @@ export function FlooringCoveringEditForm({
           />
         </FormField>
         <FormField label="Клей ₽/ед.">
-          <input
+          <CatalogDecimalInput
             className="ce-input ce-num"
-            type="number"
-            step="0.01"
-            value={numericInputValue(draft.gluePricePerUnit)}
-            onChange={(event) => onNumberChange("gluePricePerUnit", event.target.value)}
+            value={draft.gluePricePerUnit}
+            onCommit={(value) => onNumberChange("gluePricePerUnit", value ?? 0)}
           />
         </FormField>
         <FormField label="Грунт расход/м²">
-          <input
+          <CatalogDecimalInput
             className="ce-input ce-num"
-            type="number"
-            step="0.01"
-            value={numericInputValue(draft.primerConsumptionPerM2)}
-            onChange={(event) => onNumberChange("primerConsumptionPerM2", event.target.value)}
+            value={draft.primerConsumptionPerM2}
+            onCommit={(value) => onNumberChange("primerConsumptionPerM2", value ?? 0)}
           />
         </FormField>
         <FormField label="Грунт ед.">
@@ -174,21 +159,17 @@ export function FlooringCoveringEditForm({
           />
         </FormField>
         <FormField label="Грунт ₽/ед.">
-          <input
+          <CatalogDecimalInput
             className="ce-input ce-num"
-            type="number"
-            step="0.01"
-            value={numericInputValue(draft.primerPricePerUnit)}
-            onChange={(event) => onNumberChange("primerPricePerUnit", event.target.value)}
+            value={draft.primerPricePerUnit}
+            onCommit={(value) => onNumberChange("primerPricePerUnit", value ?? 0)}
           />
         </FormField>
         <FormField label="СВП расход/м²">
-          <input
+          <CatalogDecimalInput
             className="ce-input ce-num"
-            type="number"
-            step="0.01"
-            value={numericInputValue(draft.svpConsumptionPerM2)}
-            onChange={(event) => onNumberChange("svpConsumptionPerM2", event.target.value)}
+            value={draft.svpConsumptionPerM2}
+            onCommit={(value) => onNumberChange("svpConsumptionPerM2", value ?? 0)}
           />
         </FormField>
         <FormField label="СВП ед.">
@@ -199,21 +180,17 @@ export function FlooringCoveringEditForm({
           />
         </FormField>
         <FormField label="СВП ₽/ед.">
-          <input
+          <CatalogDecimalInput
             className="ce-input ce-num"
-            type="number"
-            step="0.01"
-            value={numericInputValue(draft.svpPricePerUnit)}
-            onChange={(event) => onNumberChange("svpPricePerUnit", event.target.value)}
+            value={draft.svpPricePerUnit}
+            onCommit={(value) => onNumberChange("svpPricePerUnit", value ?? 0)}
           />
         </FormField>
         <FormField label="Затирка расход/м²">
-          <input
+          <CatalogDecimalInput
             className="ce-input ce-num"
-            type="number"
-            step="0.01"
-            value={numericInputValue(draft.groutConsumptionPerM2)}
-            onChange={(event) => onNumberChange("groutConsumptionPerM2", event.target.value)}
+            value={draft.groutConsumptionPerM2}
+            onCommit={(value) => onNumberChange("groutConsumptionPerM2", value ?? 0)}
           />
         </FormField>
         <FormField label="Затирка ед.">
@@ -224,21 +201,17 @@ export function FlooringCoveringEditForm({
           />
         </FormField>
         <FormField label="Затирка ₽/ед.">
-          <input
+          <CatalogDecimalInput
             className="ce-input ce-num"
-            type="number"
-            step="0.01"
-            value={numericInputValue(draft.groutPricePerUnit)}
-            onChange={(event) => onNumberChange("groutPricePerUnit", event.target.value)}
+            value={draft.groutPricePerUnit}
+            onCommit={(value) => onNumberChange("groutPricePerUnit", value ?? 0)}
           />
         </FormField>
         <FormField label="Инструмент ₽/м²">
-          <input
+          <CatalogDecimalInput
             className="ce-input ce-num"
-            type="number"
-            step="0.01"
-            value={numericInputValue(draft.instrumentPricePerM2)}
-            onChange={(event) => onNumberChange("instrumentPricePerM2", event.target.value)}
+            value={draft.instrumentPricePerM2}
+            onCommit={(value) => onNumberChange("instrumentPricePerM2", value ?? 0)}
           />
         </FormField>
         <FormField label="Нужен плинтус">
@@ -295,17 +268,15 @@ export function FlooringCoveringEditForm({
                     />
                   </td>
                   <td>
-                    <input
+                    <CatalogDecimalInput
                       className="ce-cell-input ce-num"
-                      type="number"
-                      step="0.01"
-                      value={numericInputValue(item.consumptionPerM2)}
-                      onChange={(event) =>
+                      value={item.consumptionPerM2}
+                      onCommit={(value) =>
                         onDraftChange((prev) => ({
                           ...prev,
                           customConsumables: prev.customConsumables.map((current, currentIndex) =>
                             currentIndex === index
-                              ? { ...current, consumptionPerM2: Number(event.target.value.replace(",", ".")) || 0 }
+                              ? { ...current, consumptionPerM2: value ?? 0 }
                               : current,
                           ),
                         }))
@@ -327,17 +298,15 @@ export function FlooringCoveringEditForm({
                     />
                   </td>
                   <td>
-                    <input
+                    <CatalogDecimalInput
                       className="ce-cell-input ce-num"
-                      type="number"
-                      step="0.01"
-                      value={numericInputValue(item.pricePerUnit)}
-                      onChange={(event) =>
+                      value={item.pricePerUnit}
+                      onCommit={(value) =>
                         onDraftChange((prev) => ({
                           ...prev,
                           customConsumables: prev.customConsumables.map((current, currentIndex) =>
                             currentIndex === index
-                              ? { ...current, pricePerUnit: Number(event.target.value.replace(",", ".")) || 0 }
+                              ? { ...current, pricePerUnit: value ?? 0 }
                               : current,
                           ),
                         }))
@@ -389,7 +358,7 @@ export type FlooringPreparationEditFormProps = {
   onSubmit: () => void;
   onCancel: () => void;
   onDraftChange: Dispatch<SetStateAction<FlooringPreparationDraft>>;
-  onNumberChange: (field: keyof FlooringPreparationDraft, value: string) => void;
+  onNumberChange: (field: keyof FlooringPreparationDraft, value: number) => void;
 };
 
 export function FlooringPreparationEditForm({
@@ -412,30 +381,24 @@ export function FlooringPreparationEditForm({
           />
         </FormField>
         <FormField label="Работа ₽/м²">
-          <input
+          <CatalogDecimalInput
             className="ce-input ce-num"
-            type="number"
-            step="0.01"
-            value={numericInputValue(draft.laborPricePerM2)}
-            onChange={(event) => onNumberChange("laborPricePerM2", event.target.value)}
+            value={draft.laborPricePerM2}
+            onCommit={(value) => onNumberChange("laborPricePerM2", value ?? 0)}
           />
         </FormField>
         <FormField label="Материал ₽/м²">
-          <input
+          <CatalogDecimalInput
             className="ce-input ce-num"
-            type="number"
-            step="0.01"
-            value={numericInputValue(draft.materialPricePerM2)}
-            onChange={(event) => onNumberChange("materialPricePerM2", event.target.value)}
+            value={draft.materialPricePerM2}
+            onCommit={(value) => onNumberChange("materialPricePerM2", value ?? 0)}
           />
         </FormField>
         <FormField label="Грунт расход/м²">
-          <input
+          <CatalogDecimalInput
             className="ce-input ce-num"
-            type="number"
-            step="0.01"
-            value={numericInputValue(draft.primerConsumptionPerM2)}
-            onChange={(event) => onNumberChange("primerConsumptionPerM2", event.target.value)}
+            value={draft.primerConsumptionPerM2}
+            onCommit={(value) => onNumberChange("primerConsumptionPerM2", value ?? 0)}
           />
         </FormField>
         <FormField label="Грунт ед.">
@@ -446,12 +409,10 @@ export function FlooringPreparationEditForm({
           />
         </FormField>
         <FormField label="Грунт ₽/ед.">
-          <input
+          <CatalogDecimalInput
             className="ce-input ce-num"
-            type="number"
-            step="0.01"
-            value={numericInputValue(draft.primerPricePerUnit)}
-            onChange={(event) => onNumberChange("primerPricePerUnit", event.target.value)}
+            value={draft.primerPricePerUnit}
+            onCommit={(value) => onNumberChange("primerPricePerUnit", value ?? 0)}
           />
         </FormField>
         <FormField label="Примечание" className="ce-flooring-field-note">
@@ -472,7 +433,7 @@ export type FlooringLayoutEditFormProps = {
   onSubmit: () => void;
   onCancel: () => void;
   onDraftChange: Dispatch<SetStateAction<FlooringLayoutDraft>>;
-  onNumberChange: (field: keyof FlooringLayoutDraft, value: string) => void;
+  onNumberChange: (field: keyof FlooringLayoutDraft, value: number) => void;
 };
 
 export function FlooringLayoutEditForm({
@@ -495,32 +456,24 @@ export function FlooringLayoutEditForm({
           />
         </FormField>
         <FormField label="Работа ₽/м²">
-          <input
+          <CatalogDecimalInput
             className="ce-input ce-num"
-            type="number"
-            step="0.01"
-            min={0}
-            value={numericInputValue(draft.laborPricePerM2)}
-            onChange={(event) => onNumberChange("laborPricePerM2", event.target.value)}
+            value={draft.laborPricePerM2}
+            onCommit={(value) => onNumberChange("laborPricePerM2", value ?? 0)}
           />
         </FormField>
         <FormField label="Коэф. работы">
-          <input
+          <CatalogDecimalInput
             className="ce-input ce-num"
-            type="number"
-            step="0.01"
-            min={0}
-            value={numericInputValue(draft.laborFactor)}
-            onChange={(event) => onNumberChange("laborFactor", event.target.value)}
+            value={draft.laborFactor}
+            onCommit={(value) => onNumberChange("laborFactor", value ?? 0)}
           />
         </FormField>
         <FormField label="Доп. отход %">
-          <input
+          <CatalogDecimalInput
             className="ce-input ce-num"
-            type="number"
-            step="0.01"
-            value={numericInputValue(draft.additionalWastePercent)}
-            onChange={(event) => onNumberChange("additionalWastePercent", event.target.value)}
+            value={draft.additionalWastePercent}
+            onCommit={(value) => onNumberChange("additionalWastePercent", value ?? 0)}
           />
         </FormField>
         <FormField label="Примечание" className="ce-flooring-field-note">

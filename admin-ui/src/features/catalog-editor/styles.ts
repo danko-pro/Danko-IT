@@ -285,14 +285,22 @@ select.ce-cell-input { appearance: none; cursor: pointer; }
 .ce-preview-body { margin-top: 8px; }
 
 /* --- Вкладка «Полы» (F5b) --- */
-.ce-flooring-section { margin-bottom: 20px; }
-.ce-flooring-section-title { margin: 0 0 10px; font-size: 15px; font-weight: 650; }
-.ce-flooring-table-wrap { margin-bottom: 10px; max-height: none; overflow-x: auto; }
+.ce-flooring-meta {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px;
+  margin-bottom: 10px; padding: 0; font-size: 12px; line-height: 1.4;
+}
+.ce-flooring-meta-sep { color: var(--ce-border); }
+.ce-flooring-meta-note { color: var(--ce-muted); font-size: 11px; }
+
+.ce-flooring-section { margin-bottom: 14px; }
+.ce-flooring-section-title { margin: 0 0 6px; font-size: 14px; font-weight: 650; }
+.ce-flooring-table-wrap { margin-bottom: 6px; max-height: none; overflow-x: auto; }
 .ce-flooring-table { width: 100%; min-width: 1020px; table-layout: fixed; }
+.ce-flooring-table thead th { padding: 6px 8px; }
 .ce-flooring-table tbody td.ce-num { text-align: right; }
-.ce-flooring-table tbody td { height: 38px; }
+.ce-flooring-table tbody td { height: 34px; }
 .ce-flooring-table .ce-readonly {
-  padding: 0 10px; line-height: 38px;
+  padding: 0 8px; line-height: 34px;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .ce-flooring-table .ce-col-id { width: 170px; min-width: 0; }
@@ -303,106 +311,108 @@ select.ce-cell-input { appearance: none; cursor: pointer; }
   width: 108px; min-width: 108px; max-width: 108px;
   text-align: center; white-space: nowrap; vertical-align: middle;
 }
+.ce-flooring-table .ce-row-actions { padding: 0 4px; }
 .ce-flooring-table .ce-cell-select {
   padding-right: 18px; font-size: 11px;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .ce-flooring-table .ce-cell-formula { font-size: 10px; font-weight: 600; }
 .ce-flooring-table .ce-cell-input {
-  height: 38px; min-height: 38px; font-size: 12px;
+  height: 34px; min-height: 34px; font-size: 12px;
 }
 .ce-flooring-table .ce-na {
-  height: 38px; line-height: 38px; padding: 0 10px;
+  height: 34px; line-height: 34px; padding: 0 8px;
 }
 .ce-flooring-form {
-  padding: 10px 12px; border: 1px solid var(--ce-border); border-radius: 10px;
-  background: var(--ce-panel);
+  margin-top: 6px; padding: 8px 10px; border: 1px solid var(--ce-border); border-radius: 8px;
+  background: var(--ce-panel-2);
 }
 .ce-flooring-form-head {
-  display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
-  margin-bottom: 8px;
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  margin-bottom: 6px;
 }
 .ce-flooring-form-head-copy {
-  display: flex; flex-direction: column; gap: 4px; min-width: 0;
-}
-.ce-flooring-form-hint {
-  font-size: 11px; color: var(--ce-muted); line-height: 1.35;
+  display: flex; flex-direction: column; gap: 2px; min-width: 0;
+  font-size: 13px;
 }
 .ce-flooring-form-toolbar {
   flex-wrap: nowrap; flex-shrink: 0; justify-content: flex-end;
 }
 .ce-flooring-form-content {
-  display: flex; flex-direction: column; gap: 8px;
+  display: flex; flex-direction: column; gap: 6px;
 }
-.ce-flooring-form-table-caption {
-  margin: 0 0 6px; font-size: 11px; font-weight: 600; color: var(--ce-muted);
+.ce-flooring-form-table-wrap {
+  border: 0; border-radius: 0; overflow: visible;
 }
+.ce-flooring-form-table-wrap .ce-table-wrap { border: 0; border-radius: 0; }
 .ce-flooring-form .ce-table-wrap {
-  border-radius: 8px;
+  border: 1px solid var(--ce-border); border-radius: 6px;
 }
 .ce-flooring-form .ce-table,
 .ce-flooring-form .ce-flooring-form-table {
   min-width: 0;
 }
 .ce-flooring-form .ce-empty {
-  padding: 10px 12px; text-align: left;
+  padding: 8px 10px; text-align: left;
 }
-.ce-flooring-form-note-wrap { margin-top: 2px; }
-.ce-flooring-form-note-table .ce-flooring-form-note-label {
-  width: 110px; min-width: 110px; padding: 10px 12px;
-  font-size: 11px; font-weight: 600; color: var(--ce-muted);
-  text-align: left; vertical-align: top; white-space: nowrap;
-  background: var(--ce-panel-2);
+.ce-flooring-form-note-wrap {
+  display: grid; grid-template-columns: 88px 1fr; gap: 8px; align-items: start;
+  margin-top: 2px;
+}
+.ce-flooring-form-note-label {
+  padding-top: 8px; font-size: 11px; font-weight: 600; color: var(--ce-muted);
+  white-space: nowrap;
 }
 .ce-flooring-form-note-input {
-  min-height: 42px; padding-top: 6px; resize: vertical; line-height: 1.3;
+  min-height: 36px; padding: 6px 8px; resize: vertical; line-height: 1.3;
+  border: 1px solid var(--ce-border); border-radius: 6px; background: var(--ce-panel);
 }
 @media (max-width: 640px) {
   .ce-flooring-form-head { flex-wrap: wrap; }
   .ce-flooring-form-toolbar {
     width: 100%; flex-wrap: wrap; justify-content: flex-end;
   }
+  .ce-flooring-form-note-wrap { grid-template-columns: 1fr; }
 }
-.ce-flooring-library-form { margin-top: 10px; }
+.ce-flooring-library-form { margin-top: 6px; }
 
 /* --- Локальная сборка покрытия (FA1 spike) --- */
 .ce-flooring-assembly {
-  width: 100%; margin-bottom: 20px; padding: 14px; border: 1px solid rgba(76,141,255,.35); border-radius: 10px;
-  background: rgba(76,141,255,.04);
+  width: 100%; margin-bottom: 14px; padding: 8px 10px; border: 1px solid var(--ce-border); border-radius: 8px;
+  background: var(--ce-panel);
 }
 .ce-flooring-assembly-empty {
-  display: flex; flex-direction: column; align-items: center; gap: 10px;
-  padding: 28px 16px; text-align: center; color: var(--ce-muted);
-  border: 1px dashed var(--ce-border); border-radius: 8px; margin-bottom: 10px;
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  padding: 16px 12px; text-align: center; color: var(--ce-muted);
+  border: 1px dashed var(--ce-border); border-radius: 6px; margin-bottom: 6px;
 }
-.ce-flooring-assembly-empty p { margin: 0; font-size: 13px; }
+.ce-flooring-assembly-empty p { margin: 0; font-size: 12px; }
 .ce-flooring-assembly-row-off { opacity: 0.45; }
-.ce-flooring-assembly-recommended { border-style: dashed; }
-.ce-flooring-assembly-summary-total .ce-flooring-assembly-summary-value { font-size: 14px; }
+.ce-flooring-assembly-recommended { border-style: dashed; opacity: .85; }
+.ce-flooring-assembly-summary-total strong { color: var(--ce-ok); }
 .ce-flooring-assembly-status {
-  flex: 1; min-width: 200px; display: inline-flex; align-items: center; gap: 8px;
-  font-size: 12px; color: var(--ce-muted); line-height: 1.4;
+  flex: 1; min-width: 0; display: inline-flex; align-items: center; gap: 6px;
+  font-size: 11px; color: var(--ce-muted); line-height: 1.3;
 }
-.ce-flooring-assembly-actions { align-items: center; justify-content: space-between; }
+.ce-flooring-assembly-actions { align-items: center; justify-content: space-between; gap: 8px; }
 .ce-flooring-assembly-head {
-  display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap;
-  margin-bottom: 10px;
+  display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;
+  margin-bottom: 6px;
 }
-.ce-flooring-assembly-title { margin: 0; font-size: 14px; font-weight: 650; }
-.ce-flooring-assembly-hint { margin: 4px 0 0; font-size: 11px; color: var(--ce-muted); line-height: 1.4; }
-.ce-flooring-assembly-toolbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.ce-flooring-assembly-title { margin: 0; font-size: 13px; font-weight: 650; }
+.ce-flooring-assembly-hint { margin: 0; font-size: 11px; color: var(--ce-muted); line-height: 1.3; }
+.ce-flooring-assembly-toolbar { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .ce-flooring-assembly-library {
-  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
-  margin-bottom: 10px; padding: 8px 10px; border-radius: 8px;
-  background: rgba(255,255,255,.025); border: 1px solid var(--ce-border);
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  margin-bottom: 6px; padding: 6px 8px; border-radius: 6px;
+  background: var(--ce-panel-2); border: 1px solid var(--ce-border);
 }
-.ce-flooring-assembly-library-label { font-size: 12px; color: var(--ce-muted); font-weight: 650; }
-.ce-flooring-assembly-library-select { width: 150px; }
-.ce-flooring-assembly-library-item { min-width: 280px; flex: 1; }
-.ce-flooring-assembly-library-hint { color: var(--ce-muted); font-size: 11px; line-height: 1.35; }
-.ce-flooring-assembly-table-wrap { margin-bottom: 10px; max-height: none; overflow-x: auto; border-radius: 8px; }
+.ce-flooring-assembly-library-label { font-size: 11px; color: var(--ce-muted); font-weight: 600; white-space: nowrap; }
+.ce-flooring-assembly-library-select { width: 130px; height: 28px; font-size: 12px; }
+.ce-flooring-assembly-library-item { min-width: 180px; flex: 1; height: 28px; font-size: 12px; }
+.ce-flooring-assembly-table-wrap { margin-bottom: 6px; max-height: none; overflow-x: auto; border-radius: 6px; }
 .ce-flooring-assembly-table { min-width: 1080px; width: 100%; table-layout: fixed; }
-.ce-flooring-assembly-table thead th { padding: 8px 7px; }
+.ce-flooring-assembly-table thead th { padding: 6px 7px; }
 .ce-flooring-assembly-table tbody td { height: 34px; }
 .ce-flooring-assembly-table .ce-col-check { width: 44px; text-align: center; }
 .ce-flooring-assembly-table .ce-col-kind { width: 100px; }
@@ -428,22 +438,22 @@ select.ce-cell-input { appearance: none; cursor: pointer; }
 .ce-flooring-assembly-table .ce-col-actions { padding: 0; vertical-align: middle; }
 .ce-flooring-assembly-table .ce-row-delete { display: block; margin: 0 auto; }
 .ce-flooring-assembly-section-row td {
-  height: 26px !important; padding: 5px 8px !important;
-  border-top: 1px solid rgba(76,141,255,.35);
-  border-bottom: 1px solid rgba(76,141,255,.18);
-  background: rgba(76,141,255,.08) !important;
-  color: var(--ce-accent); font-size: 11px; font-weight: 650;
+  height: 24px !important; padding: 4px 8px !important;
+  border-top: 1px solid var(--ce-border);
+  border-bottom: 1px solid var(--ce-border);
+  background: rgba(255,255,255,.02) !important;
+  color: var(--ce-muted); font-size: 10px; font-weight: 650;
   text-transform: uppercase; letter-spacing: .04em;
 }
 .ce-flooring-assembly-summary {
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px;
-  margin-bottom: 10px; padding: 10px; border-radius: 8px;
+  display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px;
+  margin-bottom: 6px; padding: 6px 8px; border-radius: 6px;
   background: var(--ce-panel-2); border: 1px solid var(--ce-border);
+  font-size: 11px; color: var(--ce-muted); line-height: 1.3;
 }
-.ce-flooring-assembly-summary-item { font-size: 12px; }
-.ce-flooring-assembly-summary-label { display: block; color: var(--ce-muted); font-size: 11px; }
-.ce-flooring-assembly-summary-value { font-weight: 600; color: var(--ce-ok); }
-.ce-flooring-assembly-actions { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
+.ce-flooring-assembly-summary-chip { white-space: nowrap; }
+.ce-flooring-assembly-summary-chip strong { color: var(--ce-ok); font-weight: 600; }
+.ce-flooring-assembly-actions { display: flex; justify-content: flex-end; gap: 6px; flex-wrap: wrap; }
 .ce-flooring-assembly-check {
   padding: 0; text-align: center; vertical-align: middle;
 }
@@ -451,4 +461,5 @@ select.ce-cell-input { appearance: none; cursor: pointer; }
   display: block; width: 14px; height: 14px; margin: 0 auto;
 }
 .ce-flooring-assembly { max-width: 100%; overflow-x: hidden; }
+.ce-flooring-assembly .ce-input { height: 28px; font-size: 12px; }
 `;

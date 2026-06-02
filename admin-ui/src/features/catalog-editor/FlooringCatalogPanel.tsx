@@ -128,16 +128,13 @@ export function FlooringCatalogPanel() {
         </div>
       ) : null}
 
-      <div className="ce-note">
-        <span className="ce-note-tag">Модель</span>
-        Каталог полов читается из public snapshot (<code>/api/public/catalog/flooring/snapshot</code>).
-        Создание и редактирование глобальных строк — через REST API (без удаления и reorder).
-      </div>
-
-      <div className="ce-meta">
-        Версия snapshot: <strong>{snapshot.version}</strong> · Покрытий:{" "}
-        <strong>{coveringRows.length}</strong> · Подготовок: <strong>{preparationRows.length}</strong> · Укладок:{" "}
-        <strong>{layoutRows.length}</strong>
+      <div className="ce-meta ce-flooring-meta">
+        Snapshot v<strong>{snapshot.version}</strong> · Покрытий <strong>{coveringRows.length}</strong> · Подготовок{" "}
+        <strong>{preparationRows.length}</strong> · Укладок <strong>{layoutRows.length}</strong>
+        <span className="ce-flooring-meta-sep">·</span>
+        <span className="ce-flooring-meta-note">
+          public snapshot + REST API (без reorder)
+        </span>
       </div>
 
       {flooringView === "library" ? (

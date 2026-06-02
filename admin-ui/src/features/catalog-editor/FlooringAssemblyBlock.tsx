@@ -38,8 +38,7 @@ const FLOORING_ASSEMBLY_TARGET_LIBRARY_SECTIONS: Record<FlooringAssemblyTarget, 
   layout: ["work"],
 };
 
-const ASSEMBLY_APPLY_STATUS =
-  "Строка создана в выбранном разделе. Проверьте её в таблице ниже.";
+const ASSEMBLY_APPLY_STATUS = "Строка добавлена — см. таблицу ниже.";
 
 type CoveringAssemblyBlockProps = {
   libraryItems: ReturnType<typeof createAssemblyLibraryItemFromCatalogItem>[];
@@ -362,10 +361,9 @@ export function FlooringAssemblyBlock({
       <div className="ce-flooring-assembly-head">
         <div>
           <h4 className="ce-flooring-assembly-title">Сборка строки каталога</h4>
-          <p className="ce-flooring-assembly-hint">
-            Выберите, что собираем: покрытие, подготовку или укладку. Кубики остаются в библиотеке, итог переносится в форму ниже.
-            {loadingAssembly ? " Загрузка состава…" : null}
-          </p>
+          {loadingAssembly ? (
+            <p className="ce-flooring-assembly-hint">Загрузка состава…</p>
+          ) : null}
         </div>
         {rows.length > 0 ? (
           <div className="ce-flooring-assembly-toolbar">
@@ -438,9 +436,8 @@ export function FlooringAssemblyBlock({
           ))}
         </select>
         <button type="button" className="ce-btn ce-btn-sm" onClick={addLibraryItem} disabled={!selectedLibraryItem}>
-          Добавить в состав
+          + В состав
         </button>
-        <span className="ce-flooring-assembly-library-hint">После добавления строку можно править в таблице.</span>
       </div>
       <datalist id={rowLibraryDatalistId}>
         {availableRowLibraryItems.map((item) => (
@@ -504,48 +501,29 @@ export function FlooringAssemblyBlock({
       {rows.length > 0 ? (
         <>
           <div className="ce-flooring-assembly-summary">
-            <div className="ce-flooring-assembly-summary-item">
-              <span className="ce-flooring-assembly-summary-label">Работы</span>
-              <span className="ce-flooring-assembly-summary-value">
-                {formatMoney(aggregates.worksPerM2)} ₽/м²
-              </span>
-            </div>
-            <div className="ce-flooring-assembly-summary-item">
-              <span className="ce-flooring-assembly-summary-label">Материалы</span>
-              <span className="ce-flooring-assembly-summary-value">
-                {formatMoney(aggregates.materialPerM2)} ₽/м²
-              </span>
-            </div>
-            <div className="ce-flooring-assembly-summary-item">
-              <span className="ce-flooring-assembly-summary-label">Расходники</span>
-              <span className="ce-flooring-assembly-summary-value">
-                {formatMoney(aggregates.consumablesPerM2)} ₽/м²
-              </span>
-            </div>
-            <div className="ce-flooring-assembly-summary-item">
-              <span className="ce-flooring-assembly-summary-label">Инструмент</span>
-              <span className="ce-flooring-assembly-summary-value">
-                {formatMoney(aggregates.toolPerM2)} ₽/м²
-              </span>
-            </div>
-            <div className="ce-flooring-assembly-summary-item ce-flooring-assembly-summary-total">
-              <span className="ce-flooring-assembly-summary-label">Итого сборки</span>
-              <span className="ce-flooring-assembly-summary-value">{formatMoney(totalPerM2)} ₽/м²</span>
-            </div>
+            <span className="ce-flooring-assembly-summary-chip">
+              Раб. <strong>{formatMoney(aggregates.worksPerM2)}</strong>
+            </span>
+            <span className="ce-flooring-assembly-summary-chip">
+              Мат. <strong>{formatMoney(aggregates.materialPerM2)}</strong>
+            </span>
+            <span className="ce-flooring-assembly-summary-chip">
+              Расх. <strong>{formatMoney(aggregates.consumablesPerM2)}</strong>
+            </span>
+            <span className="ce-flooring-assembly-summary-chip">
+              Инстр. <strong>{formatMoney(aggregates.toolPerM2)}</strong>
+            </span>
+            <span className="ce-flooring-assembly-summary-chip ce-flooring-assembly-summary-total">
+              Итого <strong>{formatMoney(totalPerM2)} ₽/м²</strong>
+            </span>
+            {target === "covering"
+              ? recommendedEntries.map((entry) => (
+                  <span key={entry.label} className="ce-flooring-assembly-summary-chip ce-flooring-assembly-recommended">
+                    {entry.label} <strong>{formatMoney(entry.valuePerM2)}</strong>
+                  </span>
+                ))
+              : null}
           </div>
-
-          {target === "covering" ? (
-          <div className="ce-flooring-assembly-summary ce-flooring-assembly-recommended">
-            {recommendedEntries.map((entry) => (
-              <div key={entry.label} className="ce-flooring-assembly-summary-item">
-                <span className="ce-flooring-assembly-summary-label">{entry.label}</span>
-                <span className="ce-flooring-assembly-summary-value">
-                  {formatMoney(entry.valuePerM2)} ₽/m²
-                </span>
-              </div>
-            ))}
-          </div>
-          ) : null}
 
           <div className="ce-flooring-assembly-actions">
             {applyStatus ? (

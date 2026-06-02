@@ -39,6 +39,10 @@ export function FlooringCatalogPanel() {
     savingAssembly,
     assemblyTarget,
     setAssemblyTarget,
+    assemblyResetKey,
+    assemblyInitialRows,
+    assemblyInitialTitle,
+    assemblyLoading,
     flooringView,
     setFlooringView,
     coveringRows,
@@ -163,6 +167,10 @@ export function FlooringCatalogPanel() {
         formatMoney={formatMoney}
         onRowsChange={(rows) => setAssemblyRowsCount(rows.length)}
         onCreateFromAssembly={createAssemblyTargetRow}
+        initialRows={assemblyInitialRows}
+        initialTitle={assemblyInitialTitle}
+        resetKey={assemblyResetKey}
+        loadingAssembly={assemblyLoading}
       />
 
       <FlooringCoveringsSection

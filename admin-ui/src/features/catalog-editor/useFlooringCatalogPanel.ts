@@ -70,6 +70,8 @@ import {
   finalizeAssemblyTargetRowCreate,
   type AssemblyTargetSnapshotSection,
 } from "./flooring-catalog-assembly-save";
+import { useFlooringAssemblyEditLoad } from "./useFlooringAssemblyEditLoad";
+import { resolveCatalogEditItem } from "./flooring-catalog-row-edit";
 
 const ASSEMBLY_TARGET_CREATE_ERRORS: Record<FlooringAssemblyTarget, string> = {
   covering: "Не удалось создать покрытие из сборки.",
@@ -112,6 +114,14 @@ export function useFlooringCatalogPanel() {
   const [savingAssembly, setSavingAssembly] = useState(false);
   const [assemblyRowsCount, setAssemblyRowsCount] = useState(0);
   const [assemblyTarget, setAssemblyTarget] = useState<FlooringAssemblyTarget>("covering");
+  const {
+    assemblyResetKey,
+    assemblyInitialRows,
+    assemblyInitialTitle,
+    assemblyLoading,
+    clearAssemblyEditLoad,
+    loadAssemblyForEdit,
+  } = useFlooringAssemblyEditLoad();
   const [flooringView, setFlooringView] = useState<"catalog" | "library">("catalog");
 
   const reloadSnapshot = useCallback(async () => {
@@ -345,17 +355,8 @@ export function useFlooringCatalogPanel() {
     }
   }
 
-  function findCatalogItem<T extends { id: number; title: string }>(
-    catalog: T[],
-    row: FlooringSnapshotDisplayRow,
-  ): T | undefined {
-    return catalog.find((item) => item.title.trim().toLowerCase() === row.title.trim().toLowerCase());
-  }
-
   function beginEditCovering(row: FlooringSnapshotDisplayRow) {
-    const item = row.catalogId
-      ? coveringCatalog.find((entry) => entry.id === row.catalogId)
-      : findCatalogItem(coveringCatalog, row);
+    const item = resolveCatalogEditItem(coveringCatalog, row);
     if (!item) {
       setError("Не найдена глобальная запись покрытия для редактирования.");
       return;
@@ -367,12 +368,11 @@ export function useFlooringCatalogPanel() {
     setError(null);
     setStatusMessage(null);
     setWarningMessage(null);
+    void loadAssemblyForEdit("covering", item.id, setAssemblyTarget, setWarningMessage);
   }
 
   function beginEditPreparation(row: FlooringSnapshotDisplayRow) {
-    const item = row.catalogId
-      ? preparationCatalog.find((entry) => entry.id === row.catalogId)
-      : findCatalogItem(preparationCatalog, row);
+    const item = resolveCatalogEditItem(preparationCatalog, row);
     if (!item) {
       setError("Не найдена глобальная запись подготовки для редактирования.");
       return;
@@ -384,12 +384,11 @@ export function useFlooringCatalogPanel() {
     setError(null);
     setStatusMessage(null);
     setWarningMessage(null);
+    void loadAssemblyForEdit("preparation", item.id, setAssemblyTarget, setWarningMessage);
   }
 
   function beginEditLayout(row: FlooringSnapshotDisplayRow) {
-    const item = row.catalogId
-      ? layoutCatalog.find((entry) => entry.id === row.catalogId)
-      : findCatalogItem(layoutCatalog, row);
+    const item = resolveCatalogEditItem(layoutCatalog, row);
     if (!item) {
       setError("Не найдена глобальная запись укладки для редактирования.");
       return;
@@ -401,21 +400,25 @@ export function useFlooringCatalogPanel() {
     setError(null);
     setStatusMessage(null);
     setWarningMessage(null);
+    void loadAssemblyForEdit("layout", item.id, setAssemblyTarget, setWarningMessage);
   }
 
   function cancelCoveringEdit() {
     setEditingCoveringId(null);
     setCoveringDraft(emptyCoveringDraft());
+    clearAssemblyEditLoad();
   }
 
   function cancelPreparationEdit() {
     setEditingPreparationId(null);
     setPreparationDraft(emptyPreparationDraft());
+    clearAssemblyEditLoad();
   }
 
   function cancelLayoutEdit() {
     setEditingLayoutId(null);
     setLayoutDraft(emptyLayoutDraft());
+    clearAssemblyEditLoad();
   }
 
   
@@ -574,6 +577,10 @@ export function useFlooringCatalogPanel() {
     savingAssembly,
     assemblyTarget,
     setAssemblyTarget,
+    assemblyResetKey,
+    assemblyInitialRows,
+    assemblyInitialTitle,
+    assemblyLoading,
     flooringView,
     setFlooringView,
     coveringRows,

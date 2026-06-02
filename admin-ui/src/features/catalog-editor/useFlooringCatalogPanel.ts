@@ -66,6 +66,22 @@ import {
   snapshotRatesMatchRow,
 } from "./flooring-catalog-model";
 import { createFlooringCatalogDeleteActions } from "./flooring-delete-actions";
+import {
+  finalizeAssemblyTargetRowCreate,
+  type AssemblyTargetSnapshotSection,
+} from "./flooring-catalog-assembly-save";
+
+const ASSEMBLY_TARGET_CREATE_ERRORS: Record<FlooringAssemblyTarget, string> = {
+  covering: "Не удалось создать покрытие из сборки.",
+  preparation: "Не удалось создать подготовку из сборки.",
+  layout: "Не удалось создать укладку из сборки.",
+};
+
+function assemblyTargetSnapshotSection(target: FlooringAssemblyTarget): AssemblyTargetSnapshotSection {
+  if (target === "covering") return "coverings";
+  if (target === "preparation") return "preparations";
+  return "layouts";
+}
 
 export function useFlooringCatalogPanel() {
   const [snapshot, setSnapshot] = useState<PublicFlooringSnapshotResponse | null>(null);
@@ -156,7 +172,26 @@ export function useFlooringCatalogPanel() {
     [assemblyCatalog],
   );
 
-  
+  async function reloadAssemblyTargetCatalogPanel(target: FlooringAssemblyTarget) {
+    const snapshot = await fetchFlooringSnapshot();
+    if (target === "covering") {
+      const catalog = await listFlooringCoverings();
+      setSnapshot(snapshot);
+      setCoveringCatalog(catalog);
+      return { snapshot, catalog };
+    }
+    if (target === "preparation") {
+      const catalog = await listFlooringPreparations();
+      setSnapshot(snapshot);
+      setPreparationCatalog(catalog);
+      return { snapshot, catalog };
+    }
+    const catalog = await listFlooringLayouts();
+    setSnapshot(snapshot);
+    setLayoutCatalog(catalog);
+    return { snapshot, catalog };
+  }
+
   async function createAssemblyTargetRow(
     target: FlooringAssemblyTarget,
     rawTitle: string,
@@ -181,30 +216,16 @@ export function useFlooringCatalogPanel() {
     setStatusMessage(null);
     setWarningMessage(null);
 
-    if (target === "covering") {
-      try {
+    try {
+      let createdDto: { id?: number };
+      if (target === "covering") {
         const draft = applyAggregatesToCoveringDraft(aggregates, {
           ...emptyCoveringDraft(),
           title,
         });
-        await createFlooringCovering(coveringDraftToPayload(draft));
-        const [fresh, freshCatalog] = await Promise.all([fetchFlooringSnapshot(), listFlooringCoverings()]);
-        setSnapshot(fresh);
-        setCoveringCatalog(freshCatalog);
-        if (!snapshotHasTitle(fresh, "coverings", title)) {
-          setWarningMessage(SNAPSHOT_MISSING_WARNING);
-        }
-        setStatusMessage(`Покрытие «${title}» создано из сборки.`);
-        return true;
-      } catch (cause) {
-        setError(cause instanceof Error ? cause.message : "Не удалось создать покрытие из сборки.");
-        return false;
-      }
-    }
-
-    if (target === "preparation") {
-      try {
-        await createFlooringPreparation(
+        createdDto = await createFlooringCovering(coveringDraftToPayload(draft));
+      } else if (target === "preparation") {
+        createdDto = await createFlooringPreparation(
           preparationDraftToPayload({
             ...emptyPreparationDraft(),
             title,
@@ -212,42 +233,32 @@ export function useFlooringCatalogPanel() {
             materialPricePerM2: 0,
           }),
         );
-        const [fresh, freshCatalog] = await Promise.all([fetchFlooringSnapshot(), listFlooringPreparations()]);
-        setSnapshot(fresh);
-        setPreparationCatalog(freshCatalog);
-        if (!snapshotHasTitle(fresh, "preparations", title)) {
-          setWarningMessage(SNAPSHOT_MISSING_WARNING);
-        }
-        setStatusMessage(`Подготовка «${title}» создана из рабочей строки.`);
-        return true;
-      } catch (cause) {
-        setError(cause instanceof Error ? cause.message : "Не удалось создать подготовку из сборки.");
-        return false;
+      } else {
+        const enabledRows = rows.filter((row) => row.enabled && row.kind === "work");
+        const coefficient = enabledRows.find((row) => row.consumptionPerM2 > 0)?.consumptionPerM2 ?? 1;
+        createdDto = await createFlooringLayout(
+          layoutDraftToPayload({
+            ...emptyLayoutDraft(),
+            title,
+            laborPricePerM2: aggregates.worksPerM2,
+            laborFactor: coefficient,
+            additionalWastePercent: 0,
+          }),
+        );
       }
-    }
 
-    const enabledRows = rows.filter((row) => row.enabled && row.kind === "work");
-    const coefficient = enabledRows.find((row) => row.consumptionPerM2 > 0)?.consumptionPerM2 ?? 1;
-    try {
-      await createFlooringLayout(
-        layoutDraftToPayload({
-          ...emptyLayoutDraft(),
-          title,
-          laborPricePerM2: aggregates.worksPerM2,
-          laborFactor: coefficient,
-          additionalWastePercent: 0,
-        }),
-      );
-      const [fresh, freshCatalog] = await Promise.all([fetchFlooringSnapshot(), listFlooringLayouts()]);
-      setSnapshot(fresh);
-      setLayoutCatalog(freshCatalog);
-      if (!snapshotHasTitle(fresh, "layouts", title)) {
-        setWarningMessage(SNAPSHOT_MISSING_WARNING);
-      }
-      setStatusMessage(`Укладка «${title}» создана из рабочей строки. По текущему snapshot-контракту сохраняется коэффициент ${coefficient}.`);
-      return true;
+      return await finalizeAssemblyTargetRowCreate({
+        target,
+        title,
+        rows,
+        createdDto,
+        snapshotSection: assemblyTargetSnapshotSection(target),
+        reload: () => reloadAssemblyTargetCatalogPanel(target),
+        setStatusMessage,
+        setWarningMessage,
+      });
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Не удалось создать укладку из сборки.");
+      setError(cause instanceof Error ? cause.message : ASSEMBLY_TARGET_CREATE_ERRORS[target]);
       return false;
     }
   }

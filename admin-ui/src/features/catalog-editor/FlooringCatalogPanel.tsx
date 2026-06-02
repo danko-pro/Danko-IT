@@ -72,7 +72,7 @@ export function FlooringCatalogPanel() {
     handleDeleteCovering,
     handleDeletePreparation,
     handleDeleteLayout,
-    setAssemblyRowsCount,
+    setAssemblyRowsSnapshot,
     formatMoney,
     formatPercent,
     consumablesSummaryPerM2,
@@ -165,7 +165,7 @@ export function FlooringCatalogPanel() {
         target={assemblyTarget}
         onTargetChange={setAssemblyTarget}
         formatMoney={formatMoney}
-        onRowsChange={(rows) => setAssemblyRowsCount(rows.length)}
+        onRowsChange={setAssemblyRowsSnapshot}
         onCreateFromAssembly={createAssemblyTargetRow}
         initialRows={assemblyInitialRows}
         initialTitle={assemblyInitialTitle}

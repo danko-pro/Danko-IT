@@ -12,12 +12,14 @@ export function useFlooringAssemblyEditLoad() {
   const [assemblyInitialRows, setAssemblyInitialRows] = useState<CoveringAssemblyRow[]>([]);
   const [assemblyInitialTitle, setAssemblyInitialTitle] = useState("");
   const [assemblyLoading, setAssemblyLoading] = useState(false);
+  const [assemblyHadOnLoad, setAssemblyHadOnLoad] = useState(false);
 
   const clearAssemblyEditLoad = useCallback(() => {
     setAssemblyResetKey(undefined);
     setAssemblyInitialRows([]);
     setAssemblyInitialTitle("");
     setAssemblyLoading(false);
+    setAssemblyHadOnLoad(false);
   }, []);
 
   const loadAssemblyForEdit = useCallback(
@@ -32,10 +34,12 @@ export function useFlooringAssemblyEditLoad() {
       setAssemblyLoading(true);
       setAssemblyInitialRows([]);
       setAssemblyInitialTitle("");
+      setAssemblyHadOnLoad(false);
 
       const result = await loadAssemblyForEditorEdit(target, targetId);
       setAssemblyInitialRows(result.rows);
       setAssemblyInitialTitle(result.title);
+      setAssemblyHadOnLoad(result.status === "loaded");
       setAssemblyLoading(false);
 
       if (result.status === "failed") {
@@ -50,6 +54,7 @@ export function useFlooringAssemblyEditLoad() {
     assemblyInitialRows,
     assemblyInitialTitle,
     assemblyLoading,
+    assemblyHadOnLoad,
     clearAssemblyEditLoad,
     loadAssemblyForEdit,
   };

@@ -66,6 +66,29 @@ class CalculatorFlooringAssemblyItemPayload(BaseModel):
     sort_order: int | None = None
 
 
+class CalculatorFlooringCatalogAssemblyRowPayload(BaseModel):
+    assembly_item_id: int | None = None
+    section: str
+    kind: str
+    formula: str
+    title: str
+    unit: str
+    price: float = 0
+    consumption_per_m2: float = 0
+    package_size: float | None = None
+    layer_mm: float | None = None
+    sort_order: int = 10
+    is_enabled: bool = True
+    public_category: str
+    public_title: str | None = None
+
+
+class CalculatorFlooringCatalogAssemblyReplacePayload(BaseModel):
+    title: str
+    version: str | None = None
+    rows: list[CalculatorFlooringCatalogAssemblyRowPayload] = Field(default_factory=list)
+
+
 class CalculatorFlooringRoomZonePayload(BaseModel):
     covering_id: int | None = None
     preparation_id: int | None = None

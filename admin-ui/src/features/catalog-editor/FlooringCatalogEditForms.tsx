@@ -10,7 +10,6 @@ type CatalogFormProps = {
   submitting: boolean;
   onSubmit: () => void;
   onCancel?: () => void;
-  assemblyHint?: boolean;
   children: ReactNode;
 };
 
@@ -21,7 +20,6 @@ function CatalogForm({
   submitting,
   onSubmit,
   onCancel,
-  assemblyHint,
   children,
 }: CatalogFormProps) {
   const submitLabel =
@@ -47,11 +45,6 @@ function CatalogForm({
       <div className="ce-flooring-form-head">
         <div className="ce-flooring-form-head-copy">
           <strong>{headTitle}</strong>
-          {assemblyHint ? (
-            <span className="ce-flooring-form-hint">
-              Сборка покрытия сохраняется отдельно в блоке «Локальная сборка».
-            </span>
-          ) : null}
         </div>
         <div className="ce-toolbar-group ce-flooring-form-toolbar">
           {mode === "edit" && onCancel ? (
@@ -94,10 +87,8 @@ export function FlooringCoveringEditForm({
       submitting={submitting}
       onSubmit={onSubmit}
       onCancel={onCancel}
-      assemblyHint
     >
-      <div className="ce-table-wrap ce-flooring-table-wrap">
-        <p className="ce-flooring-form-table-caption">Основные поля</p>
+      <div className="ce-table-wrap ce-flooring-table-wrap ce-flooring-form-table-wrap">
         <table className="ce-table ce-flooring-table ce-flooring-form-table">
           <thead>
             <tr>
@@ -174,8 +165,7 @@ export function FlooringCoveringEditForm({
         </table>
       </div>
 
-      <div className="ce-table-wrap ce-flooring-table-wrap">
-        <p className="ce-flooring-form-table-caption">Расходники</p>
+      <div className="ce-table-wrap ce-flooring-table-wrap ce-flooring-form-table-wrap">
         <table className="ce-table ce-flooring-table ce-flooring-form-table">
           <thead>
             <tr>
@@ -286,8 +276,7 @@ export function FlooringCoveringEditForm({
         </table>
       </div>
 
-      <div className="ce-table-wrap ce-flooring-table-wrap">
-        <p className="ce-flooring-form-table-caption">Доп. расходники</p>
+      <div className="ce-table-wrap ce-flooring-table-wrap ce-flooring-form-table-wrap">
         <table className="ce-table ce-flooring-table ce-flooring-form-table">
           <thead>
             <tr>
@@ -404,21 +393,13 @@ export function FlooringCoveringEditForm({
         Добавить расходник
       </button>
 
-      <div className="ce-table-wrap ce-flooring-table-wrap ce-flooring-form-note-wrap">
-        <table className="ce-table ce-flooring-table ce-flooring-form-table ce-flooring-form-note-table">
-          <tbody>
-            <tr>
-              <th className="ce-flooring-form-note-label">Примечание</th>
-              <td>
-                <textarea
-                  className="ce-cell-input ce-flooring-form-note-input"
-                  value={draft.note}
-                  onChange={(event) => onDraftChange((prev) => ({ ...prev, note: event.target.value }))}
-                />
-              </td>
-            </tr>
-          </tbody>
-        </table>
+      <div className="ce-flooring-form-note-wrap">
+        <label className="ce-flooring-form-note-label">Примечание</label>
+        <textarea
+          className="ce-cell-input ce-flooring-form-note-input"
+          value={draft.note}
+          onChange={(event) => onDraftChange((prev) => ({ ...prev, note: event.target.value }))}
+        />
       </div>
     </CatalogForm>
   );
@@ -450,7 +431,7 @@ export function FlooringPreparationEditForm({
       onSubmit={onSubmit}
       onCancel={onCancel}
     >
-      <div className="ce-table-wrap ce-flooring-table-wrap">
+      <div className="ce-table-wrap ce-flooring-table-wrap ce-flooring-form-table-wrap">
         <table className="ce-table ce-flooring-table ce-flooring-form-table">
           <thead>
             <tr>
@@ -512,21 +493,13 @@ export function FlooringPreparationEditForm({
         </table>
       </div>
 
-      <div className="ce-table-wrap ce-flooring-table-wrap ce-flooring-form-note-wrap">
-        <table className="ce-table ce-flooring-table ce-flooring-form-table ce-flooring-form-note-table">
-          <tbody>
-            <tr>
-              <th className="ce-flooring-form-note-label">Примечание</th>
-              <td>
-                <textarea
-                  className="ce-cell-input ce-flooring-form-note-input"
-                  value={draft.note}
-                  onChange={(event) => onDraftChange((prev) => ({ ...prev, note: event.target.value }))}
-                />
-              </td>
-            </tr>
-          </tbody>
-        </table>
+      <div className="ce-flooring-form-note-wrap">
+        <label className="ce-flooring-form-note-label">Примечание</label>
+        <textarea
+          className="ce-cell-input ce-flooring-form-note-input"
+          value={draft.note}
+          onChange={(event) => onDraftChange((prev) => ({ ...prev, note: event.target.value }))}
+        />
       </div>
     </CatalogForm>
   );
@@ -558,7 +531,7 @@ export function FlooringLayoutEditForm({
       onSubmit={onSubmit}
       onCancel={onCancel}
     >
-      <div className="ce-table-wrap ce-flooring-table-wrap">
+      <div className="ce-table-wrap ce-flooring-table-wrap ce-flooring-form-table-wrap">
         <table className="ce-table ce-flooring-table ce-flooring-form-table">
           <thead>
             <tr>
@@ -604,21 +577,13 @@ export function FlooringLayoutEditForm({
         </table>
       </div>
 
-      <div className="ce-table-wrap ce-flooring-table-wrap ce-flooring-form-note-wrap">
-        <table className="ce-table ce-flooring-table ce-flooring-form-table ce-flooring-form-note-table">
-          <tbody>
-            <tr>
-              <th className="ce-flooring-form-note-label">Примечание</th>
-              <td>
-                <textarea
-                  className="ce-cell-input ce-flooring-form-note-input"
-                  value={draft.note}
-                  onChange={(event) => onDraftChange((prev) => ({ ...prev, note: event.target.value }))}
-                />
-              </td>
-            </tr>
-          </tbody>
-        </table>
+      <div className="ce-flooring-form-note-wrap">
+        <label className="ce-flooring-form-note-label">Примечание</label>
+        <textarea
+          className="ce-cell-input ce-flooring-form-note-input"
+          value={draft.note}
+          onChange={(event) => onDraftChange((prev) => ({ ...prev, note: event.target.value }))}
+        />
       </div>
     </CatalogForm>
   );

@@ -147,6 +147,8 @@ class SqlAlchemyEstimateFlooringRepository(SqlAlchemyEstimateRepository):
         target_id: int,
         title: str,
         rows: list[dict[str, Any]],
+        *,
+        version: str = "flooring-assembly-v1",
     ) -> int:
         target_kind = validate_flooring_catalog_assembly_target_kind(target_kind)
         owner_value = self._catalog_write_owner_value()
@@ -157,6 +159,7 @@ class SqlAlchemyEstimateFlooringRepository(SqlAlchemyEstimateRepository):
                     target_kind=target_kind,
                     target_id=target_id,
                     title=title,
+                    version=version,
                     owner_user_id=owner_value,
                 )
                 await session.execute(
@@ -446,6 +449,7 @@ class SqlAlchemyEstimateFlooringRepository(SqlAlchemyEstimateRepository):
         target_kind: str,
         target_id: int,
         title: str,
+        version: str,
         owner_user_id: int | None,
     ) -> int:
         assembly_id = await self._writable_catalog_assembly_id(session, target_kind, target_id)
@@ -453,7 +457,7 @@ class SqlAlchemyEstimateFlooringRepository(SqlAlchemyEstimateRepository):
             await session.execute(
                 update(estimate_flooring_catalog_assemblies)
                 .where(estimate_flooring_catalog_assemblies.c.id == assembly_id)
-                .values(title=title, updated_at=func.current_timestamp())
+                .values(title=title, version=version, updated_at=func.current_timestamp())
             )
             return assembly_id
         result = await session.execute(
@@ -462,6 +466,7 @@ class SqlAlchemyEstimateFlooringRepository(SqlAlchemyEstimateRepository):
                 target_kind=target_kind,
                 target_id=target_id,
                 title=title,
+                version=version,
             )
         )
         return int(result.inserted_primary_key[0])

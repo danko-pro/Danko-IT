@@ -20,6 +20,7 @@ def register_calculator_routes(
     calculator_room_update_payload_model,
     calculator_warm_floor_update_payload_model,
     calculator_flooring_assembly_item_payload_model,
+    calculator_flooring_catalog_assembly_replace_payload_model,
     calculator_flooring_covering_payload_model,
     calculator_flooring_preparation_payload_model,
     calculator_flooring_layout_payload_model,
@@ -47,6 +48,7 @@ def register_calculator_routes(
     register_calculator_flooring_routes(
         app,
         calculator_flooring_assembly_item_payload_model=calculator_flooring_assembly_item_payload_model,
+        calculator_flooring_catalog_assembly_replace_payload_model=calculator_flooring_catalog_assembly_replace_payload_model,
         calculator_flooring_covering_payload_model=calculator_flooring_covering_payload_model,
         calculator_flooring_preparation_payload_model=calculator_flooring_preparation_payload_model,
         calculator_flooring_layout_payload_model=calculator_flooring_layout_payload_model,

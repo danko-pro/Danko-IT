@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { CatalogDecimalInput } from "./CatalogDecimalInput";
+import { CatalogSegmentedControl, type CatalogSegmentedOption } from "./CatalogSegmentedControl";
 import {
   aggregateCoveringAssembly,
   calculateAssemblyRowTotal,
@@ -31,6 +32,12 @@ const FLOORING_ASSEMBLY_TARGET_LABELS: Record<FlooringAssemblyTarget, string> = 
   preparation: "Подготовка",
   layout: "Укладка",
 };
+
+const FLOORING_ASSEMBLY_TARGET_OPTIONS: CatalogSegmentedOption<FlooringAssemblyTarget>[] =
+  FLOORING_ASSEMBLY_TARGETS.map((target) => ({
+    value: target,
+    label: FLOORING_ASSEMBLY_TARGET_LABELS[target],
+  }));
 
 const FLOORING_ASSEMBLY_TARGET_LIBRARY_SECTIONS: Record<FlooringAssemblyTarget, FlooringAssemblyLibrarySection[]> = {
   covering: ["covering", "consumable", "tool"],
@@ -383,18 +390,12 @@ export function FlooringAssemblyBlock({
       </div>
 
       <div className="ce-flooring-assembly-library">
-        <div className="ce-flooring-assembly-targets" role="group" aria-label="Собираем">
-          {FLOORING_ASSEMBLY_TARGETS.map((item) => (
-            <button
-              key={item}
-              type="button"
-              className={`ce-flooring-assembly-target${target === item ? " is-active" : ""}`}
-              onClick={() => changeTarget(item)}
-            >
-              {FLOORING_ASSEMBLY_TARGET_LABELS[item]}
-            </button>
-          ))}
-        </div>
+        <CatalogSegmentedControl
+          options={FLOORING_ASSEMBLY_TARGET_OPTIONS}
+          value={target}
+          onChange={changeTarget}
+          ariaLabel="Собираем"
+        />
         <input
           className="ce-input ce-flooring-assembly-library-item ce-flooring-assembly-title-input"
           value={entryTitle}

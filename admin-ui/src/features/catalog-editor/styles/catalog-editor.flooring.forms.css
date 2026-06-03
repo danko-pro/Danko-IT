@@ -1,0 +1,173 @@
+﻿.ce-flooring-form {
+  margin: 0;
+  padding: 10px;
+  border: 1px solid var(--ce-border);
+  border-radius: var(--ce-radius);
+  background: #ffffff;
+  box-shadow: var(--ce-shadow-sm);
+}
+
+.ce-flooring-form-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.ce-flooring-form-head-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  color: var(--ce-text);
+  font-size: 12px;
+}
+
+.ce-flooring-form-toolbar {
+  flex: 0 0 auto;
+  justify-content: flex-end;
+}
+
+.ce-flooring-form-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ce-flooring-form-table-wrap {
+  overflow: auto;
+}
+
+.ce-flooring-form .ce-table,
+.ce-flooring-form .ce-flooring-form-table {
+  min-width: 0;
+}
+
+.ce-flooring-form .ce-empty {
+  padding: 10px;
+  text-align: left;
+}
+
+.ce-flooring-form-note-wrap {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  gap: 8px;
+  align-items: start;
+}
+
+.ce-flooring-form-note-label {
+  padding-top: 8px;
+  color: var(--ce-muted);
+  font-size: 11px;
+  font-weight: 720;
+  white-space: nowrap;
+}
+
+.ce-flooring-form-note-input {
+  min-height: 38px;
+  padding: 7px 8px;
+  resize: vertical;
+  border: 1px solid var(--ce-border);
+  border-radius: 6px;
+  background: #ffffff;
+  line-height: 1.35;
+}
+
+.ce-flooring-library-form {
+  margin-top: 8px;
+}
+
+
+.ce-flooring-form-summary-strip {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px 9px;
+  margin-bottom: 0;
+  padding: 6px 8px;
+  border: 1px solid #b9dfcd;
+  border-radius: 6px;
+  background: var(--ce-ok-soft);
+  color: #486859;
+  font-size: 10px;
+  line-height: 1.3;
+}
+
+.ce-flooring-form-summary-chip strong {
+  color: var(--ce-text);
+  font-weight: 760;
+}
+
+.ce-flooring-form-summary-total strong {
+  color: var(--ce-ok);
+}
+
+.ce-flooring-form-grid {
+  display: grid;
+  grid-template-columns: minmax(150px, 1.2fr) minmax(110px, 0.8fr) repeat(2, minmax(104px, 0.7fr));
+  gap: 7px 10px;
+}
+
+.ce-flooring-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.ce-flooring-form-field-span-2 {
+  grid-column: span 2;
+}
+
+.ce-flooring-form-field-label {
+  color: var(--ce-muted);
+  font-size: 10px;
+  font-weight: 720;
+}
+
+.ce-flooring-form-control {
+  height: 30px;
+  min-height: 30px;
+  padding: 0 7px;
+  border: 1px solid var(--ce-border);
+  border-radius: 6px;
+  background: #ffffff;
+  outline: none;
+}
+
+
+.ce-flooring-custom-consumables {
+  margin-top: 0;
+}
+
+.ce-flooring-custom-consumables-summary {
+  padding: 2px 0;
+  color: var(--ce-muted);
+  font-size: 11px;
+  font-weight: 720;
+  list-style: none;
+  cursor: pointer;
+}
+
+.ce-flooring-custom-consumables-summary::-webkit-details-marker {
+  display: none;
+}
+
+.ce-flooring-custom-consumables-empty-hint {
+  font-weight: 400;
+}
+
+.ce-flooring-form-note-wide {
+  grid-template-columns: 1fr;
+}
+
+.ce-flooring-form-note-wide .ce-flooring-form-note-label {
+  padding-top: 0;
+}
+
+.ce-flooring-form-note-wide .ce-flooring-form-note-input {
+  min-height: 52px;
+  width: 100%;
+}
+

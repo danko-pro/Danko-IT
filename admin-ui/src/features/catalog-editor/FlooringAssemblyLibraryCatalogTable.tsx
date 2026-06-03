@@ -1,6 +1,7 @@
 import { normalizeNum } from "./api/flooring-mappers";
 import type { FlooringAssemblyItemDto } from "./api/flooring-types";
 import { EditIcon, TrashIcon } from "./CatalogEditorIcons";
+import { CatalogIconAction } from "./CatalogIconAction";
 import { CatalogManagedTableHeaderCell } from "./CatalogManagedTableHeaderCell";
 import {
   FLOORING_ASSEMBLY_LIBRARY_COLUMN_CLASS,
@@ -80,24 +81,20 @@ export function FlooringAssemblyLibraryCatalogTable({
                 <td className={controls.columnClass("layer", "ce-num ce-readonly")}>{item.layer_mm ?? "\u2014"}</td>
                 <td className={controls.columnClass("actions", "ce-col-actions")}>
                   <div className="ce-row-actions">
-                    <button
-                      type="button"
-                      className="ce-icon-action ce-icon-action-primary"
-                      aria-label={`${EDIT_TITLE}: ${item.title}`}
+                    <CatalogIconAction
+                      variant="primary"
+                      icon={<EditIcon className="ce-action-icon" />}
+                      ariaLabel={`${EDIT_TITLE}: ${item.title}`}
                       title={EDIT_TITLE}
                       onClick={() => onBeginEditAssemblyItem(item)}
-                    >
-                      <EditIcon className="ce-action-icon" />
-                    </button>
-                    <button
-                      type="button"
-                      className="ce-icon-action ce-icon-action-danger"
-                      aria-label={`${DELETE_TITLE}: ${item.title}`}
+                    />
+                    <CatalogIconAction
+                      variant="danger"
+                      icon={<TrashIcon className="ce-action-icon" />}
+                      ariaLabel={`${DELETE_TITLE}: ${item.title}`}
                       title={DELETE_TITLE}
                       onClick={() => onDeleteAssemblyItem(item)}
-                    >
-                      <TrashIcon className="ce-action-icon" />
-                    </button>
+                    />
                   </div>
                 </td>
               </tr>

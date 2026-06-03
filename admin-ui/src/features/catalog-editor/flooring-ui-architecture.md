@@ -18,6 +18,7 @@ Current reusable mechanics:
 
 - `CatalogViewTabs.tsx` for page-level view tabs such as zones/catalog-library switches.
 - `CatalogSegmentedControl.tsx` for compact segmented mode switches.
+- `CatalogIconAction.tsx` for compact icon-only actions such as edit, delete, and add.
 - `CatalogLibraryPanel.tsx` for the shared library shell used by flooring and plumbing libraries.
 - `CatalogManagedTableHeaderCell.tsx` for reusable table column controls.
 - `useCatalogTableColumns.ts` for UI-only column width and text alignment state.

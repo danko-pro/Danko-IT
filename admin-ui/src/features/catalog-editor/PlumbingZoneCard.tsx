@@ -1,6 +1,7 @@
 import { useState } from "react";
 
 import { TrashIcon } from "./CatalogEditorIcons";
+import { CatalogIconAction } from "./CatalogIconAction";
 import { DEFAULT_ZONE_RISK_PERCENT, type CatalogItem, type CatalogZone } from "./plumbing-seed";
 import { formatMoney, itemUnitPrice, zoneCompositionRows } from "./plumbing-catalog-model";
 import { PlumbingZoneCompositionTable } from "./PlumbingZoneCompositionTable";
@@ -88,15 +89,13 @@ export function PlumbingZoneCard({
         <span className="ce-zone-total" title={TOTAL_TITLE}>
           {formatMoney(grandTotal)} {"\u20bd"}
         </span>
-        <button
-          type="button"
-          className="ce-icon-action ce-icon-action-danger"
+        <CatalogIconAction
+          variant="danger"
+          icon={<TrashIcon className="ce-action-icon" />}
           title={DELETE_TITLE}
-          aria-label={`${DELETE_TITLE}: ${zone.title}`}
+          ariaLabel={`${DELETE_TITLE}: ${zone.title}`}
           onClick={() => onRemoveZone(zone.id, zone.title)}
-        >
-          <TrashIcon className="ce-action-icon" />
-        </button>
+        />
       </header>
 
       {!collapsed && (

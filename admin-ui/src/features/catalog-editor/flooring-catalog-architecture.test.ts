@@ -4,6 +4,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import catalogEditorSource from "./CatalogEditor.tsx?raw";
+import catalogIconActionSource from "./CatalogIconAction.tsx?raw";
 import catalogLibraryPanelSource from "./CatalogLibraryPanel.tsx?raw";
 import flooringAssemblyBlockSource from "./FlooringAssemblyBlock.tsx?raw";
 import flooringAssemblyLibraryCatalogTableSource from "./FlooringAssemblyLibraryCatalogTable.tsx?raw";
@@ -119,6 +120,7 @@ const REQUIRED_PLUMBING_CATALOG_MODULES = [
 ] as const;
 
 const REQUIRED_SHARED_CATALOG_MODULES = [
+  "CatalogIconAction.tsx",
   "CatalogLibraryPanel.tsx",
   "CatalogManagedTableHeaderCell.tsx",
   "useCatalogPersistedState.ts",
@@ -167,6 +169,7 @@ const plumbingCatalogModulePaths = Object.keys(
 
 const sharedCatalogModulePaths = Object.keys(
   import.meta.glob([
+    "./CatalogIconAction.tsx",
     "./CatalogManagedTableHeaderCell.tsx",
     "./CatalogLibraryPanel.tsx",
     "./useCatalogPersistedState.ts",
@@ -305,8 +308,11 @@ describe("catalog editor architecture", () => {
 
     expect(sourceLines(useCatalogTableColumnsSource).length).toBeLessThanOrEqual(140);
     expect(sourceLines(useCatalogPersistedStateSource).length).toBeLessThanOrEqual(80);
+    expect(sourceLines(catalogIconActionSource).length).toBeLessThanOrEqual(60);
     expect(sourceLines(catalogLibraryPanelSource).length).toBeLessThanOrEqual(80);
     expect(sourceLines(catalogManagedTableHeaderCellSource).length).toBeLessThanOrEqual(100);
+    expect(catalogIconActionSource).toContain("ce-icon-action");
+    expect(catalogIconActionSource).toContain("ce-icon-action-${variant}");
     expect(catalogEditorSource).toContain("useCatalogPersistedState");
     expect(catalogEditorSource).toContain('"section-tab"');
     expect(useFlooringCatalogPanelSource).toContain('"flooring:view"');
@@ -325,7 +331,11 @@ describe("catalog editor architecture", () => {
     expect(flooringAssemblyLibraryCatalogTableSource).toContain("CatalogManagedTableHeaderCell");
     expect(flooringAssemblyLibraryCatalogTableSource).toContain("EditIcon");
     expect(flooringAssemblyLibraryCatalogTableSource).toContain("TrashIcon");
-    expect(flooringAssemblyLibraryCatalogTableSource).toContain("ce-icon-action");
+    expect(flooringAssemblyLibraryCatalogTableSource).toContain("CatalogIconAction");
+    expect(flooringCatalogWorkspaceSource).toContain("CatalogIconAction");
+    expect(plumbingZoneCardSource).toContain("CatalogIconAction");
+    expect(plumbingZoneSidebarSource).toContain("CatalogIconAction");
+    expect(flooringAssemblyLibraryCatalogTableSource).not.toContain("ce-icon-action");
     expect(flooringAssemblyLibraryCatalogTableSource).not.toContain('className="ce-row-action"');
     expect(plumbingZoneCompositionTableSource).toContain("useCatalogTableColumns");
     expect(plumbingZoneCompositionTableSource).toContain('"plumbing:zone-composition-columns"');

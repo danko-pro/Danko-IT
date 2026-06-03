@@ -30,6 +30,7 @@ import plumbingZoneCardSource from "./PlumbingZoneCard.tsx?raw";
 import plumbingZoneCompositionColumnsSource from "./PlumbingZoneCompositionColumns.ts?raw";
 import plumbingZoneCompositionRowsSource from "./PlumbingZoneCompositionRows.tsx?raw";
 import plumbingZoneCompositionTableSource from "./PlumbingZoneCompositionTable.tsx?raw";
+import plumbingZoneSidebarSource from "./PlumbingZoneSidebar.tsx?raw";
 import plumbingZonesViewSource from "./PlumbingZonesView.tsx?raw";
 import useCatalogTableColumnsSource from "./useCatalogTableColumns.ts?raw";
 import usePlumbingCatalogPanelSource from "./usePlumbingCatalogPanel.ts?raw";
@@ -55,6 +56,7 @@ const plumbingCompositionCssSource = readFeatureFile("styles/catalog-editor.plum
 const plumbingLibraryCssSource = readFeatureFile("styles/catalog-editor.plumbing.library.css");
 const plumbingResponsiveCssSource = readFeatureFile("styles/catalog-editor.plumbing.responsive.css");
 const plumbingTableCssSource = readFeatureFile("styles/catalog-editor.plumbing.table.css");
+const plumbingZoneWorkspaceCssSource = readFeatureFile("styles/catalog-editor.plumbing.zone-workspace.css");
 const plumbingZonesCssSource = readFeatureFile("styles/catalog-editor.plumbing.zones.css");
 
 const REQUIRED_FLOORING_CATALOG_MODULES = [
@@ -90,6 +92,7 @@ const REQUIRED_PLUMBING_CSS_MODULES = [
   "catalog-editor.plumbing.library.css",
   "catalog-editor.plumbing.responsive.css",
   "catalog-editor.plumbing.table.css",
+  "catalog-editor.plumbing.zone-workspace.css",
   "catalog-editor.plumbing.zones.css",
 ] as const;
 
@@ -103,6 +106,7 @@ const REQUIRED_PLUMBING_CATALOG_MODULES = [
   "PlumbingZoneCompositionColumns.ts",
   "PlumbingZoneCompositionRows.tsx",
   "PlumbingZoneCompositionTable.tsx",
+  "PlumbingZoneSidebar.tsx",
   "PlumbingZonesView.tsx",
   "plumbing-catalog-model.ts",
   "usePlumbingCatalogPanel.ts",
@@ -145,6 +149,7 @@ const plumbingCatalogModulePaths = Object.keys(
     "./PlumbingZoneCompositionColumns.ts",
     "./PlumbingZoneCompositionRows.tsx",
     "./PlumbingZoneCompositionTable.tsx",
+    "./PlumbingZoneSidebar.tsx",
     "./PlumbingZonesView.tsx",
     "./plumbing-catalog-model.ts",
     "./usePlumbingCatalogPanel.ts",
@@ -179,6 +184,7 @@ const plumbingCssModulePaths = Object.keys(
     "./styles/catalog-editor.plumbing.library.css",
     "./styles/catalog-editor.plumbing.responsive.css",
     "./styles/catalog-editor.plumbing.table.css",
+    "./styles/catalog-editor.plumbing.zone-workspace.css",
     "./styles/catalog-editor.plumbing.zones.css",
   ]),
 );
@@ -207,6 +213,7 @@ const plumbingCssSources: Array<[string, string, number]> = [
   ["catalog-editor.plumbing.library.css", plumbingLibraryCssSource, 80],
   ["catalog-editor.plumbing.responsive.css", plumbingResponsiveCssSource, 60],
   ["catalog-editor.plumbing.table.css", plumbingTableCssSource, 140],
+  ["catalog-editor.plumbing.zone-workspace.css", plumbingZoneWorkspaceCssSource, 240],
   ["catalog-editor.plumbing.zones.css", plumbingZonesCssSource, 220],
 ];
 
@@ -287,6 +294,7 @@ describe("catalog editor architecture", () => {
     expect(sourceLines(plumbingCatalogPanelSource).length).toBeLessThanOrEqual(220);
     expect(sourceLines(usePlumbingCatalogPanelSource).length).toBeLessThanOrEqual(420);
     expect(sourceLines(plumbingZonesViewSource).length).toBeLessThanOrEqual(150);
+    expect(sourceLines(plumbingZoneSidebarSource).length).toBeLessThanOrEqual(120);
     expect(sourceLines(plumbingZoneCardSource).length).toBeLessThanOrEqual(260);
     expect(sourceLines(plumbingZoneCompositionTableSource).length).toBeLessThanOrEqual(170);
     expect(sourceLines(plumbingZoneCompositionColumnsSource).length).toBeLessThanOrEqual(120);
@@ -302,6 +310,7 @@ describe("catalog editor architecture", () => {
     expect(plumbingCatalogModelSource).toContain("export function itemUnitPrice");
     expect(plumbingCatalogModelSource).toContain("export function normalizeZone");
     expect(plumbingZonesViewSource).toContain("PlumbingZoneCard");
+    expect(plumbingZonesViewSource).toContain("PlumbingZoneSidebar");
     expect(plumbingZoneCardSource).toContain("PlumbingZoneCompositionTable");
     expect(plumbingZoneCompositionTableSource).toContain("PlumbingZoneCompositionRows");
   });

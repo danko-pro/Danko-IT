@@ -1,5 +1,6 @@
 import { useState } from "react";
 
+import { TrashIcon } from "./CatalogEditorIcons";
 import { DEFAULT_ZONE_RISK_PERCENT, type CatalogItem, type CatalogZone } from "./plumbing-seed";
 import { formatMoney, itemUnitPrice, zoneCompositionRows } from "./plumbing-catalog-model";
 import { PlumbingZoneCompositionTable } from "./PlumbingZoneCompositionTable";
@@ -30,6 +31,16 @@ export type PlumbingZoneCardProps = {
   onReplaceZoneVariantRow: (zoneId: string, oldAtomicItemId: string, newAtomicItemId: string) => void;
 };
 
+const TITLE_PLACEHOLDER = "\u041d\u0430\u0437\u0432\u0430\u043d\u0438\u0435 \u0437\u043e\u043d\u044b";
+const DESC_PLACEHOLDER = "\u041e\u043f\u0438\u0441\u0430\u043d\u0438\u0435";
+const PACKAGE_LABEL = "\u041f\u0430\u043a\u0435\u0442";
+const RISK_LABEL = "\u0420\u0435\u0437\u0435\u0440\u0432";
+const ADD_ROW_LABEL =
+  "+ \u041f\u043e\u0437\u0438\u0446\u0438\u044f";
+const DELETE_TITLE = "\u0423\u0434\u0430\u043b\u0438\u0442\u044c \u0437\u043e\u043d\u0443";
+const POSITIONS_LABEL = "\u043f\u043e\u0437.";
+const TOTAL_TITLE = "\u0418\u0442\u043e\u0433\u043e \u0441 \u0440\u0435\u0437\u0435\u0440\u0432\u043e\u043c";
+
 export function PlumbingZoneCard({
   zone,
   collapsed,
@@ -58,63 +69,64 @@ export function PlumbingZoneCard({
   }
 
   return (
-    <div className="ce-zone">
+    <div className="ce-zone ce-plumbing-zone-detail-card">
       <header className="ce-zone-head">
-        <button type="button" className="ce-disclosure" onClick={onToggle} aria-expanded={!collapsed}>
-          <span className={`ce-chevron${collapsed ? "" : " is-open"}`}>▶</span>
+        <button type="button" className="ce-disclosure ce-zone-detail-toggle" onClick={onToggle} aria-expanded={!collapsed}>
+          <span className={`ce-chevron${collapsed ? "" : " is-open"}`}>{"\u25b6"}</span>
         </button>
         <input
           className="ce-zone-title"
           value={zone.title}
           onChange={(event) => onUpdateZone(zone.id, { title: event.target.value })}
-          placeholder="Название зоны"
+          placeholder={TITLE_PLACEHOLDER}
         />
-        <span className="ce-zone-count">{zoneCompositionRows(zone).length} поз.</span>
-        <span className="ce-zone-total" title="Итого с резервом">
-          {formatMoney(grandTotal)} ₽
+        <span className="ce-zone-count">{zoneCompositionRows(zone).length} {POSITIONS_LABEL}</span>
+        <span className="ce-zone-total" title={TOTAL_TITLE}>
+          {formatMoney(grandTotal)} {"\u20bd"}
         </span>
         <button
           type="button"
-          className="ce-row-delete"
-          title="Удалить зону"
+          className="ce-icon-action ce-icon-action-danger"
+          title={DELETE_TITLE}
+          aria-label={`${DELETE_TITLE}: ${zone.title}`}
           onClick={() => onRemoveZone(zone.id, zone.title)}
         >
-          ×
+          <TrashIcon className="ce-action-icon" />
         </button>
       </header>
 
       {!collapsed && (
         <div className="ce-zone-body">
-          <input
-            className="ce-zone-desc"
-            value={zone.description ?? ""}
-            onChange={(event) => onUpdateZone(zone.id, { description: event.target.value })}
-            placeholder="Описание зоны"
-          />
+          <div className="ce-zone-detail-controls">
+            <input
+              className="ce-zone-desc"
+              value={zone.description ?? ""}
+              onChange={(event) => onUpdateZone(zone.id, { description: event.target.value })}
+              placeholder={DESC_PLACEHOLDER}
+            />
 
-          {zone.priceClassVariants && zone.priceClassVariants.length > 0 && (
-            <div className="ce-price-classes">
-              <span className="ce-price-classes-label">Пакет</span>
-              <div className="ce-price-class-tabs">
-                {zone.priceClassVariants.map((variant) => (
-                  <button
-                    key={variant.id}
-                    type="button"
-                    className={`ce-price-class-tab${
-                      (zone.activePriceClassId ?? zone.priceClassVariants![0].id) === variant.id ? " is-active" : ""
-                    }`}
-                    onClick={() => onUpdateZone(zone.id, { activePriceClassId: variant.id })}
-                  >
-                    {variant.label}
-                  </button>
-                ))}
+            {zone.priceClassVariants && zone.priceClassVariants.length > 0 ? (
+              <div className="ce-price-classes">
+                <span className="ce-price-classes-label">{PACKAGE_LABEL}</span>
+                <div className="ce-price-class-tabs">
+                  {zone.priceClassVariants.map((variant) => (
+                    <button
+                      key={variant.id}
+                      type="button"
+                      className={`ce-price-class-tab${
+                        (zone.activePriceClassId ?? zone.priceClassVariants![0].id) === variant.id ? " is-active" : ""
+                      }`}
+                      onClick={() => onUpdateZone(zone.id, { activePriceClassId: variant.id })}
+                    >
+                      {variant.label}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
+            ) : null}
 
-          <div className="ce-zone-risk-field">
             <label className="ce-zone-risk-label">
-              Резерв, %
+              {RISK_LABEL}
               <input
                 className="ce-input ce-zone-risk-input"
                 type="number"
@@ -124,6 +136,15 @@ export function PlumbingZoneCard({
                 onChange={(event) => onUpdateZoneRiskPercent(zone.id, event.target.value)}
               />
             </label>
+
+            <select className="ce-input ce-zone-pick" value={pickValue} onChange={(event) => handlePick(event.target.value)}>
+              <option value="">{ADD_ROW_LABEL}</option>
+              {library.map((item) => (
+                <option key={item.id} value={item.id}>
+                  [{item.group}] {item.publicTitle} - {formatMoney(itemUnitPrice(item))} {"\u20bd"}/{item.unit}
+                </option>
+              ))}
+            </select>
           </div>
 
           <PlumbingZoneCompositionTable
@@ -139,21 +160,6 @@ export function PlumbingZoneCard({
             onRemoveZoneRow={onRemoveZoneRow}
             onReplaceZoneVariantRow={onReplaceZoneVariantRow}
           />
-
-          <div className="ce-zone-add">
-            <select
-              className="ce-input ce-zone-pick"
-              value={pickValue}
-              onChange={(event) => handlePick(event.target.value)}
-            >
-              <option value="">+ Добавить позицию в состав...</option>
-              {library.map((item) => (
-                <option key={item.id} value={item.id}>
-                  [{item.group}] {item.publicTitle} — {formatMoney(itemUnitPrice(item))} ₽/{item.unit}
-                </option>
-              ))}
-            </select>
-          </div>
         </div>
       )}
     </div>

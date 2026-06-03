@@ -241,6 +241,7 @@ describe("catalog editor architecture", () => {
     expect(sourceLines(catalogEditorSource).length).toBeLessThanOrEqual(140);
     expect(catalogEditorSource).toContain("<PlumbingCatalogPanel catalog={plumbingCatalog} />");
     expect(catalogEditorSource).toContain("<FlooringCatalogPanel />");
+    expect(catalogEditorSource).toContain('hidden={activeSection?.id !== "floors"}');
     expect(catalogEditorSource).not.toContain("function ZoneCard");
     expect(catalogEditorSource).not.toContain("function LibraryView");
     expect(catalogEditorSource).not.toContain("CatalogViewTabs");

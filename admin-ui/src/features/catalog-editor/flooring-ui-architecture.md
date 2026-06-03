@@ -16,6 +16,7 @@ Put reusable mechanics in small components or hooks. A UI mechanic must receive 
 
 Current reusable mechanics:
 
+- `CatalogViewTabs.tsx` for page-level view tabs such as zones/catalog-library switches.
 - `CatalogSegmentedControl.tsx` for compact segmented mode switches.
 - `FlooringConsumablesTable.tsx` for the standard consumables table with UI-only column width and text alignment state.
 

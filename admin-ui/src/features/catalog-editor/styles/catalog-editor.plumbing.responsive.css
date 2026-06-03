@@ -5,7 +5,7 @@
 
   .ce-zone-count,
   .ce-zone-total,
-  .ce-zone-head > .ce-row-delete {
+  .ce-zone-head > .ce-icon-action {
     grid-column: 2;
     justify-self: start;
   }

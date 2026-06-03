@@ -1,10 +1,11 @@
 import type { WarmFloorCatalogController } from "./api/warm-floor-client";
+import { useCatalogPersistedStringSet } from "./useCatalogPersistedState";
 import { useCatalogTableColumns } from "./useCatalogTableColumns";
 import {
   ELECTRIC_WARM_FLOOR_RATE_FIELDS,
   WATER_WARM_FLOOR_RATE_FIELDS,
 } from "./warm-floor-rate-fields";
-import { WarmFloorRateTable } from "./WarmFloorRateTable";
+import { WarmFloorRateCard } from "./WarmFloorRateCard";
 import {
   WARM_FLOOR_RATE_DEFAULT_COLUMNS,
   WARM_FLOOR_RATE_MIN_COLUMN_WIDTH,
@@ -15,12 +16,16 @@ type WarmFloorCatalogPanelProps = {
   controller: WarmFloorCatalogController;
 };
 
+const WATER_CARD_ID = "water";
+const ELECTRIC_CARD_ID = "electric";
+
 function formatMoney(value: number): string {
   return value.toLocaleString("ru-RU");
 }
 
 export function WarmFloorCatalogPanel({ controller }: WarmFloorCatalogPanelProps) {
   const { config } = controller;
+  const [collapsedCards, setCollapsedCards] = useCatalogPersistedStringSet("warm-floor:collapsed-rate-cards");
   const rateTableControls = useCatalogTableColumns({
     defaultColumns: WARM_FLOOR_RATE_DEFAULT_COLUMNS,
     minColumnWidths: WARM_FLOOR_RATE_MIN_COLUMN_WIDTH,
@@ -39,6 +44,23 @@ export function WarmFloorCatalogPanel({ controller }: WarmFloorCatalogPanelProps
       </div>
     );
   }
+
+  function toggleRateCard(cardId: string) {
+    setCollapsedCards((current) => {
+      const next = new Set(current);
+      if (next.has(cardId)) next.delete(cardId);
+      else next.add(cardId);
+      return next;
+    });
+  }
+
+  const smallLoopTotal =
+    config.small_loop_fittings_material + config.small_loop_control_head_material + config.small_loop_connection_labor;
+  const electricFixedTotal =
+    config.electric_breaker_material +
+    config.thermostat_material +
+    config.electric_wire_material +
+    config.electric_installation_labor;
 
   return (
     <div className="ce-warm-floor-panel">
@@ -83,18 +105,36 @@ export function WarmFloorCatalogPanel({ controller }: WarmFloorCatalogPanelProps
       </div>
 
       <div className="ce-warm-floor-rate-grid">
-        <WarmFloorRateTable
+        <WarmFloorRateCard
+          id={WATER_CARD_ID}
           title="Водяной теплый пол"
           fields={WATER_WARM_FLOOR_RATE_FIELDS}
           config={config}
           controls={rateTableControls}
+          collapsed={collapsedCards.has(WATER_CARD_ID)}
+          summary={
+            <>
+              <span>{WATER_WARM_FLOOR_RATE_FIELDS.length} тарифов</span>
+              <strong>{formatMoney(smallLoopTotal)} ₽</strong>
+            </>
+          }
+          onToggle={() => toggleRateCard(WATER_CARD_ID)}
           onUpdate={controller.updateField}
         />
-        <WarmFloorRateTable
+        <WarmFloorRateCard
+          id={ELECTRIC_CARD_ID}
           title="Электрический теплый пол"
           fields={ELECTRIC_WARM_FLOOR_RATE_FIELDS}
           config={config}
           controls={rateTableControls}
+          collapsed={collapsedCards.has(ELECTRIC_CARD_ID)}
+          summary={
+            <>
+              <span>{ELECTRIC_WARM_FLOOR_RATE_FIELDS.length} тарифов</span>
+              <strong>{formatMoney(electricFixedTotal)} ₽</strong>
+            </>
+          }
+          onToggle={() => toggleRateCard(ELECTRIC_CARD_ID)}
           onUpdate={controller.updateField}
         />
       </div>
@@ -102,21 +142,12 @@ export function WarmFloorCatalogPanel({ controller }: WarmFloorCatalogPanelProps
       <div className="ce-meta ce-warm-floor-summary">
         Текущие ориентиры: малый контур ={" "}
         <strong>
-          {formatMoney(
-            config.small_loop_fittings_material +
-              config.small_loop_control_head_material +
-              config.small_loop_connection_labor,
-          )}{" "}
+          {formatMoney(smallLoopTotal)}{" "}
           ₽
         </strong>{" "}
         без трубы/штробы/м² работ; электрический фикс ={" "}
         <strong>
-          {formatMoney(
-            config.electric_breaker_material +
-              config.thermostat_material +
-              config.electric_wire_material +
-              config.electric_installation_labor,
-          )}{" "}
+          {formatMoney(electricFixedTotal)}{" "}
           ₽
         </strong>{" "}
         + мат по площади.

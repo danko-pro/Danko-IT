@@ -87,18 +87,21 @@ export function CatalogEditor() {
       </nav>
 
       <main className="ce-workspace">
-        {activeSection?.id === "warm-floor" ? (
-          <WarmFloorCatalogPanel controller={warmFloorCatalog} />
-        ) : activeSection?.id === "floors" ? (
+        <section hidden={activeSection?.id !== "plumbing"}>
+          <PlumbingCatalogPanel catalog={plumbingCatalog} />
+        </section>
+        <section hidden={activeSection?.id !== "floors"}>
           <FlooringCatalogPanel />
-        ) : activeSection && !activeSection.ready ? (
+        </section>
+        <section hidden={activeSection?.id !== "warm-floor"}>
+          <WarmFloorCatalogPanel controller={warmFloorCatalog} />
+        </section>
+        {activeSection && !activeSection.ready ? (
           <div className="ce-stub-panel">
             <h2>{activeSection.label}</h2>
             <p>Раздел в разработке. Сейчас наполняется только вкладка «Сантехника».</p>
           </div>
-        ) : (
-          <PlumbingCatalogPanel catalog={plumbingCatalog} />
-        )}
+        ) : null}
       </main>
     </div>
   );

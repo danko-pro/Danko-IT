@@ -1,0 +1,54 @@
+﻿@media (max-width: 1180px) {
+  .ce-flooring-catalog-workspace {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+
+  .ce-flooring-catalog-sidebar {
+    max-height: none;
+    min-height: 360px;
+  }
+
+  .ce-flooring-catalog-detail,
+  .ce-flooring-catalog-detail-empty {
+    min-height: 180px;
+  }
+
+  .ce-flooring-assembly-library {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .ce-flooring-form-head {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .ce-flooring-form-toolbar {
+    justify-content: flex-start;
+  }
+
+  .ce-flooring-form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .ce-flooring-form-field-span-2 {
+    grid-column: span 2;
+  }
+
+  .ce-flooring-form-note-wrap {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 520px) {
+  .ce-flooring-form-grid,
+  .ce-flooring-assembly-library {
+    grid-template-columns: 1fr;
+  }
+
+  .ce-flooring-form-field-span-2 {
+    grid-column: span 1;
+  }
+}

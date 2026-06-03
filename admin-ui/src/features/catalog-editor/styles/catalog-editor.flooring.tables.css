@@ -1,0 +1,81 @@
+﻿.ce-flooring-table-wrap {
+  max-height: none;
+  margin: 0;
+  overflow-x: auto;
+}
+
+.ce-flooring-table {
+  width: 100%;
+  min-width: 1020px;
+  table-layout: fixed;
+}
+
+.ce-flooring-table thead th {
+  height: 32px;
+  padding: 6px 8px;
+}
+
+.ce-flooring-table tbody td {
+  height: 34px;
+}
+
+.ce-flooring-table tbody td.ce-num {
+  text-align: right;
+}
+
+.ce-flooring-table .ce-readonly {
+  overflow: hidden;
+  padding: 0 8px;
+  line-height: 34px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ce-flooring-table .ce-col-id {
+  width: 170px;
+  min-width: 0;
+}
+
+.ce-flooring-table .ce-col-title {
+  width: 28%;
+  min-width: 0;
+}
+
+.ce-flooring-table .ce-col-num {
+  width: 118px;
+  min-width: 0;
+}
+
+.ce-flooring-table .ce-col-tech {
+  width: 28%;
+  min-width: 0;
+}
+
+.ce-flooring-table .ce-col-actions {
+  width: 112px;
+  min-width: 112px;
+  max-width: 112px;
+  text-align: center;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.ce-flooring-table .ce-cell-select {
+  overflow: hidden;
+  padding-right: 18px;
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ce-flooring-table .ce-cell-formula {
+  font-size: 10px;
+  font-weight: 720;
+}
+
+.ce-flooring-table .ce-cell-input {
+  height: 34px;
+  min-height: 34px;
+  font-size: 12px;
+}
+

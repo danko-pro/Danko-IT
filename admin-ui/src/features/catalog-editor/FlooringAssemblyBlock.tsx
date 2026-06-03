@@ -72,7 +72,6 @@ export function FlooringAssemblyBlock({
 }: CoveringAssemblyBlockProps) {
   const [rows, setRows] = useState<CoveringAssemblyRow[]>([]);
   const [applyStatus, setApplyStatus] = useState<string | null>(null);
-  const [libraryItemId, setLibraryItemId] = useState("");
   const [entryTitle, setEntryTitle] = useState("");
   const [creating, setCreating] = useState(false);
 
@@ -81,13 +80,11 @@ export function FlooringAssemblyBlock({
       setRows([]);
       setEntryTitle("");
       setApplyStatus(null);
-      setLibraryItemId("");
       return;
     }
     setRows(initialRows);
     setEntryTitle(initialTitle);
     setApplyStatus(null);
-    setLibraryItemId("");
   }, [resetKey, initialRows, initialTitle]);
 
   useEffect(() => {
@@ -120,33 +117,14 @@ export function FlooringAssemblyBlock({
     () => libraryItemsFromCatalog.filter((item) => availableLibrarySections.includes(item.section)),
     [availableLibrarySections, libraryItemsFromCatalog],
   );
-  const selectedLibraryItem =
-    availableRowLibraryItems.find((item) => item.id === libraryItemId) ?? availableRowLibraryItems[0];
-
-  useEffect(() => {
-    if (selectedLibraryItem && selectedLibraryItem.id !== libraryItemId) {
-      setLibraryItemId(selectedLibraryItem.id);
-    }
-    if (!selectedLibraryItem && libraryItemId) {
-      setLibraryItemId("");
-    }
-  }, [libraryItemId, selectedLibraryItem]);
 
   function addRow(partial: Partial<CoveringAssemblyRow>) {
     setApplyStatus(null);
     setRows((prev) => [...prev, createEmptyAssemblyRow(partial)]);
   }
 
-  function addLibraryItem() {
-    if (!selectedLibraryItem) return;
-    setApplyStatus(null);
-    setEntryTitle((value) => value.trim() || selectedLibraryItem.title);
-    setRows((prev) => [...prev, createAssemblyRowFromLibraryItem(selectedLibraryItem)]);
-  }
-
   function changeTarget(nextTarget: FlooringAssemblyTarget) {
     onTargetChange(nextTarget);
-    setLibraryItemId("");
     setRows([]);
     setEntryTitle("");
     setApplyStatus(null);
@@ -405,39 +383,24 @@ export function FlooringAssemblyBlock({
       </div>
 
       <div className="ce-flooring-assembly-library">
-        <span className="ce-flooring-assembly-library-label">Собираем</span>
-        <select
-          className="ce-input ce-flooring-assembly-library-select"
-          value={target}
-          onChange={(event) => changeTarget(event.target.value as FlooringAssemblyTarget)}
-        >
+        <div className="ce-flooring-assembly-targets" role="group" aria-label="Собираем">
           {FLOORING_ASSEMBLY_TARGETS.map((item) => (
-            <option key={item} value={item}>
+            <button
+              key={item}
+              type="button"
+              className={`ce-flooring-assembly-target${target === item ? " is-active" : ""}`}
+              onClick={() => changeTarget(item)}
+            >
               {FLOORING_ASSEMBLY_TARGET_LABELS[item]}
-            </option>
+            </button>
           ))}
-        </select>
+        </div>
         <input
-          className="ce-input ce-flooring-assembly-library-item"
+          className="ce-input ce-flooring-assembly-library-item ce-flooring-assembly-title-input"
           value={entryTitle}
           onChange={(event) => setEntryTitle(event.target.value)}
           placeholder={`Название: ${FLOORING_ASSEMBLY_TARGET_LABELS[target].toLowerCase()}`}
         />
-        <span className="ce-flooring-assembly-library-label">Кубик</span>
-        <select
-          className="ce-input ce-flooring-assembly-library-item"
-          value={selectedLibraryItem?.id ?? ""}
-          onChange={(event) => setLibraryItemId(event.target.value)}
-        >
-          {availableRowLibraryItems.map((item) => (
-            <option key={item.id} value={item.id}>
-              {getFlooringAssemblyLibrarySectionLabel(item.section)} · {item.title}
-            </option>
-          ))}
-        </select>
-        <button type="button" className="ce-btn ce-btn-sm" onClick={addLibraryItem} disabled={!selectedLibraryItem}>
-          + В состав
-        </button>
       </div>
       <datalist id={rowLibraryDatalistId}>
         {availableRowLibraryItems.map((item) => (
@@ -451,14 +414,12 @@ export function FlooringAssemblyBlock({
 
       {rows.length === 0 ? (
         <div className="ce-flooring-assembly-empty">
-          <p>
-            {target === "covering"
-              ? "Добавьте материал, работу и расходники покрытия или загрузите пример."
-              : "Добавьте рабочую строку из библиотеки или вручную."}
-          </p>
+          <span className="ce-flooring-assembly-empty-copy">
+            {target === "covering" ? "Готовый пример или строки состава" : "Новая рабочая строка"}
+          </span>
           {target === "covering" ? (
             <button type="button" className="ce-btn ce-btn-sm" onClick={loadPreset}>
-              Загрузить пример Керамогранит 120×60
+              Пример 120×60
             </button>
           ) : (
             <button

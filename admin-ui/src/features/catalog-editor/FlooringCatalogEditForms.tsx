@@ -3,6 +3,7 @@ import type { Dispatch, ReactNode, SetStateAction } from "react";
 import type { FlooringCoveringDraft, FlooringLayoutDraft, FlooringPreparationDraft } from "./api/flooring-types";
 import { consumablePricePerM2, normalizeNum } from "./api/flooring-mappers";
 import { CatalogDecimalInput } from "./CatalogDecimalInput";
+import { FlooringConsumablesTable } from "./FlooringConsumablesTable";
 
 type CatalogFormProps = {
   title: string;
@@ -123,52 +124,6 @@ function CoveringFormSummaryStrip({
   );
 }
 
-type StandardConsumableRowProps = {
-  label: string;
-  consumption: number;
-  unit: string;
-  pricePerUnit: number;
-  onConsumptionCommit: (value: number) => void;
-  onUnitChange: (value: string) => void;
-  onPriceCommit: (value: number) => void;
-};
-
-function StandardConsumableRow({
-  label,
-  consumption,
-  unit,
-  pricePerUnit,
-  onConsumptionCommit,
-  onUnitChange,
-  onPriceCommit,
-}: StandardConsumableRowProps) {
-  const pricePerM2 = consumablePricePerM2(consumption, pricePerUnit);
-
-  return (
-    <tr>
-      <td className="ce-readonly">{label}</td>
-      <td className="ce-num">
-        <CatalogDecimalInput
-          className="ce-cell-input ce-num"
-          value={consumption}
-          onCommit={(value) => onConsumptionCommit(value ?? 0)}
-        />
-      </td>
-      <td>
-        <input className="ce-cell-input" value={unit} onChange={(event) => onUnitChange(event.target.value)} />
-      </td>
-      <td className="ce-num">
-        <CatalogDecimalInput
-          className="ce-cell-input ce-num"
-          value={pricePerUnit}
-          onCommit={(value) => onPriceCommit(value ?? 0)}
-        />
-      </td>
-      <td className="ce-num ce-readonly ce-flooring-consumable-per-m2">{pricePerM2.toLocaleString("ru-RU")}</td>
-    </tr>
-  );
-}
-
 export type FlooringCoveringEditFormProps = {
   draft: FlooringCoveringDraft;
   submitting: boolean;
@@ -263,57 +218,46 @@ export function FlooringCoveringEditForm({
         </FormField>
       </div>
 
-      <div className="ce-table-wrap ce-flooring-table-wrap ce-flooring-consumables-table-wrap">
-        <table className="ce-table ce-flooring-table ce-flooring-consumables-table">
-          <thead>
-            <tr>
-              <th className="ce-col-title">Расходник</th>
-              <th className="ce-col-num">Расход/м²</th>
-              <th>Ед.</th>
-              <th className="ce-col-num">₽/ед.</th>
-              <th className="ce-col-num">₽/м²</th>
-            </tr>
-          </thead>
-          <tbody>
-            <StandardConsumableRow
-              label="Клей"
-              consumption={draft.glueConsumptionPerM2}
-              unit={draft.glueUnit}
-              pricePerUnit={draft.gluePricePerUnit}
-              onConsumptionCommit={(value) => onNumberChange("glueConsumptionPerM2", value)}
-              onUnitChange={(value) => onDraftChange((prev) => ({ ...prev, glueUnit: value }))}
-              onPriceCommit={(value) => onNumberChange("gluePricePerUnit", value)}
-            />
-            <StandardConsumableRow
-              label="Грунт"
-              consumption={draft.primerConsumptionPerM2}
-              unit={draft.primerUnit}
-              pricePerUnit={draft.primerPricePerUnit}
-              onConsumptionCommit={(value) => onNumberChange("primerConsumptionPerM2", value)}
-              onUnitChange={(value) => onDraftChange((prev) => ({ ...prev, primerUnit: value }))}
-              onPriceCommit={(value) => onNumberChange("primerPricePerUnit", value)}
-            />
-            <StandardConsumableRow
-              label="СВП"
-              consumption={draft.svpConsumptionPerM2}
-              unit={draft.svpUnit}
-              pricePerUnit={draft.svpPricePerUnit}
-              onConsumptionCommit={(value) => onNumberChange("svpConsumptionPerM2", value)}
-              onUnitChange={(value) => onDraftChange((prev) => ({ ...prev, svpUnit: value }))}
-              onPriceCommit={(value) => onNumberChange("svpPricePerUnit", value)}
-            />
-            <StandardConsumableRow
-              label="Затирка"
-              consumption={draft.groutConsumptionPerM2}
-              unit={draft.groutUnit}
-              pricePerUnit={draft.groutPricePerUnit}
-              onConsumptionCommit={(value) => onNumberChange("groutConsumptionPerM2", value)}
-              onUnitChange={(value) => onDraftChange((prev) => ({ ...prev, groutUnit: value }))}
-              onPriceCommit={(value) => onNumberChange("groutPricePerUnit", value)}
-            />
-          </tbody>
-        </table>
-      </div>
+      <FlooringConsumablesTable
+        rows={[
+          {
+            label: "Клей",
+            consumption: draft.glueConsumptionPerM2,
+            unit: draft.glueUnit,
+            pricePerUnit: draft.gluePricePerUnit,
+            onConsumptionCommit: (value) => onNumberChange("glueConsumptionPerM2", value),
+            onUnitChange: (value) => onDraftChange((prev) => ({ ...prev, glueUnit: value })),
+            onPriceCommit: (value) => onNumberChange("gluePricePerUnit", value),
+          },
+          {
+            label: "Грунт",
+            consumption: draft.primerConsumptionPerM2,
+            unit: draft.primerUnit,
+            pricePerUnit: draft.primerPricePerUnit,
+            onConsumptionCommit: (value) => onNumberChange("primerConsumptionPerM2", value),
+            onUnitChange: (value) => onDraftChange((prev) => ({ ...prev, primerUnit: value })),
+            onPriceCommit: (value) => onNumberChange("primerPricePerUnit", value),
+          },
+          {
+            label: "СВП",
+            consumption: draft.svpConsumptionPerM2,
+            unit: draft.svpUnit,
+            pricePerUnit: draft.svpPricePerUnit,
+            onConsumptionCommit: (value) => onNumberChange("svpConsumptionPerM2", value),
+            onUnitChange: (value) => onDraftChange((prev) => ({ ...prev, svpUnit: value })),
+            onPriceCommit: (value) => onNumberChange("svpPricePerUnit", value),
+          },
+          {
+            label: "Затирка",
+            consumption: draft.groutConsumptionPerM2,
+            unit: draft.groutUnit,
+            pricePerUnit: draft.groutPricePerUnit,
+            onConsumptionCommit: (value) => onNumberChange("groutConsumptionPerM2", value),
+            onUnitChange: (value) => onDraftChange((prev) => ({ ...prev, groutUnit: value })),
+            onPriceCommit: (value) => onNumberChange("groutPricePerUnit", value),
+          },
+        ]}
+      />
 
       <details className="ce-flooring-custom-consumables" open={hasCustomConsumables}>
         <summary className="ce-flooring-custom-consumables-summary">

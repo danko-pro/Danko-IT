@@ -26,6 +26,7 @@ from supply_bot.estimates.application.flooring_snapshot import (
     _attach_spec_lines_to_snapshot_row,
     _resolve_public_code,
     build_public_flooring_snapshot_from_catalog,
+    covering_spec_lines_are_complete,
 )
 from supply_bot.storage_estimates.runtime_repository import SqlAlchemyEstimateRuntimeRepository
 from tests.admin_projects_routes_case import AdminProjectsRouteCase
@@ -147,19 +148,100 @@ class FlooringSnapshotSpecLinesTests(unittest.IsolatedAsyncioTestCase):
                     kind="consumable",
                     formula="unit_consumption",
                     title="Underlay",
+                    public_title="Underlay",
                     unit="m2",
                     price=220,
                     consumption_per_m2=1,
                     public_category="consumables",
+                ),
+                _sample_assembly_row(
+                    section="consumable",
+                    kind="consumable",
+                    formula="unit_consumption",
+                    title="Грунт",
+                    public_title="Грунт",
+                    unit="l",
+                    price=250,
+                    consumption_per_m2=0.1,
+                    public_category="consumables",
+                ),
+                _sample_assembly_row(
+                    section="tool",
+                    kind="tool",
+                    formula="flat_per_m2",
+                    title="Tool consumables",
+                    public_title="Tool consumables",
+                    unit="m2",
+                    price=40,
+                    consumption_per_m2=1,
+                    public_category="tools",
                 ),
             ],
         )
         payload = await BuildFlooringSnapshotUseCase(self.repository).build_public()
         laminate = next(item for item in payload["coverings"] if item["code"] == "laminate")
         self.assertIn("specLines", laminate)
-        self.assertEqual(len(laminate["specLines"]), 2)
+        self.assertEqual(len(laminate["specLines"]), 4)
         self.assertEqual(laminate["specLines"][0]["title"], "Ламинат доска")
         self.assertEqual(laminate["materialPricePerM2"], 930)
+
+    async def test_partial_covering_assembly_omits_spec_lines(self) -> None:
+        covering_id = await self.repository.create_estimate_flooring_covering(
+            **_minimal_covering_kwargs(title="Ламинат", material_price_per_m2=930)
+        )
+        await self.repository.replace_estimate_flooring_catalog_assembly(
+            "covering",
+            covering_id,
+            "Partial laminate package",
+            [_sample_assembly_row(title="Laminate board only", public_title="Ламинат доска")],
+        )
+        payload = await BuildFlooringSnapshotUseCase(self.repository).build_public()
+        laminate = next(item for item in payload["coverings"] if item["code"] == "laminate")
+        self.assertNotIn("specLines", laminate)
+        self.assertEqual(laminate["materialPricePerM2"], 930)
+        self.assertGreater(laminate["primerPricePerM2"], 0)
+        self.assertGreater(laminate["toolConsumablesPerM2"], 0)
+
+    def test_covering_spec_lines_completeness_guard(self) -> None:
+        flat_rates = {
+            "materialPricePerM2": 930,
+            "underlayPricePerM2": 220,
+            "adhesivePricePerM2": 0,
+            "primerPricePerM2": 25,
+            "svpPricePerM2": 0,
+            "groutPricePerM2": 0,
+            "toolConsumablesPerM2": 40,
+        }
+        complete_lines = [
+            {"category": "materials", "title": "Board"},
+            {"category": "consumables", "title": "Подложка"},
+            {"category": "consumables", "title": "Грунт"},
+            {"category": "tools", "title": "Инструмент"},
+        ]
+        partial_lines = [{"category": "materials", "title": "Board"}]
+
+        self.assertTrue(covering_spec_lines_are_complete(flat_rates, complete_lines))
+        self.assertFalse(covering_spec_lines_are_complete(flat_rates, partial_lines))
+
+    def test_partial_covering_attach_omits_spec_lines(self) -> None:
+        flat_row = {
+            "code": "laminate",
+            "title": "Ламинат",
+            "materialPricePerM2": 930,
+            "underlayPricePerM2": 220,
+            "adhesivePricePerM2": 0,
+            "primerPricePerM2": 25,
+            "svpPricePerM2": 0,
+            "groutPricePerM2": 0,
+            "toolConsumablesPerM2": 40,
+        }
+        row = _attach_spec_lines_to_snapshot_row(
+            flat_row,
+            target_kind="covering",
+            assembly={"rows": [_sample_assembly_row(title="Material only", public_title="Ламинат доска")]},
+        )
+        self.assertNotIn("specLines", row)
+        self.assertEqual(row["materialPricePerM2"], 930)
 
     async def test_preparation_and_layout_work_spec_lines(self) -> None:
         preparation_id = await self.repository.create_estimate_flooring_preparation(

@@ -325,6 +325,70 @@ def _resolve_public_code(
     return candidate
 
 
+def _classify_covering_spec_consumable(title: object) -> str:
+    normalized = normalize_text(str(title or ""))
+    if "подлож" in normalized or "underlay" in normalized:
+        return "underlay"
+    if "клей" in normalized or "адгез" in normalized or "glue" in normalized:
+        return "adhesive"
+    if "грунт" in normalized or "primer" in normalized:
+        return "primer"
+    if "свп" in normalized or "крест" in normalized or "spacer" in normalized:
+        return "svp"
+    if "затир" in normalized or "grout" in normalized:
+        return "grout"
+    return "other"
+
+
+def covering_spec_lines_are_complete(
+    flat_rates: Mapping[str, Any],
+    spec_lines: Sequence[Mapping[str, Any]],
+) -> bool:
+    """Return True when specLines cover every non-zero flat covering bucket.
+
+    Partial assemblies must not publish specLines: the public frontend replaces
+    all flat covering rows when specLines are present, which would drop omitted
+    consumables from the estimate.
+    """
+
+    required_buckets: list[tuple[str, float]] = [
+        ("material", float(_public_number(flat_rates.get("materialPricePerM2")))),
+        ("underlay", float(_public_number(flat_rates.get("underlayPricePerM2")))),
+        ("adhesive", float(_public_number(flat_rates.get("adhesivePricePerM2")))),
+        ("primer", float(_public_number(flat_rates.get("primerPricePerM2")))),
+        ("svp", float(_public_number(flat_rates.get("svpPricePerM2")))),
+        ("grout", float(_public_number(flat_rates.get("groutPricePerM2")))),
+        ("tools", float(_public_number(flat_rates.get("toolConsumablesPerM2")))),
+    ]
+
+    has_material = False
+    has_tools = False
+    consumable_buckets: set[str] = set()
+
+    for line in spec_lines:
+        category = str(line.get("category") or "")
+        if category == "materials":
+            has_material = True
+        elif category == "tools":
+            has_tools = True
+        elif category == "consumables":
+            consumable_buckets.add(_classify_covering_spec_consumable(line.get("title")))
+
+    for bucket, amount in required_buckets:
+        if amount <= 0:
+            continue
+        if bucket == "material":
+            if not has_material:
+                return False
+        elif bucket == "tools":
+            if not has_tools:
+                return False
+        elif bucket not in consumable_buckets:
+            return False
+
+    return True
+
+
 def _public_spec_lines_for_assembly(
     target_kind: str,
     rows: Sequence[Mapping[str, Any]],
@@ -345,6 +409,8 @@ def _attach_spec_lines_to_snapshot_row(
         return snapshot_row
     spec_lines = _public_spec_lines_for_assembly(target_kind, assembly.get("rows") or [])
     if spec_lines is None:
+        return snapshot_row
+    if target_kind == "covering" and not covering_spec_lines_are_complete(snapshot_row, spec_lines):
         return snapshot_row
     return {**snapshot_row, "specLines": spec_lines}
 
@@ -618,6 +684,7 @@ __all__ = [
     "_attach_spec_lines_to_snapshot_row",
     "_public_spec_lines_for_assembly",
     "_resolve_public_code",
+    "covering_spec_lines_are_complete",
     "build_public_flooring_snapshot",
     "build_public_flooring_snapshot_from_catalog",
 ]

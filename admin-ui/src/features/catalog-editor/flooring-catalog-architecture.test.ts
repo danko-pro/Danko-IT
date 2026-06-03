@@ -323,6 +323,10 @@ describe("catalog editor architecture", () => {
     expect(flooringAssemblyLibraryPanelSource).toContain("useCatalogTableColumns");
     expect(flooringAssemblyLibraryPanelSource).toContain('"flooring:assembly-library-columns"');
     expect(flooringAssemblyLibraryCatalogTableSource).toContain("CatalogManagedTableHeaderCell");
+    expect(flooringAssemblyLibraryCatalogTableSource).toContain("EditIcon");
+    expect(flooringAssemblyLibraryCatalogTableSource).toContain("TrashIcon");
+    expect(flooringAssemblyLibraryCatalogTableSource).toContain("ce-icon-action");
+    expect(flooringAssemblyLibraryCatalogTableSource).not.toContain('className="ce-row-action"');
     expect(plumbingZoneCompositionTableSource).toContain("useCatalogTableColumns");
     expect(plumbingZoneCompositionTableSource).toContain('"plumbing:zone-composition-columns"');
     expect(plumbingZoneCompositionTableSource).toContain("CatalogManagedTableHeaderCell");

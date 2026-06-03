@@ -1,5 +1,6 @@
 import { normalizeNum } from "./api/flooring-mappers";
 import type { FlooringAssemblyItemDto } from "./api/flooring-types";
+import { EditIcon, TrashIcon } from "./CatalogEditorIcons";
 import { CatalogManagedTableHeaderCell } from "./CatalogManagedTableHeaderCell";
 import {
   FLOORING_ASSEMBLY_LIBRARY_COLUMN_CLASS,
@@ -24,8 +25,6 @@ export type FlooringAssemblyLibraryCatalogTableProps = {
 };
 
 const EMPTY_LABEL = "\u041a\u0443\u0431\u0438\u043a\u0438 \u0435\u0449\u0435 \u043d\u0435 \u0434\u043e\u0431\u0430\u0432\u043b\u0435\u043d\u044b.";
-const EDIT_LABEL = "\u0418\u0437\u043c.";
-const DELETE_LABEL = "\u0423\u0434\u0430\u043b.";
 const EDIT_TITLE = "\u0420\u0435\u0434\u0430\u043a\u0442.";
 const DELETE_TITLE = "\u0423\u0434\u0430\u043b\u0438\u0442\u044c";
 
@@ -83,19 +82,21 @@ export function FlooringAssemblyLibraryCatalogTable({
                   <div className="ce-row-actions">
                     <button
                       type="button"
-                      className="ce-row-action"
+                      className="ce-icon-action ce-icon-action-primary"
+                      aria-label={`${EDIT_TITLE}: ${item.title}`}
                       title={EDIT_TITLE}
                       onClick={() => onBeginEditAssemblyItem(item)}
                     >
-                      {EDIT_LABEL}
+                      <EditIcon className="ce-action-icon" />
                     </button>
                     <button
                       type="button"
-                      className="ce-row-action ce-row-action-danger"
+                      className="ce-icon-action ce-icon-action-danger"
+                      aria-label={`${DELETE_TITLE}: ${item.title}`}
                       title={DELETE_TITLE}
                       onClick={() => onDeleteAssemblyItem(item)}
                     >
-                      {DELETE_LABEL}
+                      <TrashIcon className="ce-action-icon" />
                     </button>
                   </div>
                 </td>

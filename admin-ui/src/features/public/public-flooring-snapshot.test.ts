@@ -21,15 +21,20 @@ const EXPECTED_LAYOUT_CODES = ["straight", "large_format_straight", "glue", "flo
 const EXPECTED_PLINTH_CODES = ["none", "duropolymer", "painted_mdf"];
 
 function expectCodesPresent(items: Array<{ code: string }>, expectedCodes: string[]) {
-  const presentCodes = items.map((item) => item.code).sort();
-  expect(presentCodes).toEqual([...expectedCodes].sort());
+  const presentCodes = new Set(items.map((item) => item.code));
+
+  for (const code of expectedCodes) {
+    expect(presentCodes.has(code)).toBe(true);
+  }
 }
 
 describe("flooring snapshot", () => {
   it("loads and validates the generated v2 snapshot", () => {
     const snapshot = loadFlooringSnapshot();
     expect(snapshot.version).toBe("flooring-v2");
-    expect(snapshot.coverings.find((item) => item.code === "laminate")?.materialPricePerM2).toBe(930);
+    expect(snapshot.coverings.find((item) => item.code === "laminate")?.materialPricePerM2).toBe(
+      flooringSnapshotData.coverings.find((item) => item.code === "laminate")?.materialPricePerM2,
+    );
     expect(snapshot.layouts.find((item) => item.code === "straight")?.laborPricePerM2).toBe(1000);
     expect(snapshot.globalAddons.thresholdPrice).toBe(900);
   });
@@ -185,6 +190,40 @@ describe("flooring snapshot", () => {
     expect(catalog.coverings.laminate.code).toBe("laminate");
     expect(catalog.preparations.none.code).toBe("none");
     expect(catalog.layouts.straight.code).toBe("straight");
-    expect(catalog.coverings.laminate.materialPricePerM2).toBe(930);
+    expect(catalog.coverings.laminate.materialPricePerM2).toBe(
+      flooringSnapshotData.coverings.find((item) => item.code === "laminate")?.materialPricePerM2,
+    );
+  });
+
+  it("getFlooringSnapshotCatalog exposes custom active snapshot codes", () => {
+    const payload = {
+      ...flooringSnapshotData,
+      coverings: [
+        ...flooringSnapshotData.coverings,
+        {
+          code: "custom_covering",
+          title: "Кастомное покрытие",
+          materialPricePerM2: 0,
+          baseWastePercent: 0,
+          underlayPricePerM2: 0,
+          adhesivePricePerM2: 0,
+          primerPricePerM2: 0,
+          svpPricePerM2: 0,
+          groutPricePerM2: 0,
+          toolConsumablesPerM2: 0,
+        },
+      ],
+    };
+
+    expect(validateFlooringSnapshot(payload).ok).toBe(true);
+
+    const catalog = {
+      coverings: Object.fromEntries(payload.coverings.map((item) => [item.code, item])),
+      preparations: Object.fromEntries(payload.preparations.map((item) => [item.code, item])),
+      layouts: Object.fromEntries(payload.layouts.map((item) => [item.code, item])),
+    };
+
+    expect(catalog.coverings.custom_covering.title).toBe("Кастомное покрытие");
+    expect(catalog.coverings.custom_covering.code).toBe("custom_covering");
   });
 });

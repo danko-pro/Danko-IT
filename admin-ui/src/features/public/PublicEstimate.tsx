@@ -5,10 +5,6 @@ import { type EstimateSection } from "./public-estimate-model";
 import { classifyEstimatePackage } from "./public-estimate-package";
 import {
   doorPackageOptions,
-  flooringCoveringOptions,
-  flooringLayoutOptions,
-  flooringPlinthOptions,
-  flooringPreparationOptions,
   GEOMETRY_STEP_HINT,
   wallsCoveringOptions,
   wallsPreparationOptions,
@@ -107,6 +103,10 @@ export function PublicEstimate() {
   const {
     flooringRooms,
     flooringOptions,
+    flooringCoveringOptions,
+    flooringPreparationOptions,
+    flooringLayoutOptions,
+    flooringPlinthOptions,
     flooringResult,
     flooringSummaryItems,
     removeFlooringRoom,

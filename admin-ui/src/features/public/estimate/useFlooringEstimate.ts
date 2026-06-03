@@ -13,8 +13,13 @@ import {
 import {
   getDefaultFlooringCovering,
   getDefaultFlooringLayout,
+  getDefaultFlooringPlinth,
   getDefaultFlooringPreparation,
-} from "./defaults";
+  getFlooringCoveringOptions,
+  getFlooringLayoutOptions,
+  getFlooringPlinthOptions,
+  getFlooringPreparationOptions,
+} from "./flooring-snapshot-options";
 import type { EstimateRoomDraft, FlooringOptionsDraft, FlooringRoomDraft } from "./context";
 import { buildFlooringSummaryItems } from "./summary";
 
@@ -28,7 +33,7 @@ export function useFlooringEstimate({ rooms, roomInputs, roomGeometries }: UseFl
   const [flooringRooms, setFlooringRooms] = useState<Record<string, FlooringRoomDraft>>({});
   const [flooringOptions, setFlooringOptions] = useState<FlooringOptionsDraft>({
     includePlinth: true,
-    plinthType: "duropolymer",
+    plinthType: getDefaultFlooringPlinth(),
     includeThresholds: false,
     thresholdCount: "0",
     includeDemolition: false,
@@ -144,6 +149,10 @@ export function useFlooringEstimate({ rooms, roomInputs, roomGeometries }: UseFl
   return {
     flooringRooms,
     flooringOptions,
+    flooringCoveringOptions: getFlooringCoveringOptions(),
+    flooringPreparationOptions: getFlooringPreparationOptions(),
+    flooringLayoutOptions: getFlooringLayoutOptions(),
+    flooringPlinthOptions: getFlooringPlinthOptions(),
     flooringResult,
     flooringSummaryItems,
     removeFlooringRoom,

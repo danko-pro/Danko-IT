@@ -431,21 +431,18 @@ function catalogItemsByCode<T extends { code: string }>(items: T[]): Record<stri
 }
 
 export type FlooringSnapshotCatalog = {
-  coverings: Record<FlooringCoveringType, FlooringCoveringSnapshotItem>;
-  preparations: Record<FlooringPreparationType, FlooringPreparationSnapshotItem>;
-  layouts: Record<FlooringLayoutType, FlooringLayoutSnapshotItem>;
+  coverings: Record<string, FlooringCoveringSnapshotItem>;
+  preparations: Record<string, FlooringPreparationSnapshotItem>;
+  layouts: Record<string, FlooringLayoutSnapshotItem>;
 };
 
 export function getFlooringSnapshotCatalog(): FlooringSnapshotCatalog {
   const snapshot = loadFlooringSnapshot();
 
   return {
-    coverings: catalogItemsByCode(snapshot.coverings) as Record<FlooringCoveringType, FlooringCoveringSnapshotItem>,
-    preparations: catalogItemsByCode(snapshot.preparations) as Record<
-      FlooringPreparationType,
-      FlooringPreparationSnapshotItem
-    >,
-    layouts: catalogItemsByCode(snapshot.layouts) as Record<FlooringLayoutType, FlooringLayoutSnapshotItem>,
+    coverings: catalogItemsByCode(snapshot.coverings),
+    preparations: catalogItemsByCode(snapshot.preparations),
+    layouts: catalogItemsByCode(snapshot.layouts),
   };
 }
 

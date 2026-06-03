@@ -41,6 +41,81 @@ describe("flooring snapshot", () => {
     expectCodesPresent(snapshot.plinthTypes, EXPECTED_PLINTH_CODES);
   });
 
+  it("accepts optional specLines on catalog items", () => {
+    const payload = {
+      ...flooringSnapshotData,
+      coverings: flooringSnapshotData.coverings.map((item) =>
+        item.code === "laminate"
+          ? {
+              ...item,
+              specLines: [
+                {
+                  code: "flooring-line-laminate-materials",
+                  title: "Ламинат доска",
+                  category: "materials",
+                  basis: "area",
+                  unit: "m2",
+                  quantityPerBasis: 1,
+                  unitPrice: 930,
+                },
+              ],
+            }
+          : item,
+      ),
+    };
+
+    expect(validateFlooringSnapshot(payload)).toEqual({ ok: true });
+  });
+
+  it("rejects forbidden keys inside specLines", () => {
+    const payload = {
+      ...flooringSnapshotData,
+      coverings: flooringSnapshotData.coverings.map((item) =>
+        item.code === "laminate"
+          ? {
+              ...item,
+              specLines: [
+                {
+                  code: "flooring-line-laminate-materials",
+                  title: "Ламинат доска",
+                  category: "materials",
+                  basis: "area",
+                  unit: "m2",
+                  quantityPerBasis: 1,
+                  unitPrice: 930,
+                  note: "internal",
+                },
+              ],
+            }
+          : item,
+      ),
+    };
+
+    expect(validateFlooringSnapshot(payload)).toEqual({
+      ok: false,
+      reason: "forbidden internal keys: note",
+    });
+  });
+
+  it("rejects invalid specLines shape", () => {
+    const payload = {
+      ...flooringSnapshotData,
+      preparations: flooringSnapshotData.preparations.map((item) =>
+        item.code === "primer"
+          ? {
+              ...item,
+              specLines: [{ code: "line", title: "Work", category: "invalid", basis: "area", unit: "m2", quantityPerBasis: 1, unitPrice: 10 }],
+            }
+          : item,
+      ),
+    };
+
+    expect(validateFlooringSnapshot(payload)).toEqual({
+      ok: false,
+      reason: "preparations[primer].specLines[0].category is invalid",
+    });
+  });
+
   it("has no forbidden internal keys in the seed snapshot", () => {
     expect(validateFlooringSnapshot(flooringSnapshotData)).toEqual({ ok: true });
   });

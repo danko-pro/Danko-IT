@@ -6,6 +6,18 @@ import type {
   FlooringPreparationType,
 } from "./public-estimate-flooring";
 
+export type FlooringPackageSpecLine = {
+  code: string;
+  title: string;
+  category: "materials" | "works" | "consumables" | "tools";
+  basis: "area";
+  unit: string;
+  quantityPerBasis: number;
+  unitPrice: number;
+  packageSize?: number;
+  packageUnit?: string;
+};
+
 export type FlooringCoveringSnapshotItem = {
   code: FlooringCoveringType;
   title: string;
@@ -19,6 +31,7 @@ export type FlooringCoveringSnapshotItem = {
   svpPricePerM2: number;
   groutPricePerM2: number;
   toolConsumablesPerM2: number;
+  specLines?: FlooringPackageSpecLine[];
 };
 
 export type FlooringPreparationSnapshotItem = {
@@ -26,6 +39,7 @@ export type FlooringPreparationSnapshotItem = {
   title: string;
   laborPricePerM2: number;
   materialPricePerM2: number;
+  specLines?: FlooringPackageSpecLine[];
 };
 
 export type FlooringLayoutSnapshotItem = {
@@ -34,6 +48,7 @@ export type FlooringLayoutSnapshotItem = {
   laborPricePerM2?: number;
   laborFactor: number;
   additionalWastePercent: number;
+  specLines?: FlooringPackageSpecLine[];
 };
 
 export type FlooringPlinthSnapshotItem = {
@@ -141,7 +156,21 @@ const FORBIDDEN_INTERNAL_KEYS = new Set([
   "equipment_price",
   "consumables_price",
   "coefficient",
+  "assembly_id",
+  "assembly_item_id",
 ]);
+
+const FLOORING_SPEC_LINE_CATEGORIES = new Set(["materials", "works", "consumables", "tools"]);
+
+const FLOORING_SPEC_LINE_REQUIRED_KEYS = [
+  "code",
+  "title",
+  "category",
+  "basis",
+  "unit",
+  "quantityPerBasis",
+  "unitPrice",
+] as const;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
@@ -167,6 +196,57 @@ function findForbiddenKeys(node: unknown, found = new Set<string>()): Set<string
     }
   }
   return found;
+}
+
+function validateSpecLines(
+  specLines: unknown,
+  arrayName: string,
+): { ok: true } | { ok: false; reason: string } {
+  if (!Array.isArray(specLines)) {
+    return { ok: false, reason: `${arrayName}.specLines must be an array` };
+  }
+
+  for (const [index, line] of specLines.entries()) {
+    if (!isRecord(line)) {
+      return { ok: false, reason: `${arrayName}.specLines[${index}] must be an object` };
+    }
+    for (const key of FLOORING_SPEC_LINE_REQUIRED_KEYS) {
+      if (!(key in line)) {
+        return { ok: false, reason: `${arrayName}.specLines[${index}] missing ${key}` };
+      }
+    }
+    if (typeof line.code !== "string" || line.code.length === 0) {
+      return { ok: false, reason: `${arrayName}.specLines[${index}].code must be a non-empty string` };
+    }
+    if (typeof line.title !== "string" || line.title.length === 0) {
+      return { ok: false, reason: `${arrayName}.specLines[${index}].title must be a non-empty string` };
+    }
+    if (typeof line.category !== "string" || !FLOORING_SPEC_LINE_CATEGORIES.has(line.category)) {
+      return { ok: false, reason: `${arrayName}.specLines[${index}].category is invalid` };
+    }
+    if (line.basis !== "area") {
+      return { ok: false, reason: `${arrayName}.specLines[${index}].basis must be area` };
+    }
+    if (typeof line.unit !== "string" || line.unit.length === 0) {
+      return { ok: false, reason: `${arrayName}.specLines[${index}].unit must be a non-empty string` };
+    }
+    if (typeof line.quantityPerBasis !== "number" || !Number.isFinite(line.quantityPerBasis)) {
+      return { ok: false, reason: `${arrayName}.specLines[${index}].quantityPerBasis must be a finite number` };
+    }
+    if (typeof line.unitPrice !== "number" || !Number.isFinite(line.unitPrice)) {
+      return { ok: false, reason: `${arrayName}.specLines[${index}].unitPrice must be a finite number` };
+    }
+    if ("packageSize" in line) {
+      if (typeof line.packageSize !== "number" || !Number.isFinite(line.packageSize)) {
+        return { ok: false, reason: `${arrayName}.specLines[${index}].packageSize must be a finite number` };
+      }
+      if (typeof line.packageUnit !== "string" || line.packageUnit.length === 0) {
+        return { ok: false, reason: `${arrayName}.specLines[${index}].packageUnit must be a non-empty string` };
+      }
+    }
+  }
+
+  return { ok: true };
 }
 
 function validateCatalogItems(
@@ -196,6 +276,12 @@ function validateCatalogItems(
     seenCodes.add(item.code);
     if (!hasNumericRates(item, rateKeys)) {
       return { ok: false, reason: `${arrayName} rates must be finite numbers` };
+    }
+    if ("specLines" in item) {
+      const specLinesValidation = validateSpecLines(item.specLines, `${arrayName}[${item.code}]`);
+      if (!specLinesValidation.ok) {
+        return specLinesValidation;
+      }
     }
   }
 

@@ -141,6 +141,39 @@ describe("generate-snapshot validation", () => {
     });
   });
 
+  it("accepts valid flooring-v2 procurement specLines on catalog items", () => {
+    const payload = {
+      ...FLOORING_V2_SEED,
+      coverings: FLOORING_V2_SEED.coverings.map((item) =>
+        item.code === "laminate"
+          ? {
+              ...item,
+              specLines: [
+                {
+                  code: "flooring-line-laminate-consumables",
+                  title: "Клей плиточный",
+                  category: "consumables",
+                  basis: "area",
+                  unit: "kg",
+                  quantityPerBasis: 7.5,
+                  unitPrice: 24,
+                  packageSize: 25,
+                  packageUnit: "kg",
+                  packagePrice: 600,
+                  purchaseMode: "package",
+                  purchaseAggregation: "project",
+                  aggregationKey: "flooring-line-laminate-consumables",
+                  calculationNote: "1.5 kg/m²/mm × 5 mm",
+                },
+              ],
+            }
+          : item,
+      ),
+    };
+
+    expect(validateFlooringSnapshotPayload(payload)).toEqual({ ok: true });
+  });
+
   it("accepts valid flooring-v2 specLines on catalog items", () => {
     const payload = {
       ...FLOORING_V2_SEED,

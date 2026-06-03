@@ -52,11 +52,8 @@ describe("calculateFlooring", () => {
   it("считает золотой случай ламината с прямой укладкой и плинтусом", () => {
     const result = calculateFlooring([room], options);
 
-    // works: укладка 16*1100 + подготовка 16*300 + монтаж плинтуса 15.9*450
     expect(result.worksTotal).toBeCloseTo(17600 + 4800 + 7155, 2);
-    // materials: покрытие 18.4*930 + материалы подготовки 16*100 + плинтус 15.9*450
     expect(result.materialsTotal).toBeCloseTo(17112 + 1600 + 7155, 2);
-    // consumables: подложка 18.4*220 + грунт 16*25 + инструмент 16*40
     expect(result.consumablesTotal).toBeCloseTo(4048 + 400 + 640, 2);
     expect(result.total).toBeCloseTo(60510, 2);
   });
@@ -98,7 +95,8 @@ describe("calculateFlooring", () => {
               basis: "area",
               unit: "m2",
               quantityPerBasis: 1,
-              unitPrice: 930,
+              unitPrice:
+                flooringSnapshotData.coverings.find((item) => item.code === "laminate")!.materialPricePerM2,
             },
           ],
         },
@@ -154,6 +152,44 @@ describe("calculateFlooring", () => {
     expect(result.specificationSection).toBe(result.section);
 
     catalogSpy.mockRestore();
+  });
+
+  it("считает помещение с кастомным кодом покрытия из снапшота", () => {
+    const baseRates = flooringSnapshotModule.getFlooringSnapshotRates();
+    const ratesSpy = vi.spyOn(flooringSnapshotModule, "getFlooringSnapshotRates").mockReturnValue({
+      ...baseRates,
+      flooringCoveringRates: {
+        ...baseRates.flooringCoveringRates,
+        custom_covering: {
+          materialPricePerM2: 0,
+          baseWastePercent: 0,
+          underlayPricePerM2: 0,
+          adhesivePricePerM2: 0,
+          primerPricePerM2: 0,
+          svpPricePerM2: 0,
+          groutPricePerM2: 0,
+          toolConsumablesPerM2: 0,
+        },
+      },
+    });
+
+    const customRoom: FlooringRoomInput = {
+      ...room,
+      coveringType: "custom_covering",
+      preparationType: "none",
+      layoutType: "straight",
+    };
+
+    const result = calculateFlooring([customRoom], { ...options, includePlinth: false });
+
+    expect(result.flooringArea).toBe(16);
+    expect(result.roomResults[0]?.coveringType).toBe("custom_covering");
+    const coveringMaterialTotal = result.section.items
+      .filter((item) => item.id.startsWith("flooring-material-"))
+      .reduce((sum, item) => sum + item.total, 0);
+    expect(coveringMaterialTotal).toBe(0);
+
+    ratesSpy.mockRestore();
   });
 
   it("public result не содержит forbidden internal keys", () => {

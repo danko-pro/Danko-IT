@@ -1,11 +1,14 @@
 import type { DoorPackageType } from "../public-estimate-doors";
-import type {
-  FlooringCoveringType,
-  FlooringLayoutType,
-  FlooringPlinthType,
-  FlooringPreparationType,
-} from "../public-estimate-flooring";
 import type { EstimateRoomType } from "../public-estimate-geometry";
+import {
+  FALLBACK_FLOORING_COVERING_OPTIONS,
+  FALLBACK_FLOORING_LAYOUT_OPTIONS,
+  FALLBACK_FLOORING_PLINTH_OPTIONS,
+  FALLBACK_FLOORING_PREPARATION_OPTIONS,
+  getDefaultFlooringCovering,
+  getDefaultFlooringLayout,
+  getDefaultFlooringPreparation,
+} from "./flooring-snapshot-options";
 import type { WallsCoveringType, WallsPreparationType } from "../public-estimate-walls";
 
 export const roomTypeOptions: Array<{ value: EstimateRoomType; label: string }> = [
@@ -26,33 +29,12 @@ export const validEstimateRoomTypes = new Set<EstimateRoomType>(roomTypeOptions.
 
 export const NEW_ROOM_DEFAULT_NAME = "Новое помещение";
 
-export const flooringCoveringOptions: Array<{ value: FlooringCoveringType; label: string }> = [
-  { value: "porcelain", label: "Керамогранит" },
-  { value: "quartz_vinyl", label: "Кварцвинил" },
-  { value: "laminate", label: "Ламинат" },
-  { value: "carpet", label: "Ковролин" },
-  { value: "engineered_wood", label: "Инженерная доска" },
-];
+export const flooringCoveringOptions = FALLBACK_FLOORING_COVERING_OPTIONS;
+export const flooringPreparationOptions = FALLBACK_FLOORING_PREPARATION_OPTIONS;
+export const flooringLayoutOptions = FALLBACK_FLOORING_LAYOUT_OPTIONS;
+export const flooringPlinthOptions = FALLBACK_FLOORING_PLINTH_OPTIONS;
 
-export const flooringPreparationOptions: Array<{ value: FlooringPreparationType; label: string }> = [
-  { value: "none", label: "Без подготовки" },
-  { value: "primer", label: "Грунтование" },
-  { value: "self_leveling", label: "Наливной пол" },
-  { value: "waterproofing", label: "Гидроизоляция" },
-];
-
-export const flooringLayoutOptions: Array<{ value: FlooringLayoutType; label: string }> = [
-  { value: "straight", label: "Прямая" },
-  { value: "large_format_straight", label: "Крупный формат" },
-  { value: "glue", label: "Клеевая" },
-  { value: "floating", label: "Плавающая" },
-];
-
-export const flooringPlinthOptions: Array<{ value: FlooringPlinthType; label: string }> = [
-  { value: "none", label: "Без плинтуса" },
-  { value: "duropolymer", label: "Дюрополимерный" },
-  { value: "painted_mdf", label: "МДФ окрашенный" },
-];
+export { getDefaultFlooringCovering, getDefaultFlooringLayout, getDefaultFlooringPreparation };
 
 export const wallsCoveringOptions: Array<{ value: WallsCoveringType; label: string }> = [
   { value: "wallpaper", label: "Обои" },
@@ -90,38 +72,6 @@ export const initialRooms: EstimateInitialRoom[] = [
   { id: "bathroom", name: "Санузел", type: "bathroom", area: "4.3", doorCount: "1", windowCount: "0" },
   { id: "balcony", name: "Балкон", type: "balcony", area: "2.2", doorCount: "1", windowCount: "1" },
 ];
-
-export function getDefaultFlooringCovering(roomType: EstimateRoomType): FlooringCoveringType {
-  if (roomType === "living_room") {
-    return "carpet";
-  }
-
-  if (roomType === "other") {
-    return "quartz_vinyl";
-  }
-
-  return "porcelain";
-}
-
-export function getDefaultFlooringPreparation(roomType: EstimateRoomType): FlooringPreparationType {
-  return roomType === "living_room" ? "self_leveling" : "primer";
-}
-
-export function getDefaultFlooringLayout(coveringType: FlooringCoveringType): FlooringLayoutType {
-  if (coveringType === "porcelain") {
-    return "large_format_straight";
-  }
-
-  if (coveringType === "carpet" || coveringType === "engineered_wood") {
-    return "glue";
-  }
-
-  if (coveringType === "laminate") {
-    return "floating";
-  }
-
-  return "straight";
-}
 
 export function getDefaultWallsCovering(roomType: EstimateRoomType): WallsCoveringType {
   return roomType === "bathroom" ? "tile" : "wallpaper";

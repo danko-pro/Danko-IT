@@ -1,0 +1,252 @@
+﻿.ce-flooring-assembly {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  padding: 9px 10px;
+  border: 1px solid var(--ce-border);
+  border-radius: var(--ce-radius);
+  background: #ffffff;
+}
+
+.ce-flooring-assembly-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 7px;
+}
+
+.ce-flooring-assembly-title {
+  margin: 0;
+  color: var(--ce-text);
+  font-size: 12px;
+  font-weight: 760;
+}
+
+.ce-flooring-assembly-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.ce-flooring-assembly-library {
+  display: grid;
+  grid-template-columns: auto minmax(240px, 1fr);
+  gap: 6px;
+  align-items: center;
+  margin-bottom: 7px;
+  padding: 6px;
+  border: 1px solid var(--ce-border);
+  border-radius: 6px;
+  background: #f8fbff;
+}
+
+.ce-flooring-assembly-library-item,
+.ce-flooring-assembly .ce-input {
+  height: 30px;
+  font-size: 11px;
+}
+
+.ce-flooring-assembly-title-input {
+  min-width: 0;
+}
+
+.ce-flooring-assembly-table-wrap {
+  max-height: none;
+  margin-bottom: 8px;
+  overflow-x: auto;
+}
+
+.ce-flooring-assembly-table {
+  width: 100%;
+  min-width: 1080px;
+  table-layout: fixed;
+}
+
+.ce-flooring-assembly-table thead th {
+  padding: 6px 7px;
+}
+
+.ce-flooring-assembly-table tbody td {
+  height: 34px;
+}
+
+.ce-flooring-assembly-table .ce-col-check {
+  width: 44px;
+  text-align: center;
+}
+
+.ce-flooring-assembly-table .ce-col-kind {
+  width: 100px;
+}
+
+.ce-flooring-assembly-table .ce-col-formula {
+  width: 126px;
+}
+
+.ce-flooring-assembly-table .ce-col-title {
+  width: auto;
+  min-width: 220px;
+}
+
+.ce-flooring-assembly-table .ce-col-unit {
+  width: 58px;
+}
+
+.ce-flooring-assembly-table .ce-col-num {
+  width: 82px;
+}
+
+.ce-flooring-assembly-table .ce-col-total {
+  width: 88px;
+}
+
+.ce-flooring-assembly-table .ce-col-actions {
+  width: 40px;
+  text-align: center;
+}
+
+.ce-flooring-assembly-table .ce-cell-input {
+  overflow: hidden;
+  height: 34px;
+  min-height: 34px;
+  padding: 0 7px;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ce-flooring-assembly-table .ce-cell-select {
+  padding-right: 16px;
+  font-size: 11px;
+}
+
+.ce-flooring-assembly-table .ce-cell-formula {
+  font-size: 10px;
+  font-weight: 720;
+}
+
+.ce-flooring-assembly-table .ce-cell-unit {
+  text-align: center;
+}
+
+.ce-flooring-assembly-table .ce-readonly {
+  padding: 0 7px;
+  line-height: 34px;
+}
+
+.ce-flooring-assembly-table tbody td.ce-num {
+  text-align: right;
+}
+
+.ce-flooring-assembly-table .ce-total-cell {
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.ce-flooring-assembly-section-row td {
+  height: 24px !important;
+  padding: 4px 8px !important;
+  border-top: 1px solid var(--ce-border);
+  border-bottom: 1px solid var(--ce-border);
+  background: #f6f8fb !important;
+  color: var(--ce-muted);
+  font-size: 10px;
+  font-weight: 760;
+  text-transform: uppercase;
+}
+
+.ce-flooring-assembly-summary {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 7px 10px;
+  margin-bottom: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--ce-border);
+  border-radius: 6px;
+  background: #ffffff;
+  color: var(--ce-muted);
+  font-size: 11px;
+  line-height: 1.3;
+}
+
+.ce-flooring-assembly-summary-chip {
+  white-space: nowrap;
+}
+
+.ce-flooring-assembly-summary-chip strong {
+  color: var(--ce-ok);
+  font-weight: 760;
+}
+
+.ce-flooring-assembly-recommended {
+  opacity: 0.9;
+}
+
+.ce-flooring-assembly-summary-total strong {
+  color: var(--ce-ok);
+}
+
+.ce-flooring-assembly-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.ce-flooring-assembly-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  flex: 1 1 auto;
+  color: var(--ce-muted);
+  font-size: 11px;
+  line-height: 1.3;
+}
+
+.ce-flooring-assembly-check {
+  padding: 0;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.ce-flooring-assembly-check input {
+  display: block;
+  width: 14px;
+  height: 14px;
+  margin: 0 auto;
+}
+
+.ce-flooring-assembly-row-off {
+  opacity: 0.5;
+}
+
+.ce-flooring-assembly-empty {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  margin-bottom: 0;
+  padding: 7px 10px;
+  border: 1px dashed var(--ce-border-strong);
+  border-radius: 6px;
+  background: #f8fbff;
+  color: var(--ce-muted);
+  text-align: center;
+}
+
+.ce-flooring-assembly-empty-copy {
+  min-width: 0;
+  overflow: hidden;
+  font-size: 11px;
+  font-weight: 720;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

@@ -1,0 +1,19 @@
+.ce-flooring-library-table-wrap {
+  max-height: none;
+  overflow-x: auto;
+}
+
+.ce-flooring-library-table {
+  min-width: 1180px;
+}
+
+.ce-flooring-library-table .ce-col-id,
+.ce-flooring-library-table .ce-col-title,
+.ce-flooring-library-table .ce-col-select,
+.ce-flooring-library-table .ce-col-formula,
+.ce-flooring-library-table .ce-col-num,
+.ce-flooring-library-table .ce-col-actions {
+  width: auto;
+  min-width: 0;
+  max-width: none;
+}

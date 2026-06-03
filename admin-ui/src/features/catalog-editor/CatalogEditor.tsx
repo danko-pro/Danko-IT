@@ -23,6 +23,7 @@ import {
 import { usePlumbingCatalog } from "./api/client";
 import { useWarmFloorCatalog } from "./api/warm-floor-client";
 import type { PlumbingSnapshotPreview } from "./api/types";
+import { CatalogViewTabs, type CatalogViewTabOption } from "./CatalogViewTabs";
 import { FlooringCatalogPanel } from "./FlooringCatalogPanel";
 import { WarmFloorCatalogPanel } from "./WarmFloorCatalogPanel";
 import "./styles/catalog-editor.css";
@@ -39,6 +40,13 @@ type SectionTab = {
   label: string;
   ready: boolean;
 };
+
+type PlumbingView = "zones" | "library";
+
+const PLUMBING_VIEW_TABS: CatalogViewTabOption<PlumbingView>[] = [
+  { value: "zones", label: "Зоны" },
+  { value: "library", label: "Библиотека позиций (Сан v1)" },
+];
 
 const SECTION_TABS: SectionTab[] = [
   { id: "plumbing", label: "Сантехника", ready: true },
@@ -255,7 +263,7 @@ export function CatalogEditor() {
   const warmFloorCatalog = useWarmFloorCatalog();
   const { items, zones, setItems, setZones, loading, saving, error, savedAt } = catalog;
   const [activeTab, setActiveTab] = useState<string>("plumbing");
-  const [plumbingView, setPlumbingView] = useState<"zones" | "library">("zones");
+  const [plumbingView, setPlumbingView] = useState<PlumbingView>("zones");
   const [search, setSearch] = useState("");
   const [groupFilter, setGroupFilter] = useState<"all" | CatalogGroup>("all");
   const [collapsedSubgroups, setCollapsedSubgroups] = useState<Set<string>>(new Set());
@@ -620,22 +628,12 @@ export function CatalogEditor() {
         ) : (
           <>
           <div className="ce-toolbar">
-            <div className="ce-subtabs">
-              <button
-                type="button"
-                className={`ce-subtab${plumbingView === "zones" ? " is-active" : ""}`}
-                onClick={() => setPlumbingView("zones")}
-              >
-                Зоны
-              </button>
-              <button
-                type="button"
-                className={`ce-subtab${plumbingView === "library" ? " is-active" : ""}`}
-                onClick={() => setPlumbingView("library")}
-              >
-                Библиотека позиций (Сан v1)
-              </button>
-            </div>
+            <CatalogViewTabs
+              options={PLUMBING_VIEW_TABS}
+              value={plumbingView}
+              onChange={setPlumbingView}
+              ariaLabel="Раздел сантехники"
+            />
             <div className="ce-toolbar-group">
               <button
                 type="button"

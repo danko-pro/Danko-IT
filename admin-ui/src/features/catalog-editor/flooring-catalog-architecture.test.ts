@@ -14,6 +14,7 @@ import flooringCatalogAssemblyCreateRowSource from "./flooring-catalog-assembly-
 import flooringUiArchitectureSource from "./flooring-ui-architecture.md?raw";
 import useFlooringCatalogPanelSource from "./useFlooringCatalogPanel.ts?raw";
 import catalogSegmentedControlSource from "./CatalogSegmentedControl.tsx?raw";
+import catalogViewTabsSource from "./CatalogViewTabs.tsx?raw";
 
 const FEATURE_DIR = dirname(fileURLToPath(import.meta.url));
 
@@ -32,6 +33,7 @@ const flooringWorkspaceCssSource = readFeatureFile("styles/catalog-editor.floori
 
 const REQUIRED_FLOORING_CATALOG_MODULES = [
   "CatalogSegmentedControl.tsx",
+  "CatalogViewTabs.tsx",
   "FlooringAssemblyBlock.tsx",
   "FlooringAssemblyLibraryPanel.tsx",
   "FlooringCatalogWorkspace.tsx",
@@ -56,6 +58,7 @@ const flooringCatalogModulePaths = Object.keys(
   import.meta.glob([
     "./FlooringAssemblyBlock.tsx",
     "./CatalogSegmentedControl.tsx",
+    "./CatalogViewTabs.tsx",
     "./FlooringAssemblyLibraryPanel.tsx",
     "./FlooringCatalogWorkspace.tsx",
     "./FlooringConsumablesTable.tsx",
@@ -111,6 +114,7 @@ describe("flooring catalog editor architecture", () => {
     expect(sourceLines(flooringCatalogWorkspaceSource).length).toBeLessThanOrEqual(260);
     expect(sourceLines(flooringConsumablesTableSource).length).toBeLessThanOrEqual(260);
     expect(sourceLines(catalogSegmentedControlSource).length).toBeLessThanOrEqual(80);
+    expect(sourceLines(catalogViewTabsSource).length).toBeLessThanOrEqual(80);
   });
 
   it("keeps flooring catalog submodules present", () => {
@@ -166,6 +170,7 @@ describe("flooring catalog editor architecture", () => {
   it("keeps assembly builder, library, workspace, and edit forms separated", () => {
     expect(flooringAssemblyBlockSource).toContain("export function FlooringAssemblyBlock");
     expect(catalogSegmentedControlSource).toContain("export function CatalogSegmentedControl");
+    expect(catalogViewTabsSource).toContain("export function CatalogViewTabs");
     expect(flooringAssemblyBlockSource).toContain("CatalogSegmentedControl");
     expect(flooringAssemblyLibraryPanelSource).toContain("export function FlooringAssemblyLibraryPanel");
     expect(flooringCatalogWorkspaceSource).toContain("export function FlooringCatalogWorkspace");

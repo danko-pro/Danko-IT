@@ -1,3 +1,4 @@
+import { CatalogViewTabs, type CatalogViewTabOption } from "./CatalogViewTabs";
 import { FlooringAssemblyBlock } from "./FlooringAssemblyBlock";
 import { FlooringAssemblyLibraryPanel } from "./FlooringAssemblyLibraryPanel";
 import {
@@ -7,6 +8,13 @@ import {
 } from "./FlooringCatalogEditForms";
 import { FlooringCatalogWorkspace } from "./FlooringCatalogWorkspace";
 import { useFlooringCatalogPanel } from "./useFlooringCatalogPanel";
+
+type FlooringView = "catalog" | "library";
+
+const FLOORING_VIEW_TABS: CatalogViewTabOption<FlooringView>[] = [
+  { value: "catalog", label: "Каталог" },
+  { value: "library", label: "Библиотека кубиков" },
+];
 
 export function FlooringCatalogPanel() {
   const {
@@ -94,15 +102,12 @@ export function FlooringCatalogPanel() {
   return (
     <section className="ce-flooring-shell flooring-catalog-panel">
       <div className="ce-toolbar ce-flooring-toolbar">
-        <div className="ce-toolbar-group">
-          <button
-            type="button"
-            className={flooringView === "library" ? "ce-btn ce-btn-primary" : "ce-btn"}
-            onClick={() => setFlooringView((view) => (view === "library" ? "catalog" : "library"))}
-          >
-            {flooringView === "library" ? "← К сборке и каталогу полов" : "Библиотека кубиков"}
-          </button>
-        </div>
+        <CatalogViewTabs
+          options={FLOORING_VIEW_TABS}
+          value={flooringView}
+          onChange={setFlooringView}
+          ariaLabel="Раздел полов"
+        />
         {statusMessage ? (
           <div className="ce-save-status">
             <span className="ce-dot" aria-hidden="true" />

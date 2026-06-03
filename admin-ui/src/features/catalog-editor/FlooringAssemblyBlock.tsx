@@ -342,13 +342,10 @@ export function FlooringAssemblyBlock({
   }
 
   return (
-    <div className="ce-flooring-assembly">
+    <div className="ce-flooring-assembly" aria-busy={loadingAssembly}>
       <div className="ce-flooring-assembly-head">
         <div>
           <h4 className="ce-flooring-assembly-title">Сборка строки каталога</h4>
-          {loadingAssembly ? (
-            <p className="ce-flooring-assembly-hint">Загрузка состава…</p>
-          ) : null}
         </div>
         {rows.length > 0 ? (
           <div className="ce-flooring-assembly-toolbar">

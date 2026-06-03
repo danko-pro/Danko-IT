@@ -5,6 +5,10 @@ from collections.abc import Mapping, Sequence
 from typing import Any, Protocol
 
 from supply_bot.admin_api.calculator_payloads.flooring_custom_consumables import parse_flooring_custom_consumables
+from supply_bot.estimates.application.flooring_package_projection import (
+    build_flooring_package_projection,
+    has_enabled_flooring_assembly_rows,
+)
 from supply_bot.utils import normalize_text, slugify
 
 # Детерминированный публичный seed v2 — работа укладки находится в layouts.
@@ -166,6 +170,8 @@ PUBLIC_FLOORING_FORBIDDEN_KEYS = frozenset(
         "source",
         "created_at",
         "updated_at",
+        "assembly_id",
+        "assembly_item_id",
         "custom_consumables_json",
         "risk_percent",
         "riskPercent",
@@ -319,21 +325,59 @@ def _resolve_public_code(
     return candidate
 
 
-def _map_covering_row(row: Mapping[str, Any], *, used_codes: set[str]) -> dict[str, Any]:
+def _public_spec_lines_for_assembly(
+    target_kind: str,
+    rows: Sequence[Mapping[str, Any]],
+) -> list[dict[str, Any]] | None:
+    if not has_enabled_flooring_assembly_rows(rows):
+        return None
+    projection = build_flooring_package_projection(target_kind, rows)
+    return list(projection["specLines"])
+
+
+def _attach_spec_lines_to_snapshot_row(
+    snapshot_row: dict[str, Any],
+    *,
+    target_kind: str,
+    assembly: Mapping[str, Any] | None,
+) -> dict[str, Any]:
+    if assembly is None:
+        return snapshot_row
+    spec_lines = _public_spec_lines_for_assembly(target_kind, assembly.get("rows") or [])
+    if spec_lines is None:
+        return snapshot_row
+    return {**snapshot_row, "specLines": spec_lines}
+
+
+def _map_covering_row(
+    row: Mapping[str, Any],
+    *,
+    used_codes: set[str],
+    assembly: Mapping[str, Any] | None = None,
+) -> dict[str, Any]:
     title = _public_title(row.get("title"))
     code = _resolve_public_code(title, section="coverings", known_titles=_COVERING_TITLE_TO_CODE, used_codes=used_codes)
     used_codes.add(code)
     consumables = _aggregate_covering_consumables(row)
-    return {
-        "code": code,
-        "title": title,
-        "materialPricePerM2": _public_number(row.get("material_price_per_m2")),
-        "baseWastePercent": _public_number(row.get("base_waste_percent")),
-        **consumables,
-    }
+    return _attach_spec_lines_to_snapshot_row(
+        {
+            "code": code,
+            "title": title,
+            "materialPricePerM2": _public_number(row.get("material_price_per_m2")),
+            "baseWastePercent": _public_number(row.get("base_waste_percent")),
+            **consumables,
+        },
+        target_kind="covering",
+        assembly=assembly,
+    )
 
 
-def _map_preparation_row(row: Mapping[str, Any], *, used_codes: set[str]) -> dict[str, Any]:
+def _map_preparation_row(
+    row: Mapping[str, Any],
+    *,
+    used_codes: set[str],
+    assembly: Mapping[str, Any] | None = None,
+) -> dict[str, Any]:
     title = _public_title(row.get("title"))
     code = _resolve_public_code(
         title,
@@ -342,15 +386,24 @@ def _map_preparation_row(row: Mapping[str, Any], *, used_codes: set[str]) -> dic
         used_codes=used_codes,
     )
     used_codes.add(code)
-    return {
-        "code": code,
-        "title": title,
-        "laborPricePerM2": _public_number(row.get("labor_price_per_m2")),
-        "materialPricePerM2": _public_number(row.get("material_price_per_m2")),
-    }
+    return _attach_spec_lines_to_snapshot_row(
+        {
+            "code": code,
+            "title": title,
+            "laborPricePerM2": _public_number(row.get("labor_price_per_m2")),
+            "materialPricePerM2": _public_number(row.get("material_price_per_m2")),
+        },
+        target_kind="preparation",
+        assembly=assembly,
+    )
 
 
-def _map_layout_row(row: Mapping[str, Any], *, used_codes: set[str]) -> dict[str, Any]:
+def _map_layout_row(
+    row: Mapping[str, Any],
+    *,
+    used_codes: set[str],
+    assembly: Mapping[str, Any] | None = None,
+) -> dict[str, Any]:
     title = _public_title(row.get("title"))
     code = _resolve_public_code(title, section="layouts", known_titles=_LAYOUT_TITLE_TO_CODE, used_codes=used_codes)
     used_codes.add(code)
@@ -358,13 +411,17 @@ def _map_layout_row(row: Mapping[str, Any], *, used_codes: set[str]) -> dict[str
     labor_price_per_m2 = _public_number(row.get("labor_price_per_m2"))
     if float(labor_price_per_m2) == 0 and code in _DEFAULT_LAYOUT_LABOR_BY_CODE:
         labor_price_per_m2 = _public_number(_DEFAULT_LAYOUT_LABOR_BY_CODE[code])
-    return {
-        "code": code,
-        "title": title,
-        "laborPricePerM2": labor_price_per_m2,
-        "laborFactor": labor_multiplier if labor_multiplier > 0 else 1,
-        "additionalWastePercent": _public_number(row.get("extra_waste_percent")),
-    }
+    return _attach_spec_lines_to_snapshot_row(
+        {
+            "code": code,
+            "title": title,
+            "laborPricePerM2": labor_price_per_m2,
+            "laborFactor": labor_multiplier if labor_multiplier > 0 else 1,
+            "additionalWastePercent": _public_number(row.get("extra_waste_percent")),
+        },
+        target_kind="layout",
+        assembly=assembly,
+    )
 
 
 def _merge_section_with_defaults(
@@ -393,10 +450,26 @@ def _merge_section_with_defaults(
     return ordered
 
 
+def _assembly_for_row(
+    row: Mapping[str, Any],
+    assemblies_by_target_id: Mapping[int, Mapping[str, Any]] | None,
+) -> Mapping[str, Any] | None:
+    if not assemblies_by_target_id:
+        return None
+    row_id = row.get("id")
+    if row_id is None:
+        return None
+    return assemblies_by_target_id.get(int(row_id))
+
+
 def build_public_flooring_snapshot_from_catalog(
     coverings: Sequence[Mapping[str, Any]],
     preparations: Sequence[Mapping[str, Any]],
     layouts: Sequence[Mapping[str, Any]],
+    *,
+    covering_assemblies: Mapping[int, Mapping[str, Any]] | None = None,
+    preparation_assemblies: Mapping[int, Mapping[str, Any]] | None = None,
+    layout_assemblies: Mapping[int, Mapping[str, Any]] | None = None,
 ) -> dict[str, Any]:
     if not coverings and not preparations and not layouts:
         return build_public_flooring_snapshot()
@@ -406,15 +479,27 @@ def build_public_flooring_snapshot_from_catalog(
     used_layout_codes: set[str] = set()
 
     mapped_coverings = [
-        _map_covering_row(row, used_codes=used_covering_codes)
+        _map_covering_row(
+            row,
+            used_codes=used_covering_codes,
+            assembly=_assembly_for_row(row, covering_assemblies),
+        )
         for row in coverings
     ]
     mapped_preparations = [
-        _map_preparation_row(row, used_codes=used_preparation_codes)
+        _map_preparation_row(
+            row,
+            used_codes=used_preparation_codes,
+            assembly=_assembly_for_row(row, preparation_assemblies),
+        )
         for row in preparations
     ]
     mapped_layouts = [
-        _map_layout_row(row, used_codes=used_layout_codes)
+        _map_layout_row(
+            row,
+            used_codes=used_layout_codes,
+            assembly=_assembly_for_row(row, layout_assemblies),
+        )
         for row in layouts
     ]
 
@@ -458,6 +543,28 @@ class FlooringSnapshotStorage(Protocol):
 
     async def list_estimate_flooring_layouts(self) -> list[dict[str, Any]]: ...
 
+    async def get_estimate_flooring_catalog_assembly(
+        self,
+        target_kind: str,
+        target_id: int,
+    ) -> dict[str, Any] | None: ...
+
+
+async def _load_catalog_assemblies_for_rows(
+    storage: FlooringSnapshotStorage,
+    target_kind: str,
+    rows: Sequence[Mapping[str, Any]],
+) -> dict[int, dict[str, Any]]:
+    assemblies: dict[int, dict[str, Any]] = {}
+    for row in rows:
+        row_id = row.get("id")
+        if row_id is None:
+            continue
+        assembly = await storage.get_estimate_flooring_catalog_assembly(target_kind, int(row_id))
+        if assembly is not None:
+            assemblies[int(row_id)] = assembly
+    return assemblies
+
 
 class BuildFlooringSnapshotUseCase:
     def __init__(self, storage: FlooringSnapshotStorage | None = None) -> None:
@@ -470,7 +577,17 @@ class BuildFlooringSnapshotUseCase:
         coverings = _filter_global_catalog_rows(await self._storage.list_estimate_flooring_coverings())
         preparations = _filter_global_catalog_rows(await self._storage.list_estimate_flooring_preparations())
         layouts = _filter_global_catalog_rows(await self._storage.list_estimate_flooring_layouts())
-        return build_public_flooring_snapshot_from_catalog(coverings, preparations, layouts)
+        covering_assemblies = await _load_catalog_assemblies_for_rows(self._storage, "covering", coverings)
+        preparation_assemblies = await _load_catalog_assemblies_for_rows(self._storage, "preparation", preparations)
+        layout_assemblies = await _load_catalog_assemblies_for_rows(self._storage, "layout", layouts)
+        return build_public_flooring_snapshot_from_catalog(
+            coverings,
+            preparations,
+            layouts,
+            covering_assemblies=covering_assemblies,
+            preparation_assemblies=preparation_assemblies,
+            layout_assemblies=layout_assemblies,
+        )
 
     async def build_internal(self) -> dict[str, Any]:
         return await self.build_public()
@@ -498,6 +615,8 @@ __all__ = [
     "EXPECTED_PREPARATION_CODES",
     "PUBLIC_FLOORING_FORBIDDEN_KEYS",
     "_aggregate_covering_consumables",
+    "_attach_spec_lines_to_snapshot_row",
+    "_public_spec_lines_for_assembly",
     "_resolve_public_code",
     "build_public_flooring_snapshot",
     "build_public_flooring_snapshot_from_catalog",

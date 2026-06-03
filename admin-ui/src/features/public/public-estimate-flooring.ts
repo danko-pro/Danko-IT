@@ -4,6 +4,8 @@ import {
   type EstimateLineItem,
   type EstimateSection,
 } from "./public-estimate-model";
+import { buildFlooringProcurementSummary, type FlooringProcurementLine } from "./public-estimate-flooring-procurement";
+export type { FlooringProcurementLine } from "./public-estimate-flooring-procurement";
 import { buildFlooringSpecification, type FlooringSpecificationLine } from "./public-estimate-flooring-spec";
 import { getFlooringSnapshotCatalog, getFlooringSnapshotRates } from "./public-flooring-snapshot";
 
@@ -64,6 +66,7 @@ export type FlooringCalculationResult = {
   section: EstimateSection;
   specificationLines: FlooringSpecificationLine[];
   specificationSection: EstimateSection;
+  procurementLines: FlooringProcurementLine[];
 };
 
 /** Публичные тарифы v1 из `generated/flooring.snapshot.json`. */
@@ -349,6 +352,12 @@ export function calculateFlooring(rooms: FlooringRoomInput[], options: FlooringO
     preparationByCode: flooringCatalog.preparations,
     layoutByCode: flooringCatalog.layouts,
   });
+  const procurementLines = buildFlooringProcurementSummary({
+    roomResults,
+    coveringByCode: flooringCatalog.coverings,
+    preparationByCode: flooringCatalog.preparations,
+    layoutByCode: flooringCatalog.layouts,
+  });
 
   return {
     roomResults,
@@ -362,5 +371,6 @@ export function calculateFlooring(rooms: FlooringRoomInput[], options: FlooringO
     section,
     specificationLines,
     specificationSection,
+    procurementLines,
   };
 }

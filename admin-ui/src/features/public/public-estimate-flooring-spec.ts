@@ -89,6 +89,29 @@ function coveringLineUsesPurchaseArea(line: FlooringPackageSpecLine) {
   return line.category === "materials" || (line.category === "consumables" && coveringConsumableUsesPurchaseArea(line));
 }
 
+export function computeFlooringSpecLineRawQuantity(params: {
+  line: FlooringPackageSpecLine;
+  area: number;
+  purchaseArea: number;
+  sourceKind: "covering" | "preparation" | "layout";
+  layoutLaborFactor?: number;
+}): number {
+  const { line, area, purchaseArea, sourceKind, layoutLaborFactor = 1 } = params;
+  const safeArea = safeNumber(area);
+  const safePurchaseArea = safeNumber(purchaseArea);
+  const wasteFactor = safeArea > 0 ? safePurchaseArea / safeArea : 1;
+  const quantityPerBasis = safeNumber(line.quantityPerBasis);
+  let runtimeMultiplier = 1;
+
+  if (sourceKind === "covering" && coveringLineUsesPurchaseArea(line)) {
+    runtimeMultiplier *= wasteFactor;
+  } else if (sourceKind === "layout" && line.category === "works") {
+    runtimeMultiplier *= safeNumber(layoutLaborFactor);
+  }
+
+  return safeArea * quantityPerBasis * runtimeMultiplier;
+}
+
 function expandSpecLinesForRoom(params: {
   room: FlooringRoomForSpecification;
   source: FlooringSpecCatalogSource;
@@ -102,10 +125,7 @@ function expandSpecLinesForRoom(params: {
     return [];
   }
 
-  const safeArea = safeNumber(area);
   const purchaseArea = safeNumber(room.purchaseArea ?? area);
-  const wasteFactor = safeArea > 0 ? purchaseArea / safeArea : 1;
-  const layoutLaborFactor = safeNumber(source.laborFactor ?? 1);
 
   const sourceLabel =
     sourceKind === "covering"
@@ -116,16 +136,13 @@ function expandSpecLinesForRoom(params: {
 
   return specLines.map((line) => {
     const unitPrice = safeNumber(line.unitPrice);
-    const quantityPerBasis = safeNumber(line.quantityPerBasis);
-    let runtimeMultiplier = 1;
-
-    if (sourceKind === "covering" && coveringLineUsesPurchaseArea(line)) {
-      runtimeMultiplier *= wasteFactor;
-    } else if (sourceKind === "layout" && line.category === "works") {
-      runtimeMultiplier *= layoutLaborFactor;
-    }
-
-    const quantity = safeArea * quantityPerBasis * runtimeMultiplier;
+    const quantity = computeFlooringSpecLineRawQuantity({
+      line,
+      area,
+      purchaseArea,
+      sourceKind,
+      layoutLaborFactor: source.laborFactor,
+    });
     const total = quantity * unitPrice;
 
     return {

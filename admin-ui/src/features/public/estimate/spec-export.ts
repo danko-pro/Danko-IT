@@ -1,5 +1,6 @@
 import type { EstimateCostCategory } from "../public-estimate-model";
 import type { EstimateSpecSection } from "../public-estimate-plumbing-zones";
+import type { FlooringProcurementLine } from "../public-estimate-flooring-procurement";
 
 const CSV_HEADERS = [
   "Раздел",
@@ -105,6 +106,74 @@ export function buildSpecExportCsv(sections: EstimateSpecSection[]): string {
   });
 
   return rows.join("\r\n");
+}
+
+const PROCUREMENT_CSV_HEADERS = [
+  "Позиция",
+  "Категория",
+  "Потребность",
+  "Ед. потребности",
+  "Закупка",
+  "Ед. закупки",
+  "Цена за ед.",
+  "Сумма",
+  "Примечание",
+] as const;
+
+function formatProcurementCategoryLabel(category: FlooringProcurementLine["category"]): string {
+  if (category === "tools") {
+    return "Расходники";
+  }
+
+  return formatEstimateCategoryLabel(category);
+}
+
+export function buildProcurementExportCsvSection(procurementLines: FlooringProcurementLine[]): string {
+  if (procurementLines.length === 0) {
+    return "";
+  }
+
+  const rows: string[] = [
+    buildCsvRow(["Закупка"]),
+    buildCsvRow([...PROCUREMENT_CSV_HEADERS]),
+  ];
+  const procurementTotal = procurementLines.reduce((sum, line) => sum + line.total, 0);
+
+  procurementLines.forEach((line, index) => {
+    const isLastRow = index === procurementLines.length - 1;
+    const unitPrice = line.purchaseMode === "package" ? (line.packagePrice ?? line.unitPrice) : line.unitPrice;
+    const note = [line.calculationNote, line.note].filter(Boolean).join("; ");
+
+    rows.push(
+      buildCsvRow([
+        line.title,
+        formatProcurementCategoryLabel(line.category),
+        formatExportNumber(line.rawQuantity),
+        line.rawUnit,
+        formatExportNumber(line.purchaseQuantity),
+        line.purchaseUnit,
+        formatExportNumber(unitPrice),
+        formatExportNumber(line.total),
+        isLastRow ? `${note}; Итого: ${formatExportNumber(procurementTotal)}` : note,
+      ]),
+    );
+  });
+
+  return rows.join("\r\n");
+}
+
+export function buildSpecExportCsvWithProcurement(
+  sections: EstimateSpecSection[],
+  procurementLines?: FlooringProcurementLine[],
+): string {
+  const specificationCsv = buildSpecExportCsv(sections);
+  const procurementCsv = buildProcurementExportCsvSection(procurementLines ?? []);
+
+  if (!procurementCsv) {
+    return specificationCsv;
+  }
+
+  return `${specificationCsv}\r\n\r\n${procurementCsv}`;
 }
 
 export function downloadSpecExportCsv(sections: EstimateSpecSection[], filename?: string): void {

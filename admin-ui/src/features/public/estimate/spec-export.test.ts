@@ -3,7 +3,9 @@ import { createEstimateSection } from "../public-estimate-model";
 import { expandFlooringSectionForSpec } from "../public-estimate-flooring-spec";
 import type { EstimateSpecSection } from "../public-estimate-plumbing-zones";
 import {
+  buildProcurementExportCsvSection,
   buildSpecExportCsv,
+  buildSpecExportCsvWithProcurement,
   buildSpecExportFilename,
   escapeCsvCell,
   formatEstimateCategoryLabel,
@@ -323,5 +325,52 @@ describe("buildSpecExportCsv", () => {
 describe("buildSpecExportFilename", () => {
   it("строит безопасное имя файла из заголовка модалки", () => {
     expect(buildSpecExportFilename("Полная спецификация")).toBe("Полная-спецификация.csv");
+  });
+});
+
+describe("buildSpecExportCsvWithProcurement", () => {
+  it("добавляет секцию Закупка после спецификации", () => {
+    const section = createEstimateSection("flooring", "Полы", [
+      {
+        id: "flooring-material-room-1",
+        sectionId: "flooring",
+        title: "Flat covering",
+        category: "materials",
+        quantity: 16,
+        unit: "м²",
+        unitPrice: 100,
+        total: 1600,
+        isIncluded: true,
+      },
+    ]);
+
+    const csv = buildSpecExportCsvWithProcurement([section], [
+      {
+        aggregationKey: "svp",
+        code: "svp",
+        title: "СВП",
+        category: "consumables",
+        rawQuantity: 300,
+        rawUnit: "pcs",
+        purchaseMode: "package",
+        purchaseQuantity: 1,
+        purchaseUnit: "pcs",
+        unitPrice: 1.2,
+        packageSize: 500,
+        packagePrice: 600,
+        total: 600,
+      },
+    ]);
+    const rows = parseCsvRows(csv);
+
+    expect(rows.some((row) => row[0] === "Закупка")).toBe(true);
+    expect(rows.some((row) => row[0] === "СВП" && row[4] === "1")).toBe(true);
+  });
+
+  it("buildProcurementExportCsvSection возвращает пустую строку без строк закупки", () => {
+    expect(buildProcurementExportCsvSection([])).toBe("");
+    expect(buildSpecExportCsvWithProcurement([createEstimateSection("flooring", "Полы", [])])).toBe(
+      buildSpecExportCsv([createEstimateSection("flooring", "Полы", [])]),
+    );
   });
 });

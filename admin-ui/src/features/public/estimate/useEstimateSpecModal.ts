@@ -9,7 +9,7 @@ export function useEstimateSpecModal(params: {
   estimateResult: PublicEstimateResult;
   plumbingOptions: PlumbingOptions;
   plumbingResult: PlumbingCalculationResult;
-  flooringResult: Pick<FlooringCalculationResult, "specificationSection">;
+  flooringResult: Pick<FlooringCalculationResult, "specificationSection" | "procurementLines">;
 }) {
   const { allEstimateSections, estimateResult, plumbingOptions, plumbingResult, flooringResult } = params;
   const [specModal, setSpecModal] = useState<EstimateSpecModalState | null>(null);

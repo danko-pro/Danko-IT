@@ -11,10 +11,11 @@ import {
 
 function emptyFlooringResult(
   overrides: Partial<FlooringCalculationResult> = {},
-): Pick<FlooringCalculationResult, "specificationSection"> {
+): Pick<FlooringCalculationResult, "specificationSection" | "procurementLines"> {
   const section = createEstimateSection("flooring", "Полы", []);
   return {
     specificationSection: section,
+    procurementLines: [],
     ...overrides,
   };
 }
@@ -93,10 +94,43 @@ describe("buildEstimateSpecModalData", () => {
       title: "Полная спецификация",
       subtitle: "Все разделы текущей сметы по позициям",
       sections: [wallsSection],
+      procurementLines: [],
     });
   });
 
-  it("для section modal находит раздел в allEstimateSections", () => {
+  it("для flooring section modal передаёт procurementLines в данные экспорта", () => {
+    const flooringSection = createEstimateSection("flooring", "Полы", []);
+    const procurementLines = [
+      {
+        aggregationKey: "svp",
+        code: "svp",
+        title: "СВП",
+        category: "consumables" as const,
+        rawQuantity: 300,
+        rawUnit: "pcs",
+        purchaseMode: "package" as const,
+        purchaseQuantity: 1,
+        purchaseUnit: "уп.",
+        unitPrice: 1.2,
+        packageSize: 500,
+        packagePrice: 600,
+        total: 600,
+      },
+    ];
+
+    const result = buildEstimateSpecModalData({
+      specModal: { kind: "section", sectionId: "flooring" },
+      allEstimateSections: [flooringSection],
+      estimateResult: createEmptyEstimateResult(),
+      plumbingOptions: defaultPlumbingOptions(),
+      plumbingResult: emptyPlumbingResult(),
+      flooringResult: emptyFlooringResult({ procurementLines }),
+    });
+
+    expect(result?.procurementLines).toEqual(procurementLines);
+  });
+
+  it("для не-flooring section modal не передаёт procurementLines", () => {
     const wallsSection = createEstimateSection("walls", "Стены", [], "Описание стен");
     const plumbingSection = createEstimateSection("plumbing", "Сантехника", []);
 
@@ -113,6 +147,7 @@ describe("buildEstimateSpecModalData", () => {
       title: "Стены",
       subtitle: "Описание стен",
       sections: [wallsSection],
+      procurementLines: undefined,
     });
   });
 

@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useId, useRef } from "react";
 import { createPortal } from "react-dom";
 import { buildSpecExportFilename, downloadSpecExportCsv } from "./estimate/spec-export";
+import type { FlooringProcurementLine } from "./public-estimate-flooring-procurement";
 import type { EstimateSpecSection } from "./public-estimate-plumbing-zones";
 
 type EstimateSpecOverlayProps = {
   title: string;
   subtitle?: string;
   sections: EstimateSpecSection[];
+  procurementLines?: FlooringProcurementLine[];
   formatMoney: (value: number) => string;
   formatQuantity: (value: number) => string;
   onClose: () => void;
@@ -19,6 +21,7 @@ export function EstimateSpecOverlay({
   title,
   subtitle,
   sections,
+  procurementLines,
   formatMoney,
   formatQuantity,
   onClose,
@@ -89,8 +92,8 @@ export function EstimateSpecOverlay({
   const grandTotal = sections.reduce((sum, section) => sum + section.totals.total, 0);
 
   const handleExportCsv = useCallback(() => {
-    downloadSpecExportCsv(sections, buildSpecExportFilename(title));
-  }, [sections, title]);
+    downloadSpecExportCsv(sections, buildSpecExportFilename(title), procurementLines);
+  }, [procurementLines, sections, title]);
 
   const overlay = (
     <div

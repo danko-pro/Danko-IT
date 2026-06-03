@@ -329,7 +329,27 @@ describe("buildSpecExportFilename", () => {
 });
 
 describe("buildSpecExportCsvWithProcurement", () => {
-  it("добавляет секцию Закупка после спецификации", () => {
+  it("без procurementLines CSV совпадает с обычным экспортом", () => {
+    const section = createEstimateSection("flooring", "Полы", [
+      {
+        id: "flooring-material-room-1",
+        sectionId: "flooring",
+        title: "Flat covering",
+        category: "materials",
+        quantity: 16,
+        unit: "м²",
+        unitPrice: 100,
+        total: 1600,
+        isIncluded: true,
+      },
+    ]);
+
+    const baseCsv = buildSpecExportCsv([section]);
+    expect(buildSpecExportCsvWithProcurement([section])).toBe(baseCsv);
+    expect(buildSpecExportCsvWithProcurement([section], [])).toBe(baseCsv);
+  });
+
+  it("добавляет информационный блок закупки после спецификации", () => {
     const section = createEstimateSection("flooring", "Полы", [
       {
         id: "flooring-material-room-1",
@@ -354,7 +374,7 @@ describe("buildSpecExportCsvWithProcurement", () => {
         rawUnit: "pcs",
         purchaseMode: "package",
         purchaseQuantity: 1,
-        purchaseUnit: "pcs",
+        purchaseUnit: "уп.",
         unitPrice: 1.2,
         packageSize: 500,
         packagePrice: 600,
@@ -363,8 +383,117 @@ describe("buildSpecExportCsvWithProcurement", () => {
     ]);
     const rows = parseCsvRows(csv);
 
-    expect(rows.some((row) => row[0] === "Закупка")).toBe(true);
-    expect(rows.some((row) => row[0] === "СВП" && row[4] === "1")).toBe(true);
+    expect(rows.some((row) => row[0] === "Полы — ориентировочная закупка материалов")).toBe(true);
+    expect(rows.some((row) => row[0] === "СВП" && row[2] === "300" && row[4] === "1")).toBe(true);
+    expect(rows.some((row) => row[1] === "Flat covering")).toBe(true);
+  });
+
+  it("не меняет общий итог основной спецификации при добавлении закупки", () => {
+    const section = createEstimateSection("flooring", "Полы", [
+      {
+        id: "flooring-material-room-1",
+        sectionId: "flooring",
+        title: "Flat covering",
+        category: "materials",
+        quantity: 16,
+        unit: "м²",
+        unitPrice: 100,
+        total: 1600,
+        isIncluded: true,
+      },
+    ]);
+
+    const baseRows = parseCsvRows(buildSpecExportCsv([section]));
+    const withProcurementRows = parseCsvRows(
+      buildSpecExportCsvWithProcurement([section], [
+        {
+          aggregationKey: "svp",
+          code: "svp",
+          title: "СВП",
+          category: "consumables",
+          rawQuantity: 300,
+          rawUnit: "pcs",
+          purchaseMode: "package",
+          purchaseQuantity: 1,
+          purchaseUnit: "уп.",
+          unitPrice: 1.2,
+          packageSize: 500,
+          packagePrice: 600,
+          total: 600,
+        },
+      ]),
+    );
+
+    expect(withProcurementRows[1]?.[9]).toBe(baseRows[1]?.[9]);
+    expect(Number(withProcurementRows[1]?.[8])).toBe(Number(baseRows[1]?.[8]));
+  });
+
+  it("строка клея: raw kg, количество упаковок и цена упаковки", () => {
+    const section = createEstimateSection("flooring", "Полы", []);
+    const rawQuantity = 247.5;
+    const packageSize = 25;
+    const packagePrice = 500;
+    const purchaseQuantity = Math.ceil(rawQuantity / packageSize);
+
+    const csv = buildSpecExportCsvWithProcurement([section], [
+      {
+        aggregationKey: "glue",
+        code: "glue",
+        title: "Клей плиточный",
+        category: "consumables",
+        rawQuantity,
+        rawUnit: "kg",
+        purchaseMode: "package",
+        purchaseQuantity,
+        purchaseUnit: "уп.",
+        unitPrice: packagePrice / packageSize,
+        packageSize,
+        packagePrice,
+        total: purchaseQuantity * packagePrice,
+        calculationNote: "9 kg/m²",
+      },
+    ]);
+    const rows = parseCsvRows(csv);
+    const glueRow = rows.find((row) => row[0] === "Клей плиточный");
+
+    expect(glueRow?.[2]).toBe(String(rawQuantity));
+    expect(glueRow?.[3]).toBe("kg");
+    expect(glueRow?.[4]).toBe(String(purchaseQuantity));
+    expect(glueRow?.[6]).toBe(String(packagePrice));
+    expect(Number(glueRow?.[7])).toBe(purchaseQuantity * packagePrice);
+    expect(glueRow?.[8]).toContain("9 kg/m²");
+  });
+
+  it("строка СВП: raw pcs и количество упаковок", () => {
+    const section = createEstimateSection("flooring", "Полы", []);
+    const rawQuantity = 300;
+    const purchaseQuantity = 1;
+    const packagePrice = 600;
+
+    const csv = buildSpecExportCsvWithProcurement([section], [
+      {
+        aggregationKey: "svp",
+        code: "svp",
+        title: "СВП",
+        category: "consumables",
+        rawQuantity,
+        rawUnit: "pcs",
+        purchaseMode: "package",
+        purchaseQuantity,
+        purchaseUnit: "уп.",
+        unitPrice: packagePrice / 500,
+        packageSize: 500,
+        packagePrice,
+        total: purchaseQuantity * packagePrice,
+      },
+    ]);
+    const rows = parseCsvRows(csv);
+    const svpRow = rows.find((row) => row[0] === "СВП");
+
+    expect(svpRow?.[2]).toBe(String(rawQuantity));
+    expect(svpRow?.[3]).toBe("pcs");
+    expect(svpRow?.[4]).toBe(String(purchaseQuantity));
+    expect(Number(svpRow?.[7])).toBe(packagePrice);
   });
 
   it("buildProcurementExportCsvSection возвращает пустую строку без строк закупки", () => {

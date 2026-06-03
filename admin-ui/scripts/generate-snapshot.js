@@ -437,6 +437,74 @@ const EXPECTED_FLOORING_LAYOUT_CODES = ["straight", "large_format_straight", "gl
 
 const EXPECTED_FLOORING_PLINTH_CODES = ["none", "duropolymer", "painted_mdf"];
 
+const FLOORING_SPEC_LINE_CATEGORIES = new Set(["materials", "works", "consumables", "tools"]);
+
+const FLOORING_SPEC_LINE_REQUIRED_KEYS = [
+  "code",
+  "title",
+  "category",
+  "basis",
+  "unit",
+  "quantityPerBasis",
+  "unitPrice",
+];
+
+/**
+ * @param {unknown} specLines
+ * @param {string} arrayName
+ * @returns {{ ok: true } | { ok: false; reason: string }}
+ */
+function validateSpecLines(specLines, arrayName) {
+  if (!Array.isArray(specLines)) {
+    return { ok: false, reason: `${arrayName}.specLines must be an array` };
+  }
+
+  for (const [index, line] of specLines.entries()) {
+    if (!line || typeof line !== "object" || Array.isArray(line)) {
+      return { ok: false, reason: `${arrayName}.specLines[${index}] must be an object` };
+    }
+    for (const key of FLOORING_SPEC_LINE_REQUIRED_KEYS) {
+      if (!(key in line)) {
+        return { ok: false, reason: `${arrayName}.specLines[${index}] missing ${key}` };
+      }
+    }
+    if (typeof line.code !== "string" || line.code.length === 0) {
+      return { ok: false, reason: `${arrayName}.specLines[${index}].code must be a non-empty string` };
+    }
+    if (typeof line.title !== "string" || line.title.length === 0) {
+      return { ok: false, reason: `${arrayName}.specLines[${index}].title must be a non-empty string` };
+    }
+    if (typeof line.category !== "string" || !FLOORING_SPEC_LINE_CATEGORIES.has(line.category)) {
+      return { ok: false, reason: `${arrayName}.specLines[${index}].category is invalid` };
+    }
+    if (line.basis !== "area") {
+      return { ok: false, reason: `${arrayName}.specLines[${index}].basis must be area` };
+    }
+    if (typeof line.unit !== "string" || line.unit.length === 0) {
+      return { ok: false, reason: `${arrayName}.specLines[${index}].unit must be a non-empty string` };
+    }
+    if (typeof line.quantityPerBasis !== "number" || !Number.isFinite(line.quantityPerBasis)) {
+      return {
+        ok: false,
+        reason: `${arrayName}.specLines[${index}].quantityPerBasis must be a finite number`,
+      };
+    }
+    if (typeof line.unitPrice !== "number" || !Number.isFinite(line.unitPrice)) {
+      return { ok: false, reason: `${arrayName}.specLines[${index}].unitPrice must be a finite number` };
+    }
+    if ("packageSize" in line) {
+      if (typeof line.packageSize !== "number" || !Number.isFinite(line.packageSize)) {
+        return { ok: false, reason: `${arrayName}.specLines[${index}].packageSize must be a finite number` };
+      }
+      if (typeof line.packageUnit !== "string" || line.packageUnit.length === 0) {
+        return { ok: false, reason: `${arrayName}.specLines[${index}].packageUnit must be a non-empty string` };
+      }
+    }
+  }
+
+  return { ok: true };
+}
+
 /**
  * @param {unknown} items
  * @param {string} arrayName
@@ -466,6 +534,12 @@ function validateFlooringCatalogItems(items, arrayName, rateKeys) {
     seenCodes.add(item.code);
     if (!hasNumericRates(item, rateKeys)) {
       return { ok: false, reason: `${arrayName} rates must be finite numbers` };
+    }
+    if ("specLines" in item) {
+      const specLinesValidation = validateSpecLines(item.specLines, `${arrayName}[${item.code}]`);
+      if (!specLinesValidation.ok) {
+        return specLinesValidation;
+      }
     }
   }
 

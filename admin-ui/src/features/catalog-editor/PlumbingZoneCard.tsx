@@ -1,5 +1,6 @@
 import { useState } from "react";
 
+import { CatalogDisclosureCard } from "./CatalogDisclosureCard";
 import { TrashIcon } from "./CatalogEditorIcons";
 import { CatalogIconAction } from "./CatalogIconAction";
 import { DEFAULT_ZONE_RISK_PERCENT, type CatalogItem, type CatalogZone } from "./plumbing-seed";
@@ -74,21 +75,31 @@ export function PlumbingZoneCard({
   }
 
   return (
-    <div className="ce-zone ce-plumbing-zone-detail-card">
-      <header className="ce-zone-head">
-        <button type="button" className="ce-disclosure ce-zone-detail-toggle" onClick={onToggle} aria-expanded={!collapsed}>
-          <span className={`ce-chevron${collapsed ? "" : " is-open"}`}>{"\u25b6"}</span>
-        </button>
+    <CatalogDisclosureCard
+      className="ce-zone ce-plumbing-zone-detail-card"
+      headClassName="ce-zone-head"
+      bodyClassName="ce-zone-body"
+      toggleClassName="ce-zone-detail-toggle"
+      collapsed={collapsed}
+      onToggle={onToggle}
+      ariaLabel={zone.title}
+      title={
         <input
           className="ce-zone-title"
           value={zone.title}
           onChange={(event) => onUpdateZone(zone.id, { title: event.target.value })}
           placeholder={TITLE_PLACEHOLDER}
         />
-        <span className="ce-zone-count">{zoneCompositionRows(zone).length} {POSITIONS_LABEL}</span>
-        <span className="ce-zone-total" title={TOTAL_TITLE}>
-          {formatMoney(grandTotal)} {"\u20bd"}
-        </span>
+      }
+      summary={
+        <>
+          <span className="ce-zone-count">{zoneCompositionRows(zone).length} {POSITIONS_LABEL}</span>
+          <span className="ce-zone-total" title={TOTAL_TITLE}>
+            {formatMoney(grandTotal)} {"\u20bd"}
+          </span>
+        </>
+      }
+      actions={
         <CatalogIconAction
           variant="danger"
           icon={<TrashIcon className="ce-action-icon" />}
@@ -96,76 +107,72 @@ export function PlumbingZoneCard({
           ariaLabel={`${DELETE_TITLE}: ${zone.title}`}
           onClick={() => onRemoveZone(zone.id, zone.title)}
         />
-      </header>
+      }
+    >
+      <div className="ce-zone-detail-controls">
+        <input
+          className="ce-zone-desc"
+          value={zone.description ?? ""}
+          onChange={(event) => onUpdateZone(zone.id, { description: event.target.value })}
+          placeholder={DESC_PLACEHOLDER}
+        />
 
-      {!collapsed && (
-        <div className="ce-zone-body">
-          <div className="ce-zone-detail-controls">
-            <input
-              className="ce-zone-desc"
-              value={zone.description ?? ""}
-              onChange={(event) => onUpdateZone(zone.id, { description: event.target.value })}
-              placeholder={DESC_PLACEHOLDER}
-            />
-
-            {zone.priceClassVariants && zone.priceClassVariants.length > 0 ? (
-              <div className="ce-price-classes">
-                <span className="ce-price-classes-label">{PACKAGE_LABEL}</span>
-                <div className="ce-price-class-tabs">
-                  {zone.priceClassVariants.map((variant) => (
-                    <button
-                      key={variant.id}
-                      type="button"
-                      title={variant.label}
-                      className={`ce-price-class-tab${
-                        (zone.activePriceClassId ?? zone.priceClassVariants![0].id) === variant.id ? " is-active" : ""
-                      }`}
-                      onClick={() => onUpdateZone(zone.id, { activePriceClassId: variant.id })}
-                    >
-                      {compactPackageLabel(variant.label)}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            ) : null}
-
-            <label className="ce-zone-risk-label">
-              {RISK_LABEL}
-              <input
-                className="ce-input ce-zone-risk-input"
-                type="number"
-                min={0}
-                step="0.1"
-                value={zone.riskPercent ?? DEFAULT_ZONE_RISK_PERCENT}
-                onChange={(event) => onUpdateZoneRiskPercent(zone.id, event.target.value)}
-              />
-            </label>
-
-            <select className="ce-input ce-zone-pick" value={pickValue} onChange={(event) => handlePick(event.target.value)}>
-              <option value="">{ADD_ROW_LABEL}</option>
-              {library.map((item) => (
-                <option key={item.id} value={item.id}>
-                  [{item.group}] {item.publicTitle} - {formatMoney(itemUnitPrice(item))} {"\u20bd"}/{item.unit}
-                </option>
+        {zone.priceClassVariants && zone.priceClassVariants.length > 0 ? (
+          <div className="ce-price-classes">
+            <span className="ce-price-classes-label">{PACKAGE_LABEL}</span>
+            <div className="ce-price-class-tabs">
+              {zone.priceClassVariants.map((variant) => (
+                <button
+                  key={variant.id}
+                  type="button"
+                  title={variant.label}
+                  className={`ce-price-class-tab${
+                    (zone.activePriceClassId ?? zone.priceClassVariants![0].id) === variant.id ? " is-active" : ""
+                  }`}
+                  onClick={() => onUpdateZone(zone.id, { activePriceClassId: variant.id })}
+                >
+                  {compactPackageLabel(variant.label)}
+                </button>
               ))}
-            </select>
+            </div>
           </div>
+        ) : null}
 
-          <PlumbingZoneCompositionTable
-            zone={zone}
-            itemsById={itemsById}
-            library={library}
-            subtotal={subtotal}
-            riskAmount={riskAmount}
-            grandTotal={grandTotal}
-            riskPercent={riskPercent}
-            zoneRowTotal={zoneRowTotal}
-            onUpdateZoneRow={onUpdateZoneRow}
-            onRemoveZoneRow={onRemoveZoneRow}
-            onReplaceZoneVariantRow={onReplaceZoneVariantRow}
+        <label className="ce-zone-risk-label">
+          {RISK_LABEL}
+          <input
+            className="ce-input ce-zone-risk-input"
+            type="number"
+            min={0}
+            step="0.1"
+            value={zone.riskPercent ?? DEFAULT_ZONE_RISK_PERCENT}
+            onChange={(event) => onUpdateZoneRiskPercent(zone.id, event.target.value)}
           />
-        </div>
-      )}
-    </div>
+        </label>
+
+        <select className="ce-input ce-zone-pick" value={pickValue} onChange={(event) => handlePick(event.target.value)}>
+          <option value="">{ADD_ROW_LABEL}</option>
+          {library.map((item) => (
+            <option key={item.id} value={item.id}>
+              [{item.group}] {item.publicTitle} - {formatMoney(itemUnitPrice(item))} {"\u20bd"}/{item.unit}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <PlumbingZoneCompositionTable
+        zone={zone}
+        itemsById={itemsById}
+        library={library}
+        subtotal={subtotal}
+        riskAmount={riskAmount}
+        grandTotal={grandTotal}
+        riskPercent={riskPercent}
+        zoneRowTotal={zoneRowTotal}
+        onUpdateZoneRow={onUpdateZoneRow}
+        onRemoveZoneRow={onRemoveZoneRow}
+        onReplaceZoneVariantRow={onReplaceZoneVariantRow}
+      />
+    </CatalogDisclosureCard>
   );
 }

@@ -4,6 +4,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import catalogEditorSource from "./CatalogEditor.tsx?raw";
+import catalogDisclosureCardSource from "./CatalogDisclosureCard.tsx?raw";
 import catalogIconActionSource from "./CatalogIconAction.tsx?raw";
 import catalogLibraryPanelSource from "./CatalogLibraryPanel.tsx?raw";
 import flooringAssemblyBlockSource from "./FlooringAssemblyBlock.tsx?raw";
@@ -40,6 +41,7 @@ import useCatalogTableColumnsSource from "./useCatalogTableColumns.ts?raw";
 import usePlumbingCatalogPanelSource from "./usePlumbingCatalogPanel.ts?raw";
 import warmFloorCatalogPanelSource from "./WarmFloorCatalogPanel.tsx?raw";
 import warmFloorRateFieldsSource from "./warm-floor-rate-fields.ts?raw";
+import warmFloorRateCardSource from "./WarmFloorRateCard.tsx?raw";
 import warmFloorRateTableSource from "./WarmFloorRateTable.tsx?raw";
 import warmFloorRateTableColumnsSource from "./WarmFloorRateTableColumns.ts?raw";
 import warmFloorSnapshotPreviewPanelSource from "./WarmFloorSnapshotPreviewPanel.tsx?raw";
@@ -51,6 +53,7 @@ function readFeatureFile(path: string): string {
 }
 
 const flooringCssSource = readFeatureFile("styles/catalog-editor.flooring.css");
+const cardsCssSource = readFeatureFile("styles/catalog-editor.cards.css");
 const flooringAssemblyCssSource = readFeatureFile("styles/catalog-editor.flooring.assembly.css");
 const flooringConsumablesCssSource = readFeatureFile("styles/catalog-editor.flooring.consumables.css");
 const flooringFormsCssSource = readFeatureFile("styles/catalog-editor.flooring.forms.css");
@@ -127,6 +130,7 @@ const REQUIRED_PLUMBING_CATALOG_MODULES = [
 
 const REQUIRED_WARM_FLOOR_CATALOG_MODULES = [
   "WarmFloorCatalogPanel.tsx",
+  "WarmFloorRateCard.tsx",
   "WarmFloorRateTable.tsx",
   "WarmFloorRateTableColumns.ts",
   "WarmFloorSnapshotPreviewPanel.tsx",
@@ -134,6 +138,7 @@ const REQUIRED_WARM_FLOOR_CATALOG_MODULES = [
 ] as const;
 
 const REQUIRED_SHARED_CATALOG_MODULES = [
+  "CatalogDisclosureCard.tsx",
   "CatalogIconAction.tsx",
   "CatalogLibraryPanel.tsx",
   "CatalogManagedTableHeaderCell.tsx",
@@ -142,6 +147,7 @@ const REQUIRED_SHARED_CATALOG_MODULES = [
 ] as const;
 
 const REQUIRED_SHARED_CSS_MODULES = [
+  "catalog-editor.cards.css",
   "catalog-editor.library.css",
   "catalog-editor.managed-table.css",
 ] as const;
@@ -185,6 +191,7 @@ const plumbingCatalogModulePaths = Object.keys(
 
 const sharedCatalogModulePaths = Object.keys(
   import.meta.glob([
+    "./CatalogDisclosureCard.tsx",
     "./CatalogIconAction.tsx",
     "./CatalogManagedTableHeaderCell.tsx",
     "./CatalogLibraryPanel.tsx",
@@ -196,6 +203,7 @@ const sharedCatalogModulePaths = Object.keys(
 const warmFloorCatalogModulePaths = Object.keys(
   import.meta.glob([
     "./WarmFloorCatalogPanel.tsx",
+    "./WarmFloorRateCard.tsx",
     "./WarmFloorRateTable.tsx",
     "./WarmFloorRateTableColumns.ts",
     "./WarmFloorSnapshotPreviewPanel.tsx",
@@ -232,6 +240,7 @@ const plumbingCssModulePaths = Object.keys(
 
 const sharedCssModulePaths = Object.keys(
   import.meta.glob([
+    "./styles/catalog-editor.cards.css",
     "./styles/catalog-editor.library.css",
     "./styles/catalog-editor.managed-table.css",
   ]),
@@ -265,12 +274,13 @@ const plumbingCssSources: Array<[string, string, number]> = [
 ];
 
 const sharedCssSources: Array<[string, string, number]> = [
+  ["catalog-editor.cards.css", cardsCssSource, 80],
   ["catalog-editor.library.css", libraryCssSource, 120],
   ["catalog-editor.managed-table.css", managedTableCssSource, 160],
 ];
 
 const warmFloorCssSources: Array<[string, string, number]> = [
-  ["catalog-editor.warm-floor.css", warmFloorCssSource, 80],
+  ["catalog-editor.warm-floor.css", warmFloorCssSource, 110],
 ];
 
 function sourceLines(source: string): string[] {
@@ -348,9 +358,12 @@ describe("catalog editor architecture", () => {
 
     expect(sourceLines(useCatalogTableColumnsSource).length).toBeLessThanOrEqual(140);
     expect(sourceLines(useCatalogPersistedStateSource).length).toBeLessThanOrEqual(80);
+    expect(sourceLines(catalogDisclosureCardSource).length).toBeLessThanOrEqual(70);
     expect(sourceLines(catalogIconActionSource).length).toBeLessThanOrEqual(60);
     expect(sourceLines(catalogLibraryPanelSource).length).toBeLessThanOrEqual(80);
     expect(sourceLines(catalogManagedTableHeaderCellSource).length).toBeLessThanOrEqual(100);
+    expect(catalogDisclosureCardSource).toContain("ce-catalog-disclosure-card");
+    expect(catalogDisclosureCardSource).toContain("aria-expanded={!collapsed}");
     expect(catalogIconActionSource).toContain("ce-icon-action");
     expect(catalogIconActionSource).toContain("ce-icon-action-${variant}");
     expect(catalogEditorSource).toContain("useCatalogPersistedState");
@@ -374,6 +387,7 @@ describe("catalog editor architecture", () => {
     expect(flooringAssemblyLibraryCatalogTableSource).toContain("CatalogIconAction");
     expect(flooringCatalogWorkspaceSource).toContain("CatalogIconAction");
     expect(plumbingZoneCardSource).toContain("CatalogIconAction");
+    expect(plumbingZoneCardSource).toContain("CatalogDisclosureCard");
     expect(plumbingZoneSidebarSource).toContain("CatalogIconAction");
     expect(flooringAssemblyLibraryCatalogTableSource).not.toContain("ce-icon-action");
     expect(flooringAssemblyLibraryCatalogTableSource).not.toContain('className="ce-row-action"');
@@ -386,14 +400,19 @@ describe("catalog editor architecture", () => {
   });
 
   it("keeps warm floor tables compact, managed, and UI-only", () => {
-    expect(sourceLines(warmFloorCatalogPanelSource).length).toBeLessThanOrEqual(130);
+    expect(sourceLines(warmFloorCatalogPanelSource).length).toBeLessThanOrEqual(170);
     expect(sourceLines(warmFloorRateFieldsSource).length).toBeLessThanOrEqual(50);
+    expect(sourceLines(warmFloorRateCardSource).length).toBeLessThanOrEqual(60);
     expect(sourceLines(warmFloorRateTableSource).length).toBeLessThanOrEqual(110);
     expect(sourceLines(warmFloorRateTableColumnsSource).length).toBeLessThanOrEqual(80);
     expect(sourceLines(warmFloorSnapshotPreviewPanelSource).length).toBeLessThanOrEqual(40);
-    expect(warmFloorCatalogPanelSource).toContain("WarmFloorRateTable");
+    expect(warmFloorCatalogPanelSource).toContain("WarmFloorRateCard");
+    expect(warmFloorCatalogPanelSource).toContain("useCatalogPersistedStringSet");
     expect(warmFloorCatalogPanelSource).toContain("useCatalogTableColumns");
     expect(warmFloorCatalogPanelSource).toContain('"warm-floor:rate-columns"');
+    expect(warmFloorCatalogPanelSource).toContain('"warm-floor:collapsed-rate-cards"');
+    expect(warmFloorRateCardSource).toContain("CatalogDisclosureCard");
+    expect(warmFloorRateCardSource).toContain("WarmFloorRateTable");
     expect(warmFloorRateTableSource).toContain("CatalogManagedTableHeaderCell");
     expect(warmFloorRateTableSource).toContain("ce-warm-floor-rate-table");
     expect(warmFloorCatalogPanelSource).not.toContain("function renderRows");

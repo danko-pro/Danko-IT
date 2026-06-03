@@ -13,6 +13,29 @@
   min-width: 0;
 }
 
+.ce-warm-floor-rate-card {
+  min-width: 0;
+}
+
+.ce-warm-floor-rate-card .ce-catalog-disclosure-card-head {
+  grid-template-columns: 24px minmax(0, 1fr) auto;
+}
+
+.ce-warm-floor-rate-card-summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--ce-muted);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.ce-warm-floor-rate-card-summary strong {
+  color: var(--ce-ok);
+  font-size: 13px;
+  font-weight: 760;
+}
+
 .ce-warm-floor-rate-table-wrap {
   max-height: none;
   overflow: auto;

@@ -18,9 +18,11 @@ Current reusable mechanics:
 
 - `CatalogViewTabs.tsx` for page-level view tabs such as zones/catalog-library switches.
 - `CatalogSegmentedControl.tsx` for compact segmented mode switches.
+- `CatalogDisclosureCard.tsx` for collapsible cards that reveal dense tables or detail content.
 - `CatalogIconAction.tsx` for compact icon-only actions such as edit, delete, and add.
 - `CatalogLibraryPanel.tsx` for the shared library shell used by flooring and plumbing libraries.
 - `CatalogManagedTableHeaderCell.tsx` for reusable table column controls.
+- `WarmFloorRateCard.tsx` for warm-floor rate cards built on the shared disclosure card.
 - `WarmFloorRateTable.tsx` for compact warm-floor rate tables with shared managed columns.
 - `useCatalogTableColumns.ts` for UI-only column width and text alignment state.
 - `useCatalogPersistedState.ts` for resilient UI state that survives reloads.
@@ -36,6 +38,7 @@ Do not persist catalog rows, prices, formulas, material rates, REST snapshots, d
 Flooring CSS is split by surface:
 
 - `catalog-editor.library.css` for shared library shells, metrics, and compact library tables.
+- `catalog-editor.cards.css` for shared disclosure cards, chevrons, and compact card headers.
 - `catalog-editor.managed-table.css` for shared managed table controls.
 - `catalog-editor.flooring.shell.css` for the floor page shell, toolbar, and meta.
 - `catalog-editor.flooring.tables.css` for generic flooring tables.

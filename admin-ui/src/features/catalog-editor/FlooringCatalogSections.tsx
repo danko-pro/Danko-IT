@@ -13,6 +13,7 @@ export type FlooringCoveringsSectionProps = {
   selectedId: number | null;
   onEdit: (row: FlooringSnapshotDisplayRow) => void;
   onDelete: (row: FlooringSnapshotDisplayRow) => void;
+  onPromote: (row: FlooringSnapshotDisplayRow) => void;
   formatMoney: (value: number) => string;
   consumablesSummaryPerM2: (rates: Record<string, number>) => string;
   editor: ReactNode;
@@ -23,6 +24,7 @@ export function FlooringCoveringsSection({
   selectedId,
   onEdit,
   onDelete,
+  onPromote,
   formatMoney,
   consumablesSummaryPerM2,
   editor,
@@ -37,6 +39,7 @@ export function FlooringCoveringsSection({
         consumablesSummaryPerM2={consumablesSummaryPerM2}
         onEdit={onEdit}
         onDelete={onDelete}
+        onPromote={onPromote}
         editor={editor}
       />
     </section>
@@ -47,6 +50,7 @@ export type FlooringPreparationsSectionProps = FormatterProps & {
   rows: FlooringSnapshotDisplayRow[];
   onEdit: (row: FlooringSnapshotDisplayRow) => void;
   onDelete: (row: FlooringSnapshotDisplayRow) => void;
+  onPromote: (row: FlooringSnapshotDisplayRow) => void;
   children?: ReactNode;
 };
 
@@ -54,6 +58,7 @@ export function FlooringPreparationsSection({
   rows,
   onEdit,
   onDelete,
+  onPromote,
   formatMoney,
   children,
 }: FlooringPreparationsSectionProps) {
@@ -87,24 +92,38 @@ export function FlooringPreparationsSection({
                   <td className="ce-num ce-readonly">{formatMoney(row.rates.materialPricePerM2)}</td>
                   <td className="ce-col-actions">
                     <div className="ce-row-actions">
-                      <button
-                        type="button"
-                        className="ce-row-action"
-                        disabled={!row.catalogId}
-                        title="Редактировать"
-                        onClick={() => onEdit(row)}
-                      >
-                        Изм.
-                      </button>
-                      <button
-                        type="button"
-                        className="ce-row-action ce-row-action-danger"
-                        disabled={!row.catalogId}
-                        title="Удалить"
-                        onClick={() => onDelete(row)}
-                      >
-                        Удал.
-                      </button>
+                      {row.catalogId ? (
+                        <>
+                          <button
+                            type="button"
+                            className="ce-row-action"
+                            title="Редактировать"
+                            onClick={() => onEdit(row)}
+                          >
+                            Изм.
+                          </button>
+                          <button
+                            type="button"
+                            className="ce-row-action ce-row-action-danger"
+                            title="Удалить"
+                            onClick={() => onDelete(row)}
+                          >
+                            Удал.
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <button
+                            type="button"
+                            className="ce-row-action ce-row-action-primary"
+                            title="Создать запись в каталоге"
+                            onClick={() => onPromote(row)}
+                          >
+                            Создать в БД
+                          </button>
+                          <span className="ce-flooring-meta-note">из snapshot</span>
+                        </>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -123,6 +142,7 @@ export type FlooringLayoutsSectionProps = FormatterProps & {
   rows: FlooringSnapshotDisplayRow[];
   onEdit: (row: FlooringSnapshotDisplayRow) => void;
   onDelete: (row: FlooringSnapshotDisplayRow) => void;
+  onPromote: (row: FlooringSnapshotDisplayRow) => void;
   children?: ReactNode;
 };
 
@@ -130,6 +150,7 @@ export function FlooringLayoutsSection({
   rows,
   onEdit,
   onDelete,
+  onPromote,
   formatMoney,
   formatPercent,
   children,
@@ -166,24 +187,38 @@ export function FlooringLayoutsSection({
                   <td className="ce-num ce-readonly">{formatPercent(row.rates.additionalWastePercent)}</td>
                   <td className="ce-col-actions">
                     <div className="ce-row-actions">
-                      <button
-                        type="button"
-                        className="ce-row-action"
-                        disabled={!row.catalogId}
-                        title="Редактировать"
-                        onClick={() => onEdit(row)}
-                      >
-                        Изм.
-                      </button>
-                      <button
-                        type="button"
-                        className="ce-row-action ce-row-action-danger"
-                        disabled={!row.catalogId}
-                        title="Удалить"
-                        onClick={() => onDelete(row)}
-                      >
-                        Удал.
-                      </button>
+                      {row.catalogId ? (
+                        <>
+                          <button
+                            type="button"
+                            className="ce-row-action"
+                            title="Редактировать"
+                            onClick={() => onEdit(row)}
+                          >
+                            Изм.
+                          </button>
+                          <button
+                            type="button"
+                            className="ce-row-action ce-row-action-danger"
+                            title="Удалить"
+                            onClick={() => onDelete(row)}
+                          >
+                            Удал.
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <button
+                            type="button"
+                            className="ce-row-action ce-row-action-primary"
+                            title="Создать запись в каталоге"
+                            onClick={() => onPromote(row)}
+                          >
+                            Создать в БД
+                          </button>
+                          <span className="ce-flooring-meta-note">из snapshot</span>
+                        </>
+                      )}
                     </div>
                   </td>
                 </tr>

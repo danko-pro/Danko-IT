@@ -72,6 +72,7 @@ export function FlooringCatalogPanel() {
     handleDeleteCovering,
     handleDeletePreparation,
     handleDeleteLayout,
+    promoteSnapshotRowToCatalog,
     setAssemblyRowsSnapshot,
     formatMoney,
     formatPercent,
@@ -175,6 +176,7 @@ export function FlooringCatalogPanel() {
         selectedId={editingCoveringId}
         onEdit={beginEditCovering}
         onDelete={handleDeleteCovering}
+        onPromote={(row) => void promoteSnapshotRowToCatalog(row)}
         formatMoney={formatMoney}
         consumablesSummaryPerM2={consumablesSummaryPerM2}
         editor={
@@ -197,6 +199,7 @@ export function FlooringCatalogPanel() {
         rows={preparationRows}
         onEdit={beginEditPreparation}
         onDelete={handleDeletePreparation}
+        onPromote={(row) => void promoteSnapshotRowToCatalog(row)}
         formatMoney={formatMoney}
         formatPercent={formatPercent}
       >
@@ -217,6 +220,7 @@ export function FlooringCatalogPanel() {
         rows={layoutRows}
         onEdit={beginEditLayout}
         onDelete={handleDeleteLayout}
+        onPromote={(row) => void promoteSnapshotRowToCatalog(row)}
         formatMoney={formatMoney}
         formatPercent={formatPercent}
       >

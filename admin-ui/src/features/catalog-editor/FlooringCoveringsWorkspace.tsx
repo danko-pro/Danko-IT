@@ -28,6 +28,7 @@ export type FlooringCoveringsWorkspaceProps = FormatterProps & {
   consumablesSummaryPerM2: (rates: Record<string, number>) => string;
   onEdit: (row: FlooringSnapshotDisplayRow) => void;
   onDelete: (row: FlooringSnapshotDisplayRow) => void;
+  onPromote: (row: FlooringSnapshotDisplayRow) => void;
   editor: ReactNode;
 };
 
@@ -38,6 +39,7 @@ export function FlooringCoveringsWorkspace({
   consumablesSummaryPerM2,
   onEdit,
   onDelete,
+  onPromote,
   editor,
 }: FlooringCoveringsWorkspaceProps) {
   return (
@@ -47,7 +49,8 @@ export function FlooringCoveringsWorkspace({
           <div className="ce-flooring-coverings-empty">Покрытия не найдены в snapshot.</div>
         ) : (
           rows.map((row) => {
-            const isSelected = selectedId !== null && row.catalogId === selectedId;
+            const hasCatalog = row.catalogId != null;
+            const isSelected = hasCatalog && selectedId !== null && row.catalogId === selectedId;
             const consumablesLabel = consumablesSummaryPerM2(row.rates);
             const totalLabel = `${formatMoney(coveringTotalPerM2(row))} ₽/м²`;
 
@@ -61,11 +64,13 @@ export function FlooringCoveringsWorkspace({
                 <button
                   type="button"
                   className="ce-flooring-covering-item-main"
-                  disabled={!row.catalogId}
-                  onClick={() => onEdit(row)}
+                  onClick={() => (hasCatalog ? onEdit(row) : onPromote(row))}
                 >
                   <span className="ce-flooring-covering-item-title">{row.title}</span>
                   <span className="ce-flooring-covering-item-code ce-mono">{row.code}</span>
+                  {!hasCatalog ? (
+                    <span className="ce-flooring-meta-note">нужно создать в БД</span>
+                  ) : null}
                   <span className="ce-flooring-covering-item-metrics">
                     <span>
                       <span className="ce-flooring-covering-metric-label">Мат.</span>
@@ -86,24 +91,35 @@ export function FlooringCoveringsWorkspace({
                   </span>
                 </button>
                 <div className="ce-flooring-covering-item-actions">
-                  <button
-                    type="button"
-                    className="ce-row-action ce-row-action-primary"
-                    disabled={!row.catalogId}
-                    title="Открыть"
-                    onClick={() => onEdit(row)}
-                  >
-                    Открыть
-                  </button>
-                  <button
-                    type="button"
-                    className="ce-row-action ce-row-action-danger"
-                    disabled={!row.catalogId}
-                    title="Удалить"
-                    onClick={() => onDelete(row)}
-                  >
-                    Удал.
-                  </button>
+                  {hasCatalog ? (
+                    <>
+                      <button
+                        type="button"
+                        className="ce-row-action ce-row-action-primary"
+                        title="Открыть"
+                        onClick={() => onEdit(row)}
+                      >
+                        Открыть
+                      </button>
+                      <button
+                        type="button"
+                        className="ce-row-action ce-row-action-danger"
+                        title="Удалить"
+                        onClick={() => onDelete(row)}
+                      >
+                        Удал.
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      type="button"
+                      className="ce-row-action ce-row-action-primary"
+                      title="Создать запись в каталоге"
+                      onClick={() => onPromote(row)}
+                    >
+                      Создать в БД
+                    </button>
+                  )}
                 </div>
               </div>
             );

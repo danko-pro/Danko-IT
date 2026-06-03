@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 
 import type { FlooringSnapshotDisplayRow } from "./api/flooring-types";
 import { EditIcon, PlusIcon, TrashIcon } from "./CatalogEditorIcons";
+import { CatalogIconAction } from "./CatalogIconAction";
 import { normalizeNum } from "./api/flooring-mappers";
 
 type FlooringCatalogSectionKind = "coverings" | "preparations" | "layouts";
@@ -207,35 +208,29 @@ function FlooringCatalogCard({
       <div className="ce-flooring-catalog-card-actions">
         {hasCatalog ? (
           <>
-            <button
-              type="button"
-              className="ce-icon-action ce-icon-action-primary"
-              aria-label={`Редактировать: ${row.title}`}
+            <CatalogIconAction
+              variant="primary"
+              icon={<EditIcon className="ce-action-icon" />}
+              ariaLabel={`Редактировать: ${row.title}`}
               title="Редактировать"
               onClick={() => section.onEdit(row)}
-            >
-              <EditIcon className="ce-action-icon" />
-            </button>
-            <button
-              type="button"
-              className="ce-icon-action ce-icon-action-danger"
-              aria-label={`Удалить: ${row.title}`}
+            />
+            <CatalogIconAction
+              variant="danger"
+              icon={<TrashIcon className="ce-action-icon" />}
+              ariaLabel={`Удалить: ${row.title}`}
               title="Удалить"
               onClick={() => section.onDelete(row)}
-            >
-              <TrashIcon className="ce-action-icon" />
-            </button>
+            />
           </>
         ) : (
-          <button
-            type="button"
-            className="ce-icon-action ce-icon-action-primary"
-            aria-label={`Создать в БД: ${row.title}`}
+          <CatalogIconAction
+            variant="primary"
+            icon={<PlusIcon className="ce-action-icon" />}
+            ariaLabel={`Создать в БД: ${row.title}`}
             title="Создать в БД"
             onClick={() => section.onPromote(row)}
-          >
-            <PlusIcon className="ce-action-icon" />
-          </button>
+          />
         )}
       </div>
     </div>

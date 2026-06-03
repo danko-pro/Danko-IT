@@ -1,4 +1,5 @@
 import { PlusIcon } from "./CatalogEditorIcons";
+import { CatalogIconAction } from "./CatalogIconAction";
 import type { CatalogZone, ZoneSubgroup } from "./plumbing-seed";
 import { formatMoney, zoneCompositionRows, zoneRiskPercent } from "./plumbing-catalog-model";
 
@@ -46,15 +47,14 @@ export function PlumbingZoneSidebar({
           <span className="ce-plumbing-zone-sidebar-count">{zones.length}</span>
         </button>
         <span className="ce-plumbing-zone-sidebar-total">{formatMoney(subgroupTotal)} {"\u20bd"}</span>
-        <button
-          type="button"
-          className="ce-icon-action ce-icon-action-primary ce-plumbing-zone-add-btn"
+        <CatalogIconAction
+          variant="primary"
+          className="ce-plumbing-zone-add-btn"
+          icon={<PlusIcon className="ce-action-icon" />}
           title={ADD_ZONE_TITLE}
-          aria-label={`${ADD_ZONE_TITLE}: ${subgroupLabel}`}
+          ariaLabel={`${ADD_ZONE_TITLE}: ${subgroupLabel}`}
           onClick={() => onAddZone(subgroup)}
-        >
-          <PlusIcon className="ce-action-icon" />
-        </button>
+        />
       </header>
 
       {!collapsed ? (

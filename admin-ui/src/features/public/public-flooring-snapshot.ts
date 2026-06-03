@@ -420,6 +420,35 @@ export function loadFlooringSnapshot(): FlooringSnapshot {
   return flooringSnapshotData as FlooringSnapshot;
 }
 
+function catalogItemsByCode<T extends { code: string }>(items: T[]): Record<string, T> {
+  const result: Record<string, T> = {};
+
+  for (const item of items) {
+    result[item.code] = item;
+  }
+
+  return result;
+}
+
+export type FlooringSnapshotCatalog = {
+  coverings: Record<FlooringCoveringType, FlooringCoveringSnapshotItem>;
+  preparations: Record<FlooringPreparationType, FlooringPreparationSnapshotItem>;
+  layouts: Record<FlooringLayoutType, FlooringLayoutSnapshotItem>;
+};
+
+export function getFlooringSnapshotCatalog(): FlooringSnapshotCatalog {
+  const snapshot = loadFlooringSnapshot();
+
+  return {
+    coverings: catalogItemsByCode(snapshot.coverings) as Record<FlooringCoveringType, FlooringCoveringSnapshotItem>,
+    preparations: catalogItemsByCode(snapshot.preparations) as Record<
+      FlooringPreparationType,
+      FlooringPreparationSnapshotItem
+    >,
+    layouts: catalogItemsByCode(snapshot.layouts) as Record<FlooringLayoutType, FlooringLayoutSnapshotItem>,
+  };
+}
+
 export function getFlooringSnapshotRates(): FlooringSnapshotRates {
   const snapshot = loadFlooringSnapshot();
   const isLegacyV1 = snapshot.version === "flooring-v1";

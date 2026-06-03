@@ -4,7 +4,8 @@ import {
   type EstimateLineItem,
   type EstimateSection,
 } from "./public-estimate-model";
-import { getFlooringSnapshotRates } from "./public-flooring-snapshot";
+import { buildFlooringSpecification, type FlooringSpecificationLine } from "./public-estimate-flooring-spec";
+import { getFlooringSnapshotCatalog, getFlooringSnapshotRates } from "./public-flooring-snapshot";
 
 export type FlooringCoveringType = "porcelain" | "quartz_vinyl" | "laminate" | "carpet" | "engineered_wood";
 
@@ -61,6 +62,8 @@ export type FlooringCalculationResult = {
   consumablesTotal: number;
   total: number;
   section: EstimateSection;
+  specificationLines: FlooringSpecificationLine[];
+  specificationSection: EstimateSection;
 };
 
 /** Публичные тарифы v1 из `generated/flooring.snapshot.json`. */
@@ -274,6 +277,14 @@ export function calculateFlooring(rooms: FlooringRoomInput[], options: FlooringO
   }
 
   const section = createEstimateSection("flooring", "Полы", items, "Напольные покрытия, подготовка основания, плинтус и расходники.");
+  const flooringCatalog = getFlooringSnapshotCatalog();
+  const { specificationLines, specificationSection } = buildFlooringSpecification({
+    roomResults,
+    flatSection: section,
+    coveringByCode: flooringCatalog.coverings,
+    preparationByCode: flooringCatalog.preparations,
+    layoutByCode: flooringCatalog.layouts,
+  });
 
   return {
     roomResults,
@@ -285,5 +296,7 @@ export function calculateFlooring(rooms: FlooringRoomInput[], options: FlooringO
     consumablesTotal: section.totals.consumables,
     total: section.totals.total,
     section,
+    specificationLines,
+    specificationSection,
   };
 }

@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from "react";
 import type { EstimateSection, EstimateSectionId, PublicEstimateResult } from "../public-estimate-model";
+import type { FlooringCalculationResult } from "../public-estimate-flooring";
 import type { PlumbingCalculationResult, PlumbingOptions } from "../public-estimate-plumbing";
 import { buildEstimateSpecModalData, type EstimateSpecModalState } from "./spec";
 
@@ -8,8 +9,9 @@ export function useEstimateSpecModal(params: {
   estimateResult: PublicEstimateResult;
   plumbingOptions: PlumbingOptions;
   plumbingResult: PlumbingCalculationResult;
+  flooringResult: Pick<FlooringCalculationResult, "specificationSection">;
 }) {
-  const { allEstimateSections, estimateResult, plumbingOptions, plumbingResult } = params;
+  const { allEstimateSections, estimateResult, plumbingOptions, plumbingResult, flooringResult } = params;
   const [specModal, setSpecModal] = useState<EstimateSpecModalState | null>(null);
 
   const specModalData = useMemo(
@@ -20,8 +22,9 @@ export function useEstimateSpecModal(params: {
         estimateResult,
         plumbingOptions,
         plumbingResult,
+        flooringResult,
       }),
-    [allEstimateSections, estimateResult, plumbingOptions, plumbingResult, specModal],
+    [allEstimateSections, estimateResult, flooringResult, plumbingOptions, plumbingResult, specModal],
   );
 
   const openSectionSpec = useCallback((sectionId: EstimateSectionId) => {

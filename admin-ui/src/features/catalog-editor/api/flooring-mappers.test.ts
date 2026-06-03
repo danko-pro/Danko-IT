@@ -21,7 +21,12 @@ import {
   normalizeNum,
   preparationDraftToPayload,
   preparationDraftToUpdatePayload,
+  snapshotCoveringRowToCreatePayload,
+  snapshotLayoutRowToCreatePayload,
+  snapshotPreparationRowToCreatePayload,
   snapshotToDisplayRows,
+  snapshotUnderlayFieldsFromRate,
+  SNAPSHOT_ROW_CREATE_NOTE,
 } from "./flooring-mappers";
 import type {
   FlooringAssemblyItemDto,
@@ -30,6 +35,7 @@ import type {
   FlooringCoveringDto,
   FlooringLayoutDto,
   FlooringPreparationDto,
+  FlooringSnapshotDisplayRow,
 } from "./flooring-types";
 
 function makeCoveringDto(overrides: Partial<FlooringCoveringDto> = {}): FlooringCoveringDto {
@@ -305,6 +311,135 @@ describe("attachCatalogIdsToDisplayRows", () => {
     expect(withIds.find((row) => row.code === "porcelain")?.catalogId).toBe(11);
     expect(withIds.find((row) => row.code === "primer")?.catalogId).toBe(22);
     expect(withIds.find((row) => row.code === "straight")?.catalogId).toBe(33);
+  });
+});
+
+const CARPET_SNAPSHOT_ROW: FlooringSnapshotDisplayRow = {
+  section: "coverings",
+  code: "carpet",
+  title: "Ковролин",
+  rates: {
+    materialPricePerM2: 1500,
+    baseWastePercent: 7,
+    underlayPricePerM2: 0,
+    adhesivePricePerM2: 250,
+    primerPricePerM2: 25,
+    svpPricePerM2: 0,
+    groutPricePerM2: 0,
+    toolConsumablesPerM2: 40,
+  },
+};
+
+const LAMINATE_UNDERLAY_ROW: FlooringSnapshotDisplayRow = {
+  section: "coverings",
+  code: "laminate",
+  title: "Ламинат",
+  rates: {
+    materialPricePerM2: 930,
+    baseWastePercent: 10,
+    underlayPricePerM2: 220,
+    adhesivePricePerM2: 0,
+    primerPricePerM2: 25,
+    svpPricePerM2: 0,
+    groutPricePerM2: 0,
+    toolConsumablesPerM2: 40,
+  },
+};
+
+describe("snapshot row → create payload mappers", () => {
+  it("маппит ковролин (carpet) в covering create payload", () => {
+    const payload = snapshotCoveringRowToCreatePayload(CARPET_SNAPSHOT_ROW);
+    expect(payload.title).toBe("Ковролин");
+    expect(payload.material_price_per_m2).toBe(1500);
+    expect(payload.base_waste_percent).toBe(7);
+    expect(payload.labor_price_per_m2).toBe(0);
+    expect(payload.glue_consumption_per_m2).toBe(1);
+    expect(payload.glue_price_per_unit).toBe(250);
+    expect(payload.primer_consumption_per_m2).toBe(1);
+    expect(payload.primer_price_per_unit).toBe(25);
+    expect(payload.instrument_price_per_m2).toBe(40);
+    expect(payload.needs_plinth).toBe(true);
+    expect(payload.note).toBe(SNAPSHOT_ROW_CREATE_NOTE);
+    expect(payload.underlay_mode).toBe("none");
+    expect(payload.underlay_consumption_per_m2).toBe(0);
+  });
+
+  it("covering labor_price_per_m2 всегда 0", () => {
+    expect(snapshotCoveringRowToCreatePayload(CARPET_SNAPSHOT_ROW).labor_price_per_m2).toBe(0);
+  });
+
+  it("не теряет ₽/m² расходников (плоская модель consumption=1)", () => {
+    const payload = snapshotCoveringRowToCreatePayload(CARPET_SNAPSHOT_ROW);
+    expect(consumablePricePerM2(payload.glue_consumption_per_m2, payload.glue_price_per_unit)).toBe(250);
+    expect(consumablePricePerM2(payload.primer_consumption_per_m2, payload.primer_price_per_unit)).toBe(25);
+    expect(payload.instrument_price_per_m2).toBe(40);
+  });
+
+  it("сохраняет underlayPricePerM2 через mode required и consumption=rate", () => {
+    const payload = snapshotCoveringRowToCreatePayload(LAMINATE_UNDERLAY_ROW);
+    expect(payload.underlay_mode).toBe("required");
+    expect(payload.underlay_consumption_per_m2).toBe(220);
+    const rates = coveringDtoToConsumableRates(
+      {
+        ...makeCoveringDto(),
+        title: "Ламинат",
+        underlay_mode: payload.underlay_mode,
+        underlay_consumption_per_m2: payload.underlay_consumption_per_m2,
+      },
+      { underlayPricePerM2: 1 },
+    );
+    expect(rates.underlayPricePerM2).toBe(220);
+  });
+
+  it("маппит preparation snapshot row", () => {
+    const row: FlooringSnapshotDisplayRow = {
+      section: "preparations",
+      code: "primer",
+      title: "Грунтование",
+      rates: { laborPricePerM2: 250, materialPricePerM2: 120 },
+    };
+    const payload = snapshotPreparationRowToCreatePayload(row);
+    expect(payload).toEqual({
+      title: "Грунтование",
+      labor_price_per_m2: 250,
+      material_price_per_m2: 120,
+      primer_consumption_per_m2: 0,
+      primer_unit: "l",
+      primer_price_per_unit: 0,
+      note: SNAPSHOT_ROW_CREATE_NOTE,
+    });
+  });
+
+  it("маппит layout snapshot row (laborFactor → labor_multiplier)", () => {
+    const row: FlooringSnapshotDisplayRow = {
+      section: "layouts",
+      code: "straight",
+      title: "Прямая",
+      rates: { laborPricePerM2: 1000, laborFactor: 1.1, additionalWastePercent: 5 },
+    };
+    const payload = snapshotLayoutRowToCreatePayload(row);
+    expect(payload).toEqual({
+      title: "Прямая",
+      labor_price_per_m2: 1000,
+      labor_multiplier: 1.1,
+      extra_waste_percent: 5,
+      note: SNAPSHOT_ROW_CREATE_NOTE,
+    });
+  });
+
+  it("бросает при неверной section", () => {
+    expect(() => snapshotCoveringRowToCreatePayload({ ...CARPET_SNAPSHOT_ROW, section: "layouts" })).toThrow(
+      'snapshot row section must be "coverings"',
+    );
+    expect(() => snapshotPreparationRowToCreatePayload(CARPET_SNAPSHOT_ROW)).toThrow(
+      'snapshot row section must be "preparations"',
+    );
+  });
+});
+
+describe("snapshotUnderlayFieldsFromRate", () => {
+  it("0 → none", () => {
+    expect(snapshotUnderlayFieldsFromRate(0)).toEqual({ underlayMode: "none", underlayConsumptionPerM2: 0 });
   });
 });
 

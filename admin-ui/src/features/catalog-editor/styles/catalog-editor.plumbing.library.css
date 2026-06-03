@@ -4,33 +4,6 @@
 
 .ce-plumbing-library-table {
   min-width: 1540px;
-  table-layout: fixed;
-  font-variant-numeric: tabular-nums;
-}
-
-.ce-plumbing-library-table thead th {
-  height: 30px;
-  padding: 5px 6px;
-  font-size: 10px;
-}
-
-.ce-plumbing-library-table tbody td {
-  height: 32px;
-}
-
-.ce-plumbing-library-table .ce-cell-input {
-  height: 32px;
-  min-height: 32px;
-  padding: 0 6px;
-  font-size: 11px;
-}
-
-.ce-plumbing-library-table .ce-readonly {
-  overflow: hidden;
-  padding: 0 7px;
-  line-height: 32px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .ce-plumbing-library-table .ce-col-id,

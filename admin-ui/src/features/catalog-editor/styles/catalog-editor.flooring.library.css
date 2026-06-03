@@ -5,18 +5,6 @@
 
 .ce-flooring-library-table {
   min-width: 1180px;
-  table-layout: fixed;
-  font-variant-numeric: tabular-nums;
-}
-
-.ce-flooring-library-table thead th {
-  height: 30px;
-  padding: 5px 6px;
-  font-size: 10px;
-}
-
-.ce-flooring-library-table tbody td {
-  height: 32px;
 }
 
 .ce-flooring-library-table .ce-col-id,
@@ -28,22 +16,6 @@
   width: auto;
   min-width: 0;
   max-width: none;
-}
-
-.ce-flooring-library-table .ce-cell-input {
-  height: 32px;
-  min-height: 32px;
-  padding: 0 6px;
-  font-size: 11px;
-}
-
-.ce-flooring-library-table .ce-readonly {
-  padding: 0 7px;
-  line-height: 32px;
-}
-
-.ce-flooring-library-table .ce-row-actions {
-  gap: 4px;
 }
 
 .ce-flooring-library-table .ce-row-action {

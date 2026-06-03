@@ -52,6 +52,7 @@ export function FlooringConsumablesTable({ rows }: FlooringConsumablesTableProps
   const { columns, beginColumnResize, columnClass, columnStyle, cycleColumnAlign } = useCatalogTableColumns({
     defaultColumns: DEFAULT_COLUMNS,
     minColumnWidths: MIN_COLUMN_WIDTH,
+    storageKey: "flooring:consumables-columns",
   });
 
   return (

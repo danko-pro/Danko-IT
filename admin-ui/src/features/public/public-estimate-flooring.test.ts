@@ -121,6 +121,14 @@ describe("calculateFlooring", () => {
     expect(result.specificationSection.items).not.toBe(result.section.items);
     expect(result.specificationSection.totals.total).toBe(result.section.totals.total);
 
+    const materialSpecTotal = result.specificationLines
+      .filter((line) => line.category === "materials")
+      .reduce((sum, line) => sum + line.total, 0);
+    const flatMaterialTotal = result.section.items
+      .filter((item) => item.id.startsWith("flooring-material-"))
+      .reduce((sum, item) => sum + item.total, 0);
+    expect(materialSpecTotal).toBeCloseTo(flatMaterialTotal, 2);
+
     catalogSpy.mockRestore();
   });
 

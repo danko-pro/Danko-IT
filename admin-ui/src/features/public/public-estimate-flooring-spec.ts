@@ -1,5 +1,6 @@
 import {
-  createEstimateSection,
+  calculateSectionTotals,
+  type EstimateCategoryTotals,
   type EstimateCostCategory,
   type EstimateLineItem,
   type EstimateSection,
@@ -16,6 +17,8 @@ export type FlooringRoomForSpecification = {
   coveringType: string;
   preparationType: string;
   layoutType: string;
+  /** Purchase area incl. catalog waste; defaults to `area` when omitted. */
+  purchaseArea?: number;
 };
 
 export type FlooringSpecificationLine = {
@@ -34,6 +37,8 @@ export type FlooringSpecCatalogSource = {
   code: string;
   title: string;
   specLines?: FlooringPackageSpecLine[];
+  /** Layout catalog labor multiplier applied to work spec lines. */
+  laborFactor?: number;
 };
 
 const COVERING_FLAT_PREFIXES = [
@@ -75,6 +80,10 @@ function isGlobalFlatItem(item: EstimateLineItem) {
   return GLOBAL_FLAT_IDS.has(item.id);
 }
 
+function coveringLineUsesPurchaseArea(category: FlooringPackageSpecLine["category"]) {
+  return category === "materials" || category === "consumables";
+}
+
 function expandSpecLinesForRoom(params: {
   room: FlooringRoomForSpecification;
   source: FlooringSpecCatalogSource;
@@ -88,6 +97,11 @@ function expandSpecLinesForRoom(params: {
     return [];
   }
 
+  const safeArea = safeNumber(area);
+  const purchaseArea = safeNumber(room.purchaseArea ?? area);
+  const wasteFactor = safeArea > 0 ? purchaseArea / safeArea : 1;
+  const layoutLaborFactor = safeNumber(source.laborFactor ?? 1);
+
   const sourceLabel =
     sourceKind === "covering"
       ? `Покрытие: ${source.title}`
@@ -96,10 +110,18 @@ function expandSpecLinesForRoom(params: {
         : `Укладка: ${source.title}`;
 
   return specLines.map((line) => {
-    const quantity = safeNumber(area);
+    const quantity = safeArea;
     const unitPrice = safeNumber(line.unitPrice);
     const quantityPerBasis = safeNumber(line.quantityPerBasis);
-    const total = quantity * unitPrice * quantityPerBasis;
+    let effectiveQuantityPerBasis = quantityPerBasis;
+
+    if (sourceKind === "covering" && coveringLineUsesPurchaseArea(line.category)) {
+      effectiveQuantityPerBasis *= wasteFactor;
+    } else if (sourceKind === "layout" && line.category === "works") {
+      effectiveQuantityPerBasis *= layoutLaborFactor;
+    }
+
+    const total = quantity * unitPrice * effectiveQuantityPerBasis;
 
     return {
       id: `flooring-spec-${sourceKind}-${source.code}-${line.code}-${room.roomId}`,
@@ -116,14 +138,17 @@ function expandSpecLinesForRoom(params: {
 }
 
 function specificationLineToEstimateLineItem(line: FlooringSpecificationLine): EstimateLineItem {
+  const quantity = line.quantity;
+  const effectiveUnitPrice = quantity > 0 ? line.total / quantity : line.unitPrice;
+
   return {
     id: line.id,
     sectionId: "flooring",
     title: line.title,
     category: mapSpecificationCategoryToEstimateCategory(line.category),
-    quantity: line.quantity,
+    quantity,
     unit: line.unit,
-    unitPrice: line.unitPrice,
+    unitPrice: effectiveUnitPrice,
     total: line.total,
     isIncluded: true,
     note: line.sourceLabel,
@@ -225,4 +250,9 @@ export function expandFlooringSectionForSpec(
     ...section,
     items: specificationSection.items,
   };
+}
+
+/** Sum included line totals by category (ignores section.totals copied from flat). */
+export function calculateSpecificationSectionItemTotals(section: EstimateSection): EstimateCategoryTotals {
+  return calculateSectionTotals(section.items);
 }

@@ -58,6 +58,7 @@ import {
   snapshotRatesMatchRow,
 } from "./flooring-catalog-model";
 import { createFlooringCatalogDeleteActions } from "./flooring-delete-actions";
+import { createFlooringSnapshotPromoteActions } from "./flooring-snapshot-promote-actions";
 import { useFlooringAssemblyEditLoad } from "./useFlooringAssemblyEditLoad";
 import { resolveCatalogEditItem } from "./flooring-catalog-row-edit";
 
@@ -126,6 +127,7 @@ export function useFlooringCatalogPanel() {
           `Библиотека кубиков не загрузилась: ${detail}. Перезапустите backend, если endpoint ещё не поднят.`,
         );
       }
+      return { snapshot: data, coverings, preparations, layouts };
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Не удалось загрузить snapshot полов.");
       setSnapshot(null);
@@ -133,6 +135,7 @@ export function useFlooringCatalogPanel() {
       setCoveringCatalog([]);
       setPreparationCatalog([]);
       setLayoutCatalog([]);
+      return null;
     } finally {
       setLoading(false);
     }
@@ -264,8 +267,11 @@ export function useFlooringCatalogPanel() {
     }
   }
 
-  function beginEditCovering(row: FlooringSnapshotDisplayRow) {
-    const item = resolveCatalogEditItem(coveringCatalog, row);
+  function beginEditCovering(
+    row: FlooringSnapshotDisplayRow,
+    catalog: FlooringCoveringDto[] = coveringCatalog,
+  ) {
+    const item = resolveCatalogEditItem(catalog, row);
     if (!item) {
       setError("Не найдена глобальная запись покрытия для редактирования.");
       return;
@@ -280,8 +286,11 @@ export function useFlooringCatalogPanel() {
     void loadAssemblyForEdit("covering", item.id, setAssemblyTarget, setWarningMessage);
   }
 
-  function beginEditPreparation(row: FlooringSnapshotDisplayRow) {
-    const item = resolveCatalogEditItem(preparationCatalog, row);
+  function beginEditPreparation(
+    row: FlooringSnapshotDisplayRow,
+    catalog: FlooringPreparationDto[] = preparationCatalog,
+  ) {
+    const item = resolveCatalogEditItem(catalog, row);
     if (!item) {
       setError("Не найдена глобальная запись подготовки для редактирования.");
       return;
@@ -296,8 +305,11 @@ export function useFlooringCatalogPanel() {
     void loadAssemblyForEdit("preparation", item.id, setAssemblyTarget, setWarningMessage);
   }
 
-  function beginEditLayout(row: FlooringSnapshotDisplayRow) {
-    const item = resolveCatalogEditItem(layoutCatalog, row);
+  function beginEditLayout(
+    row: FlooringSnapshotDisplayRow,
+    catalog: FlooringLayoutDto[] = layoutCatalog,
+  ) {
+    const item = resolveCatalogEditItem(catalog, row);
     if (!item) {
       setError("Не найдена глобальная запись укладки для редактирования.");
       return;
@@ -311,6 +323,14 @@ export function useFlooringCatalogPanel() {
     setWarningMessage(null);
     void loadAssemblyForEdit("layout", item.id, setAssemblyTarget, setWarningMessage);
   }
+
+  const { promoteSnapshotRowToCatalog } = createFlooringSnapshotPromoteActions({
+    setError,
+    setStatusMessage,
+    setWarningMessage,
+    reloadSnapshot,
+    edits: { beginEditCovering, beginEditPreparation, beginEditLayout },
+  });
 
   function cancelCoveringEdit() {
     setEditingCoveringId(null);
@@ -537,6 +557,7 @@ export function useFlooringCatalogPanel() {
     beginEditCovering,
     beginEditPreparation,
     beginEditLayout,
+    promoteSnapshotRowToCatalog,
     cancelCoveringEdit,
     cancelPreparationEdit,
     cancelLayoutEdit,

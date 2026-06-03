@@ -186,6 +186,157 @@ class FlooringPackageBackendConsistencyTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(covering["material_price_per_m2"], 11)
         self.assertEqual(covering["labor_price_per_m2"], 22)
 
+    async def test_flat_patch_rejected_when_empty_assembly_shell(self) -> None:
+        covering_id = await self.repository.create_estimate_flooring_covering(**_sample_covering_kwargs())
+        await ReplaceFlooringCatalogAssemblyUseCase(self.repository).execute(
+            ReplaceFlooringCatalogAssemblyCommand(
+                target_kind="covering",
+                target_id=covering_id,
+                title="Shell only",
+                version=None,
+                rows=[],
+            )
+        )
+
+        assembly = await self.repository.get_estimate_flooring_catalog_assembly("covering", covering_id)
+        assert assembly is not None
+        self.assertEqual(assembly["rows"], [])
+
+        with self.assertRaises(ValidationError) as ctx:
+            await UpdateFlooringCoveringUseCase(self.repository).execute(
+                UpdateFlooringCoveringCommand(
+                    covering_id=covering_id,
+                    title="Covering",
+                    material_price_per_m2=9999,
+                    labor_price_per_m2=0,
+                    base_waste_percent=0,
+                    underlay_mode="none",
+                    underlay_consumption_per_m2=0,
+                    glue_consumption_per_m2=0,
+                    glue_unit="кг",
+                    glue_price_per_unit=0,
+                    primer_consumption_per_m2=0,
+                    primer_unit="л",
+                    primer_price_per_unit=0,
+                    svp_consumption_per_m2=0,
+                    svp_unit="шт",
+                    svp_price_per_unit=0,
+                    grout_consumption_per_m2=0,
+                    grout_unit="кг",
+                    grout_price_per_unit=0,
+                    custom_consumables=[],
+                    needs_plinth=True,
+                    instrument_price_per_m2=0,
+                    note=None,
+                )
+            )
+        self.assertEqual(str(ctx.exception), FLOORING_FLAT_UPDATE_BLOCKED_BY_ASSEMBLY)
+
+    async def test_flat_patch_allowed_after_delete_assembly(self) -> None:
+        covering_id = await self.repository.create_estimate_flooring_covering(**_sample_covering_kwargs())
+        await ReplaceFlooringCatalogAssemblyUseCase(self.repository).execute(
+            ReplaceFlooringCatalogAssemblyCommand(
+                target_kind="covering",
+                target_id=covering_id,
+                title="Shell only",
+                version=None,
+                rows=[],
+            )
+        )
+        deleted = await self.repository.delete_estimate_flooring_catalog_assembly("covering", covering_id)
+        self.assertTrue(deleted)
+
+        await UpdateFlooringCoveringUseCase(self.repository).execute(
+            UpdateFlooringCoveringCommand(
+                covering_id=covering_id,
+                title="Covering",
+                material_price_per_m2=77,
+                labor_price_per_m2=0,
+                base_waste_percent=0,
+                underlay_mode="none",
+                underlay_consumption_per_m2=0,
+                glue_consumption_per_m2=0,
+                glue_unit="кг",
+                glue_price_per_unit=0,
+                primer_consumption_per_m2=0,
+                primer_unit="л",
+                primer_price_per_unit=0,
+                svp_consumption_per_m2=0,
+                svp_unit="шт",
+                svp_price_per_unit=0,
+                grout_consumption_per_m2=0,
+                grout_unit="кг",
+                grout_price_per_unit=0,
+                custom_consumables=[],
+                needs_plinth=True,
+                instrument_price_per_m2=0,
+                note=None,
+            )
+        )
+
+        covering = await self.repository.get_estimate_flooring_covering(covering_id)
+        assert covering is not None
+        self.assertEqual(covering["material_price_per_m2"], 77)
+
+    async def test_all_disabled_assembly_replace_does_not_change_flat(self) -> None:
+        covering_id = await self.repository.create_estimate_flooring_covering(**_sample_covering_kwargs())
+        await ReplaceFlooringCatalogAssemblyUseCase(self.repository).execute(
+            ReplaceFlooringCatalogAssemblyCommand(
+                target_kind="covering",
+                target_id=covering_id,
+                title="All disabled",
+                version=None,
+                rows=[_assembly_row_command(is_enabled=False)],
+            )
+        )
+
+        covering = await self.repository.get_estimate_flooring_covering(covering_id)
+        assert covering is not None
+        self.assertEqual(covering["material_price_per_m2"], 11)
+        self.assertEqual(covering["labor_price_per_m2"], 22)
+
+    async def test_flat_patch_rejected_when_all_disabled_assembly(self) -> None:
+        covering_id = await self.repository.create_estimate_flooring_covering(**_sample_covering_kwargs())
+        await ReplaceFlooringCatalogAssemblyUseCase(self.repository).execute(
+            ReplaceFlooringCatalogAssemblyCommand(
+                target_kind="covering",
+                target_id=covering_id,
+                title="All disabled",
+                version=None,
+                rows=[_assembly_row_command(is_enabled=False)],
+            )
+        )
+
+        with self.assertRaises(ValidationError) as ctx:
+            await UpdateFlooringCoveringUseCase(self.repository).execute(
+                UpdateFlooringCoveringCommand(
+                    covering_id=covering_id,
+                    title="Covering",
+                    material_price_per_m2=9999,
+                    labor_price_per_m2=0,
+                    base_waste_percent=0,
+                    underlay_mode="none",
+                    underlay_consumption_per_m2=0,
+                    glue_consumption_per_m2=0,
+                    glue_unit="кг",
+                    glue_price_per_unit=0,
+                    primer_consumption_per_m2=0,
+                    primer_unit="л",
+                    primer_price_per_unit=0,
+                    svp_consumption_per_m2=0,
+                    svp_unit="шт",
+                    svp_price_per_unit=0,
+                    grout_consumption_per_m2=0,
+                    grout_unit="кг",
+                    grout_price_per_unit=0,
+                    custom_consumables=[],
+                    needs_plinth=True,
+                    instrument_price_per_m2=0,
+                    note=None,
+                )
+            )
+        self.assertEqual(str(ctx.exception), FLOORING_FLAT_UPDATE_BLOCKED_BY_ASSEMBLY)
+
     async def test_flat_patch_rejected_when_assembly_present(self) -> None:
         covering_id = await self.repository.create_estimate_flooring_covering(**_sample_covering_kwargs())
         await ReplaceFlooringCatalogAssemblyUseCase(self.repository).execute(

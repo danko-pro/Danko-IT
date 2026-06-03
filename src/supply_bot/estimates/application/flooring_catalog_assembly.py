@@ -186,10 +186,10 @@ async def reject_flooring_flat_update_when_assembly_present(
     target_kind: str,
     target_id: int,
 ) -> None:
-    """Reject independent flat PATCH when a package assembly is stored (FP3b)."""
+    """Reject independent flat PATCH when an assembly record exists (FP3c)."""
 
     assembly = await storage.get_estimate_flooring_catalog_assembly(target_kind, target_id)
-    if assembly is not None and assembly.get("rows"):
+    if assembly is not None:
         raise ValidationError(FLOORING_FLAT_UPDATE_BLOCKED_BY_ASSEMBLY)
 
 

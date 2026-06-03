@@ -30,16 +30,14 @@ export function useFlooringAssemblyEditLoad() {
       setWarningMessage: (message: string | null) => void,
     ) => {
       setAssemblyTarget(target);
-      setAssemblyResetKey(assemblyEditResetKey(target, targetId));
       setAssemblyLoading(true);
-      setAssemblyInitialRows([]);
-      setAssemblyInitialTitle("");
       setAssemblyHadOnLoad(false);
 
       const result = await loadAssemblyForEditorEdit(target, targetId);
       setAssemblyInitialRows(result.rows);
       setAssemblyInitialTitle(result.title);
       setAssemblyHadOnLoad(result.status === "loaded");
+      setAssemblyResetKey(assemblyEditResetKey(target, targetId));
       setAssemblyLoading(false);
 
       if (result.status === "failed") {

@@ -16,6 +16,7 @@ import flooringCatalogWorkspaceSource from "./FlooringCatalogWorkspace.tsx?raw";
 import flooringConsumablesTableSource from "./FlooringConsumablesTable.tsx?raw";
 import flooringCatalogAssemblyCreateRowSource from "./flooring-catalog-assembly-create-row.ts?raw";
 import flooringUiArchitectureSource from "./flooring-ui-architecture.md?raw";
+import useFlooringAssemblyEditLoadSource from "./useFlooringAssemblyEditLoad.ts?raw";
 import useFlooringCatalogPanelSource from "./useFlooringCatalogPanel.ts?raw";
 import catalogManagedTableHeaderCellSource from "./CatalogManagedTableHeaderCell.tsx?raw";
 import catalogSegmentedControlSource from "./CatalogSegmentedControl.tsx?raw";
@@ -264,6 +265,15 @@ describe("catalog editor architecture", () => {
     expect(sourceLines(flooringConsumablesTableSource).length).toBeLessThanOrEqual(260);
     expect(sourceLines(catalogSegmentedControlSource).length).toBeLessThanOrEqual(80);
     expect(sourceLines(catalogViewTabsSource).length).toBeLessThanOrEqual(80);
+  });
+
+  it("keeps flooring assembly edit loading visually stable", () => {
+    const loadIndex = useFlooringAssemblyEditLoadSource.indexOf("const result = await loadAssemblyForEditorEdit");
+    const resetIndex = useFlooringAssemblyEditLoadSource.indexOf("setAssemblyResetKey(assemblyEditResetKey(target, targetId));");
+
+    expect(flooringAssemblyBlockSource).toContain("aria-busy={loadingAssembly}");
+    expect(flooringAssemblyBlockSource).not.toContain("ce-flooring-assembly-hint");
+    expect(resetIndex).toBeGreaterThan(loadIndex);
   });
 
   it("keeps flooring catalog submodules present", () => {

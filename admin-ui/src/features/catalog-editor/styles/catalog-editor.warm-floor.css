@@ -1,0 +1,72 @@
+.ce-warm-floor-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.ce-warm-floor-rate-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  align-items: start;
+  min-width: 0;
+}
+
+.ce-warm-floor-rate-table-wrap {
+  max-height: none;
+  overflow: auto;
+}
+
+.ce-warm-floor-rate-table {
+  min-width: 520px;
+  table-layout: fixed;
+  font-variant-numeric: tabular-nums;
+}
+
+.ce-warm-floor-rate-table thead th {
+  height: 30px;
+  padding: 5px 6px;
+  font-size: 10px;
+}
+
+.ce-warm-floor-rate-table tbody td {
+  height: 32px;
+}
+
+.ce-warm-floor-rate-label {
+  overflow: hidden;
+  padding: 0 8px;
+  color: var(--ce-text);
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 32px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ce-warm-floor-rate-unit {
+  line-height: 32px;
+}
+
+.ce-warm-floor-rate-input {
+  height: 32px;
+  min-height: 32px;
+  padding: 0 7px;
+  font-size: 12px;
+}
+
+.ce-warm-floor-summary {
+  min-height: 24px;
+  padding: 0 2px;
+}
+
+@media (max-width: 980px) {
+  .ce-warm-floor-rate-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ce-warm-floor-rate-table {
+    min-width: 460px;
+  }
+}

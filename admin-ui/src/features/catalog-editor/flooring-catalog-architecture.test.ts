@@ -38,6 +38,11 @@ import plumbingZonesViewSource from "./PlumbingZonesView.tsx?raw";
 import useCatalogPersistedStateSource from "./useCatalogPersistedState.ts?raw";
 import useCatalogTableColumnsSource from "./useCatalogTableColumns.ts?raw";
 import usePlumbingCatalogPanelSource from "./usePlumbingCatalogPanel.ts?raw";
+import warmFloorCatalogPanelSource from "./WarmFloorCatalogPanel.tsx?raw";
+import warmFloorRateFieldsSource from "./warm-floor-rate-fields.ts?raw";
+import warmFloorRateTableSource from "./WarmFloorRateTable.tsx?raw";
+import warmFloorRateTableColumnsSource from "./WarmFloorRateTableColumns.ts?raw";
+import warmFloorSnapshotPreviewPanelSource from "./WarmFloorSnapshotPreviewPanel.tsx?raw";
 
 const FEATURE_DIR = dirname(fileURLToPath(import.meta.url));
 
@@ -64,6 +69,7 @@ const plumbingTableAdaptiveCssSource = readFeatureFile("styles/catalog-editor.pl
 const plumbingTableCssSource = readFeatureFile("styles/catalog-editor.plumbing.table.css");
 const plumbingZoneWorkspaceCssSource = readFeatureFile("styles/catalog-editor.plumbing.zone-workspace.css");
 const plumbingZonesCssSource = readFeatureFile("styles/catalog-editor.plumbing.zones.css");
+const warmFloorCssSource = readFeatureFile("styles/catalog-editor.warm-floor.css");
 
 const REQUIRED_FLOORING_CATALOG_MODULES = [
   "CatalogSegmentedControl.tsx",
@@ -119,6 +125,14 @@ const REQUIRED_PLUMBING_CATALOG_MODULES = [
   "usePlumbingCatalogPanel.ts",
 ] as const;
 
+const REQUIRED_WARM_FLOOR_CATALOG_MODULES = [
+  "WarmFloorCatalogPanel.tsx",
+  "WarmFloorRateTable.tsx",
+  "WarmFloorRateTableColumns.ts",
+  "WarmFloorSnapshotPreviewPanel.tsx",
+  "warm-floor-rate-fields.ts",
+] as const;
+
 const REQUIRED_SHARED_CATALOG_MODULES = [
   "CatalogIconAction.tsx",
   "CatalogLibraryPanel.tsx",
@@ -131,6 +145,8 @@ const REQUIRED_SHARED_CSS_MODULES = [
   "catalog-editor.library.css",
   "catalog-editor.managed-table.css",
 ] as const;
+
+const REQUIRED_WARM_FLOOR_CSS_MODULES = ["catalog-editor.warm-floor.css"] as const;
 
 const flooringCatalogModulePaths = Object.keys(
   import.meta.glob([
@@ -177,6 +193,16 @@ const sharedCatalogModulePaths = Object.keys(
   ]),
 );
 
+const warmFloorCatalogModulePaths = Object.keys(
+  import.meta.glob([
+    "./WarmFloorCatalogPanel.tsx",
+    "./WarmFloorRateTable.tsx",
+    "./WarmFloorRateTableColumns.ts",
+    "./WarmFloorSnapshotPreviewPanel.tsx",
+    "./warm-floor-rate-fields.ts",
+  ]),
+);
+
 const flooringCssModulePaths = Object.keys(
   import.meta.glob([
     "./styles/catalog-editor.flooring.css",
@@ -211,6 +237,10 @@ const sharedCssModulePaths = Object.keys(
   ]),
 );
 
+const warmFloorCssModulePaths = Object.keys(
+  import.meta.glob(["./styles/catalog-editor.warm-floor.css"]),
+);
+
 const flooringCssSources: Array<[string, string, number]> = [
   ["catalog-editor.flooring.css", flooringCssSource, 20],
   ["catalog-editor.flooring.assembly.css", flooringAssemblyCssSource, 360],
@@ -237,6 +267,10 @@ const plumbingCssSources: Array<[string, string, number]> = [
 const sharedCssSources: Array<[string, string, number]> = [
   ["catalog-editor.library.css", libraryCssSource, 120],
   ["catalog-editor.managed-table.css", managedTableCssSource, 160],
+];
+
+const warmFloorCssSources: Array<[string, string, number]> = [
+  ["catalog-editor.warm-floor.css", warmFloorCssSource, 80],
 ];
 
 function sourceLines(source: string): string[] {
@@ -301,6 +335,12 @@ describe("catalog editor architecture", () => {
     }
   });
 
+  it("keeps warm floor catalog submodules present", () => {
+    for (const moduleFile of REQUIRED_WARM_FLOOR_CATALOG_MODULES) {
+      expect(warmFloorCatalogModulePaths).toContain(`./${moduleFile}`);
+    }
+  });
+
   it("keeps shared catalog table controls reusable", () => {
     for (const moduleFile of REQUIRED_SHARED_CATALOG_MODULES) {
       expect(sharedCatalogModulePaths).toContain(`./${moduleFile}`);
@@ -343,6 +383,22 @@ describe("catalog editor architecture", () => {
     expect(plumbingLibraryViewSource).toContain("useCatalogTableColumns");
     expect(plumbingLibraryViewSource).toContain('"plumbing:library-columns"');
     expect(plumbingLibraryViewSource).toContain("CatalogManagedTableHeaderCell");
+  });
+
+  it("keeps warm floor tables compact, managed, and UI-only", () => {
+    expect(sourceLines(warmFloorCatalogPanelSource).length).toBeLessThanOrEqual(130);
+    expect(sourceLines(warmFloorRateFieldsSource).length).toBeLessThanOrEqual(50);
+    expect(sourceLines(warmFloorRateTableSource).length).toBeLessThanOrEqual(110);
+    expect(sourceLines(warmFloorRateTableColumnsSource).length).toBeLessThanOrEqual(80);
+    expect(sourceLines(warmFloorSnapshotPreviewPanelSource).length).toBeLessThanOrEqual(40);
+    expect(warmFloorCatalogPanelSource).toContain("WarmFloorRateTable");
+    expect(warmFloorCatalogPanelSource).toContain("useCatalogTableColumns");
+    expect(warmFloorCatalogPanelSource).toContain('"warm-floor:rate-columns"');
+    expect(warmFloorRateTableSource).toContain("CatalogManagedTableHeaderCell");
+    expect(warmFloorRateTableSource).toContain("ce-warm-floor-rate-table");
+    expect(warmFloorCatalogPanelSource).not.toContain("function renderRows");
+    expect(warmFloorCatalogPanelSource).not.toContain("style={{");
+    expect(warmFloorRateTableSource).not.toContain("style={{");
   });
 
   it("keeps plumbing catalog UI, controller, and pure model separated", () => {
@@ -412,6 +468,17 @@ describe("catalog editor architecture", () => {
     }
 
     for (const [moduleFile, source, maxLines] of sharedCssSources) {
+      expect(sourceLines(source).length, moduleFile).toBeLessThanOrEqual(maxLines);
+    }
+  });
+
+  it("keeps warm floor CSS split by UI area", () => {
+    for (const moduleFile of REQUIRED_WARM_FLOOR_CSS_MODULES) {
+      expect(warmFloorCssModulePaths).toContain(`./styles/${moduleFile}`);
+      expect(readFeatureFile("styles/catalog-editor.css")).toContain(`@import "./${moduleFile}";`);
+    }
+
+    for (const [moduleFile, source, maxLines] of warmFloorCssSources) {
       expect(sourceLines(source).length, moduleFile).toBeLessThanOrEqual(maxLines);
     }
   });

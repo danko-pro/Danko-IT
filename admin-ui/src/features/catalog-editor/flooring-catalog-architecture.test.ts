@@ -55,6 +55,7 @@ const plumbingCssSource = readFeatureFile("styles/catalog-editor.plumbing.css");
 const plumbingCompositionCssSource = readFeatureFile("styles/catalog-editor.plumbing.composition.css");
 const plumbingLibraryCssSource = readFeatureFile("styles/catalog-editor.plumbing.library.css");
 const plumbingResponsiveCssSource = readFeatureFile("styles/catalog-editor.plumbing.responsive.css");
+const plumbingTableAdaptiveCssSource = readFeatureFile("styles/catalog-editor.plumbing.table-adaptive.css");
 const plumbingTableCssSource = readFeatureFile("styles/catalog-editor.plumbing.table.css");
 const plumbingZoneWorkspaceCssSource = readFeatureFile("styles/catalog-editor.plumbing.zone-workspace.css");
 const plumbingZonesCssSource = readFeatureFile("styles/catalog-editor.plumbing.zones.css");
@@ -91,6 +92,7 @@ const REQUIRED_PLUMBING_CSS_MODULES = [
   "catalog-editor.plumbing.composition.css",
   "catalog-editor.plumbing.library.css",
   "catalog-editor.plumbing.responsive.css",
+  "catalog-editor.plumbing.table-adaptive.css",
   "catalog-editor.plumbing.table.css",
   "catalog-editor.plumbing.zone-workspace.css",
   "catalog-editor.plumbing.zones.css",
@@ -183,6 +185,7 @@ const plumbingCssModulePaths = Object.keys(
     "./styles/catalog-editor.plumbing.composition.css",
     "./styles/catalog-editor.plumbing.library.css",
     "./styles/catalog-editor.plumbing.responsive.css",
+    "./styles/catalog-editor.plumbing.table-adaptive.css",
     "./styles/catalog-editor.plumbing.table.css",
     "./styles/catalog-editor.plumbing.zone-workspace.css",
     "./styles/catalog-editor.plumbing.zones.css",
@@ -212,6 +215,7 @@ const plumbingCssSources: Array<[string, string, number]> = [
   ["catalog-editor.plumbing.composition.css", plumbingCompositionCssSource, 140],
   ["catalog-editor.plumbing.library.css", plumbingLibraryCssSource, 80],
   ["catalog-editor.plumbing.responsive.css", plumbingResponsiveCssSource, 60],
+  ["catalog-editor.plumbing.table-adaptive.css", plumbingTableAdaptiveCssSource, 100],
   ["catalog-editor.plumbing.table.css", plumbingTableCssSource, 140],
   ["catalog-editor.plumbing.zone-workspace.css", plumbingZoneWorkspaceCssSource, 240],
   ["catalog-editor.plumbing.zones.css", plumbingZonesCssSource, 220],

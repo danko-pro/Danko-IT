@@ -1,0 +1,74 @@
+.ce-zone-table.ce-zone-composition-table {
+  min-width: 0;
+}
+
+.ce-zone-composition-table th,
+.ce-zone-composition-table td {
+  padding-right: 6px;
+  padding-left: 6px;
+}
+
+.ce-zone-composition-table thead th {
+  padding: 5px 6px;
+  font-size: 9.5px;
+}
+
+.ce-zone-composition-table .ce-managed-table-header-inner {
+  gap: 2px;
+}
+
+.ce-zone-composition-table .ce-managed-table-header-tool {
+  width: 14px;
+  height: 14px;
+}
+
+.ce-zone-composition-table .ce-managed-table-column-resizer {
+  width: 5px;
+}
+
+.ce-zone-composition-table .ce-readonly,
+.ce-zone-composition-table .ce-col-total,
+.ce-zone-composition-table .ce-col-actions {
+  min-width: 0;
+}
+
+.ce-zone-composition-table .ce-readonly {
+  padding-right: 6px;
+  padding-left: 6px;
+  font-size: 11px;
+}
+
+.ce-zone-composition-table .ce-col-actions {
+  width: auto;
+  padding-right: 1px;
+  padding-left: 1px;
+}
+
+.ce-zone-id-chip {
+  font-size: 9px;
+}
+
+.ce-zone-item-title {
+  font-size: 11px;
+}
+
+.ce-zone-item-select {
+  min-width: 0;
+}
+
+.ce-zone-number-input {
+  max-width: 72px;
+}
+
+.ce-zone-composition-table .ce-cell-input {
+  min-width: 0;
+  padding-right: 5px;
+  padding-left: 5px;
+  font-size: 11px;
+}
+
+.ce-zone-composition-table .ce-row-delete {
+  width: 20px;
+  height: 20px;
+  font-size: 12px;
+}

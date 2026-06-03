@@ -448,6 +448,114 @@ export function attachCatalogIdsToDisplayRows(
   });
 }
 
+/** Note for catalog rows created from a public flooring-v2 snapshot preview row. */
+export const SNAPSHOT_ROW_CREATE_NOTE = "Создано из public snapshot";
+
+/**
+ * Underlay in snapshot is aggregated ₽/m² (global underlay price × consumption in catalog).
+ * Reversible with {@link coveringDtoToConsumableRates} when `underlayPricePerM2` option is 1:
+ * store the snapshot rate as consumption at mode `required` (1 × rate = rate).
+ */
+export function snapshotUnderlayFieldsFromRate(underlayPricePerM2: number): {
+  underlayMode: string;
+  underlayConsumptionPerM2: number;
+} {
+  const rate = normalizeNum(underlayPricePerM2);
+  if (rate <= 0) {
+    return { underlayMode: "none", underlayConsumptionPerM2: 0 };
+  }
+  return { underlayMode: "required", underlayConsumptionPerM2: rate };
+}
+
+function flatConsumableFromPricePerM2(
+  pricePerM2: unknown,
+  zeroDefaults: { consumptionPerM2: number; pricePerUnit: number },
+): { consumptionPerM2: number; pricePerUnit: number } {
+  const rate = normalizeNum(pricePerM2);
+  if (rate <= 0) {
+    return zeroDefaults;
+  }
+  return { consumptionPerM2: 1, pricePerUnit: rate };
+}
+
+function assertSnapshotRowSection(
+  row: FlooringSnapshotDisplayRow,
+  expected: FlooringSnapshotDisplayRow["section"],
+): void {
+  if (row.section !== expected) {
+    throw new Error(`snapshot row section must be "${expected}", got "${row.section}"`);
+  }
+}
+
+export function snapshotCoveringRowToCreatePayload(
+  row: FlooringSnapshotDisplayRow,
+): FlooringCoveringCreatePayload {
+  assertSnapshotRowSection(row, "coverings");
+  const rates = row.rates;
+  const underlay = snapshotUnderlayFieldsFromRate(rates.underlayPricePerM2);
+  const glue = flatConsumableFromPricePerM2(rates.adhesivePricePerM2, { consumptionPerM2: 0, pricePerUnit: 0 });
+  const primer = flatConsumableFromPricePerM2(rates.primerPricePerM2, { consumptionPerM2: 0, pricePerUnit: 0 });
+  const svp = flatConsumableFromPricePerM2(rates.svpPricePerM2, { consumptionPerM2: 0, pricePerUnit: 0 });
+  const grout = flatConsumableFromPricePerM2(rates.groutPricePerM2, { consumptionPerM2: 0, pricePerUnit: 0 });
+
+  return coveringDraftToPayload({
+    id: 0,
+    title: row.title,
+    materialPricePerM2: normalizeNum(rates.materialPricePerM2),
+    laborPricePerM2: 0,
+    baseWastePercent: normalizeNum(rates.baseWastePercent),
+    underlayMode: underlay.underlayMode,
+    underlayConsumptionPerM2: underlay.underlayConsumptionPerM2,
+    glueConsumptionPerM2: glue.consumptionPerM2,
+    glueUnit: "kg",
+    gluePricePerUnit: glue.pricePerUnit,
+    primerConsumptionPerM2: primer.consumptionPerM2,
+    primerUnit: "l",
+    primerPricePerUnit: primer.pricePerUnit,
+    svpConsumptionPerM2: svp.consumptionPerM2,
+    svpUnit: "pcs",
+    svpPricePerUnit: svp.pricePerUnit,
+    groutConsumptionPerM2: grout.consumptionPerM2,
+    groutUnit: "kg",
+    groutPricePerUnit: grout.pricePerUnit,
+    customConsumables: [],
+    needsPlinth: true,
+    instrumentPricePerM2: normalizeNum(rates.toolConsumablesPerM2),
+    note: SNAPSHOT_ROW_CREATE_NOTE,
+  });
+}
+
+export function snapshotPreparationRowToCreatePayload(
+  row: FlooringSnapshotDisplayRow,
+): FlooringPreparationCreatePayload {
+  assertSnapshotRowSection(row, "preparations");
+  const rates = row.rates;
+  return preparationDraftToPayload({
+    id: 0,
+    title: row.title,
+    laborPricePerM2: normalizeNum(rates.laborPricePerM2),
+    materialPricePerM2: normalizeNum(rates.materialPricePerM2),
+    primerConsumptionPerM2: 0,
+    primerUnit: "l",
+    primerPricePerUnit: 0,
+    note: SNAPSHOT_ROW_CREATE_NOTE,
+  });
+}
+
+export function snapshotLayoutRowToCreatePayload(row: FlooringSnapshotDisplayRow): FlooringLayoutCreatePayload {
+  assertSnapshotRowSection(row, "layouts");
+  const rates = row.rates;
+  const laborFactor = normalizeNum(rates.laborFactor);
+  return layoutDraftToPayload({
+    id: 0,
+    title: row.title,
+    laborPricePerM2: normalizeNum(rates.laborPricePerM2),
+    laborFactor: laborFactor > 0 ? laborFactor : 1,
+    additionalWastePercent: normalizeNum(rates.additionalWastePercent),
+    note: SNAPSHOT_ROW_CREATE_NOTE,
+  });
+}
+
 export function snapshotToDisplayRows(snapshot: FlooringSnapshot): FlooringSnapshotDisplayRow[] {
   const rows: FlooringSnapshotDisplayRow[] = [];
 

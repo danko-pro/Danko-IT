@@ -523,6 +523,51 @@ describe("FP5b specLines arithmetic guard", () => {
     const flatMaterialTotal = flatSection.items.find((item) => item.id === "flooring-material-room-1")!.total;
     expect(specMaterialTotal).toBeCloseTo(flatMaterialTotal, 2);
   });
+
+  it("primer consumable uses floor area, not purchase waste", () => {
+    const area = 16;
+    const purchaseArea = 18.4;
+
+    const flatSection = createEstimateSection("flooring", "Полы", [
+      {
+        id: "flooring-primer-room-1",
+        sectionId: "flooring",
+        title: "Грунт",
+        category: "consumables",
+        quantity: area,
+        unit: "м²",
+        unitPrice: 25,
+        total: 400,
+        isIncluded: true,
+      },
+    ]);
+
+    const { specificationSection } = buildFlooringSpecification({
+      roomResults: [{ ...room, area, purchaseArea }],
+      flatSection,
+      coveringByCode: {
+        laminate: {
+          code: "laminate",
+          title: "Ламинат",
+          specLines: [
+            {
+              code: "primer",
+              title: "Грунт",
+              category: "consumables",
+              basis: "area",
+              unit: "l",
+              quantityPerBasis: 1,
+              unitPrice: 25,
+            },
+          ],
+        },
+      },
+      preparationByCode: { none: { code: "none", title: "Без подготовки" } },
+      layoutByCode: { straight: { code: "straight", title: "Прямая" } },
+    });
+
+    expect(calculateSpecificationSectionItemTotals(specificationSection).consumables).toBeCloseTo(400, 2);
+  });
 });
 
 describe("expandFlooringSectionForSpec", () => {

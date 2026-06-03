@@ -5,6 +5,9 @@ import { fileURLToPath } from "node:url";
 
 import catalogEditorSource from "./CatalogEditor.tsx?raw";
 import flooringAssemblyBlockSource from "./FlooringAssemblyBlock.tsx?raw";
+import flooringAssemblyLibraryCatalogTableSource from "./FlooringAssemblyLibraryCatalogTable.tsx?raw";
+import flooringAssemblyLibraryColumnsSource from "./FlooringAssemblyLibraryColumns.ts?raw";
+import flooringAssemblyLibraryFormTableSource from "./FlooringAssemblyLibraryFormTable.tsx?raw";
 import flooringAssemblyLibraryPanelSource from "./FlooringAssemblyLibraryPanel.tsx?raw";
 import flooringCatalogEditFormsSource from "./FlooringCatalogEditForms.tsx?raw";
 import flooringCatalogModelSource from "./flooring-catalog-model.ts?raw";
@@ -19,6 +22,8 @@ import catalogSegmentedControlSource from "./CatalogSegmentedControl.tsx?raw";
 import catalogViewTabsSource from "./CatalogViewTabs.tsx?raw";
 import plumbingCatalogModelSource from "./plumbing-catalog-model.ts?raw";
 import plumbingCatalogPanelSource from "./PlumbingCatalogPanel.tsx?raw";
+import plumbingLibraryColumnsSource from "./PlumbingLibraryColumns.ts?raw";
+import plumbingLibraryRowsSource from "./PlumbingLibraryRows.tsx?raw";
 import plumbingLibraryViewSource from "./PlumbingLibraryView.tsx?raw";
 import plumbingPreviewPanelSource from "./PlumbingPreviewPanel.tsx?raw";
 import plumbingZoneCardSource from "./PlumbingZoneCard.tsx?raw";
@@ -39,6 +44,7 @@ const flooringCssSource = readFeatureFile("styles/catalog-editor.flooring.css");
 const flooringAssemblyCssSource = readFeatureFile("styles/catalog-editor.flooring.assembly.css");
 const flooringConsumablesCssSource = readFeatureFile("styles/catalog-editor.flooring.consumables.css");
 const flooringFormsCssSource = readFeatureFile("styles/catalog-editor.flooring.forms.css");
+const flooringLibraryCssSource = readFeatureFile("styles/catalog-editor.flooring.library.css");
 const flooringResponsiveCssSource = readFeatureFile("styles/catalog-editor.flooring.responsive.css");
 const flooringShellCssSource = readFeatureFile("styles/catalog-editor.flooring.shell.css");
 const flooringTablesCssSource = readFeatureFile("styles/catalog-editor.flooring.tables.css");
@@ -46,6 +52,7 @@ const flooringWorkspaceCssSource = readFeatureFile("styles/catalog-editor.floori
 const managedTableCssSource = readFeatureFile("styles/catalog-editor.managed-table.css");
 const plumbingCssSource = readFeatureFile("styles/catalog-editor.plumbing.css");
 const plumbingCompositionCssSource = readFeatureFile("styles/catalog-editor.plumbing.composition.css");
+const plumbingLibraryCssSource = readFeatureFile("styles/catalog-editor.plumbing.library.css");
 const plumbingResponsiveCssSource = readFeatureFile("styles/catalog-editor.plumbing.responsive.css");
 const plumbingTableCssSource = readFeatureFile("styles/catalog-editor.plumbing.table.css");
 const plumbingZonesCssSource = readFeatureFile("styles/catalog-editor.plumbing.zones.css");
@@ -54,6 +61,9 @@ const REQUIRED_FLOORING_CATALOG_MODULES = [
   "CatalogSegmentedControl.tsx",
   "CatalogViewTabs.tsx",
   "FlooringAssemblyBlock.tsx",
+  "FlooringAssemblyLibraryCatalogTable.tsx",
+  "FlooringAssemblyLibraryColumns.ts",
+  "FlooringAssemblyLibraryFormTable.tsx",
   "FlooringAssemblyLibraryPanel.tsx",
   "FlooringCatalogWorkspace.tsx",
   "FlooringConsumablesTable.tsx",
@@ -67,6 +77,7 @@ const REQUIRED_FLOORING_CSS_MODULES = [
   "catalog-editor.flooring.assembly.css",
   "catalog-editor.flooring.consumables.css",
   "catalog-editor.flooring.forms.css",
+  "catalog-editor.flooring.library.css",
   "catalog-editor.flooring.responsive.css",
   "catalog-editor.flooring.shell.css",
   "catalog-editor.flooring.tables.css",
@@ -76,6 +87,7 @@ const REQUIRED_FLOORING_CSS_MODULES = [
 const REQUIRED_PLUMBING_CSS_MODULES = [
   "catalog-editor.plumbing.css",
   "catalog-editor.plumbing.composition.css",
+  "catalog-editor.plumbing.library.css",
   "catalog-editor.plumbing.responsive.css",
   "catalog-editor.plumbing.table.css",
   "catalog-editor.plumbing.zones.css",
@@ -83,6 +95,8 @@ const REQUIRED_PLUMBING_CSS_MODULES = [
 
 const REQUIRED_PLUMBING_CATALOG_MODULES = [
   "PlumbingCatalogPanel.tsx",
+  "PlumbingLibraryColumns.ts",
+  "PlumbingLibraryRows.tsx",
   "PlumbingLibraryView.tsx",
   "PlumbingPreviewPanel.tsx",
   "PlumbingZoneCard.tsx",
@@ -106,6 +120,9 @@ const REQUIRED_SHARED_CSS_MODULES = [
 const flooringCatalogModulePaths = Object.keys(
   import.meta.glob([
     "./FlooringAssemblyBlock.tsx",
+    "./FlooringAssemblyLibraryCatalogTable.tsx",
+    "./FlooringAssemblyLibraryColumns.ts",
+    "./FlooringAssemblyLibraryFormTable.tsx",
     "./CatalogSegmentedControl.tsx",
     "./CatalogViewTabs.tsx",
     "./FlooringAssemblyLibraryPanel.tsx",
@@ -120,6 +137,8 @@ const flooringCatalogModulePaths = Object.keys(
 const plumbingCatalogModulePaths = Object.keys(
   import.meta.glob([
     "./PlumbingCatalogPanel.tsx",
+    "./PlumbingLibraryColumns.ts",
+    "./PlumbingLibraryRows.tsx",
     "./PlumbingLibraryView.tsx",
     "./PlumbingPreviewPanel.tsx",
     "./PlumbingZoneCard.tsx",
@@ -145,6 +164,7 @@ const flooringCssModulePaths = Object.keys(
     "./styles/catalog-editor.flooring.assembly.css",
     "./styles/catalog-editor.flooring.consumables.css",
     "./styles/catalog-editor.flooring.forms.css",
+    "./styles/catalog-editor.flooring.library.css",
     "./styles/catalog-editor.flooring.responsive.css",
     "./styles/catalog-editor.flooring.shell.css",
     "./styles/catalog-editor.flooring.tables.css",
@@ -156,6 +176,7 @@ const plumbingCssModulePaths = Object.keys(
   import.meta.glob([
     "./styles/catalog-editor.plumbing.css",
     "./styles/catalog-editor.plumbing.composition.css",
+    "./styles/catalog-editor.plumbing.library.css",
     "./styles/catalog-editor.plumbing.responsive.css",
     "./styles/catalog-editor.plumbing.table.css",
     "./styles/catalog-editor.plumbing.zones.css",
@@ -173,6 +194,7 @@ const flooringCssSources: Array<[string, string, number]> = [
   ["catalog-editor.flooring.assembly.css", flooringAssemblyCssSource, 360],
   ["catalog-editor.flooring.consumables.css", flooringConsumablesCssSource, 320],
   ["catalog-editor.flooring.forms.css", flooringFormsCssSource, 240],
+  ["catalog-editor.flooring.library.css", flooringLibraryCssSource, 80],
   ["catalog-editor.flooring.responsive.css", flooringResponsiveCssSource, 120],
   ["catalog-editor.flooring.shell.css", flooringShellCssSource, 120],
   ["catalog-editor.flooring.tables.css", flooringTablesCssSource, 140],
@@ -182,6 +204,7 @@ const flooringCssSources: Array<[string, string, number]> = [
 const plumbingCssSources: Array<[string, string, number]> = [
   ["catalog-editor.plumbing.css", plumbingCssSource, 20],
   ["catalog-editor.plumbing.composition.css", plumbingCompositionCssSource, 140],
+  ["catalog-editor.plumbing.library.css", plumbingLibraryCssSource, 80],
   ["catalog-editor.plumbing.responsive.css", plumbingResponsiveCssSource, 60],
   ["catalog-editor.plumbing.table.css", plumbingTableCssSource, 140],
   ["catalog-editor.plumbing.zones.css", plumbingZonesCssSource, 220],
@@ -221,6 +244,10 @@ describe("catalog editor architecture", () => {
   it("keeps flooring catalog controller and assembly builder within module budgets", () => {
     expect(sourceLines(useFlooringCatalogPanelSource).length).toBeLessThanOrEqual(620);
     expect(sourceLines(flooringAssemblyBlockSource).length).toBeLessThanOrEqual(650);
+    expect(sourceLines(flooringAssemblyLibraryCatalogTableSource).length).toBeLessThanOrEqual(180);
+    expect(sourceLines(flooringAssemblyLibraryColumnsSource).length).toBeLessThanOrEqual(140);
+    expect(sourceLines(flooringAssemblyLibraryFormTableSource).length).toBeLessThanOrEqual(240);
+    expect(sourceLines(flooringAssemblyLibraryPanelSource).length).toBeLessThanOrEqual(120);
     expect(sourceLines(flooringCatalogWorkspaceSource).length).toBeLessThanOrEqual(260);
     expect(sourceLines(flooringConsumablesTableSource).length).toBeLessThanOrEqual(260);
     expect(sourceLines(catalogSegmentedControlSource).length).toBeLessThanOrEqual(80);
@@ -248,8 +275,12 @@ describe("catalog editor architecture", () => {
     expect(sourceLines(catalogManagedTableHeaderCellSource).length).toBeLessThanOrEqual(100);
     expect(flooringConsumablesTableSource).toContain("useCatalogTableColumns");
     expect(flooringConsumablesTableSource).toContain("CatalogManagedTableHeaderCell");
+    expect(flooringAssemblyLibraryPanelSource).toContain("useCatalogTableColumns");
+    expect(flooringAssemblyLibraryCatalogTableSource).toContain("CatalogManagedTableHeaderCell");
     expect(plumbingZoneCompositionTableSource).toContain("useCatalogTableColumns");
     expect(plumbingZoneCompositionTableSource).toContain("CatalogManagedTableHeaderCell");
+    expect(plumbingLibraryViewSource).toContain("useCatalogTableColumns");
+    expect(plumbingLibraryViewSource).toContain("CatalogManagedTableHeaderCell");
   });
 
   it("keeps plumbing catalog UI, controller, and pure model separated", () => {
@@ -260,7 +291,9 @@ describe("catalog editor architecture", () => {
     expect(sourceLines(plumbingZoneCompositionTableSource).length).toBeLessThanOrEqual(170);
     expect(sourceLines(plumbingZoneCompositionColumnsSource).length).toBeLessThanOrEqual(120);
     expect(sourceLines(plumbingZoneCompositionRowsSource).length).toBeLessThanOrEqual(150);
-    expect(sourceLines(plumbingLibraryViewSource).length).toBeLessThanOrEqual(260);
+    expect(sourceLines(plumbingLibraryColumnsSource).length).toBeLessThanOrEqual(150);
+    expect(sourceLines(plumbingLibraryRowsSource).length).toBeLessThanOrEqual(190);
+    expect(sourceLines(plumbingLibraryViewSource).length).toBeLessThanOrEqual(170);
     expect(sourceLines(plumbingPreviewPanelSource).length).toBeLessThanOrEqual(100);
     expect(sourceLines(plumbingCatalogModelSource).length).toBeLessThanOrEqual(260);
     expect(plumbingCatalogPanelSource).toContain("CatalogViewTabs");

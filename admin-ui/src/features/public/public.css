@@ -5060,6 +5060,9 @@
   --public-green: #1e514a;
   --public-green-deep: #173f3a;
   --public-green-soft: #e9f2ef;
+  --public-ink: #13231f;
+  --public-muted: #687a75;
+  --public-border: rgba(30, 81, 74, 0.14);
 
   position: fixed;
   inset: 0;

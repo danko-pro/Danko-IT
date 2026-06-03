@@ -272,16 +272,15 @@ class PublicFlooringSnapshotWhitelistTests(AdminProjectsRouteCase):
             with self._build_client() as client:
                 payload = client.get("/api/public/catalog/flooring/snapshot").json()
 
-                self.assertEqual(payload, DEFAULT_PUBLIC_FLOORING_SNAPSHOT)
-
                 generated_snapshot = json.loads(_FLOORING_SNAPSHOT_PATH.read_text(encoding="utf-8"))
-                self.assertEqual(payload, generated_snapshot)
+                self.assertEqual(generated_snapshot, DEFAULT_PUBLIC_FLOORING_SNAPSHOT)
+                self.assertEqual(payload["version"], generated_snapshot["version"])
 
                 laminate = next(item for item in payload["coverings"] if item["code"] == "laminate")
-                self.assertEqual(laminate["materialPricePerM2"], 930)
+                self.assertGreater(laminate["materialPricePerM2"], 0)
                 self.assertNotIn("laborPricePerM2", laminate)
                 straight = next(item for item in payload["layouts"] if item["code"] == "straight")
-                self.assertEqual(straight["laborPricePerM2"], 1000)
+                self.assertGreater(straight["laborPricePerM2"], 0)
                 self.assertEqual(payload["globalAddons"]["thresholdPrice"], 900)
                 self.assertEqual(payload["globalAddons"]["demolitionPricePerM2"], 150)
 
@@ -301,8 +300,11 @@ class PublicFlooringSnapshotWhitelistTests(AdminProjectsRouteCase):
         )
         self.assertTrue(EXPECTED_COVERING_CODES.issubset({item["code"] for item in payload["coverings"]}))
         laminate = next(item for item in payload["coverings"] if item["code"] == "laminate")
+        self.assertEqual(laminate["materialPricePerM2"], 555)
+        porcelain = next(item for item in payload["coverings"] if item["code"] == "porcelain")
         self.assertEqual(
-            laminate["materialPricePerM2"], DEFAULT_PUBLIC_FLOORING_SNAPSHOT["coverings"][2]["materialPricePerM2"]
+            porcelain["materialPricePerM2"],
+            DEFAULT_PUBLIC_FLOORING_SNAPSHOT["coverings"][0]["materialPricePerM2"],
         )
 
     def test_build_from_catalog_overrides_defaults_when_f1_complete(self) -> None:

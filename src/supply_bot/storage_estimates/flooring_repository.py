@@ -73,7 +73,11 @@ class SqlAlchemyEstimateFlooringRepository(SqlAlchemyEstimateRepository):
         return await self._update_global_catalog_item(estimate_flooring_coverings, covering_id, values)
 
     async def delete_estimate_flooring_covering(self, covering_id: int) -> bool:
-        return await self._delete_global_catalog_item(estimate_flooring_coverings, covering_id)
+        return await self._delete_global_catalog_item_with_assembly(
+            estimate_flooring_coverings,
+            covering_id,
+            target_kind="covering",
+        )
 
     async def list_estimate_flooring_preparations(self) -> list[dict[str, Any]]:
         return await self._list_catalog(
@@ -93,7 +97,11 @@ class SqlAlchemyEstimateFlooringRepository(SqlAlchemyEstimateRepository):
         return await self._update_global_catalog_item(estimate_flooring_preparations, preparation_id, values)
 
     async def delete_estimate_flooring_preparation(self, preparation_id: int) -> bool:
-        return await self._delete_global_catalog_item(estimate_flooring_preparations, preparation_id)
+        return await self._delete_global_catalog_item_with_assembly(
+            estimate_flooring_preparations,
+            preparation_id,
+            target_kind="preparation",
+        )
 
     async def list_estimate_flooring_layouts(self) -> list[dict[str, Any]]:
         return await self._list_catalog(
@@ -112,7 +120,11 @@ class SqlAlchemyEstimateFlooringRepository(SqlAlchemyEstimateRepository):
         return await self._update_global_catalog_item(estimate_flooring_layouts, layout_id, values)
 
     async def delete_estimate_flooring_layout(self, layout_id: int) -> bool:
-        return await self._delete_global_catalog_item(estimate_flooring_layouts, layout_id)
+        return await self._delete_global_catalog_item_with_assembly(
+            estimate_flooring_layouts,
+            layout_id,
+            target_kind="layout",
+        )
 
     async def get_estimate_flooring_catalog_assembly(
         self,
@@ -402,6 +414,31 @@ class SqlAlchemyEstimateFlooringRepository(SqlAlchemyEstimateRepository):
                     .values(is_active=0, updated_at=func.current_timestamp())
                 )
                 return bool(result.rowcount)
+
+    async def _delete_global_catalog_item_with_assembly(self, table, item_id: int, *, target_kind: str) -> bool:
+        if self._owner_user_id is not None:
+            return False
+        async with self._session_factory() as session:
+            async with session.begin():
+                result = await session.execute(
+                    update(table)
+                    .where(
+                        table.c.owner_user_id.is_(None),
+                        table.c.is_active == 1,
+                        table.c.id == item_id,
+                    )
+                    .values(is_active=0, updated_at=func.current_timestamp())
+                )
+                if not result.rowcount:
+                    return False
+                await session.execute(
+                    delete(estimate_flooring_catalog_assemblies).where(
+                        estimate_flooring_catalog_assemblies.c.owner_user_id.is_(None),
+                        estimate_flooring_catalog_assemblies.c.target_kind == target_kind,
+                        estimate_flooring_catalog_assemblies.c.target_id == item_id,
+                    )
+                )
+                return True
 
     async def _fetch_visible_catalog_assembly(
         self,

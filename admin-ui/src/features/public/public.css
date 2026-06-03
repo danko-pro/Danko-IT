@@ -5057,6 +5057,10 @@
 
 /* Overlay-модалка спецификации */
 .public-estimate-spec-overlay {
+  --public-green: #1e514a;
+  --public-green-deep: #173f3a;
+  --public-green-soft: #e9f2ef;
+
   position: fixed;
   inset: 0;
   z-index: 1000;

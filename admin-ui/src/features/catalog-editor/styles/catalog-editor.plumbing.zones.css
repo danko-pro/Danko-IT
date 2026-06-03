@@ -104,6 +104,41 @@
   align-items: center;
 }
 
+.ce-zone-detail-controls .ce-price-classes {
+  display: inline-grid;
+  grid-template-columns: auto auto;
+  gap: 5px;
+  align-items: center;
+  height: 30px;
+  margin: 0;
+  padding: 3px 5px 3px 7px;
+  border-radius: 6px;
+  background: #ffffff;
+  white-space: nowrap;
+}
+
+.ce-zone-detail-controls .ce-price-classes-label {
+  color: var(--ce-muted);
+  font-size: 10px;
+  font-weight: 720;
+}
+
+.ce-zone-detail-controls .ce-price-class-tabs {
+  display: inline-flex;
+  gap: 2px;
+  flex-wrap: nowrap;
+}
+
+.ce-zone-detail-controls .ce-price-class-tab {
+  width: 28px;
+  height: 22px;
+  padding: 0;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 720;
+  line-height: 1;
+}
+
 .ce-zone-desc {
   width: 100%;
   min-width: 0;

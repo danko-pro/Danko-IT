@@ -41,6 +41,10 @@ const DELETE_TITLE = "\u0423\u0434\u0430\u043b\u0438\u0442\u044c \u0437\u043e\u0
 const POSITIONS_LABEL = "\u043f\u043e\u0437.";
 const TOTAL_TITLE = "\u0418\u0442\u043e\u0433\u043e \u0441 \u0440\u0435\u0437\u0435\u0440\u0432\u043e\u043c";
 
+function compactPackageLabel(label: string): string {
+  return label.replace(/^\u041f\u0430\u043a\u0435\u0442\s+/i, "");
+}
+
 export function PlumbingZoneCard({
   zone,
   collapsed,
@@ -113,12 +117,13 @@ export function PlumbingZoneCard({
                     <button
                       key={variant.id}
                       type="button"
+                      title={variant.label}
                       className={`ce-price-class-tab${
                         (zone.activePriceClassId ?? zone.priceClassVariants![0].id) === variant.id ? " is-active" : ""
                       }`}
                       onClick={() => onUpdateZone(zone.id, { activePriceClassId: variant.id })}
                     >
-                      {variant.label}
+                      {compactPackageLabel(variant.label)}
                     </button>
                   ))}
                 </div>

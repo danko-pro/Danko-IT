@@ -155,8 +155,15 @@
 
 .ce-zone-table {
   width: 100%;
-  min-width: 920px;
+  min-width: 820px;
   border: 0;
+}
+
+.ce-zone-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--ce-border);
+  border-radius: var(--ce-radius);
+  background: #ffffff;
 }
 
 .ce-zone-table thead th {

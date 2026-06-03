@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { createEmptyEstimateResult, createEstimateSection } from "../public-estimate-model";
+import type { FlooringCalculationResult } from "../public-estimate-flooring";
 import type { PlumbingCalculationResult, PlumbingOptions } from "../public-estimate-plumbing";
 import * as plumbingModule from "../public-estimate-plumbing";
 import {
@@ -7,6 +8,16 @@ import {
   buildPlumbingSpecExpansionOptions,
   mapSectionsForSpec,
 } from "./spec";
+
+function emptyFlooringResult(
+  overrides: Partial<FlooringCalculationResult> = {},
+): Pick<FlooringCalculationResult, "specificationSection"> {
+  const section = createEstimateSection("flooring", "Полы", []);
+  return {
+    specificationSection: section,
+    ...overrides,
+  };
+}
 
 function defaultPlumbingOptions(overrides: Partial<PlumbingOptions> = {}): PlumbingOptions {
   return {
@@ -55,6 +66,7 @@ describe("buildEstimateSpecModalData", () => {
       estimateResult: createEmptyEstimateResult(),
       plumbingOptions: defaultPlumbingOptions(),
       plumbingResult: emptyPlumbingResult(),
+      flooringResult: emptyFlooringResult(),
     });
 
     expect(result).toBeNull();
@@ -74,6 +86,7 @@ describe("buildEstimateSpecModalData", () => {
       },
       plumbingOptions: defaultPlumbingOptions(),
       plumbingResult: emptyPlumbingResult(),
+      flooringResult: emptyFlooringResult(),
     });
 
     expect(result).toEqual({
@@ -93,6 +106,7 @@ describe("buildEstimateSpecModalData", () => {
       estimateResult: createEmptyEstimateResult(),
       plumbingOptions: defaultPlumbingOptions(),
       plumbingResult: emptyPlumbingResult(),
+      flooringResult: emptyFlooringResult(),
     });
 
     expect(result).toEqual({
@@ -109,6 +123,7 @@ describe("buildEstimateSpecModalData", () => {
       estimateResult: createEmptyEstimateResult(),
       plumbingOptions: defaultPlumbingOptions(),
       plumbingResult: emptyPlumbingResult(),
+      flooringResult: emptyFlooringResult(),
     });
 
     expect(result).toBeNull();
@@ -173,7 +188,12 @@ describe("mapSectionsForSpec", () => {
       .spyOn(plumbingModule, "expandPlumbingSectionForSpec")
       .mockReturnValue(expandedSection);
 
-    const result = mapSectionsForSpec([wallsSection, plumbingSection], plumbingOptions, plumbingResult);
+    const result = mapSectionsForSpec(
+      [wallsSection, plumbingSection],
+      plumbingOptions,
+      plumbingResult,
+      emptyFlooringResult(),
+    );
 
     expect(result).toEqual([wallsSection, expandedSection]);
     expect(expandSpy).toHaveBeenCalledOnce();
@@ -195,5 +215,46 @@ describe("mapSectionsForSpec", () => {
     });
 
     expandSpy.mockRestore();
+  });
+
+  it("разворачивает flooring через specificationSection", () => {
+    const flatSection = createEstimateSection("flooring", "Полы", [
+      {
+        id: "flooring-material-room",
+        sectionId: "flooring",
+        title: "Flat",
+        category: "materials",
+        quantity: 1,
+        unit: "m2",
+        unitPrice: 100,
+        total: 100,
+        isIncluded: true,
+      },
+    ]);
+    const specSection = createEstimateSection("flooring", "Полы", [
+      {
+        id: "flooring-spec-line",
+        sectionId: "flooring",
+        title: "Spec",
+        category: "materials",
+        quantity: 16,
+        unit: "m2",
+        unitPrice: 930,
+        total: 14880,
+        isIncluded: true,
+      },
+    ]);
+    const wallsSection = createEstimateSection("walls", "Стены", []);
+
+    const result = mapSectionsForSpec(
+      [wallsSection, flatSection],
+      defaultPlumbingOptions(),
+      emptyPlumbingResult(),
+      { specificationSection: specSection },
+    );
+
+    expect(result[0]).toBe(wallsSection);
+    expect(result[1]?.items[0]?.id).toBe("flooring-spec-line");
+    expect(result[1]?.totals.total).toBe(flatSection.totals.total);
   });
 });

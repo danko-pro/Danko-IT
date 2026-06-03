@@ -1,9 +1,11 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   calculateFlooring,
   type FlooringOptions,
   type FlooringRoomInput,
 } from "./public-estimate-flooring";
+import * as flooringSnapshotModule from "./public-flooring-snapshot";
+import flooringSnapshotData from "./generated/flooring.snapshot.json";
 
 const room: FlooringRoomInput = {
   roomId: "room",
@@ -71,5 +73,111 @@ describe("calculateFlooring", () => {
 
     expect(result.flooringArea).toBe(0);
     expect(result.total).toBe(0);
+  });
+
+  it("без specLines использует flat section как specification fallback", () => {
+    const result = calculateFlooring([room], options);
+
+    expect(result.specificationLines).toEqual([]);
+    expect(result.specificationSection).toBe(result.section);
+  });
+
+  it("с specLines строит specificationLines без изменения flat totals", () => {
+    const catalogSpy = vi.spyOn(flooringSnapshotModule, "getFlooringSnapshotCatalog").mockReturnValue({
+      coverings: {
+        ...Object.fromEntries(
+          flooringSnapshotData.coverings.map((item) => [item.code, { ...item }]),
+        ),
+        laminate: {
+          ...flooringSnapshotData.coverings.find((item) => item.code === "laminate")!,
+          specLines: [
+            {
+              code: "laminate-board",
+              title: "Ламинат доска",
+              category: "materials",
+              basis: "area",
+              unit: "m2",
+              quantityPerBasis: 1,
+              unitPrice: 930,
+            },
+          ],
+        },
+      },
+      preparations: Object.fromEntries(
+        flooringSnapshotData.preparations.map((item) => [item.code, { ...item }]),
+      ),
+      layouts: Object.fromEntries(flooringSnapshotData.layouts.map((item) => [item.code, { ...item }])),
+    });
+
+    const result = calculateFlooring([room], options);
+
+    expect(result.total).toBeCloseTo(60510, 2);
+    expect(result.specificationLines.length).toBeGreaterThan(0);
+    expect(result.specificationLines[0]).toMatchObject({
+      category: "materials",
+      quantity: 16,
+      sourceLabel: expect.stringContaining("Покрытие"),
+    });
+    expect(result.specificationSection.items).not.toBe(result.section.items);
+    expect(result.specificationSection.totals.total).toBe(result.section.totals.total);
+
+    catalogSpy.mockRestore();
+  });
+
+  it("legacy flooring-v1 snapshot без specLines сохраняет golden totals", () => {
+    const legacyCoverings = flooringSnapshotData.coverings.map((item) => ({
+      ...item,
+      laborPricePerM2: item.code === "laminate" ? 1000 : 0,
+    }));
+    const legacyLayouts = flooringSnapshotData.layouts.map(({ laborPricePerM2: _legacy, ...item }) => item);
+
+    const catalogSpy = vi.spyOn(flooringSnapshotModule, "getFlooringSnapshotCatalog").mockReturnValue({
+      coverings: Object.fromEntries(legacyCoverings.map((item) => [item.code, { ...item }])),
+      preparations: Object.fromEntries(
+        flooringSnapshotData.preparations.map((item) => [item.code, { ...item }]),
+      ),
+      layouts: Object.fromEntries(legacyLayouts.map((item) => [item.code, { ...item }])),
+    });
+
+    const result = calculateFlooring([room], options);
+
+    expect(result.total).toBeCloseTo(60510, 2);
+    expect(result.specificationLines).toEqual([]);
+    expect(result.specificationSection).toBe(result.section);
+
+    catalogSpy.mockRestore();
+  });
+
+  it("public result не содержит forbidden internal keys", () => {
+    const result = calculateFlooring([room], options);
+    const forbidden = new Set([
+      "assembly_id",
+      "assembly_item_id",
+      "owner_user_id",
+      "custom_consumables_json",
+      "created_at",
+      "updated_at",
+      "technical_title",
+    ]);
+
+    function findForbiddenKeys(value: unknown, found = new Set<string>()): Set<string> {
+      if (value !== null && typeof value === "object") {
+        if (Array.isArray(value)) {
+          for (const item of value) {
+            findForbiddenKeys(item, found);
+          }
+        } else {
+          for (const [key, nested] of Object.entries(value)) {
+            if (forbidden.has(key)) {
+              found.add(key);
+            }
+            findForbiddenKeys(nested, found);
+          }
+        }
+      }
+      return found;
+    }
+
+    expect([...findForbiddenKeys(result)].sort()).toEqual([]);
   });
 });

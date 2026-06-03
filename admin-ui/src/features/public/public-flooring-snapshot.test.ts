@@ -8,6 +8,7 @@ import {
   flooringPreparationRates,
 } from "./public-estimate-flooring";
 import {
+  getFlooringSnapshotCatalog,
   getFlooringSnapshotRates,
   loadFlooringSnapshot,
   validateFlooringSnapshot,
@@ -176,5 +177,14 @@ describe("flooring snapshot", () => {
     expect(rates.flooringLayoutRates).toEqual(flooringLayoutRates);
     expect(rates.flooringPlinthRates).toEqual(flooringPlinthRates);
     expect(rates.flooringExtraRates).toEqual(flooringExtraRates);
+  });
+
+  it("getFlooringSnapshotCatalog returns full catalog items by code", () => {
+    const catalog = getFlooringSnapshotCatalog();
+
+    expect(catalog.coverings.laminate.code).toBe("laminate");
+    expect(catalog.preparations.none.code).toBe("none");
+    expect(catalog.layouts.straight.code).toBe("straight");
+    expect(catalog.coverings.laminate.materialPricePerM2).toBe(930);
   });
 });

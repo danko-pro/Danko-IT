@@ -296,6 +296,7 @@ export function PublicEstimate() {
     estimateResult,
     plumbingOptions,
     plumbingResult,
+    flooringResult,
   });
   const { handlePrintEstimate, handlePrintVolumes } = useEstimatePrintActions();
 

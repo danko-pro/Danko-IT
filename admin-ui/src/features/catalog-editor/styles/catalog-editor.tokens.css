@@ -1,0 +1,51 @@
+.catalog-editor {
+  --ce-bg: #f4f6f9;
+  --ce-surface: #ffffff;
+  --ce-surface-raised: #f9fafc;
+  --ce-surface-muted: #eef2f6;
+  --ce-border: #d8dee8;
+  --ce-border-strong: #c4ccd8;
+  --ce-text: #172033;
+  --ce-muted: #647084;
+  --ce-faint: #8b95a5;
+  --ce-accent: #2368d9;
+  --ce-accent-strong: #174da6;
+  --ce-accent-soft: #e7efff;
+  --ce-ok: #138a5a;
+  --ce-ok-soft: #e4f6ee;
+  --ce-warning: #9b6400;
+  --ce-warning-soft: #fff4d8;
+  --ce-danger: #c73535;
+  --ce-danger-soft: #fde8e8;
+  --ce-shadow-sm: 0 1px 2px rgb(18 28 45 / 0.06);
+  --ce-shadow-md: 0 12px 28px rgb(18 28 45 / 0.10);
+  --ce-radius: 8px;
+  width: 100%;
+  min-height: calc(100vh - 96px);
+  box-sizing: border-box;
+  padding: 18px;
+  background: var(--ce-bg);
+  color: var(--ce-text);
+  font-family: Inter, "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-size: 13px;
+  line-height: 1.45;
+  letter-spacing: 0;
+}
+
+.catalog-editor *,
+.catalog-editor *::before,
+.catalog-editor *::after {
+  box-sizing: border-box;
+  letter-spacing: 0;
+}
+
+.catalog-editor code,
+.ce-mono {
+  font-family: "JetBrains Mono", Consolas, "SFMono-Regular", monospace;
+  font-size: 11px;
+}
+
+.catalog-editor ::selection {
+  background: var(--ce-accent-soft);
+  color: var(--ce-text);
+}

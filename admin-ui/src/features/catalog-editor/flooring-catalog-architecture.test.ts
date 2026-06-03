@@ -5,14 +5,14 @@ import flooringAssemblyLibraryPanelSource from "./FlooringAssemblyLibraryPanel.t
 import flooringCatalogEditFormsSource from "./FlooringCatalogEditForms.tsx?raw";
 import flooringCatalogModelSource from "./flooring-catalog-model.ts?raw";
 import flooringCatalogPanelSource from "./FlooringCatalogPanel.tsx?raw";
-import flooringCatalogSectionsSource from "./FlooringCatalogSections.tsx?raw";
+import flooringCatalogWorkspaceSource from "./FlooringCatalogWorkspace.tsx?raw";
 import flooringCatalogAssemblyCreateRowSource from "./flooring-catalog-assembly-create-row.ts?raw";
 import useFlooringCatalogPanelSource from "./useFlooringCatalogPanel.ts?raw";
 
 const REQUIRED_FLOORING_CATALOG_MODULES = [
   "FlooringAssemblyBlock.tsx",
   "FlooringAssemblyLibraryPanel.tsx",
-  "FlooringCatalogSections.tsx",
+  "FlooringCatalogWorkspace.tsx",
   "FlooringCatalogEditForms.tsx",
   "flooring-catalog-model.ts",
   "useFlooringCatalogPanel.ts",
@@ -22,7 +22,7 @@ const flooringCatalogModulePaths = Object.keys(
   import.meta.glob([
     "./FlooringAssemblyBlock.tsx",
     "./FlooringAssemblyLibraryPanel.tsx",
-    "./FlooringCatalogSections.tsx",
+    "./FlooringCatalogWorkspace.tsx",
     "./FlooringCatalogEditForms.tsx",
     "./flooring-catalog-model.ts",
     "./useFlooringCatalogPanel.ts",
@@ -48,6 +48,7 @@ describe("flooring catalog editor architecture", () => {
   it("keeps flooring catalog controller and assembly builder within module budgets", () => {
     expect(sourceLines(useFlooringCatalogPanelSource).length).toBeLessThanOrEqual(620);
     expect(sourceLines(flooringAssemblyBlockSource).length).toBeLessThanOrEqual(650);
+    expect(sourceLines(flooringCatalogWorkspaceSource).length).toBeLessThanOrEqual(260);
   });
 
   it("keeps flooring catalog submodules present", () => {
@@ -78,12 +79,12 @@ describe("flooring catalog editor architecture", () => {
     expect(flooringCatalogModelSource).toContain("export function consumablesSummaryPerM2");
   });
 
-  it("keeps assembly builder, library, tables, and edit forms separated", () => {
+  it("keeps assembly builder, library, workspace, and edit forms separated", () => {
     expect(flooringAssemblyBlockSource).toContain("export function FlooringAssemblyBlock");
     expect(flooringAssemblyLibraryPanelSource).toContain("export function FlooringAssemblyLibraryPanel");
-    expect(flooringCatalogSectionsSource).toContain("export function FlooringCoveringsSection");
-    expect(flooringCatalogSectionsSource).toContain("export function FlooringPreparationsSection");
-    expect(flooringCatalogSectionsSource).toContain("export function FlooringLayoutsSection");
+    expect(flooringCatalogWorkspaceSource).toContain("export function FlooringCatalogWorkspace");
+    expect(flooringCatalogWorkspaceSource).toContain("function FlooringCatalogSidebarSection");
+    expect(flooringCatalogWorkspaceSource).toContain("function FlooringCatalogCard");
     expect(flooringCatalogEditFormsSource).toContain("export function FlooringCoveringEditForm");
     expect(flooringCatalogEditFormsSource).toContain("export function FlooringPreparationEditForm");
     expect(flooringCatalogEditFormsSource).toContain("export function FlooringLayoutEditForm");

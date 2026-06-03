@@ -5,11 +5,7 @@ import {
   FlooringLayoutEditForm,
   FlooringPreparationEditForm,
 } from "./FlooringCatalogEditForms";
-import {
-  FlooringCoveringsSection,
-  FlooringLayoutsSection,
-  FlooringPreparationsSection,
-} from "./FlooringCatalogSections";
+import { FlooringCatalogWorkspace } from "./FlooringCatalogWorkspace";
 import { useFlooringCatalogPanel } from "./useFlooringCatalogPanel";
 
 export function FlooringCatalogPanel() {
@@ -80,12 +76,12 @@ export function FlooringCatalogPanel() {
   } = useFlooringCatalogPanel();
 
   if (loading && !snapshot) {
-    return <div className="ce-empty">Загрузка snapshot полов…</div>;
+    return <div className="ce-empty ce-flooring-shell flooring-catalog-panel">Загрузка snapshot полов…</div>;
   }
 
   if (!snapshot) {
     return (
-      <div className="ce-stub-panel">
+      <div className="ce-stub-panel ce-flooring-shell flooring-catalog-panel">
         <h2>Полы</h2>
         <p>{error ?? "Не удалось получить snapshot каталога полов."}</p>
         <button type="button" className="ce-btn" onClick={() => void reloadSnapshot()}>
@@ -96,8 +92,8 @@ export function FlooringCatalogPanel() {
   }
 
   return (
-    <>
-      <div className="ce-toolbar">
+    <section className="ce-flooring-shell flooring-catalog-panel">
+      <div className="ce-toolbar ce-flooring-toolbar">
         <div className="ce-toolbar-group">
           <button
             type="button"
@@ -171,13 +167,30 @@ export function FlooringCatalogPanel() {
         loadingAssembly={assemblyLoading}
       />
 
-      <FlooringCoveringsSection
-        rows={coveringRows}
-        selectedId={editingCoveringId}
-        onEdit={beginEditCovering}
-        onDelete={handleDeleteCovering}
-        onPromote={(row) => void promoteSnapshotRowToCatalog(row)}
+      <FlooringCatalogWorkspace
+        coverings={{
+          rows: coveringRows,
+          selectedId: editingCoveringId,
+          onEdit: beginEditCovering,
+          onDelete: handleDeleteCovering,
+          onPromote: (row) => void promoteSnapshotRowToCatalog(row),
+        }}
+        preparations={{
+          rows: preparationRows,
+          selectedId: editingPreparationId,
+          onEdit: beginEditPreparation,
+          onDelete: handleDeletePreparation,
+          onPromote: (row) => void promoteSnapshotRowToCatalog(row),
+        }}
+        layouts={{
+          rows: layoutRows,
+          selectedId: editingLayoutId,
+          onEdit: beginEditLayout,
+          onDelete: handleDeleteLayout,
+          onPromote: (row) => void promoteSnapshotRowToCatalog(row),
+        }}
         formatMoney={formatMoney}
+        formatPercent={formatPercent}
         consumablesSummaryPerM2={consumablesSummaryPerM2}
         editor={
           editingCoveringId !== null ? (
@@ -191,51 +204,27 @@ export function FlooringCatalogPanel() {
               formatMoney={formatMoney}
               formatPercent={formatPercent}
             />
+          ) : editingPreparationId !== null ? (
+            <FlooringPreparationEditForm
+              draft={preparationDraft}
+              submitting={savingPreparation}
+              onSubmit={() => void handleUpdatePreparation()}
+              onCancel={cancelPreparationEdit}
+              onDraftChange={setPreparationDraft}
+              onNumberChange={updatePreparationNumber}
+            />
+          ) : editingLayoutId !== null ? (
+            <FlooringLayoutEditForm
+              draft={layoutDraft}
+              submitting={savingLayout}
+              onSubmit={() => void handleUpdateLayout()}
+              onCancel={cancelLayoutEdit}
+              onDraftChange={setLayoutDraft}
+              onNumberChange={updateLayoutNumber}
+            />
           ) : null
         }
       />
-
-      <FlooringPreparationsSection
-        rows={preparationRows}
-        onEdit={beginEditPreparation}
-        onDelete={handleDeletePreparation}
-        onPromote={(row) => void promoteSnapshotRowToCatalog(row)}
-        formatMoney={formatMoney}
-        formatPercent={formatPercent}
-      >
-
-        {editingPreparationId !== null ? (
-          <FlooringPreparationEditForm
-            draft={preparationDraft}
-            submitting={savingPreparation}
-            onSubmit={() => void handleUpdatePreparation()}
-            onCancel={cancelPreparationEdit}
-            onDraftChange={setPreparationDraft}
-            onNumberChange={updatePreparationNumber}
-          />
-        ) : null}
-      </FlooringPreparationsSection>
-
-      <FlooringLayoutsSection
-        rows={layoutRows}
-        onEdit={beginEditLayout}
-        onDelete={handleDeleteLayout}
-        onPromote={(row) => void promoteSnapshotRowToCatalog(row)}
-        formatMoney={formatMoney}
-        formatPercent={formatPercent}
-      >
-
-        {editingLayoutId !== null ? (
-          <FlooringLayoutEditForm
-            draft={layoutDraft}
-            submitting={savingLayout}
-            onSubmit={() => void handleUpdateLayout()}
-            onCancel={cancelLayoutEdit}
-            onDraftChange={setLayoutDraft}
-            onNumberChange={updateLayoutNumber}
-          />
-        ) : null}
-      </FlooringLayoutsSection>
         </>
       ) : null}
 
@@ -248,6 +237,6 @@ export function FlooringCatalogPanel() {
           {loading ? "Перечитываю…" : "Перечитать snapshot"}
         </button>
       </div>
-    </>
+    </section>
   );
 }

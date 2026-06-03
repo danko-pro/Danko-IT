@@ -439,6 +439,10 @@ const EXPECTED_FLOORING_PLINTH_CODES = ["none", "duropolymer", "painted_mdf"];
 
 const FLOORING_SPEC_LINE_CATEGORIES = new Set(["materials", "works", "consumables", "tools"]);
 
+const FLOORING_SPEC_LINE_PURCHASE_MODES = new Set(["raw", "package"]);
+
+const FLOORING_SPEC_LINE_PURCHASE_AGGREGATIONS = new Set(["room", "project"]);
+
 const FLOORING_SPEC_LINE_REQUIRED_KEYS = [
   "code",
   "title",
@@ -498,6 +502,34 @@ function validateSpecLines(specLines, arrayName) {
       }
       if (typeof line.packageUnit !== "string" || line.packageUnit.length === 0) {
         return { ok: false, reason: `${arrayName}.specLines[${index}].packageUnit must be a non-empty string` };
+      }
+    }
+    if ("packagePrice" in line) {
+      if (typeof line.packagePrice !== "number" || !Number.isFinite(line.packagePrice)) {
+        return { ok: false, reason: `${arrayName}.specLines[${index}].packagePrice must be a finite number` };
+      }
+    }
+    if ("purchaseMode" in line) {
+      if (typeof line.purchaseMode !== "string" || !FLOORING_SPEC_LINE_PURCHASE_MODES.has(line.purchaseMode)) {
+        return { ok: false, reason: `${arrayName}.specLines[${index}].purchaseMode is invalid` };
+      }
+    }
+    if ("purchaseAggregation" in line) {
+      if (
+        typeof line.purchaseAggregation !== "string" ||
+        !FLOORING_SPEC_LINE_PURCHASE_AGGREGATIONS.has(line.purchaseAggregation)
+      ) {
+        return { ok: false, reason: `${arrayName}.specLines[${index}].purchaseAggregation is invalid` };
+      }
+    }
+    if ("aggregationKey" in line) {
+      if (typeof line.aggregationKey !== "string" || line.aggregationKey.length === 0) {
+        return { ok: false, reason: `${arrayName}.specLines[${index}].aggregationKey must be a non-empty string` };
+      }
+    }
+    if ("calculationNote" in line) {
+      if (typeof line.calculationNote !== "string" || line.calculationNote.length === 0) {
+        return { ok: false, reason: `${arrayName}.specLines[${index}].calculationNote must be a non-empty string` };
       }
     }
   }

@@ -144,6 +144,98 @@ class FlooringPackageProjectionTests(unittest.TestCase):
         self.assertEqual(line["packageSize"], 25)
         self.assertEqual(line["packageUnit"], "kg")
 
+    def test_spec_line_procurement_fields_for_package_formulas(self) -> None:
+        projection = build_flooring_package_projection(
+            "covering",
+            [
+                row(
+                    title="Клей плиточный",
+                    formula="kg_layer_consumption",
+                    unit="kg",
+                    price=600,
+                    package_size=25,
+                    consumption_per_m2=1.5,
+                    layer_mm=5,
+                ),
+                row(title="Грунт", formula="package_consumption", unit="l", price=1250, package_size=10, consumption_per_m2=0.2),
+                row(title="СВП 2 мм", formula="piece_consumption", unit="pcs", price=30, package_size=100, consumption_per_m2=4),
+            ],
+        )
+
+        glue = projection["specLines"][0]
+        self.assertEqual(glue["purchaseMode"], "package")
+        self.assertEqual(glue["packagePrice"], 600)
+        self.assertEqual(glue["purchaseAggregation"], "project")
+        self.assertEqual(glue["aggregationKey"], glue["code"])
+        self.assertEqual(glue["calculationNote"], "1.5 kg/m²/mm × 5 mm")
+
+        primer = projection["specLines"][1]
+        self.assertEqual(primer["purchaseMode"], "package")
+        self.assertEqual(primer["packagePrice"], 1250)
+        self.assertEqual(primer["calculationNote"], "0.2 l/m²")
+
+    def test_spec_line_omits_package_purchase_mode_for_raw_formulas(self) -> None:
+        projection = build_flooring_package_projection(
+            "covering",
+            [
+                row(
+                    section="covering",
+                    kind="material",
+                    formula="flat_per_m2",
+                    title="Porcelain 120x60",
+                    unit="m2",
+                    price=2900,
+                    consumption_per_m2=1.1,
+                    public_category="materials",
+                ),
+                row(title="Underlay", formula="unit_consumption", unit="m2", price=220, consumption_per_m2=1),
+                row(
+                    section="tool",
+                    kind="tool",
+                    formula="fixed_area_allocation",
+                    title="Tool kit",
+                    unit="m2",
+                    price=5000,
+                    package_size=50,
+                    public_category="tools",
+                ),
+            ],
+        )
+
+        material, underlay, tool = projection["specLines"]
+        self.assertNotIn("purchaseMode", material)
+        self.assertNotIn("packagePrice", material)
+        self.assertEqual(material["aggregationKey"], material["code"])
+
+        self.assertNotIn("purchaseMode", underlay)
+        self.assertEqual(underlay["calculationNote"], "1 m2/m²")
+
+        self.assertNotIn("purchaseMode", tool)
+        self.assertNotIn("packagePrice", tool)
+        self.assertEqual(tool["packageSize"], 50)
+
+    def test_layout_work_package_mode_aggregates_per_room(self) -> None:
+        projection = build_flooring_package_projection(
+            "layout",
+            [
+                row(
+                    section="work",
+                    kind="work",
+                    formula="package_consumption",
+                    title="Lay tile",
+                    unit="m2",
+                    price=2000,
+                    package_size=10,
+                    consumption_per_m2=1.25,
+                    public_category="works",
+                )
+            ],
+        )
+
+        line = projection["specLines"][0]
+        self.assertEqual(line["purchaseMode"], "package")
+        self.assertEqual(line["purchaseAggregation"], "room")
+
 
 if __name__ == "__main__":
     unittest.main()

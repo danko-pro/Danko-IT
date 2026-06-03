@@ -14,6 +14,7 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from supply_bot.admin_api.app import create_admin_app
 from supply_bot.config import Settings, load_settings
 from supply_bot.database.metadata import metadata
+from supply_bot.estimates.application.flooring_package_projection import build_flooring_package_projection
 from supply_bot.estimates.application.flooring_snapshot import (
     DEFAULT_PUBLIC_FLOORING_SNAPSHOT,
     EXPECTED_COVERING_CODES,
@@ -114,6 +115,47 @@ def _work_assembly_row(**overrides: Any) -> dict[str, Any]:
     }
     values.update(overrides)
     return _sample_assembly_row(**values)
+
+
+class FlooringSnapshotProcurementFieldsTests(unittest.TestCase):
+    def test_projection_spec_lines_allow_procurement_keys(self) -> None:
+        projection = build_flooring_package_projection(
+            "covering",
+            [
+                _sample_assembly_row(
+                    section="consumable",
+                    kind="consumable",
+                    formula="kg_layer_consumption",
+                    title="Клей",
+                    unit="kg",
+                    price=600,
+                    package_size=25,
+                    consumption_per_m2=1.5,
+                    layer_mm=5,
+                    public_category="consumables",
+                )
+            ],
+        )
+        line = projection["specLines"][0]
+        allowed = {
+            "code",
+            "title",
+            "category",
+            "basis",
+            "unit",
+            "quantityPerBasis",
+            "unitPrice",
+            "packageSize",
+            "packageUnit",
+            "packagePrice",
+            "purchaseMode",
+            "purchaseAggregation",
+            "aggregationKey",
+            "calculationNote",
+        }
+        self.assertTrue(set(line) <= allowed)
+        leaked = set(line) & PUBLIC_FLOORING_FORBIDDEN_KEYS
+        self.assertEqual(leaked, set())
 
 
 class FlooringSnapshotSpecLinesTests(unittest.IsolatedAsyncioTestCase):

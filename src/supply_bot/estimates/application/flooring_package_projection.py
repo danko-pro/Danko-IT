@@ -14,6 +14,18 @@ from supply_bot.utils import normalize_text, slugify
 
 FLOORING_PACKAGE_SPEC_BASIS = "area"
 
+_PACKAGE_AWARE_FORMULAS = frozenset(
+    {
+        "package_consumption",
+        "layer_consumption",
+        "piece_consumption",
+        "kg_layer_consumption",
+        "liquid_layers",
+        "roll_meter_consumption",
+        "sheet_area_consumption",
+    }
+)
+
 _TARGET_ALLOWED_KINDS: dict[str, frozenset[str]] = {
     "covering": frozenset({"material", "consumable", "tool"}),
     "preparation": frozenset({"work"}),
@@ -146,12 +158,76 @@ def _build_spec_line(row: Mapping[str, Any], *, target_kind: str, category: str,
         "unit": _text(row.get("unit")) or "pcs",
         "quantityPerBasis": _round_quantity(quantity_per_basis),
         "unitPrice": _round_money(unit_price),
+        "aggregationKey": code,
     }
     package_size = _number(row.get("package_size"))
     if package_size > 0:
         line["packageSize"] = _round_quantity(package_size)
         line["packageUnit"] = line["unit"]
+
+    if _purchase_mode(row) == "package":
+        line["purchaseMode"] = "package"
+        line["packagePrice"] = _round_money(_number(row.get("price")))
+        line["purchaseAggregation"] = _purchase_aggregation(row)
+
+    calculation_note = _calculation_note(row)
+    if calculation_note:
+        line["calculationNote"] = calculation_note
+
     return line
+
+
+def _purchase_mode(row: Mapping[str, Any]) -> str:
+    package_size = _number(row.get("package_size"))
+    if package_size <= 0:
+        return "raw"
+    formula = _normalize_formula(row.get("formula"))
+    if formula in _PACKAGE_AWARE_FORMULAS:
+        return "package"
+    return "raw"
+
+
+def _purchase_aggregation(row: Mapping[str, Any]) -> str:
+    kind = _normalize_kind(row.get("kind"))
+    if kind == "work":
+        return "room"
+    return "project"
+
+
+def _calculation_note(row: Mapping[str, Any]) -> str:
+    formula = _normalize_formula(row.get("formula"))
+    unit = _text(row.get("unit")) or "pcs"
+    consumption = _number(row.get("consumption_per_m2"))
+    layer_mm = _number(row.get("layer_mm"))
+    consumption_text = _format_public_quantity(consumption)
+
+    if formula == "kg_layer_consumption" and consumption > 0:
+        layer_part = _format_public_quantity(layer_mm if layer_mm > 0 else 1.0)
+        return f"{consumption_text} {unit}/m²/mm × {layer_part} mm"
+    if formula == "liquid_layers" and consumption > 0:
+        layer_part = _format_public_quantity(layer_mm if layer_mm > 0 else 1.0)
+        return f"{consumption_text} {unit}/m² × {layer_part} mm"
+    if formula == "layer_consumption" and consumption > 0 and layer_mm > 0:
+        return f"{consumption_text} {unit}/m² × {_format_public_quantity(layer_mm)} mm"
+    if formula in {"package_consumption", "unit_consumption", "roll_meter_consumption"} and consumption > 0:
+        return f"{consumption_text} {unit}/m²"
+    if formula == "piece_consumption" and consumption > 0:
+        return f"{consumption_text} {unit}/m²"
+    if formula == "sheet_area_consumption" and consumption > 0:
+        return f"{consumption_text} m²/m²"
+    if formula == "flat_per_m2":
+        coefficient = _flat_per_m2_coefficient(_normalize_kind(row.get("kind")), consumption)
+        if coefficient != 1.0:
+            return f"{_format_public_quantity(coefficient)} m²/m²"
+    return ""
+
+
+def _format_public_quantity(value: float) -> str:
+    rounded = _round_quantity(value)
+    if rounded == int(rounded):
+        return str(int(rounded))
+    text = f"{rounded:.6f}".rstrip("0").rstrip(".")
+    return text or "0"
 
 
 def _spec_unit_price_and_quantity(row: Mapping[str, Any]) -> tuple[float, float]:

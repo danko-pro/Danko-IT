@@ -42,6 +42,11 @@ import {
   type FlooringAssemblyTarget,
 } from "./flooring-assembly";
 import { createFlooringCatalogRowFromAssembly } from "./flooring-catalog-assembly-create-row";
+import {
+  prepareCoveringDraftForCatalogSave,
+  prepareLayoutDraftForCatalogSave,
+  preparePreparationDraftForCatalogSave,
+} from "./flooring-package-projection";
 import { finalizeFlooringCatalogAssemblyAfterFlatSave } from "./flooring-catalog-assembly-edit-save";
 import {
   SNAPSHOT_MAPPING_DELAY_STATUS,
@@ -381,7 +386,15 @@ export function useFlooringCatalogPanel() {
       setError("Укажите название покрытия.");
       return;
     }
-    const draftToSave = { ...coveringDraft, title };
+    let draftToSave = { ...coveringDraft, title };
+    if (assemblyTarget === "covering") {
+      const prepared = prepareCoveringDraftForCatalogSave(draftToSave, assemblyRowsSnapshot);
+      if (prepared.status === "error") {
+        setError(prepared.message);
+        return;
+      }
+      draftToSave = prepared.draft;
+    }
     setSavingCovering(true);
     setError(null);
     setStatusMessage(null);
@@ -422,6 +435,15 @@ export function useFlooringCatalogPanel() {
       setError("Укажите название подготовки.");
       return;
     }
+    let draftToSave = { ...preparationDraft, title };
+    if (assemblyTarget === "preparation") {
+      const prepared = preparePreparationDraftForCatalogSave(draftToSave, assemblyRowsSnapshot);
+      if (prepared.status === "error") {
+        setError(prepared.message);
+        return;
+      }
+      draftToSave = prepared.draft;
+    }
     setSavingPreparation(true);
     setError(null);
     setStatusMessage(null);
@@ -430,7 +452,7 @@ export function useFlooringCatalogPanel() {
       const before = snapshot;
       await updateFlooringPreparation(
         editingPreparationId,
-        preparationDraftToUpdatePayload({ ...preparationDraft, title }),
+        preparationDraftToUpdatePayload(draftToSave),
       );
       const fresh = await fetchFlooringSnapshot();
       setSnapshot(fresh);
@@ -456,13 +478,22 @@ export function useFlooringCatalogPanel() {
       setError("Укажите название укладки.");
       return;
     }
+    let draftToSave = { ...layoutDraft, title };
+    if (assemblyTarget === "layout") {
+      const prepared = prepareLayoutDraftForCatalogSave(draftToSave, assemblyRowsSnapshot);
+      if (prepared.status === "error") {
+        setError(prepared.message);
+        return;
+      }
+      draftToSave = prepared.draft;
+    }
     setSavingLayout(true);
     setError(null);
     setStatusMessage(null);
     setWarningMessage(null);
     try {
       const before = snapshot;
-      await updateFlooringLayout(editingLayoutId, layoutDraftToUpdatePayload({ ...layoutDraft, title }));
+      await updateFlooringLayout(editingLayoutId, layoutDraftToUpdatePayload(draftToSave));
       const fresh = await fetchFlooringSnapshot();
       setSnapshot(fresh);
       const freshCatalog = await listFlooringLayouts();

@@ -2,5 +2,6 @@
 @import "./catalog-editor.plumbing.table.css";
 @import "./catalog-editor.plumbing.composition.css";
 @import "./catalog-editor.plumbing.zones.css";
+@import "./catalog-editor.plumbing.table-adaptive.css";
 @import "./catalog-editor.plumbing.library.css";
 @import "./catalog-editor.plumbing.responsive.css";

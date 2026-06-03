@@ -367,41 +367,6 @@ def _map_layout_row(row: Mapping[str, Any], *, used_codes: set[str]) -> dict[str
     }
 
 
-def _catalog_covers_required_codes(
-    mapped_items: Sequence[Mapping[str, Any]],
-    required_codes: frozenset[str],
-) -> bool:
-    mapped_codes = {str(item["code"]) for item in mapped_items}
-    return required_codes.issubset(mapped_codes)
-
-
-def _custom_section_extras(
-    mapped_items: Sequence[Mapping[str, Any]],
-    *,
-    expected_codes: frozenset[str],
-    known_seed_codes: set[str],
-) -> list[dict[str, Any]]:
-    extras: list[dict[str, Any]] = []
-    for item in mapped_items:
-        code = str(item["code"])
-        if code in expected_codes or code in known_seed_codes:
-            continue
-        extras.append(dict(item))
-    return extras
-
-
-def _is_f1_complete_catalog(
-    mapped_coverings: Sequence[Mapping[str, Any]],
-    mapped_preparations: Sequence[Mapping[str, Any]],
-    mapped_layouts: Sequence[Mapping[str, Any]],
-) -> bool:
-    return (
-        _catalog_covers_required_codes(mapped_coverings, EXPECTED_COVERING_CODES)
-        and _catalog_covers_required_codes(mapped_preparations, EXPECTED_PREPARATION_CODES)
-        and _catalog_covers_required_codes(mapped_layouts, EXPECTED_LAYOUT_CODES)
-    )
-
-
 def _merge_section_with_defaults(
     db_items: Sequence[Mapping[str, Any]],
     default_items: Sequence[Mapping[str, Any]],
@@ -452,34 +417,6 @@ def build_public_flooring_snapshot_from_catalog(
         _map_layout_row(row, used_codes=used_layout_codes)
         for row in layouts
     ]
-
-    if not _is_f1_complete_catalog(mapped_coverings, mapped_preparations, mapped_layouts):
-        result = build_public_flooring_snapshot()
-        result["coverings"] = [
-            *result["coverings"],
-            *_custom_section_extras(
-                mapped_coverings,
-                expected_codes=EXPECTED_COVERING_CODES,
-                known_seed_codes=set(_COVERING_TITLE_TO_CODE.values()),
-            ),
-        ]
-        result["preparations"] = [
-            *result["preparations"],
-            *_custom_section_extras(
-                mapped_preparations,
-                expected_codes=EXPECTED_PREPARATION_CODES,
-                known_seed_codes=set(_PREPARATION_TITLE_TO_CODE.values()),
-            ),
-        ]
-        result["layouts"] = [
-            *result["layouts"],
-            *_custom_section_extras(
-                mapped_layouts,
-                expected_codes=EXPECTED_LAYOUT_CODES,
-                known_seed_codes=set(_LAYOUT_TITLE_TO_CODE.values()),
-            ),
-        ]
-        return result
 
     return {
         "version": DEFAULT_PUBLIC_FLOORING_SNAPSHOT["version"],

@@ -33,6 +33,7 @@ import type {
 } from "./flooring-types";
 
 const FLOORING_CATALOG_ASSEMBLY_VERSION = "flooring-assembly-v1";
+export const DEFAULT_PUBLIC_UNDERLAY_PRICE_PER_M2 = 220;
 
 const PUBLIC_CATEGORY_BY_KIND: Record<FlooringAssemblyRowKind, string> = {
   material: "materials",
@@ -464,7 +465,10 @@ export function snapshotUnderlayFieldsFromRate(underlayPricePerM2: number): {
   if (rate <= 0) {
     return { underlayMode: "none", underlayConsumptionPerM2: 0 };
   }
-  return { underlayMode: "required", underlayConsumptionPerM2: rate };
+  return {
+    underlayMode: "required",
+    underlayConsumptionPerM2: rate / DEFAULT_PUBLIC_UNDERLAY_PRICE_PER_M2,
+  };
 }
 
 function flatConsumableFromPricePerM2(

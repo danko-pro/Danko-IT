@@ -26,6 +26,7 @@ import {
   snapshotPreparationRowToCreatePayload,
   snapshotToDisplayRows,
   snapshotUnderlayFieldsFromRate,
+  DEFAULT_PUBLIC_UNDERLAY_PRICE_PER_M2,
   SNAPSHOT_ROW_CREATE_NOTE,
 } from "./flooring-mappers";
 import type {
@@ -378,7 +379,7 @@ describe("snapshot row → create payload mappers", () => {
   it("сохраняет underlayPricePerM2 через mode required и consumption=rate", () => {
     const payload = snapshotCoveringRowToCreatePayload(LAMINATE_UNDERLAY_ROW);
     expect(payload.underlay_mode).toBe("required");
-    expect(payload.underlay_consumption_per_m2).toBe(220);
+    expect(payload.underlay_consumption_per_m2).toBe(1);
     const rates = coveringDtoToConsumableRates(
       {
         ...makeCoveringDto(),
@@ -386,7 +387,7 @@ describe("snapshot row → create payload mappers", () => {
         underlay_mode: payload.underlay_mode,
         underlay_consumption_per_m2: payload.underlay_consumption_per_m2,
       },
-      { underlayPricePerM2: 1 },
+      { underlayPricePerM2: DEFAULT_PUBLIC_UNDERLAY_PRICE_PER_M2 },
     );
     expect(rates.underlayPricePerM2).toBe(220);
   });

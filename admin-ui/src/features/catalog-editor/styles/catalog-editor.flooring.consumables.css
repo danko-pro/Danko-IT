@@ -28,94 +28,6 @@
   line-height: 1;
 }
 
-.ce-flooring-consumables-table .ce-consumables-header-cell {
-  position: relative;
-}
-
-.ce-consumables-header-inner {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  min-width: 0;
-}
-
-.ce-consumables-header-label {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.ce-consumables-header-tools {
-  display: inline-flex;
-  align-items: center;
-  gap: 1px;
-  position: absolute;
-  top: 4px;
-  right: 6px;
-  z-index: 4;
-  opacity: 0.42;
-  pointer-events: auto;
-  transition: opacity 0.12s ease;
-}
-
-.ce-consumables-header-cell:hover .ce-consumables-header-tools,
-.ce-consumables-header-cell:focus-within .ce-consumables-header-tools {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-.ce-consumables-header-tool {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 16px;
-  height: 16px;
-  padding: 0;
-  border: 1px solid transparent;
-  border-radius: 4px;
-  background: transparent;
-  color: var(--ce-muted);
-  font: inherit;
-  font-size: 9px;
-  line-height: 1;
-  cursor: pointer;
-}
-
-.ce-consumables-header-tool:hover {
-  border-color: var(--ce-accent);
-  background: #ffffff;
-  color: var(--ce-accent-strong);
-}
-
-.ce-consumables-column-resizer {
-  position: absolute;
-  top: 4px;
-  right: 0;
-  bottom: 4px;
-  z-index: 3;
-  width: 6px;
-  cursor: col-resize;
-  touch-action: none;
-}
-
-.ce-consumables-column-resizer::before {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 2px;
-  width: 2px;
-  border-radius: 999px;
-  background: #b9c7da;
-  content: "";
-  opacity: 0.45;
-}
-
-.ce-consumables-column-resizer:hover::before {
-  background: var(--ce-accent);
-  opacity: 1;
-}
-
 .ce-flooring-consumables-table tbody td {
   height: 32px;
   border-right: 0;
@@ -198,18 +110,6 @@
 .ce-flooring-consumables-table td.ce-consumables-cell.ce-readonly.is-align-right {
   padding-left: 8px;
   padding-right: 8px;
-}
-
-.ce-flooring-consumables-table th.ce-consumables-cell.is-align-left .ce-consumables-header-inner {
-  justify-content: flex-start;
-}
-
-.ce-flooring-consumables-table th.ce-consumables-cell.is-align-center .ce-consumables-header-inner {
-  justify-content: center;
-}
-
-.ce-flooring-consumables-table th.ce-consumables-cell.is-align-right .ce-consumables-header-inner {
-  justify-content: flex-end;
 }
 
 .ce-flooring-consumables-table td.ce-consumables-cell.is-align-left .ce-cell-input {

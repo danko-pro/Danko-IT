@@ -23,9 +23,9 @@ import {
 import { usePlumbingCatalog } from "./api/client";
 import { useWarmFloorCatalog } from "./api/warm-floor-client";
 import type { PlumbingSnapshotPreview } from "./api/types";
-import { CATALOG_EDITOR_STYLES } from "./styles";
 import { FlooringCatalogPanel } from "./FlooringCatalogPanel";
 import { WarmFloorCatalogPanel } from "./WarmFloorCatalogPanel";
+import "./styles/catalog-editor.css";
 
 const CATEGORY_LABELS: Record<CatalogCategory, string> = {
   works: "Работа",
@@ -566,8 +566,6 @@ export function CatalogEditor() {
 
   return (
     <div className="catalog-editor">
-      <style>{CATALOG_EDITOR_STYLES}</style>
-
       <header className="ce-header">
         <div className="ce-header-text">
           <span className="ce-kicker">Danko BuildTech · внутренний инструмент</span>
@@ -609,17 +607,18 @@ export function CatalogEditor() {
         ))}
       </nav>
 
-      {activeSection?.id === "warm-floor" ? (
-        <WarmFloorCatalogPanel controller={warmFloorCatalog} />
-      ) : activeSection?.id === "floors" ? (
-        <FlooringCatalogPanel />
-      ) : activeSection && !activeSection.ready ? (
-        <div className="ce-stub-panel">
-          <h2>{activeSection.label}</h2>
-          <p>Раздел в разработке. Сейчас наполняется только вкладка «Сантехника».</p>
-        </div>
-      ) : (
-        <>
+      <main className="ce-workspace">
+        {activeSection?.id === "warm-floor" ? (
+          <WarmFloorCatalogPanel controller={warmFloorCatalog} />
+        ) : activeSection?.id === "floors" ? (
+          <FlooringCatalogPanel />
+        ) : activeSection && !activeSection.ready ? (
+          <div className="ce-stub-panel">
+            <h2>{activeSection.label}</h2>
+            <p>Раздел в разработке. Сейчас наполняется только вкладка «Сантехника».</p>
+          </div>
+        ) : (
+          <>
           <div className="ce-toolbar">
             <div className="ce-subtabs">
               <button
@@ -734,8 +733,9 @@ export function CatalogEditor() {
               onRemoveItem={removeLibraryItem}
             />
           )}
-        </>
-      )}
+          </>
+        )}
+      </main>
     </div>
   );
 }

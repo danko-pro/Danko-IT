@@ -790,6 +790,108 @@ class AdminCalculatorFlooringCatalogAssemblyRouteTests(AdminProjectsRouteCase):
                 self.assertEqual(patch.status_code, 400)
                 self.assertIn("assembly", patch.json()["detail"].lower())
 
+    def test_patch_covering_blocked_after_put_empty_assembly_rows(self) -> None:
+        with TemporaryDirectory() as tmp_dir:
+            self._root = Path(tmp_dir)
+            with self._build_client() as client:
+                self._login_admin(client)
+                covering = client.post(
+                    "/api/calculator/flooring/coverings",
+                    json=_minimal_covering_kwargs(
+                        title=f"FP3c empty shell {uuid4().hex}",
+                        material_price_per_m2=55,
+                    ),
+                ).json()
+                path = f"/api/calculator/flooring/covering/{covering['id']}/assembly"
+                put = client.put(path, json={"title": "Shell", "rows": []})
+                self.assertEqual(put.status_code, 200)
+                self.assertEqual(put.json()["rows"], [])
+
+                patch = client.patch(
+                    f"/api/calculator/flooring/coverings/{covering['id']}",
+                    json=_minimal_covering_kwargs(title="Blocked", material_price_per_m2=9999),
+                )
+                self.assertEqual(patch.status_code, 400)
+                self.assertIn("assembly", patch.json()["detail"].lower())
+
+                saved = client.get("/api/calculator/flooring/coverings").json()
+                row = next(item for item in saved if item["id"] == covering["id"])
+                self.assertEqual(row["material_price_per_m2"], 55)
+
+    def test_patch_covering_allowed_after_delete_assembly_shell(self) -> None:
+        with TemporaryDirectory() as tmp_dir:
+            self._root = Path(tmp_dir)
+            with self._build_client() as client:
+                self._login_admin(client)
+                covering = client.post(
+                    "/api/calculator/flooring/coverings",
+                    json=_minimal_covering_kwargs(
+                        title=f"FP3c delete shell {uuid4().hex}",
+                        material_price_per_m2=88,
+                    ),
+                ).json()
+                path = f"/api/calculator/flooring/covering/{covering['id']}/assembly"
+                client.put(path, json={"title": "Shell", "rows": []})
+                client.delete(path)
+
+                patch = client.patch(
+                    f"/api/calculator/flooring/coverings/{covering['id']}",
+                    json=_minimal_covering_kwargs(title="Allowed", material_price_per_m2=123),
+                )
+                self.assertEqual(patch.status_code, 200)
+                self.assertEqual(patch.json()["material_price_per_m2"], 123)
+
+    def test_put_all_disabled_assembly_keeps_flat_rates(self) -> None:
+        with TemporaryDirectory() as tmp_dir:
+            self._root = Path(tmp_dir)
+            with self._build_client() as client:
+                self._login_admin(client)
+                covering = client.post(
+                    "/api/calculator/flooring/coverings",
+                    json=_minimal_covering_kwargs(
+                        title=f"FP3c all disabled {uuid4().hex}",
+                        material_price_per_m2=66,
+                        labor_price_per_m2=77,
+                    ),
+                ).json()
+                put = client.put(
+                    f"/api/calculator/flooring/covering/{covering['id']}/assembly",
+                    json={
+                        "title": "Disabled package",
+                        "rows": [_assembly_row(is_enabled=False)],
+                    },
+                )
+                self.assertEqual(put.status_code, 200)
+
+                saved = client.get("/api/calculator/flooring/coverings").json()
+                row = next(item for item in saved if item["id"] == covering["id"])
+                self.assertEqual(row["material_price_per_m2"], 66)
+                self.assertEqual(row["labor_price_per_m2"], 77)
+
+    def test_patch_covering_blocked_when_all_disabled_assembly(self) -> None:
+        with TemporaryDirectory() as tmp_dir:
+            self._root = Path(tmp_dir)
+            with self._build_client() as client:
+                self._login_admin(client)
+                covering = client.post(
+                    "/api/calculator/flooring/coverings",
+                    json=_minimal_covering_kwargs(title=f"FP3c disabled block {uuid4().hex}"),
+                ).json()
+                client.put(
+                    f"/api/calculator/flooring/covering/{covering['id']}/assembly",
+                    json={
+                        "title": "Disabled package",
+                        "rows": [_assembly_row(is_enabled=False)],
+                    },
+                )
+
+                patch = client.patch(
+                    f"/api/calculator/flooring/coverings/{covering['id']}",
+                    json=_minimal_covering_kwargs(title="Blocked", material_price_per_m2=9999),
+                )
+                self.assertEqual(patch.status_code, 400)
+                self.assertIn("assembly", patch.json()["detail"].lower())
+
     def test_delete_assembly_keeps_flat_rates(self) -> None:
         with TemporaryDirectory() as tmp_dir:
             self._root = Path(tmp_dir)

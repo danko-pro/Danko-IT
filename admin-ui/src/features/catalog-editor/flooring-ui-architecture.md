@@ -21,6 +21,7 @@ Current reusable mechanics:
 - `CatalogIconAction.tsx` for compact icon-only actions such as edit, delete, and add.
 - `CatalogLibraryPanel.tsx` for the shared library shell used by flooring and plumbing libraries.
 - `CatalogManagedTableHeaderCell.tsx` for reusable table column controls.
+- `WarmFloorRateTable.tsx` for compact warm-floor rate tables with shared managed columns.
 - `useCatalogTableColumns.ts` for UI-only column width and text alignment state.
 - `useCatalogPersistedState.ts` for resilient UI state that survives reloads.
 
@@ -43,6 +44,7 @@ Flooring CSS is split by surface:
 - `catalog-editor.flooring.consumables.css` for the standard consumables table.
 - `catalog-editor.flooring.assembly.css` for the assembly builder.
 - `catalog-editor.flooring.responsive.css` for breakpoints that coordinate multiple surfaces.
+- `catalog-editor.warm-floor.css` for the warm-floor rate grid and compact rate table overrides.
 
 Domain library CSS files should only keep category-specific dimensions and small overrides. New CSS should go into the closest existing file. Create a new CSS file only when a new reusable surface appears and the existing file would cross its boundary.
 

@@ -5,4 +5,5 @@
 @import "./catalog-editor.library.css";
 @import "./catalog-editor.plumbing.css";
 @import "./catalog-editor.flooring.css";
+@import "./catalog-editor.warm-floor.css";
 @import "./catalog-editor.managed-table.css";

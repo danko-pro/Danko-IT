@@ -108,7 +108,7 @@ export function PlumbingCatalogPanel({ catalog }: PlumbingCatalogPanelProps) {
       />
     ) : null}
 
-    <div className="ce-note ce-note-warn">
+    <div className="ce-note ce-note-warn ce-plumbing-guidance-note ce-plumbing-guidance-note-warn">
       <span className="ce-note-tag">Трубы</span>
       Без проекта расчёт труб, фитингов и крепежа ориентировочный, с запасом на повороты и углы.
       PPR d20: 10 м.п. на водяную точку (пара ХВС+ГВС = ×2); выходы и фитинги — по 6 шт. на точку.
@@ -117,7 +117,7 @@ export function PlumbingCatalogPanel({ catalog }: PlumbingCatalogPanelProps) {
       для зоны мойки без проекта (фиксированный коэффициент, не 1:1 с метражом труб).
     </div>
 
-    <div className="ce-note">
+    <div className="ce-note ce-plumbing-guidance-note ce-plumbing-guidance-note-info">
       <span className="ce-note-tag">Надбавки</span>
       Накладные 10% и транспорт 5% применяются по решению и в суммы по умолчанию не входят.
       6,4% — резерв на отклонения по трассе и комплектующим (без проекта), отдельной строкой на

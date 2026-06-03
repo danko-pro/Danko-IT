@@ -67,6 +67,7 @@ const managedTableCssSource = readFeatureFile("styles/catalog-editor.managed-tab
 const plumbingCssSource = readFeatureFile("styles/catalog-editor.plumbing.css");
 const plumbingCompositionCssSource = readFeatureFile("styles/catalog-editor.plumbing.composition.css");
 const plumbingLibraryCssSource = readFeatureFile("styles/catalog-editor.plumbing.library.css");
+const plumbingNotesCssSource = readFeatureFile("styles/catalog-editor.plumbing.notes.css");
 const plumbingResponsiveCssSource = readFeatureFile("styles/catalog-editor.plumbing.responsive.css");
 const plumbingTableAdaptiveCssSource = readFeatureFile("styles/catalog-editor.plumbing.table-adaptive.css");
 const plumbingTableCssSource = readFeatureFile("styles/catalog-editor.plumbing.table.css");
@@ -105,6 +106,7 @@ const REQUIRED_PLUMBING_CSS_MODULES = [
   "catalog-editor.plumbing.css",
   "catalog-editor.plumbing.composition.css",
   "catalog-editor.plumbing.library.css",
+  "catalog-editor.plumbing.notes.css",
   "catalog-editor.plumbing.responsive.css",
   "catalog-editor.plumbing.table-adaptive.css",
   "catalog-editor.plumbing.table.css",
@@ -230,6 +232,7 @@ const plumbingCssModulePaths = Object.keys(
     "./styles/catalog-editor.plumbing.css",
     "./styles/catalog-editor.plumbing.composition.css",
     "./styles/catalog-editor.plumbing.library.css",
+    "./styles/catalog-editor.plumbing.notes.css",
     "./styles/catalog-editor.plumbing.responsive.css",
     "./styles/catalog-editor.plumbing.table-adaptive.css",
     "./styles/catalog-editor.plumbing.table.css",
@@ -266,6 +269,7 @@ const plumbingCssSources: Array<[string, string, number]> = [
   ["catalog-editor.plumbing.css", plumbingCssSource, 20],
   ["catalog-editor.plumbing.composition.css", plumbingCompositionCssSource, 140],
   ["catalog-editor.plumbing.library.css", plumbingLibraryCssSource, 80],
+  ["catalog-editor.plumbing.notes.css", plumbingNotesCssSource, 40],
   ["catalog-editor.plumbing.responsive.css", plumbingResponsiveCssSource, 60],
   ["catalog-editor.plumbing.table-adaptive.css", plumbingTableAdaptiveCssSource, 100],
   ["catalog-editor.plumbing.table.css", plumbingTableCssSource, 140],
@@ -435,6 +439,8 @@ describe("catalog editor architecture", () => {
     expect(sourceLines(plumbingPreviewPanelSource).length).toBeLessThanOrEqual(100);
     expect(sourceLines(plumbingCatalogModelSource).length).toBeLessThanOrEqual(260);
     expect(plumbingCatalogPanelSource).toContain("CatalogViewTabs");
+    expect(plumbingCatalogPanelSource).toContain("ce-plumbing-guidance-note");
+    expect(plumbingCatalogPanelSource).toContain("ce-plumbing-guidance-note-warn");
     expect(usePlumbingCatalogPanelSource).toContain("setItems");
     expect(usePlumbingCatalogPanelSource).toContain("setZones");
     expect(plumbingCatalogModelSource).toContain("export function itemUnitPrice");

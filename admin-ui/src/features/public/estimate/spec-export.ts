@@ -108,16 +108,18 @@ export function buildSpecExportCsv(sections: EstimateSpecSection[]): string {
   return rows.join("\r\n");
 }
 
+const PROCUREMENT_BLOCK_TITLE = "Полы — ориентировочная закупка материалов";
+
 const PROCUREMENT_CSV_HEADERS = [
   "Позиция",
   "Категория",
-  "Потребность",
-  "Ед. потребности",
+  "Расчетный расход",
+  "Ед. расхода",
   "Закупка",
   "Ед. закупки",
-  "Цена за ед.",
+  "Цена закупочной единицы",
   "Сумма",
-  "Примечание",
+  "Примечание / расчет",
 ] as const;
 
 function formatProcurementCategoryLabel(category: FlooringProcurementLine["category"]): string {
@@ -134,7 +136,7 @@ export function buildProcurementExportCsvSection(procurementLines: FlooringProcu
   }
 
   const rows: string[] = [
-    buildCsvRow(["Закупка"]),
+    buildCsvRow([PROCUREMENT_BLOCK_TITLE]),
     buildCsvRow([...PROCUREMENT_CSV_HEADERS]),
   ];
   const procurementTotal = procurementLines.reduce((sum, line) => sum + line.total, 0);
@@ -176,8 +178,12 @@ export function buildSpecExportCsvWithProcurement(
   return `${specificationCsv}\r\n\r\n${procurementCsv}`;
 }
 
-export function downloadSpecExportCsv(sections: EstimateSpecSection[], filename?: string): void {
-  const csv = buildSpecExportCsv(sections);
+export function downloadSpecExportCsv(
+  sections: EstimateSpecSection[],
+  filename?: string,
+  procurementLines?: FlooringProcurementLine[],
+): void {
+  const csv = buildSpecExportCsvWithProcurement(sections, procurementLines);
   const blob = new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement("a");

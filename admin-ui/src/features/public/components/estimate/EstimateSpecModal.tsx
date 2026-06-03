@@ -17,6 +17,7 @@ export function EstimateSpecModal({ data, onClose }: EstimateSpecModalProps) {
       title={data.title}
       subtitle={data.subtitle}
       sections={data.sections}
+      procurementLines={data.procurementLines}
       formatMoney={formatMoney}
       formatQuantity={formatEstimateQuantity}
       onClose={onClose}

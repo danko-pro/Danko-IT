@@ -37,8 +37,8 @@ export function FlooringAssemblyLibraryCatalogTable({
   formatMoney,
 }: FlooringAssemblyLibraryCatalogTableProps) {
   return (
-    <div className="ce-table-wrap ce-flooring-table-wrap ce-flooring-library-table-wrap">
-      <table className="ce-table ce-flooring-table ce-flooring-library-table">
+    <div className="ce-table-wrap ce-catalog-library-table-wrap ce-flooring-table-wrap ce-flooring-library-table-wrap">
+      <table className="ce-table ce-catalog-library-table ce-flooring-table ce-flooring-library-table">
         <FlooringAssemblyLibraryColgroup controls={controls} />
         <FlooringAssemblyLibraryHeader controls={controls} />
         <tbody>

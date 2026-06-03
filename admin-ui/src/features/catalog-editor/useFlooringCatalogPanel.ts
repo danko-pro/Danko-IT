@@ -59,8 +59,9 @@ import {
 } from "./flooring-catalog-model";
 import { createFlooringCatalogDeleteActions } from "./flooring-delete-actions";
 import { createFlooringSnapshotPromoteActions } from "./flooring-snapshot-promote-actions";
-import { useFlooringAssemblyEditLoad } from "./useFlooringAssemblyEditLoad";
 import { resolveCatalogEditItem } from "./flooring-catalog-row-edit";
+import { useCatalogPersistedState } from "./useCatalogPersistedState";
+import { useFlooringAssemblyEditLoad } from "./useFlooringAssemblyEditLoad";
 
 export function useFlooringCatalogPanel() {
   const [snapshot, setSnapshot] = useState<PublicFlooringSnapshotResponse | null>(null);
@@ -90,7 +91,10 @@ export function useFlooringCatalogPanel() {
   const [savingLayout, setSavingLayout] = useState(false);
   const [savingAssembly, setSavingAssembly] = useState(false);
   const [assemblyRowsSnapshot, setAssemblyRowsSnapshot] = useState<CoveringAssemblyRow[]>([]);
-  const [assemblyTarget, setAssemblyTarget] = useState<FlooringAssemblyTarget>("covering");
+  const [assemblyTarget, setAssemblyTarget] = useCatalogPersistedState<FlooringAssemblyTarget>(
+    "flooring:assembly-target",
+    "covering",
+  );
   const {
     assemblyResetKey,
     assemblyInitialRows,
@@ -100,7 +104,10 @@ export function useFlooringCatalogPanel() {
     clearAssemblyEditLoad,
     loadAssemblyForEdit,
   } = useFlooringAssemblyEditLoad();
-  const [flooringView, setFlooringView] = useState<"catalog" | "library">("catalog");
+  const [flooringView, setFlooringView] = useCatalogPersistedState<"catalog" | "library">(
+    "flooring:view",
+    "catalog",
+  );
 
   const reloadSnapshot = useCallback(async () => {
     setLoading(true);

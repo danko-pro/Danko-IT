@@ -20,16 +20,21 @@ import {
   zoneCompositionRows,
   zoneRiskPercent,
 } from "./plumbing-catalog-model";
+import { useCatalogPersistedState, useCatalogPersistedStringSet } from "./useCatalogPersistedState";
 
 export type PlumbingView = "zones" | "library";
 
 export function usePlumbingCatalogPanel(catalog: PlumbingCatalogController) {
   const { items, zones, setItems, setZones } = catalog;
-  const [plumbingView, setPlumbingView] = useState<PlumbingView>("zones");
+  const [plumbingView, setPlumbingView] = useCatalogPersistedState<PlumbingView>("plumbing:view", "zones");
   const [search, setSearch] = useState("");
-  const [groupFilter, setGroupFilter] = useState<"all" | CatalogGroup>("all");
-  const [collapsedSubgroups, setCollapsedSubgroups] = useState<Set<string>>(new Set());
-  const [collapsedZones, setCollapsedZones] = useState<Set<string>>(new Set());
+  const [groupFilter, setGroupFilter] = useCatalogPersistedState<"all" | CatalogGroup>(
+    "plumbing:library-group",
+    "all",
+  );
+  const [collapsedSubgroups, setCollapsedSubgroups] =
+    useCatalogPersistedStringSet("plumbing:collapsed-subgroups");
+  const [collapsedZones, setCollapsedZones] = useCatalogPersistedStringSet("plumbing:collapsed-zones");
   const [showPreview, setShowPreview] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 

@@ -1,9 +1,8 @@
-import { useState } from "react";
-
 import { usePlumbingCatalog } from "./api/client";
 import { useWarmFloorCatalog } from "./api/warm-floor-client";
 import { FlooringCatalogPanel } from "./FlooringCatalogPanel";
 import { PlumbingCatalogPanel } from "./PlumbingCatalogPanel";
+import { useCatalogPersistedState } from "./useCatalogPersistedState";
 import { WarmFloorCatalogPanel } from "./WarmFloorCatalogPanel";
 import "./styles/catalog-editor.css";
 
@@ -31,17 +30,18 @@ const SECTION_TABS: SectionTab[] = [
 export function CatalogEditor() {
   const plumbingCatalog = usePlumbingCatalog();
   const warmFloorCatalog = useWarmFloorCatalog();
-  const [activeTab, setActiveTab] = useState<string>("plumbing");
+  const [activeTab, setActiveTab] = useCatalogPersistedState<string>("section-tab", "plumbing");
 
-  const activeSection = SECTION_TABS.find((tab) => tab.id === activeTab);
+  const activeSection = SECTION_TABS.find((tab) => tab.id === activeTab) ?? SECTION_TABS[0];
+  const activeSectionId = activeSection.id;
   const activeLoading =
-    activeTab === "warm-floor" ? warmFloorCatalog.loading : activeTab === "plumbing" ? plumbingCatalog.loading : false;
+    activeSectionId === "warm-floor" ? warmFloorCatalog.loading : activeSectionId === "plumbing" ? plumbingCatalog.loading : false;
   const activeSaving =
-    activeTab === "warm-floor" ? warmFloorCatalog.saving : activeTab === "plumbing" ? plumbingCatalog.saving : false;
+    activeSectionId === "warm-floor" ? warmFloorCatalog.saving : activeSectionId === "plumbing" ? plumbingCatalog.saving : false;
   const activeSavedAt =
-    activeTab === "warm-floor" ? warmFloorCatalog.savedAt : activeTab === "plumbing" ? plumbingCatalog.savedAt : null;
+    activeSectionId === "warm-floor" ? warmFloorCatalog.savedAt : activeSectionId === "plumbing" ? plumbingCatalog.savedAt : null;
   const activeError =
-    activeTab === "warm-floor" ? warmFloorCatalog.error : activeTab === "plumbing" ? plumbingCatalog.error : null;
+    activeSectionId === "warm-floor" ? warmFloorCatalog.error : activeSectionId === "plumbing" ? plumbingCatalog.error : null;
 
   return (
     <div className="catalog-editor">
@@ -77,7 +77,7 @@ export function CatalogEditor() {
           <button
             key={tab.id}
             type="button"
-            className={`ce-tab${tab.id === activeTab ? " is-active" : ""}${tab.ready ? "" : " is-stub"}`}
+            className={`ce-tab${tab.id === activeSectionId ? " is-active" : ""}${tab.ready ? "" : " is-stub"}`}
             onClick={() => setActiveTab(tab.id)}
           >
             {tab.label}
@@ -87,13 +87,13 @@ export function CatalogEditor() {
       </nav>
 
       <main className="ce-workspace">
-        <section hidden={activeSection?.id !== "plumbing"}>
+        <section hidden={activeSectionId !== "plumbing"}>
           <PlumbingCatalogPanel catalog={plumbingCatalog} />
         </section>
-        <section hidden={activeSection?.id !== "floors"}>
+        <section hidden={activeSectionId !== "floors"}>
           <FlooringCatalogPanel />
         </section>
-        <section hidden={activeSection?.id !== "warm-floor"}>
+        <section hidden={activeSectionId !== "warm-floor"}>
           <WarmFloorCatalogPanel controller={warmFloorCatalog} />
         </section>
         {activeSection && !activeSection.ready ? (

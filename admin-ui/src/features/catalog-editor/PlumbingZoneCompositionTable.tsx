@@ -53,6 +53,7 @@ export function PlumbingZoneCompositionTable({
   const { columns, beginColumnResize, columnClass, columnStyle, cycleColumnAlign } = useCatalogTableColumns({
     defaultColumns: PLUMBING_ZONE_DEFAULT_COLUMNS,
     minColumnWidths: PLUMBING_ZONE_MIN_COLUMN_WIDTH,
+    storageKey: "plumbing:zone-composition-columns",
   });
 
   return (

@@ -4,6 +4,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import catalogEditorSource from "./CatalogEditor.tsx?raw";
+import catalogLibraryPanelSource from "./CatalogLibraryPanel.tsx?raw";
 import flooringAssemblyBlockSource from "./FlooringAssemblyBlock.tsx?raw";
 import flooringAssemblyLibraryCatalogTableSource from "./FlooringAssemblyLibraryCatalogTable.tsx?raw";
 import flooringAssemblyLibraryColumnsSource from "./FlooringAssemblyLibraryColumns.ts?raw";
@@ -33,6 +34,7 @@ import plumbingZoneCompositionRowsSource from "./PlumbingZoneCompositionRows.tsx
 import plumbingZoneCompositionTableSource from "./PlumbingZoneCompositionTable.tsx?raw";
 import plumbingZoneSidebarSource from "./PlumbingZoneSidebar.tsx?raw";
 import plumbingZonesViewSource from "./PlumbingZonesView.tsx?raw";
+import useCatalogPersistedStateSource from "./useCatalogPersistedState.ts?raw";
 import useCatalogTableColumnsSource from "./useCatalogTableColumns.ts?raw";
 import usePlumbingCatalogPanelSource from "./usePlumbingCatalogPanel.ts?raw";
 
@@ -51,6 +53,7 @@ const flooringResponsiveCssSource = readFeatureFile("styles/catalog-editor.floor
 const flooringShellCssSource = readFeatureFile("styles/catalog-editor.flooring.shell.css");
 const flooringTablesCssSource = readFeatureFile("styles/catalog-editor.flooring.tables.css");
 const flooringWorkspaceCssSource = readFeatureFile("styles/catalog-editor.flooring.workspace.css");
+const libraryCssSource = readFeatureFile("styles/catalog-editor.library.css");
 const managedTableCssSource = readFeatureFile("styles/catalog-editor.managed-table.css");
 const plumbingCssSource = readFeatureFile("styles/catalog-editor.plumbing.css");
 const plumbingCompositionCssSource = readFeatureFile("styles/catalog-editor.plumbing.composition.css");
@@ -116,11 +119,14 @@ const REQUIRED_PLUMBING_CATALOG_MODULES = [
 ] as const;
 
 const REQUIRED_SHARED_CATALOG_MODULES = [
+  "CatalogLibraryPanel.tsx",
   "CatalogManagedTableHeaderCell.tsx",
+  "useCatalogPersistedState.ts",
   "useCatalogTableColumns.ts",
 ] as const;
 
 const REQUIRED_SHARED_CSS_MODULES = [
+  "catalog-editor.library.css",
   "catalog-editor.managed-table.css",
 ] as const;
 
@@ -162,6 +168,8 @@ const plumbingCatalogModulePaths = Object.keys(
 const sharedCatalogModulePaths = Object.keys(
   import.meta.glob([
     "./CatalogManagedTableHeaderCell.tsx",
+    "./CatalogLibraryPanel.tsx",
+    "./useCatalogPersistedState.ts",
     "./useCatalogTableColumns.ts",
   ]),
 );
@@ -195,6 +203,7 @@ const plumbingCssModulePaths = Object.keys(
 
 const sharedCssModulePaths = Object.keys(
   import.meta.glob([
+    "./styles/catalog-editor.library.css",
     "./styles/catalog-editor.managed-table.css",
   ]),
 );
@@ -223,6 +232,7 @@ const plumbingCssSources: Array<[string, string, number]> = [
 ];
 
 const sharedCssSources: Array<[string, string, number]> = [
+  ["catalog-editor.library.css", libraryCssSource, 120],
   ["catalog-editor.managed-table.css", managedTableCssSource, 160],
 ];
 
@@ -242,7 +252,7 @@ describe("catalog editor architecture", () => {
     expect(sourceLines(catalogEditorSource).length).toBeLessThanOrEqual(140);
     expect(catalogEditorSource).toContain("<PlumbingCatalogPanel catalog={plumbingCatalog} />");
     expect(catalogEditorSource).toContain("<FlooringCatalogPanel />");
-    expect(catalogEditorSource).toContain('hidden={activeSection?.id !== "floors"}');
+    expect(catalogEditorSource).toContain('hidden={activeSectionId !== "floors"}');
     expect(catalogEditorSource).not.toContain("function ZoneCard");
     expect(catalogEditorSource).not.toContain("function LibraryView");
     expect(catalogEditorSource).not.toContain("CatalogViewTabs");
@@ -294,14 +304,30 @@ describe("catalog editor architecture", () => {
     }
 
     expect(sourceLines(useCatalogTableColumnsSource).length).toBeLessThanOrEqual(140);
+    expect(sourceLines(useCatalogPersistedStateSource).length).toBeLessThanOrEqual(80);
+    expect(sourceLines(catalogLibraryPanelSource).length).toBeLessThanOrEqual(80);
     expect(sourceLines(catalogManagedTableHeaderCellSource).length).toBeLessThanOrEqual(100);
+    expect(catalogEditorSource).toContain("useCatalogPersistedState");
+    expect(catalogEditorSource).toContain('"section-tab"');
+    expect(useFlooringCatalogPanelSource).toContain('"flooring:view"');
+    expect(useFlooringCatalogPanelSource).toContain('"flooring:assembly-target"');
+    expect(usePlumbingCatalogPanelSource).toContain('"plumbing:view"');
+    expect(usePlumbingCatalogPanelSource).toContain('"plumbing:library-group"');
+    expect(usePlumbingCatalogPanelSource).toContain('"plumbing:collapsed-subgroups"');
+    expect(usePlumbingCatalogPanelSource).toContain('"plumbing:collapsed-zones"');
+    expect(plumbingLibraryViewSource).toContain("CatalogLibraryPanel");
+    expect(flooringAssemblyLibraryPanelSource).toContain("CatalogLibraryPanel");
     expect(flooringConsumablesTableSource).toContain("useCatalogTableColumns");
+    expect(flooringConsumablesTableSource).toContain('"flooring:consumables-columns"');
     expect(flooringConsumablesTableSource).toContain("CatalogManagedTableHeaderCell");
     expect(flooringAssemblyLibraryPanelSource).toContain("useCatalogTableColumns");
+    expect(flooringAssemblyLibraryPanelSource).toContain('"flooring:assembly-library-columns"');
     expect(flooringAssemblyLibraryCatalogTableSource).toContain("CatalogManagedTableHeaderCell");
     expect(plumbingZoneCompositionTableSource).toContain("useCatalogTableColumns");
+    expect(plumbingZoneCompositionTableSource).toContain('"plumbing:zone-composition-columns"');
     expect(plumbingZoneCompositionTableSource).toContain("CatalogManagedTableHeaderCell");
     expect(plumbingLibraryViewSource).toContain("useCatalogTableColumns");
+    expect(plumbingLibraryViewSource).toContain('"plumbing:library-columns"');
     expect(plumbingLibraryViewSource).toContain("CatalogManagedTableHeaderCell");
   });
 

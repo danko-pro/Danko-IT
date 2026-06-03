@@ -1,0 +1,23 @@
+.ce-plumbing-guidance-note {
+  width: min(100%, 1000px);
+  margin-top: 1px;
+  font-size: 10px;
+}
+
+.ce-plumbing-guidance-note .ce-note-tag {
+  min-height: 18px;
+  padding: 0 7px;
+  font-size: 10px;
+}
+
+.ce-plumbing-guidance-note-warn {
+  align-items: center;
+  border-width: 0;
+  background: #ffffff;
+  color: #8a5700;
+  font-weight: 100;
+}
+
+.ce-plumbing-guidance-note-info {
+  border-color: #ffffff;
+}

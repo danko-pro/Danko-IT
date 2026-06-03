@@ -280,6 +280,84 @@ describe("buildFlooringSpecification", () => {
   });
 });
 
+describe("FP5c covering specLines completeness guard", () => {
+  it("полные specLines заменяют все flat covering строки", () => {
+    const flatSection = flatSectionForRoom();
+    const { specificationSection } = buildFlooringSpecification({
+      roomResults: [room],
+      flatSection,
+      coveringByCode: {
+        laminate: {
+          code: "laminate",
+          title: "Ламинат",
+          specLines: [
+            {
+              code: "cover-material",
+              title: "Ламинат доска",
+              category: "materials",
+              basis: "area",
+              unit: "m2",
+              quantityPerBasis: 1,
+              unitPrice: 930,
+            },
+            {
+              code: "cover-underlay",
+              title: "Подложка",
+              category: "consumables",
+              basis: "area",
+              unit: "m2",
+              quantityPerBasis: 1,
+              unitPrice: 220,
+            },
+            {
+              code: "cover-primer",
+              title: "Грунт",
+              category: "consumables",
+              basis: "area",
+              unit: "l",
+              quantityPerBasis: 1,
+              unitPrice: 25,
+            },
+            {
+              code: "cover-tools",
+              title: "Инструмент",
+              category: "tools",
+              basis: "area",
+              unit: "m2",
+              quantityPerBasis: 1,
+              unitPrice: 40,
+            },
+          ],
+        },
+      },
+      preparationByCode: { none: { code: "none", title: "Без подготовки" } },
+      layoutByCode: { straight: { code: "straight", title: "Прямая укладка" } },
+    });
+
+    expect(specificationSection.items.some((item) => item.id === "flooring-material-room-1")).toBe(false);
+    expect(specificationSection.items.some((item) => item.id === "flooring-underlay-room-1")).toBe(false);
+    expect(specificationSection.items.some((item) => item.id === "flooring-primer-room-1")).toBe(false);
+    expect(specificationSection.items.some((item) => item.id === "flooring-tools-room-1")).toBe(false);
+    expect(specificationSection.items.some((item) => item.id.startsWith("flooring-spec-covering-"))).toBe(true);
+  });
+
+  it("без specLines (backend omit) сохраняет flat covering строки", () => {
+    const flatSection = flatSectionForRoom();
+    const { specificationLines, specificationSection } = buildFlooringSpecification({
+      roomResults: [room],
+      flatSection,
+      coveringByCode: { laminate: { code: "laminate", title: "Ламинат" } },
+      preparationByCode: { none: { code: "none", title: "Без подготовки" } },
+      layoutByCode: { straight: { code: "straight", title: "Прямая укладка" } },
+    });
+
+    expect(specificationLines).toEqual([]);
+    expect(specificationSection.items.some((item) => item.id === "flooring-material-room-1")).toBe(true);
+    expect(specificationSection.items.some((item) => item.id === "flooring-underlay-room-1")).toBe(true);
+    expect(specificationSection.items.some((item) => item.id === "flooring-tools-room-1")).toBe(true);
+  });
+});
+
 describe("FP5b specLines arithmetic guard", () => {
   it("covering material + waste: line total matches flat material bucket", () => {
     const area = 10;

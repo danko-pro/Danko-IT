@@ -115,18 +115,18 @@ function expandSpecLinesForRoom(params: {
         : `Укладка: ${source.title}`;
 
   return specLines.map((line) => {
-    const quantity = safeArea;
     const unitPrice = safeNumber(line.unitPrice);
     const quantityPerBasis = safeNumber(line.quantityPerBasis);
-    let effectiveQuantityPerBasis = quantityPerBasis;
+    let runtimeMultiplier = 1;
 
     if (sourceKind === "covering" && coveringLineUsesPurchaseArea(line)) {
-      effectiveQuantityPerBasis *= wasteFactor;
+      runtimeMultiplier *= wasteFactor;
     } else if (sourceKind === "layout" && line.category === "works") {
-      effectiveQuantityPerBasis *= layoutLaborFactor;
+      runtimeMultiplier *= layoutLaborFactor;
     }
 
-    const total = quantity * unitPrice * effectiveQuantityPerBasis;
+    const quantity = safeArea * quantityPerBasis * runtimeMultiplier;
+    const total = quantity * unitPrice;
 
     return {
       id: `flooring-spec-${sourceKind}-${source.code}-${line.code}-${room.roomId}`,
@@ -143,17 +143,14 @@ function expandSpecLinesForRoom(params: {
 }
 
 function specificationLineToEstimateLineItem(line: FlooringSpecificationLine): EstimateLineItem {
-  const quantity = line.quantity;
-  const effectiveUnitPrice = quantity > 0 ? line.total / quantity : line.unitPrice;
-
   return {
     id: line.id,
     sectionId: "flooring",
     title: line.title,
     category: mapSpecificationCategoryToEstimateCategory(line.category),
-    quantity,
+    quantity: line.quantity,
     unit: line.unit,
-    unitPrice: effectiveUnitPrice,
+    unitPrice: line.unitPrice,
     total: line.total,
     isIncluded: true,
     note: line.sourceLabel,

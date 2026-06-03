@@ -107,6 +107,54 @@ describe("escapeCsvCell", () => {
 });
 
 describe("buildSpecExportCsv", () => {
+  it("экспортирует real qty/unit/price для flooring specLines, не effective m2", () => {
+    const flatSection = createEstimateSection("flooring", "Полы", [
+      {
+        id: "flooring-adhesive-room-1",
+        sectionId: "flooring",
+        title: "Flat glue",
+        category: "consumables",
+        quantity: 7.15,
+        unit: "м²",
+        unitPrice: 1260,
+        total: 9009,
+        isIncluded: true,
+      },
+    ]);
+    const area = 6.5;
+    const wasteFactor = 1.1;
+    const quantityPerBasis = 45;
+    const unitPrice = 28;
+    const realQuantity = area * quantityPerBasis * wasteFactor;
+    const realTotal = realQuantity * unitPrice;
+
+    const specSection = createEstimateSection("flooring", "Полы", [
+      {
+        id: "flooring-spec-covering-porcelain-adhesive-room-1",
+        sectionId: "flooring",
+        title: "Клей плиточный — Комната",
+        category: "consumables",
+        quantity: realQuantity,
+        unit: "kg",
+        unitPrice,
+        total: realTotal,
+        isIncluded: true,
+        note: "Покрытие: Плитка",
+      },
+    ]);
+    specSection.totals.total = flatSection.totals.total;
+
+    const sections: EstimateSpecSection[] = [expandFlooringSectionForSpec(flatSection, specSection)];
+    const rows = parseCsvRows(buildSpecExportCsv(sections));
+    const dataRow = rows[1]!;
+
+    expect(Number(dataRow[3])).toBeCloseTo(realQuantity, 2);
+    expect(dataRow[4]).toBe("kg");
+    expect(Number(dataRow[5])).toBe(unitPrice);
+    expect(Number(dataRow[6])).toBeCloseTo(realTotal, 2);
+    expect(dataRow[7]).toBe("Покрытие: Плитка");
+  });
+
   it("экспортирует развёрнутые flooring specLines с источником", () => {
     const flatSection = createEstimateSection("flooring", "Полы", [
       {

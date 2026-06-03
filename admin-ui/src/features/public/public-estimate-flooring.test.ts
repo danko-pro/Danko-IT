@@ -1,11 +1,17 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   calculateFlooring,
   type FlooringOptions,
   type FlooringRoomInput,
 } from "./public-estimate-flooring";
+import {
+  FLOORING_GOLDEN_LAMINATE_PURCHASE_AREA,
+  FLOORING_GOLDEN_SNAPSHOT,
+  FLOORING_GOLDEN_TOTAL,
+  getFlooringGoldenSnapshotCatalog,
+  getFlooringGoldenSnapshotRates,
+} from "./flooring-golden.fixture";
 import * as flooringSnapshotModule from "./public-flooring-snapshot";
-import flooringSnapshotData from "./generated/flooring.snapshot.json";
 
 const room: FlooringRoomInput = {
   roomId: "room",
@@ -27,7 +33,24 @@ const options: FlooringOptions = {
   includeDemolition: false,
 };
 
+function installFlooringGoldenSnapshotMocks() {
+  vi.spyOn(flooringSnapshotModule, "getFlooringSnapshotRates").mockReturnValue(
+    getFlooringGoldenSnapshotRates(),
+  );
+  vi.spyOn(flooringSnapshotModule, "getFlooringSnapshotCatalog").mockReturnValue(
+    getFlooringGoldenSnapshotCatalog(),
+  );
+}
+
 describe("calculateFlooring", () => {
+  beforeEach(() => {
+    installFlooringGoldenSnapshotMocks();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   it("использует длину плинтуса из геометрии, а не полный периметр", () => {
     const result = calculateFlooring([room], options);
 
@@ -55,7 +78,7 @@ describe("calculateFlooring", () => {
     expect(result.worksTotal).toBeCloseTo(17600 + 4800 + 7155, 2);
     expect(result.materialsTotal).toBeCloseTo(17112 + 1600 + 7155, 2);
     expect(result.consumablesTotal).toBeCloseTo(4048 + 400 + 640, 2);
-    expect(result.total).toBeCloseTo(60510, 2);
+    expect(result.total).toBeCloseTo(FLOORING_GOLDEN_TOTAL, 2);
   });
 
   it("не добавляет плинтус, если опция отключена", () => {
@@ -80,13 +103,13 @@ describe("calculateFlooring", () => {
   });
 
   it("с specLines строит specificationLines без изменения flat totals", () => {
+    const laminate = FLOORING_GOLDEN_SNAPSHOT.coverings.find((item) => item.code === "laminate")!;
+
     const catalogSpy = vi.spyOn(flooringSnapshotModule, "getFlooringSnapshotCatalog").mockReturnValue({
       coverings: {
-        ...Object.fromEntries(
-          flooringSnapshotData.coverings.map((item) => [item.code, { ...item }]),
-        ),
+        ...getFlooringGoldenSnapshotCatalog().coverings,
         laminate: {
-          ...flooringSnapshotData.coverings.find((item) => item.code === "laminate")!,
+          ...laminate,
           specLines: [
             {
               code: "laminate-board",
@@ -95,28 +118,24 @@ describe("calculateFlooring", () => {
               basis: "area",
               unit: "m2",
               quantityPerBasis: 1,
-              unitPrice:
-                flooringSnapshotData.coverings.find((item) => item.code === "laminate")!.materialPricePerM2,
+              unitPrice: laminate.materialPricePerM2,
             },
           ],
         },
       },
-      preparations: Object.fromEntries(
-        flooringSnapshotData.preparations.map((item) => [item.code, { ...item }]),
-      ),
-      layouts: Object.fromEntries(flooringSnapshotData.layouts.map((item) => [item.code, { ...item }])),
+      preparations: getFlooringGoldenSnapshotCatalog().preparations,
+      layouts: getFlooringGoldenSnapshotCatalog().layouts,
     });
 
     const result = calculateFlooring([room], options);
 
-    expect(result.total).toBeCloseTo(60510, 2);
+    expect(result.total).toBeCloseTo(FLOORING_GOLDEN_TOTAL, 2);
     expect(result.specificationLines.length).toBeGreaterThan(0);
     expect(result.specificationLines[0]).toMatchObject({
       category: "materials",
-      quantity: 16 * 1.07,
+      quantity: FLOORING_GOLDEN_LAMINATE_PURCHASE_AREA,
       unit: "m2",
-      unitPrice:
-        flooringSnapshotData.coverings.find((item) => item.code === "laminate")!.materialPricePerM2,
+      unitPrice: laminate.materialPricePerM2,
       sourceLabel: expect.stringContaining("Покрытие"),
     });
     expect(result.specificationSection.items).not.toBe(result.section.items);
@@ -134,23 +153,23 @@ describe("calculateFlooring", () => {
   });
 
   it("legacy flooring-v1 snapshot без specLines сохраняет golden totals", () => {
-    const legacyCoverings = flooringSnapshotData.coverings.map((item) => ({
+    const legacyCoverings = FLOORING_GOLDEN_SNAPSHOT.coverings.map((item) => ({
       ...item,
       laborPricePerM2: item.code === "laminate" ? 1000 : 0,
     }));
-    const legacyLayouts = flooringSnapshotData.layouts.map(({ laborPricePerM2: _legacy, ...item }) => item);
+    const legacyLayouts = FLOORING_GOLDEN_SNAPSHOT.layouts.map(({ laborPricePerM2: _legacy, ...item }) => item);
 
     const catalogSpy = vi.spyOn(flooringSnapshotModule, "getFlooringSnapshotCatalog").mockReturnValue({
       coverings: Object.fromEntries(legacyCoverings.map((item) => [item.code, { ...item }])),
       preparations: Object.fromEntries(
-        flooringSnapshotData.preparations.map((item) => [item.code, { ...item }]),
+        FLOORING_GOLDEN_SNAPSHOT.preparations.map((item) => [item.code, { ...item }]),
       ),
       layouts: Object.fromEntries(legacyLayouts.map((item) => [item.code, { ...item }])),
     });
 
     const result = calculateFlooring([room], options);
 
-    expect(result.total).toBeCloseTo(60510, 2);
+    expect(result.total).toBeCloseTo(FLOORING_GOLDEN_TOTAL, 2);
     expect(result.specificationLines).toEqual([]);
     expect(result.specificationSection).toBe(result.section);
 
@@ -158,7 +177,7 @@ describe("calculateFlooring", () => {
   });
 
   it("считает помещение с кастомным кодом покрытия из снапшота", () => {
-    const baseRates = flooringSnapshotModule.getFlooringSnapshotRates();
+    const baseRates = getFlooringGoldenSnapshotRates();
     const ratesSpy = vi.spyOn(flooringSnapshotModule, "getFlooringSnapshotRates").mockReturnValue({
       ...baseRates,
       flooringCoveringRates: {

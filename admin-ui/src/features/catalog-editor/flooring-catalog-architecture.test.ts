@@ -6,6 +6,7 @@ import flooringCatalogEditFormsSource from "./FlooringCatalogEditForms.tsx?raw";
 import flooringCatalogModelSource from "./flooring-catalog-model.ts?raw";
 import flooringCatalogPanelSource from "./FlooringCatalogPanel.tsx?raw";
 import flooringCatalogWorkspaceSource from "./FlooringCatalogWorkspace.tsx?raw";
+import flooringConsumablesTableSource from "./FlooringConsumablesTable.tsx?raw";
 import flooringCatalogAssemblyCreateRowSource from "./flooring-catalog-assembly-create-row.ts?raw";
 import useFlooringCatalogPanelSource from "./useFlooringCatalogPanel.ts?raw";
 
@@ -13,6 +14,7 @@ const REQUIRED_FLOORING_CATALOG_MODULES = [
   "FlooringAssemblyBlock.tsx",
   "FlooringAssemblyLibraryPanel.tsx",
   "FlooringCatalogWorkspace.tsx",
+  "FlooringConsumablesTable.tsx",
   "FlooringCatalogEditForms.tsx",
   "flooring-catalog-model.ts",
   "useFlooringCatalogPanel.ts",
@@ -23,6 +25,7 @@ const flooringCatalogModulePaths = Object.keys(
     "./FlooringAssemblyBlock.tsx",
     "./FlooringAssemblyLibraryPanel.tsx",
     "./FlooringCatalogWorkspace.tsx",
+    "./FlooringConsumablesTable.tsx",
     "./FlooringCatalogEditForms.tsx",
     "./flooring-catalog-model.ts",
     "./useFlooringCatalogPanel.ts",
@@ -49,6 +52,7 @@ describe("flooring catalog editor architecture", () => {
     expect(sourceLines(useFlooringCatalogPanelSource).length).toBeLessThanOrEqual(620);
     expect(sourceLines(flooringAssemblyBlockSource).length).toBeLessThanOrEqual(650);
     expect(sourceLines(flooringCatalogWorkspaceSource).length).toBeLessThanOrEqual(260);
+    expect(sourceLines(flooringConsumablesTableSource).length).toBeLessThanOrEqual(260);
   });
 
   it("keeps flooring catalog submodules present", () => {
@@ -83,6 +87,7 @@ describe("flooring catalog editor architecture", () => {
     expect(flooringAssemblyBlockSource).toContain("export function FlooringAssemblyBlock");
     expect(flooringAssemblyLibraryPanelSource).toContain("export function FlooringAssemblyLibraryPanel");
     expect(flooringCatalogWorkspaceSource).toContain("export function FlooringCatalogWorkspace");
+    expect(flooringConsumablesTableSource).toContain("export function FlooringConsumablesTable");
     expect(flooringCatalogWorkspaceSource).toContain("function FlooringCatalogSidebarSection");
     expect(flooringCatalogWorkspaceSource).toContain("function FlooringCatalogCard");
     expect(flooringCatalogEditFormsSource).toContain("export function FlooringCoveringEditForm");

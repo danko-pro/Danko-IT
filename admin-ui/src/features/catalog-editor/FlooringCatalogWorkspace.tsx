@@ -19,6 +19,7 @@ type FlooringCatalogSectionConfig = {
 
 type CatalogMetric = {
   label: string;
+  title: string;
   value: string;
   tone?: "total";
 };
@@ -89,9 +90,9 @@ export function FlooringCatalogWorkspace({
       onDelete: coverings.onDelete,
       onPromote: coverings.onPromote,
       renderMetrics: (row) => [
-        { label: "Мат.", value: `${formatMoney(row.rates.materialPricePerM2)} ₽/м²` },
-        { label: "Расх.", value: consumablesSummaryPerM2(row.rates) },
-        { label: "Итого", value: `${formatMoney(coveringTotalPerM2(row))} ₽/м²`, tone: "total" },
+        { label: "М", title: "Материал", value: `${formatMoney(row.rates.materialPricePerM2)} ₽/м²` },
+        { label: "Р", title: "Расходники", value: consumablesSummaryPerM2(row.rates) },
+        { label: "Σ", title: "Итого", value: `${formatMoney(coveringTotalPerM2(row))} ₽/м²`, tone: "total" },
       ],
     },
     {
@@ -103,9 +104,9 @@ export function FlooringCatalogWorkspace({
       onDelete: preparations.onDelete,
       onPromote: preparations.onPromote,
       renderMetrics: (row) => [
-        { label: "Раб.", value: `${formatMoney(row.rates.laborPricePerM2)} ₽/м²` },
-        { label: "Мат.", value: `${formatMoney(row.rates.materialPricePerM2)} ₽/м²` },
-        { label: "Итого", value: `${formatMoney(preparationTotalPerM2(row))} ₽/м²`, tone: "total" },
+        { label: "Т", title: "Работа", value: `${formatMoney(row.rates.laborPricePerM2)} ₽/м²` },
+        { label: "М", title: "Материал", value: `${formatMoney(row.rates.materialPricePerM2)} ₽/м²` },
+        { label: "Σ", title: "Итого", value: `${formatMoney(preparationTotalPerM2(row))} ₽/м²`, tone: "total" },
       ],
     },
     {
@@ -117,9 +118,9 @@ export function FlooringCatalogWorkspace({
       onDelete: layouts.onDelete,
       onPromote: layouts.onPromote,
       renderMetrics: (row) => [
-        { label: "Раб.", value: `${formatMoney(row.rates.laborPricePerM2)} ₽/м²` },
-        { label: "Коэф.", value: String(row.rates.laborFactor ?? 1) },
-        { label: "Отход", value: formatPercent(row.rates.additionalWastePercent), tone: "total" },
+        { label: "Т", title: "Работа", value: `${formatMoney(row.rates.laborPricePerM2)} ₽/м²` },
+        { label: "К", title: "Коэффициент", value: String(row.rates.laborFactor ?? 1) },
+        { label: "%", title: "Отход", value: formatPercent(row.rates.additionalWastePercent), tone: "total" },
       ],
     },
   ];
@@ -190,7 +191,7 @@ function FlooringCatalogCard({
         </span>
         <span className="ce-flooring-catalog-card-metrics">
           {metrics.map((metric) => (
-            <span key={metric.label} className="ce-flooring-catalog-card-metric" title={`${metric.label} ${metric.value}`}>
+            <span key={metric.title} className="ce-flooring-catalog-card-metric" title={`${metric.title}: ${metric.value}`}>
               <span className="ce-flooring-catalog-card-metric-label">{metric.label}</span>
               <span
                 className={`ce-flooring-catalog-card-metric-value${

@@ -113,7 +113,10 @@ describe("calculateFlooring", () => {
     expect(result.specificationLines.length).toBeGreaterThan(0);
     expect(result.specificationLines[0]).toMatchObject({
       category: "materials",
-      quantity: 16,
+      quantity: 16 * 1.07,
+      unit: "m2",
+      unitPrice:
+        flooringSnapshotData.coverings.find((item) => item.code === "laminate")!.materialPricePerM2,
       sourceLabel: expect.stringContaining("Покрытие"),
     });
     expect(result.specificationSection.items).not.toBe(result.section.items);

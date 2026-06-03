@@ -210,7 +210,8 @@ describe("buildFlooringSpecification", () => {
     expect(specificationLines).toHaveLength(5);
     expect(specificationLines[0]).toMatchObject({
       category: "materials",
-      quantity: 16,
+      quantity: 18.4,
+      unit: "m2",
       unitPrice: 930,
       total: 16 * 930 * (18.4 / 16),
       sourceLabel: "Покрытие: Ламинат",
@@ -219,6 +220,7 @@ describe("buildFlooringSpecification", () => {
     expect(specificationLines.find((line) => line.category === "tools")).toMatchObject({
       category: "tools",
       quantity: 16,
+      unitPrice: 40,
       total: 640,
       sourceLabel: "Укладка: Прямая укладка",
     });
@@ -645,6 +647,201 @@ describe("FP5b specLines arithmetic guard", () => {
     });
 
     expect(calculateSpecificationSectionItemTotals(specificationSection).consumables).toBeCloseTo(400, 2);
+  });
+});
+
+describe("FP7b real quantities in specification export", () => {
+  const baseRoom: FlooringRoomForSpecification = {
+    roomId: "room-1",
+    roomName: "Комната",
+    area: 6.5,
+    purchaseArea: 6.5 * 1.1,
+    isIncluded: true,
+    coveringType: "porcelain",
+    preparationType: "none",
+    layoutType: "straight",
+  };
+
+  function buildWithCoveringSpecLines(
+    specLines: Parameters<typeof buildFlooringSpecification>[0]["coveringByCode"][string]["specLines"],
+    room = baseRoom,
+  ) {
+    const flatSection = createEstimateSection("flooring", "Полы", []);
+    return buildFlooringSpecification({
+      roomResults: [room],
+      flatSection,
+      coveringByCode: { porcelain: { code: "porcelain", title: "Плитка", specLines } },
+      preparationByCode: { none: { code: "none", title: "Без подготовки" } },
+      layoutByCode: { straight: { code: "straight", title: "Прямая" } },
+    });
+  }
+
+  it("glue: area × qtyPerBasis × waste, real unitPrice, total unchanged", () => {
+    const area = 6.5;
+    const wasteFactor = 1.1;
+    const quantityPerBasis = 45;
+    const unitPrice = 28;
+    const expectedTotal = area * quantityPerBasis * wasteFactor * unitPrice;
+
+    const { specificationLines, specificationSection } = buildWithCoveringSpecLines([
+      {
+        code: "adhesive",
+        title: "Клей плиточный",
+        category: "consumables",
+        basis: "area",
+        unit: "kg",
+        quantityPerBasis,
+        unitPrice,
+      },
+    ]);
+
+    const line = specificationLines[0]!;
+    expect(line.quantity).toBeCloseTo(area * quantityPerBasis * wasteFactor, 6);
+    expect(line.unit).toBe("kg");
+    expect(line.unitPrice).toBe(unitPrice);
+    expect(line.total).toBeCloseTo(expectedTotal, 2);
+
+    const item = specificationSection.items[0]!;
+    expect(item.quantity).toBeCloseTo(line.quantity, 6);
+    expect(item.unit).toBe("kg");
+    expect(item.unitPrice).toBe(unitPrice);
+    expect(item.total).toBeCloseTo(expectedTotal, 2);
+  });
+
+  it("tile material: m2 unit with waste applied to quantity", () => {
+    const area = 10;
+    const purchaseArea = 11;
+    const unitPrice = 1200;
+
+    const { specificationLines } = buildWithCoveringSpecLines(
+      [
+        {
+          code: "tile",
+          title: "Керамогранит",
+          category: "materials",
+          basis: "area",
+          unit: "m2",
+          quantityPerBasis: 1,
+          unitPrice,
+        },
+      ],
+      { ...baseRoom, area, purchaseArea },
+    );
+
+    const line = specificationLines[0]!;
+    expect(line.quantity).toBeCloseTo(purchaseArea, 6);
+    expect(line.unit).toBe("m2");
+    expect(line.unitPrice).toBe(unitPrice);
+    expect(line.total).toBeCloseTo(purchaseArea * unitPrice, 2);
+  });
+
+  it("primer: no waste multiplier on quantity", () => {
+    const area = 16;
+    const purchaseArea = 18.4;
+    const quantityPerBasis = 0.25;
+    const unitPrice = 100;
+
+    const { specificationLines } = buildWithCoveringSpecLines(
+      [
+        {
+          code: "primer",
+          title: "Грунт",
+          category: "consumables",
+          basis: "area",
+          unit: "l",
+          quantityPerBasis,
+          unitPrice,
+        },
+      ],
+      { ...baseRoom, area, purchaseArea },
+    );
+
+    const line = specificationLines[0]!;
+    expect(line.quantity).toBeCloseTo(area * quantityPerBasis, 6);
+    expect(line.unit).toBe("l");
+    expect(line.unitPrice).toBe(unitPrice);
+    expect(line.total).toBeCloseTo(area * quantityPerBasis * unitPrice, 2);
+  });
+
+  it("SVP: pcs with real piece price and waste", () => {
+    const area = 8;
+    const purchaseArea = 8.8;
+    const quantityPerBasis = 4;
+    const unitPrice = 3.5;
+
+    const { specificationLines } = buildWithCoveringSpecLines(
+      [
+        {
+          code: "svp",
+          title: "СВП",
+          category: "consumables",
+          basis: "area",
+          unit: "pcs",
+          quantityPerBasis,
+          unitPrice,
+        },
+      ],
+      { ...baseRoom, area, purchaseArea },
+    );
+
+    const line = specificationLines[0]!;
+    expect(line.quantity).toBeCloseTo(area * quantityPerBasis * (purchaseArea / area), 6);
+    expect(line.unit).toBe("pcs");
+    expect(line.unitPrice).toBe(unitPrice);
+    expect(line.total).toBeCloseTo(line.quantity * unitPrice, 2);
+  });
+
+  it("layout work: laborFactor in quantity, total unchanged", () => {
+    const area = 16;
+    const laborFactor = 1.1;
+    const unitPrice = 1000;
+    const expectedTotal = area * 1 * laborFactor * unitPrice;
+
+    const flatSection = createEstimateSection("flooring", "Полы", [
+      {
+        id: "flooring-installation-room-1",
+        sectionId: "flooring",
+        title: "Укладка",
+        category: "works",
+        quantity: area,
+        unit: "м²",
+        unitPrice: unitPrice * laborFactor,
+        total: expectedTotal,
+        isIncluded: true,
+      },
+    ]);
+
+    const { specificationLines, specificationSection } = buildFlooringSpecification({
+      roomResults: [{ ...baseRoom, area, purchaseArea: area }],
+      flatSection,
+      coveringByCode: { porcelain: { code: "porcelain", title: "Плитка" } },
+      preparationByCode: { none: { code: "none", title: "Без подготовки" } },
+      layoutByCode: {
+        straight: {
+          code: "straight",
+          title: "Прямая",
+          laborFactor,
+          specLines: [
+            {
+              code: "layout-work",
+              title: "Укладка плитки",
+              category: "works",
+              basis: "area",
+              unit: "m2",
+              quantityPerBasis: 1,
+              unitPrice,
+            },
+          ],
+        },
+      },
+    });
+
+    const line = specificationLines[0]!;
+    expect(line.quantity).toBeCloseTo(area * laborFactor, 6);
+    expect(line.unitPrice).toBe(unitPrice);
+    expect(line.total).toBeCloseTo(expectedTotal, 2);
+    expect(specificationSection.items[0]?.unitPrice).toBe(unitPrice);
+    expect(flatSection.items[0]?.total).toBeCloseTo(expectedTotal, 2);
   });
 });
 

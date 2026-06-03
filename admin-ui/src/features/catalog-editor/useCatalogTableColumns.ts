@@ -38,7 +38,7 @@ function readStoredColumns<TColumnKey extends string>(
   defaultColumns: CatalogTableColumns<TColumnKey>,
   minColumnWidths: Record<TColumnKey, number>,
 ): CatalogTableColumns<TColumnKey> {
-  const parsed = storageKey
+  const parsed: Partial<Record<TColumnKey, Partial<CatalogTableColumnState>>> = storageKey
     ? readCatalogStoredValue<Partial<Record<TColumnKey, Partial<CatalogTableColumnState>>>>(storageKey, {})
     : {};
   const merged = { ...defaultColumns };

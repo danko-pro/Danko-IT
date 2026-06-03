@@ -667,3 +667,157 @@ class AdminCalculatorFlooringCatalogAssemblyRouteTests(AdminProjectsRouteCase):
                 self.assertEqual(readback.json()["rows"], [])
                 self.assertEqual(readback.json()["title"], "")
 
+    def test_put_assembly_syncs_covering_flat_material_rate(self) -> None:
+        with TemporaryDirectory() as tmp_dir:
+            self._root = Path(tmp_dir)
+            with self._build_client() as client:
+                self._login_admin(client)
+                covering = client.post(
+                    "/api/calculator/flooring/coverings",
+                    json=_minimal_covering_kwargs(
+                        title=f"FP3b covering {uuid4().hex}",
+                        material_price_per_m2=50,
+                    ),
+                ).json()
+
+                put = client.put(
+                    f"/api/calculator/flooring/covering/{covering['id']}/assembly",
+                    json={
+                        "title": "Состав",
+                        "rows": [
+                            _assembly_row(
+                                kind="material",
+                                public_category="materials",
+                                price=2000,
+                                consumption_per_m2=1.1,
+                                public_title="Керамогранит",
+                            ),
+                        ],
+                    },
+                )
+                self.assertEqual(put.status_code, 200)
+
+                patched = client.get("/api/calculator/flooring/coverings").json()
+                saved = next(item for item in patched if item["id"] == covering["id"])
+                self.assertEqual(saved["material_price_per_m2"], 2200)
+
+    def test_put_assembly_syncs_preparation_work_flat(self) -> None:
+        with TemporaryDirectory() as tmp_dir:
+            self._root = Path(tmp_dir)
+            with self._build_client() as client:
+                self._login_admin(client)
+                preparation = client.post(
+                    "/api/calculator/flooring/preparations",
+                    json={"title": f"FP3b prep {uuid4().hex}", "labor_price_per_m2": 1, "material_price_per_m2": 2},
+                ).json()
+
+                put = client.put(
+                    f"/api/calculator/flooring/preparation/{preparation['id']}/assembly",
+                    json={
+                        "title": "Подготовка",
+                        "rows": [
+                            _assembly_row(
+                                section="work",
+                                kind="work",
+                                formula="flat_per_m2",
+                                public_category="works",
+                                public_title="Выравнивание",
+                                title="Выравнивание",
+                                price=900,
+                                consumption_per_m2=1.2,
+                            ),
+                        ],
+                    },
+                )
+                self.assertEqual(put.status_code, 200)
+
+                saved = client.get(f"/api/calculator/flooring/preparations").json()
+                row = next(item for item in saved if item["id"] == preparation["id"])
+                self.assertEqual(row["labor_price_per_m2"], 1080)
+                self.assertEqual(row["material_price_per_m2"], 0)
+
+    def test_put_invalid_assembly_kind_leaves_flat_unchanged(self) -> None:
+        with TemporaryDirectory() as tmp_dir:
+            self._root = Path(tmp_dir)
+            with self._build_client() as client:
+                self._login_admin(client)
+                covering = client.post(
+                    "/api/calculator/flooring/coverings",
+                    json=_minimal_covering_kwargs(
+                        title=f"FP3b reject {uuid4().hex}",
+                        material_price_per_m2=333,
+                    ),
+                ).json()
+
+                response = client.put(
+                    f"/api/calculator/flooring/covering/{covering['id']}/assembly",
+                    json={
+                        "title": "Bad",
+                        "rows": [
+                            _assembly_row(
+                                kind="work",
+                                section="work",
+                                public_category="works",
+                                formula="flat_per_m2",
+                            )
+                        ],
+                    },
+                )
+                self.assertEqual(response.status_code, 400)
+
+                saved = client.get("/api/calculator/flooring/coverings").json()
+                row = next(item for item in saved if item["id"] == covering["id"])
+                self.assertEqual(row["material_price_per_m2"], 333)
+
+    def test_patch_covering_rejected_when_assembly_present(self) -> None:
+        with TemporaryDirectory() as tmp_dir:
+            self._root = Path(tmp_dir)
+            with self._build_client() as client:
+                self._login_admin(client)
+                covering = client.post(
+                    "/api/calculator/flooring/coverings",
+                    json=_minimal_covering_kwargs(title=f"FP3b patch block {uuid4().hex}"),
+                ).json()
+                client.put(
+                    f"/api/calculator/flooring/covering/{covering['id']}/assembly",
+                    json={"title": "Состав", "rows": [_assembly_row()]},
+                )
+
+                patch = client.patch(
+                    f"/api/calculator/flooring/coverings/{covering['id']}",
+                    json=_minimal_covering_kwargs(title="Blocked", material_price_per_m2=9999),
+                )
+                self.assertEqual(patch.status_code, 400)
+                self.assertIn("assembly", patch.json()["detail"].lower())
+
+    def test_delete_assembly_keeps_flat_rates(self) -> None:
+        with TemporaryDirectory() as tmp_dir:
+            self._root = Path(tmp_dir)
+            with self._build_client() as client:
+                self._login_admin(client)
+                covering = client.post(
+                    "/api/calculator/flooring/coverings",
+                    json=_minimal_covering_kwargs(
+                        title=f"FP3b delete {uuid4().hex}",
+                        material_price_per_m2=77,
+                    ),
+                ).json()
+                path = f"/api/calculator/flooring/covering/{covering['id']}/assembly"
+                client.put(
+                    path,
+                    json={
+                        "title": "Состав",
+                        "rows": [
+                            _assembly_row(price=1000, consumption_per_m2=2, public_title="Mat"),
+                        ],
+                    },
+                )
+                synced = client.get("/api/calculator/flooring/coverings").json()
+                row = next(item for item in synced if item["id"] == covering["id"])
+                self.assertEqual(row["material_price_per_m2"], 2000)
+
+                client.delete(path)
+                after_delete = client.get("/api/calculator/flooring/coverings").json()
+                row = next(item for item in after_delete if item["id"] == covering["id"])
+                self.assertEqual(row["material_price_per_m2"], 2000)
+

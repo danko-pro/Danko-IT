@@ -24,6 +24,10 @@ COVERING_ALLOWED_ROW_KINDS = frozenset({"material", "consumable", "tool"})
 PREPARATION_ALLOWED_ROW_KINDS = frozenset({"work"})
 LAYOUT_ALLOWED_ROW_KINDS = frozenset({"work"})
 
+FLOORING_FLAT_UPDATE_BLOCKED_BY_ASSEMBLY = (
+    "Flooring catalog row has an assembly; edit the assembly instead of flat fields"
+)
+
 
 def validate_flooring_catalog_assembly_target_kind(target_kind: str) -> str:
     normalized = (target_kind or "").strip()
@@ -84,6 +88,7 @@ class FlooringCatalogAssemblyStorage(Protocol):
         rows: list[dict[str, Any]],
         *,
         version: str = FLOORING_CATALOG_ASSEMBLY_VERSION,
+        catalog_updates: dict[str, Any] | None = None,
     ) -> int: ...
 
     async def delete_estimate_flooring_catalog_assembly(self, target_kind: str, target_id: int) -> bool: ...
@@ -116,12 +121,26 @@ class ReplaceFlooringCatalogAssemblyUseCase:
         )
         version = _normalize_version(command.version)
         normalized_rows = _normalize_rows(command.rows or [], target_kind=target_kind)
+        catalog_updates: dict[str, Any] | None = None
+        if _has_enabled_assembly_rows(normalized_rows):
+            from supply_bot.estimates.application.flooring_package_projection import (
+                build_flooring_package_projection,
+                catalog_update_values_from_projection,
+            )
+
+            projection = build_flooring_package_projection(target_kind, normalized_rows)
+            catalog_updates = catalog_update_values_from_projection(
+                target_kind,
+                projection,
+                assembly_rows=normalized_rows,
+            )
         await self._storage.replace_estimate_flooring_catalog_assembly(
             target_kind,
             target_id,
             title,
             normalized_rows,
             version=version,
+            catalog_updates=catalog_updates,
         )
         assembly = await self._storage.get_estimate_flooring_catalog_assembly(target_kind, target_id)
         if assembly is None:
@@ -160,6 +179,18 @@ def serialize_flooring_catalog_assembly(assembly: dict[str, Any]) -> dict[str, A
         "version": assembly.get("version") or FLOORING_CATALOG_ASSEMBLY_VERSION,
         "rows": list(assembly.get("rows") or []),
     }
+
+
+async def reject_flooring_flat_update_when_assembly_present(
+    storage: FlooringCatalogAssemblyStorage,
+    target_kind: str,
+    target_id: int,
+) -> None:
+    """Reject independent flat PATCH when a package assembly is stored (FP3b)."""
+
+    assembly = await storage.get_estimate_flooring_catalog_assembly(target_kind, target_id)
+    if assembly is not None and assembly.get("rows"):
+        raise ValidationError(FLOORING_FLAT_UPDATE_BLOCKED_BY_ASSEMBLY)
 
 
 async def _ensure_flooring_catalog_target_exists(
@@ -244,6 +275,10 @@ def _optional_non_negative(value: float | int | None) -> float | None:
     if value is None or value == "":
         return None
     return clamp_non_negative(value)
+
+
+def _has_enabled_assembly_rows(rows: list[dict[str, Any]]) -> bool:
+    return any(bool(row.get("is_enabled")) for row in rows)
 
 
 def _normalize_sort_order(value: int | None, *, index: int) -> int:

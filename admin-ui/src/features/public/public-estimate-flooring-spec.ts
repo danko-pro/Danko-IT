@@ -80,8 +80,13 @@ function isGlobalFlatItem(item: EstimateLineItem) {
   return GLOBAL_FLAT_IDS.has(item.id);
 }
 
-function coveringLineUsesPurchaseArea(category: FlooringPackageSpecLine["category"]) {
-  return category === "materials" || category === "consumables";
+function coveringConsumableUsesPurchaseArea(line: FlooringPackageSpecLine) {
+  const normalizedTitle = line.title.trim().toLowerCase();
+  return !normalizedTitle.includes("грунт") && !normalizedTitle.includes("primer");
+}
+
+function coveringLineUsesPurchaseArea(line: FlooringPackageSpecLine) {
+  return line.category === "materials" || (line.category === "consumables" && coveringConsumableUsesPurchaseArea(line));
 }
 
 function expandSpecLinesForRoom(params: {
@@ -115,7 +120,7 @@ function expandSpecLinesForRoom(params: {
     const quantityPerBasis = safeNumber(line.quantityPerBasis);
     let effectiveQuantityPerBasis = quantityPerBasis;
 
-    if (sourceKind === "covering" && coveringLineUsesPurchaseArea(line.category)) {
+    if (sourceKind === "covering" && coveringLineUsesPurchaseArea(line)) {
       effectiveQuantityPerBasis *= wasteFactor;
     } else if (sourceKind === "layout" && line.category === "works") {
       effectiveQuantityPerBasis *= layoutLaborFactor;

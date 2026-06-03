@@ -64,17 +64,19 @@
 }
 
 .ce-variant-separator td {
-  padding: 8px 10px !important;
+  height: 28px;
+  padding: 5px 8px !important;
   border-top: 1px solid #c8dafc;
   background: var(--ce-accent-soft) !important;
   color: var(--ce-accent-strong);
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 760;
   text-transform: uppercase;
 }
 
 .ce-zone-summary-row td {
-  padding: 6px 10px !important;
+  height: 30px;
+  padding: 5px 8px !important;
   border-top: 1px solid var(--ce-border);
 }
 
@@ -86,11 +88,11 @@
 
 .ce-zone-summary-risk td {
   color: var(--ce-muted);
-  font-style: italic;
 }
 
 .ce-zone-summary-total td {
   background: var(--ce-ok-soft);
+  font-weight: 760;
 }
 
 .ce-zone-summary-total .ce-zone-summary-label {

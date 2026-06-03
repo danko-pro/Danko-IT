@@ -14,6 +14,7 @@ import flooringConsumablesTableSource from "./FlooringConsumablesTable.tsx?raw";
 import flooringCatalogAssemblyCreateRowSource from "./flooring-catalog-assembly-create-row.ts?raw";
 import flooringUiArchitectureSource from "./flooring-ui-architecture.md?raw";
 import useFlooringCatalogPanelSource from "./useFlooringCatalogPanel.ts?raw";
+import catalogManagedTableHeaderCellSource from "./CatalogManagedTableHeaderCell.tsx?raw";
 import catalogSegmentedControlSource from "./CatalogSegmentedControl.tsx?raw";
 import catalogViewTabsSource from "./CatalogViewTabs.tsx?raw";
 import plumbingCatalogModelSource from "./plumbing-catalog-model.ts?raw";
@@ -21,9 +22,11 @@ import plumbingCatalogPanelSource from "./PlumbingCatalogPanel.tsx?raw";
 import plumbingLibraryViewSource from "./PlumbingLibraryView.tsx?raw";
 import plumbingPreviewPanelSource from "./PlumbingPreviewPanel.tsx?raw";
 import plumbingZoneCardSource from "./PlumbingZoneCard.tsx?raw";
+import plumbingZoneCompositionColumnsSource from "./PlumbingZoneCompositionColumns.ts?raw";
 import plumbingZoneCompositionRowsSource from "./PlumbingZoneCompositionRows.tsx?raw";
 import plumbingZoneCompositionTableSource from "./PlumbingZoneCompositionTable.tsx?raw";
 import plumbingZonesViewSource from "./PlumbingZonesView.tsx?raw";
+import useCatalogTableColumnsSource from "./useCatalogTableColumns.ts?raw";
 import usePlumbingCatalogPanelSource from "./usePlumbingCatalogPanel.ts?raw";
 
 const FEATURE_DIR = dirname(fileURLToPath(import.meta.url));
@@ -40,6 +43,7 @@ const flooringResponsiveCssSource = readFeatureFile("styles/catalog-editor.floor
 const flooringShellCssSource = readFeatureFile("styles/catalog-editor.flooring.shell.css");
 const flooringTablesCssSource = readFeatureFile("styles/catalog-editor.flooring.tables.css");
 const flooringWorkspaceCssSource = readFeatureFile("styles/catalog-editor.flooring.workspace.css");
+const managedTableCssSource = readFeatureFile("styles/catalog-editor.managed-table.css");
 const plumbingCssSource = readFeatureFile("styles/catalog-editor.plumbing.css");
 const plumbingCompositionCssSource = readFeatureFile("styles/catalog-editor.plumbing.composition.css");
 const plumbingResponsiveCssSource = readFeatureFile("styles/catalog-editor.plumbing.responsive.css");
@@ -82,11 +86,21 @@ const REQUIRED_PLUMBING_CATALOG_MODULES = [
   "PlumbingLibraryView.tsx",
   "PlumbingPreviewPanel.tsx",
   "PlumbingZoneCard.tsx",
+  "PlumbingZoneCompositionColumns.ts",
   "PlumbingZoneCompositionRows.tsx",
   "PlumbingZoneCompositionTable.tsx",
   "PlumbingZonesView.tsx",
   "plumbing-catalog-model.ts",
   "usePlumbingCatalogPanel.ts",
+] as const;
+
+const REQUIRED_SHARED_CATALOG_MODULES = [
+  "CatalogManagedTableHeaderCell.tsx",
+  "useCatalogTableColumns.ts",
+] as const;
+
+const REQUIRED_SHARED_CSS_MODULES = [
+  "catalog-editor.managed-table.css",
 ] as const;
 
 const flooringCatalogModulePaths = Object.keys(
@@ -109,11 +123,19 @@ const plumbingCatalogModulePaths = Object.keys(
     "./PlumbingLibraryView.tsx",
     "./PlumbingPreviewPanel.tsx",
     "./PlumbingZoneCard.tsx",
+    "./PlumbingZoneCompositionColumns.ts",
     "./PlumbingZoneCompositionRows.tsx",
     "./PlumbingZoneCompositionTable.tsx",
     "./PlumbingZonesView.tsx",
     "./plumbing-catalog-model.ts",
     "./usePlumbingCatalogPanel.ts",
+  ]),
+);
+
+const sharedCatalogModulePaths = Object.keys(
+  import.meta.glob([
+    "./CatalogManagedTableHeaderCell.tsx",
+    "./useCatalogTableColumns.ts",
   ]),
 );
 
@@ -140,6 +162,12 @@ const plumbingCssModulePaths = Object.keys(
   ]),
 );
 
+const sharedCssModulePaths = Object.keys(
+  import.meta.glob([
+    "./styles/catalog-editor.managed-table.css",
+  ]),
+);
+
 const flooringCssSources: Array<[string, string, number]> = [
   ["catalog-editor.flooring.css", flooringCssSource, 20],
   ["catalog-editor.flooring.assembly.css", flooringAssemblyCssSource, 360],
@@ -157,6 +185,10 @@ const plumbingCssSources: Array<[string, string, number]> = [
   ["catalog-editor.plumbing.responsive.css", plumbingResponsiveCssSource, 60],
   ["catalog-editor.plumbing.table.css", plumbingTableCssSource, 140],
   ["catalog-editor.plumbing.zones.css", plumbingZonesCssSource, 220],
+];
+
+const sharedCssSources: Array<[string, string, number]> = [
+  ["catalog-editor.managed-table.css", managedTableCssSource, 160],
 ];
 
 function sourceLines(source: string): string[] {
@@ -207,12 +239,26 @@ describe("catalog editor architecture", () => {
     }
   });
 
+  it("keeps shared catalog table controls reusable", () => {
+    for (const moduleFile of REQUIRED_SHARED_CATALOG_MODULES) {
+      expect(sharedCatalogModulePaths).toContain(`./${moduleFile}`);
+    }
+
+    expect(sourceLines(useCatalogTableColumnsSource).length).toBeLessThanOrEqual(140);
+    expect(sourceLines(catalogManagedTableHeaderCellSource).length).toBeLessThanOrEqual(100);
+    expect(flooringConsumablesTableSource).toContain("useCatalogTableColumns");
+    expect(flooringConsumablesTableSource).toContain("CatalogManagedTableHeaderCell");
+    expect(plumbingZoneCompositionTableSource).toContain("useCatalogTableColumns");
+    expect(plumbingZoneCompositionTableSource).toContain("CatalogManagedTableHeaderCell");
+  });
+
   it("keeps plumbing catalog UI, controller, and pure model separated", () => {
     expect(sourceLines(plumbingCatalogPanelSource).length).toBeLessThanOrEqual(220);
     expect(sourceLines(usePlumbingCatalogPanelSource).length).toBeLessThanOrEqual(420);
     expect(sourceLines(plumbingZonesViewSource).length).toBeLessThanOrEqual(150);
     expect(sourceLines(plumbingZoneCardSource).length).toBeLessThanOrEqual(260);
     expect(sourceLines(plumbingZoneCompositionTableSource).length).toBeLessThanOrEqual(170);
+    expect(sourceLines(plumbingZoneCompositionColumnsSource).length).toBeLessThanOrEqual(120);
     expect(sourceLines(plumbingZoneCompositionRowsSource).length).toBeLessThanOrEqual(150);
     expect(sourceLines(plumbingLibraryViewSource).length).toBeLessThanOrEqual(260);
     expect(sourceLines(plumbingPreviewPanelSource).length).toBeLessThanOrEqual(100);
@@ -255,6 +301,20 @@ describe("catalog editor architecture", () => {
     }
 
     for (const [moduleFile, source, maxLines] of plumbingCssSources) {
+      expect(sourceLines(source).length, moduleFile).toBeLessThanOrEqual(maxLines);
+    }
+  });
+
+  it("keeps shared catalog CSS split from domain CSS", () => {
+    for (const moduleFile of REQUIRED_SHARED_CSS_MODULES) {
+      expect(sharedCssModulePaths).toContain(`./styles/${moduleFile}`);
+    }
+
+    for (const moduleFile of REQUIRED_SHARED_CSS_MODULES) {
+      expect(readFeatureFile("styles/catalog-editor.css")).toContain(`@import "./${moduleFile}";`);
+    }
+
+    for (const [moduleFile, source, maxLines] of sharedCssSources) {
       expect(sourceLines(source).length, moduleFile).toBeLessThanOrEqual(maxLines);
     }
   });

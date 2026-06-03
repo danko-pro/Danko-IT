@@ -1,5 +1,6 @@
 import type { CatalogItem, ZoneCompositionRow } from "./plumbing-seed";
 import { compositionQtyHint, formatMoney, itemUnitPrice } from "./plumbing-catalog-model";
+import type { PlumbingZoneCompositionColumnKey } from "./PlumbingZoneCompositionColumns";
 
 export type PlumbingZoneRowTotal = (row: {
   atomicItemId: string;
@@ -25,6 +26,7 @@ export type PlumbingZoneCompositionRowsProps = {
   onUpdateZoneRow: PlumbingZoneUpdateRow;
   onRemoveZoneRow: (zoneId: string, atomicItemId: string) => void;
   onReplaceZoneVariantRow: (zoneId: string, oldAtomicItemId: string, newAtomicItemId: string) => void;
+  columnClass: (columnKey: PlumbingZoneCompositionColumnKey, className?: string) => string;
   removable?: boolean;
 };
 
@@ -51,6 +53,7 @@ export function PlumbingZoneCompositionRows({
   onUpdateZoneRow,
   onRemoveZoneRow,
   onReplaceZoneVariantRow,
+  columnClass,
   removable = true,
 }: PlumbingZoneCompositionRowsProps) {
   return rows.map((row) => {
@@ -59,10 +62,10 @@ export function PlumbingZoneCompositionRows({
 
     return (
       <tr key={`${scope}-${row.atomicItemId}`} className={item ? "" : "ce-row-missing"}>
-        <td className="ce-zone-table-id ce-mono ce-readonly" title={row.atomicItemId}>
+        <td className={columnClass("id", "ce-zone-table-id ce-mono ce-readonly")} title={row.atomicItemId}>
           <span className="ce-zone-id-chip">{row.atomicItemId}</span>
         </td>
-        <td className="ce-zone-table-title">
+        <td className={columnClass("title", "ce-zone-table-title")}>
           {scope === "variant" ? (
             <select
               className="ce-cell-input ce-zone-item-select"
@@ -82,9 +85,11 @@ export function PlumbingZoneCompositionRows({
             </span>
           )}
         </td>
-        <td className="ce-zone-table-unit ce-readonly">{item ? item.unit : "-"}</td>
-        <td className="ce-num ce-readonly ce-zone-table-money">{item ? formatMoney(itemUnitPrice(item)) : "0"}</td>
-        <td className="ce-zone-table-input-cell" title={qtyHint ?? undefined}>
+        <td className={columnClass("unit", "ce-zone-table-unit ce-readonly")}>{item ? item.unit : "-"}</td>
+        <td className={columnClass("price", "ce-readonly ce-zone-table-money")}>
+          {item ? formatMoney(itemUnitPrice(item)) : "0"}
+        </td>
+        <td className={columnClass("qty", "ce-zone-table-input-cell")} title={qtyHint ?? undefined}>
           <input
             className="ce-cell-input ce-num ce-zone-number-input"
             type="number"
@@ -95,7 +100,7 @@ export function PlumbingZoneCompositionRows({
             onChange={(event) => onUpdateZoneRow(zoneId, row.atomicItemId, "quantity", event.target.value, scope)}
           />
         </td>
-        <td className="ce-zone-table-input-cell">
+        <td className={columnClass("coef", "ce-zone-table-input-cell")}>
           <input
             className="ce-cell-input ce-num ce-zone-number-input"
             type="number"
@@ -107,8 +112,8 @@ export function PlumbingZoneCompositionRows({
             }
           />
         </td>
-        <td className="ce-num ce-readonly ce-total-cell">{formatMoney(zoneRowTotal(row))}</td>
-        <td className="ce-col-actions">
+        <td className={columnClass("total", "ce-readonly ce-total-cell")}>{formatMoney(zoneRowTotal(row))}</td>
+        <td className={columnClass("actions", "ce-col-actions")}>
           {removable && (
             <button
               type="button"

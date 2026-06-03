@@ -161,6 +161,7 @@ class SqlAlchemyEstimateFlooringRepository(SqlAlchemyEstimateRepository):
         rows: list[dict[str, Any]],
         *,
         version: str = "flooring-assembly-v1",
+        catalog_updates: dict[str, Any] | None = None,
     ) -> int:
         target_kind = validate_flooring_catalog_assembly_target_kind(target_kind)
         owner_value = self._catalog_write_owner_value()
@@ -186,6 +187,15 @@ class SqlAlchemyEstimateFlooringRepository(SqlAlchemyEstimateRepository):
                             **self._catalog_assembly_row_values(row, index=index),
                         )
                     )
+                if catalog_updates:
+                    updated = await self._apply_flooring_catalog_projection_in_session(
+                        session,
+                        target_kind=target_kind,
+                        target_id=target_id,
+                        values=catalog_updates,
+                    )
+                    if not updated:
+                        raise ConflictError("Flooring catalog target could not be updated with assembly projection")
                 return assembly_id
 
     async def delete_estimate_flooring_catalog_assembly(self, target_kind: str, target_id: int) -> bool:
@@ -507,6 +517,33 @@ class SqlAlchemyEstimateFlooringRepository(SqlAlchemyEstimateRepository):
             )
         )
         return int(result.inserted_primary_key[0])
+
+    async def _apply_flooring_catalog_projection_in_session(
+        self,
+        session,
+        *,
+        target_kind: str,
+        target_id: int,
+        values: dict[str, Any],
+    ) -> bool:
+        if not values:
+            return False
+        table_by_kind = {
+            "covering": estimate_flooring_coverings,
+            "preparation": estimate_flooring_preparations,
+            "layout": estimate_flooring_layouts,
+        }
+        table = table_by_kind[target_kind]
+        result = await session.execute(
+            update(table)
+            .where(
+                self._owner_clause(table),
+                table.c.is_active == 1,
+                table.c.id == target_id,
+            )
+            .values(**values, updated_at=func.current_timestamp())
+        )
+        return bool(result.rowcount)
 
     def _catalog_assembly_row_values(self, row: dict[str, Any], *, index: int) -> dict[str, Any]:
         assembly_item_id = row.get("assembly_item_id")

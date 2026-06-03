@@ -279,3 +279,69 @@ def _round_money(value: float) -> float:
 
 def _round_quantity(value: float) -> float:
     return round(value + 0.0, 6)
+
+
+def has_enabled_flooring_assembly_rows(rows: Sequence[Mapping[str, Any]]) -> bool:
+    return any(_is_enabled(row) for row in rows)
+
+
+def layout_labor_multiplier_from_assembly_rows(rows: Sequence[Mapping[str, Any]]) -> float:
+    """Match catalog-editor layoutLaborFactorFromAssemblyRows (work row consumption)."""
+
+    enabled_work = [row for row in rows if _is_enabled(row) and _normalize_kind(row.get("kind")) == "work"]
+    coefficient = 0.0
+    for row in enabled_work:
+        consumption = _number(row.get("consumption_per_m2"))
+        if consumption > 0:
+            coefficient = consumption
+            break
+    return coefficient if coefficient > 0 else 1.0
+
+
+def _flat_consumable_db_fields(price_per_m2: float) -> tuple[float, float]:
+    if price_per_m2 > 0:
+        return 1.0, price_per_m2
+    return 0.0, 0.0
+
+
+def catalog_update_values_from_projection(
+    target_kind: str,
+    projection: Mapping[str, Any],
+    *,
+    assembly_rows: Sequence[Mapping[str, Any]] | None = None,
+) -> dict[str, Any]:
+    """Map projection flat rates to CRM catalog columns (parity with applyAggregatesToCoveringDraft)."""
+
+    normalized_target = validate_flooring_catalog_assembly_target_kind(target_kind)
+    flat = dict(projection.get("flat") or {})
+
+    if normalized_target == "covering":
+        glue_con, glue_price = _flat_consumable_db_fields(_number(flat.get("adhesivePricePerM2")))
+        primer_con, primer_price = _flat_consumable_db_fields(_number(flat.get("primerPricePerM2")))
+        svp_con, svp_price = _flat_consumable_db_fields(_number(flat.get("svpPricePerM2")))
+        grout_con, grout_price = _flat_consumable_db_fields(_number(flat.get("groutPricePerM2")))
+        return {
+            "material_price_per_m2": _number(flat.get("materialPricePerM2")),
+            "labor_price_per_m2": 0.0,
+            "instrument_price_per_m2": _number(flat.get("toolConsumablesPerM2")),
+            "glue_consumption_per_m2": glue_con,
+            "glue_price_per_unit": glue_price,
+            "primer_consumption_per_m2": primer_con,
+            "primer_price_per_unit": primer_price,
+            "svp_consumption_per_m2": svp_con,
+            "svp_price_per_unit": svp_price,
+            "grout_consumption_per_m2": grout_con,
+            "grout_price_per_unit": grout_price,
+        }
+
+    if normalized_target == "preparation":
+        return {
+            "labor_price_per_m2": _number(flat.get("laborPricePerM2")),
+            "material_price_per_m2": _number(flat.get("materialPricePerM2")),
+        }
+
+    rows = assembly_rows or ()
+    return {
+        "labor_price_per_m2": _number(flat.get("laborPricePerM2")),
+        "labor_multiplier": layout_labor_multiplier_from_assembly_rows(rows),
+    }

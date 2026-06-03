@@ -9,6 +9,10 @@ from supply_bot.estimates.application.create_flooring_catalog import (
     _flooring_custom_consumables_to_json,
     _normalize_required_text,
 )
+# FP3b: reject flat PATCH when a package assembly exists (safer than silent re-projection).
+from supply_bot.estimates.application.flooring_catalog_assembly import (
+    reject_flooring_flat_update_when_assembly_present,
+)
 from supply_bot.estimates.application.shared import (
     clamp_minimum,
     clamp_non_negative,
@@ -71,6 +75,12 @@ class UpdateFlooringLayoutCommand:
 
 
 class FlooringCatalogUpdateStorage(Protocol):
+    async def get_estimate_flooring_catalog_assembly(
+        self,
+        target_kind: str,
+        target_id: int,
+    ) -> dict[str, Any] | None: ...
+
     async def get_estimate_flooring_covering(self, covering_id: int) -> dict[str, Any] | None: ...
 
     async def update_estimate_flooring_covering(self, covering_id: int, **values: Any) -> bool: ...
@@ -107,6 +117,11 @@ class UpdateFlooringCoveringUseCase:
             _reject_negative(item.price_per_unit, field_label="custom_price_per_unit")
 
         title = _normalize_required_text(command.title, error_message="Floor covering title is required")
+        await reject_flooring_flat_update_when_assembly_present(
+            self._storage,
+            "covering",
+            command.covering_id,
+        )
         updated = await self._storage.update_estimate_flooring_covering(
             command.covering_id,
             title=title,
@@ -151,6 +166,11 @@ class UpdateFlooringPreparationUseCase:
         _reject_negative(command.primer_price_per_unit, field_label="primer_price_per_unit")
 
         title = _normalize_required_text(command.title, error_message="Floor preparation title is required")
+        await reject_flooring_flat_update_when_assembly_present(
+            self._storage,
+            "preparation",
+            command.preparation_id,
+        )
         updated = await self._storage.update_estimate_flooring_preparation(
             command.preparation_id,
             title=title,
@@ -179,6 +199,11 @@ class UpdateFlooringLayoutUseCase:
         _reject_negative(command.extra_waste_percent, field_label="extra_waste_percent")
 
         title = _normalize_required_text(command.title, error_message="Floor layout title is required")
+        await reject_flooring_flat_update_when_assembly_present(
+            self._storage,
+            "layout",
+            command.layout_id,
+        )
         updated = await self._storage.update_estimate_flooring_layout(
             command.layout_id,
             title=title,

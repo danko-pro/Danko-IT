@@ -4,12 +4,15 @@ import {
   buildFlatDocumentSection,
   buildPublicEstimateDocument,
   calculateDocumentLineTotals,
+  collectDocumentSectionLines,
   documentToEstimateSpecModalData,
   documentToEstimateSpecSections,
+  getAggregatedPresentationForSection,
   type BuildPublicEstimateDocumentInput,
 } from "./public-estimate-document";
 import { mapSectionsForSpec } from "./spec";
 import { calculateFlooring, type FlooringOptions, type FlooringRoomInput } from "../public-estimate-flooring";
+import type { FlooringProcurementLine } from "../public-estimate-flooring-procurement";
 import {
   FLOORING_GOLDEN_SNAPSHOT,
   FLOORING_GOLDEN_TOTAL,
@@ -346,6 +349,184 @@ describe("buildPublicEstimateDocument flooring", () => {
 
     expect(flooringResult.procurementLines.length).toBeGreaterThan(0);
     expect(document.appendices?.procurement).toEqual(flooringResult.procurementLines);
+  });
+
+  function buildGoldenFlooringDocument(procurementLines?: FlooringProcurementLine[]) {
+    const flooringResult = calculateFlooring([flooringRoom], flooringOptions);
+    const estimateResult = buildPublicEstimateResult({
+      warmFloorResult: { selectedArea: 0, section: createEstimateSection("warm_floor", "Тёплый пол", []) },
+      flooringResult: { flooringArea: flooringResult.flooringArea, section: flooringResult.section },
+      wallsResult: { wallFinishArea: 0, section: createEstimateSection("walls", "Стены", []) },
+      ceilingResult: { ceilingArea: 0, section: createEstimateSection("ceiling", "Потолки", []) },
+      electricResult: { section: createEstimateSection("electric", "Электрика", []) },
+      plumbingResult: { section: createEstimateSection("plumbing", "Сантехника", []) },
+      doorsResult: { section: createEstimateSection("doors", "Двери", []) },
+      completionResult: { section: createEstimateSection("completion", "Отделка", []) },
+      appliancesResult: { section: createEstimateSection("appliances", "Техника", []) },
+      looseFurnitureResult: { section: createEstimateSection("loose_furniture", "Мебель", []) },
+      homeGoodsResult: { section: createEstimateSection("home_goods", "Товары", []) },
+      floorArea: 16,
+    });
+
+    return {
+      flooringResult,
+      document: buildPublicEstimateDocument(
+        buildDocumentInput(estimateResult, {
+          floorArea: 16,
+          flooringResult: {
+            specificationSection: flooringResult.specificationSection,
+            procurementLines: procurementLines ?? flooringResult.procurementLines,
+          },
+        }),
+      ),
+    };
+  }
+
+  it("attaches presentationGroups to flooring section", () => {
+    const { document } = buildGoldenFlooringDocument();
+    const flooringSection = document.sections.find((section) => section.sectionId === "flooring");
+
+    expect(flooringSection?.presentationGroups).toHaveLength(2);
+    expect(flooringSection?.presentationGroups?.map((group) => group.title)).toEqual([
+      "Работы",
+      "Материалы и расходники",
+    ]);
+  });
+
+  it("includes works presentation group with aggregated lines", () => {
+    const { document } = buildGoldenFlooringDocument();
+    const worksGroup = document.sections
+      .find((section) => section.sectionId === "flooring")
+      ?.presentationGroups?.find((group) => group.kind === "works");
+
+    expect(worksGroup).toBeDefined();
+    expect(worksGroup?.title).toBe("Работы");
+    expect(worksGroup!.lines.length).toBeGreaterThan(0);
+    expect(worksGroup!.lines.every((line) => line.category === "works")).toBe(true);
+  });
+
+  it("includes materials presentation group", () => {
+    const { document } = buildGoldenFlooringDocument();
+    const materialsGroup = document.sections
+      .find((section) => section.sectionId === "flooring")
+      ?.presentationGroups?.find((group) => group.kind === "materials");
+
+    expect(materialsGroup).toBeDefined();
+    expect(materialsGroup?.title).toBe("Материалы и расходники");
+    expect(materialsGroup!.lines.length).toBeGreaterThan(0);
+  });
+
+  it("builds materials group from procurement when present", () => {
+    const laminate = FLOORING_GOLDEN_SNAPSHOT.coverings.find((item) => item.code === "laminate")!;
+
+    vi.spyOn(flooringSnapshotModule, "getFlooringSnapshotCatalog").mockReturnValue({
+      coverings: {
+        ...getFlooringGoldenSnapshotCatalog().coverings,
+        laminate: {
+          ...laminate,
+          specLines: [
+            {
+              code: "laminate-board",
+              title: "Ламинат доска",
+              category: "materials",
+              basis: "area",
+              unit: "m2",
+              quantityPerBasis: 1,
+              unitPrice: laminate.materialPricePerM2,
+              aggregationKey: "laminate-board",
+            },
+          ],
+        },
+      },
+      preparations: getFlooringGoldenSnapshotCatalog().preparations,
+      layouts: getFlooringGoldenSnapshotCatalog().layouts,
+    });
+
+    const { flooringResult, document } = buildGoldenFlooringDocument();
+
+    expect(flooringResult.procurementLines.length).toBeGreaterThan(0);
+
+    const materialsGroup = document.sections
+      .find((section) => section.sectionId === "flooring")
+      ?.presentationGroups?.find((group) => group.kind === "materials");
+
+    expect(materialsGroup!.lines.some((line) => line.sources?.some((source) => source.procurementCode))).toBe(
+      true,
+    );
+  });
+
+  it("falls back to document material aggregation when procurement is empty", () => {
+    const { document } = buildGoldenFlooringDocument([]);
+
+    expect(document.appendices?.procurement).toBeUndefined();
+
+    const materialsGroup = document.sections
+      .find((section) => section.sectionId === "flooring")
+      ?.presentationGroups?.find((group) => group.kind === "materials");
+
+    expect(materialsGroup).toBeDefined();
+    expect(materialsGroup!.lines.length).toBeGreaterThan(0);
+    expect(
+      materialsGroup!.lines.some((line) => line.sources?.some((source) => source.lineId !== undefined)),
+    ).toBe(true);
+  });
+
+  it("sets presentation group totals from aggregated lines", () => {
+    const { document } = buildGoldenFlooringDocument();
+    const flooringSection = document.sections.find((section) => section.sectionId === "flooring");
+
+    for (const group of flooringSection?.presentationGroups ?? []) {
+      expect(group.totals).toEqual(calculateDocumentLineTotals(group.lines));
+    }
+  });
+
+  it("does not attach presentationGroups to non-flooring sections", () => {
+    const { document } = buildGoldenFlooringDocument();
+
+    for (const section of document.sections) {
+      if (section.sectionId !== "flooring") {
+        expect(section.presentationGroups).toBeUndefined();
+      }
+    }
+  });
+
+  it("does not mutate input when attaching presentationGroups", () => {
+    const flooringResult = calculateFlooring([flooringRoom], flooringOptions);
+    const estimateResult = buildPublicEstimateResult({
+      warmFloorResult: { selectedArea: 0, section: createEstimateSection("warm_floor", "Тёплый пол", []) },
+      flooringResult: { flooringArea: flooringResult.flooringArea, section: flooringResult.section },
+      wallsResult: { wallFinishArea: 0, section: createEstimateSection("walls", "Стены", []) },
+      ceilingResult: { ceilingArea: 0, section: createEstimateSection("ceiling", "Потолки", []) },
+      electricResult: { section: createEstimateSection("electric", "Электрика", []) },
+      plumbingResult: { section: createEstimateSection("plumbing", "Сантехника", []) },
+      doorsResult: { section: createEstimateSection("doors", "Двери", []) },
+      completionResult: { section: createEstimateSection("completion", "Отделка", []) },
+      appliancesResult: { section: createEstimateSection("appliances", "Техника", []) },
+      looseFurnitureResult: { section: createEstimateSection("loose_furniture", "Мебель", []) },
+      homeGoodsResult: { section: createEstimateSection("home_goods", "Товары", []) },
+      floorArea: 16,
+    });
+    const input = buildDocumentInput(estimateResult, {
+      floorArea: 16,
+      flooringResult: {
+        specificationSection: flooringResult.specificationSection,
+        procurementLines: flooringResult.procurementLines,
+      },
+    });
+
+    const resultBefore = JSON.stringify(estimateResult);
+    const contextBefore = JSON.stringify(input.context);
+
+    const document = buildPublicEstimateDocument(input);
+    const flooringSection = document.sections.find((section) => section.sectionId === "flooring");
+    const presentation = getAggregatedPresentationForSection(document, "flooring");
+
+    expect(JSON.stringify(estimateResult)).toBe(resultBefore);
+    expect(JSON.stringify(input.context)).toBe(contextBefore);
+    expect(presentation).toBeDefined();
+    expect(collectDocumentSectionLines(flooringSection!).map((line) => line.id)).toEqual(
+      flooringResult.specificationSection.items.map((item) => item.id),
+    );
   });
 });
 

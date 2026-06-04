@@ -577,6 +577,8 @@ UI можно править параллельно, но он не должен
 
 **Тесты:** `admin-ui/src/features/public/generate-snapshot-validation.test.ts`
 
+**Dev workflow (PF7):** `docs/snapshot-dev-workflow.md` — явные режимы `local` / `remote` / `strict-remote`, npm scripts, проверка drift bundled vs backend.
+
 ### 13.8 Public calculator dropdowns
 
 | Модуль | Поведение |

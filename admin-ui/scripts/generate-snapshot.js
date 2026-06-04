@@ -1,23 +1,20 @@
 /**
- * Генератор публичного снапшота сантехники (A7.2) — шаг prebuild.
+ * Генератор публичных snapshot (prebuild + dev commands).
  *
- * Remote mode (Render/production): если задан PUBLIC_SNAPSHOT_BASE_URL или
- * VITE_API_BASE_URL — GET /api/public/catalog/plumbing/snapshot, валидация,
- * запись в src/features/public/generated/plumbing.snapshot.json.
- * При ошибке fetch или невалидном payload — exit != 0 (без fallback на Python).
+ * Режимы (--mode=… или SNAPSHOT_MODE):
+ * - auto (default): PUBLIC_SNAPSHOT_BASE_URL / VITE_API_BASE_URL → remote, иначе local seed
+ * - local: детерминированный seed (plumbing Python, warm-floor v1, flooring-v2 package seed)
+ * - remote: GET /api/public/catalog/{section}/snapshot; base URL из env или --base-url=
+ * - strict-remote: как remote, но exit != 0 без base URL или при invalid payload (без seed fallback)
  *
- * Local/dev mode (env не задан): Python-генератор (tools/generate_plumbing_snapshot.py)
- * с детерминированным seed-fallback.
+ * ENV:
+ * - PUBLIC_SNAPSHOT_BASE_URL — приоритетный base URL для remote
+ * - VITE_API_BASE_URL — fallback base URL
+ * - SNAPSHOT_MODE — явный режим (local | remote | strict-remote)
  *
- * Также пишет `generated/warm-floor.snapshot.json`:
- * - remote mode: GET /api/public/catalog/warm-floor/snapshot;
- * - local/dev mode: детерминированный v1 seed fallback.
+ * npm scripts: snapshot:local, snapshot:remote, snapshot:remote:local, snapshot:strict-remote
  *
- * Также пишет `generated/flooring.snapshot.json`:
- * - remote mode: GET /api/public/catalog/flooring/snapshot;
- * - local/dev mode: package-first FLOORING_V2_SEED fallback (scripts/flooring-v2-package-seed.json).
- *
- * Запуск: `node scripts/generate-snapshot.js`.
+ * Запуск: `node scripts/generate-snapshot.js` (auto) или `node scripts/generate-snapshot.js --mode=local`.
  */
 import { spawnSync } from "node:child_process";
 import { mkdirSync, writeFileSync } from "node:fs";
@@ -126,17 +123,124 @@ export function loadFlooringV2PackageSeedFromPython() {
   return JSON.parse(result.stdout);
 }
 
-/** @returns {string | null} */
-export function resolveRemoteBaseUrl() {
-  const publicSnapshot = process.env.PUBLIC_SNAPSHOT_BASE_URL?.trim();
+const SNAPSHOT_MODES = new Set(["local", "remote", "strict-remote"]);
+
+/**
+ * @param {string[]} [argv]
+ * @param {NodeJS.ProcessEnv} [env]
+ * @returns {"local" | "remote" | "strict-remote" | null}
+ */
+export function parseSnapshotMode(argv = process.argv.slice(2), env = process.env) {
+  for (let index = 0; index < argv.length; index += 1) {
+    const arg = argv[index];
+    if (arg.startsWith("--mode=")) {
+      const mode = arg.slice("--mode=".length).trim();
+      if (!SNAPSHOT_MODES.has(mode)) {
+        throw new Error(`invalid snapshot mode: ${mode}`);
+      }
+      return /** @type {"local" | "remote" | "strict-remote"} */ (mode);
+    }
+    if (arg === "--mode") {
+      const mode = argv[index + 1]?.trim();
+      if (!mode || !SNAPSHOT_MODES.has(mode)) {
+        throw new Error(`invalid snapshot mode: ${mode ?? "(missing)"}`);
+      }
+      return /** @type {"local" | "remote" | "strict-remote"} */ (mode);
+    }
+  }
+
+  const envMode = env.SNAPSHOT_MODE?.trim();
+  if (envMode) {
+    if (!SNAPSHOT_MODES.has(envMode)) {
+      throw new Error(`invalid SNAPSHOT_MODE: ${envMode}`);
+    }
+    return /** @type {"local" | "remote" | "strict-remote"} */ (envMode);
+  }
+
+  return null;
+}
+
+/**
+ * @param {string[]} [argv]
+ * @returns {string | null}
+ */
+export function parseSnapshotBaseUrlArg(argv = process.argv.slice(2)) {
+  for (let index = 0; index < argv.length; index += 1) {
+    const arg = argv[index];
+    if (arg.startsWith("--base-url=")) {
+      const baseUrl = arg.slice("--base-url=".length).trim();
+      return baseUrl.length > 0 ? baseUrl : null;
+    }
+    if (arg === "--base-url") {
+      const baseUrl = argv[index + 1]?.trim();
+      return baseUrl && baseUrl.length > 0 ? baseUrl : null;
+    }
+  }
+  return null;
+}
+
+/** @param {string | null | undefined} baseUrl */
+export function normalizeBaseUrl(baseUrl) {
+  if (!baseUrl) {
+    return null;
+  }
+  const trimmed = baseUrl.trim();
+  if (trimmed.length === 0) {
+    return null;
+  }
+  return trimmed.replace(/\/+$/, "");
+}
+
+/** @param {NodeJS.ProcessEnv} [env] */
+export function resolveRemoteBaseUrl(env = process.env) {
+  const publicSnapshot = env.PUBLIC_SNAPSHOT_BASE_URL?.trim();
   if (publicSnapshot) {
     return publicSnapshot;
   }
-  const viteApi = process.env.VITE_API_BASE_URL?.trim();
+  const viteApi = env.VITE_API_BASE_URL?.trim();
   if (viteApi) {
     return viteApi;
   }
   return null;
+}
+
+/**
+ * @param {"local" | "remote" | "strict-remote" | null} explicitMode
+ * @param {NodeJS.ProcessEnv} [env]
+ * @param {string | null} [cliBaseUrl]
+ * @returns {{
+ *   mode: "local" | "remote";
+ *   baseUrl: string | null;
+ *   strictRemote: boolean;
+ * }}
+ */
+export function resolveSnapshotRunPlan(
+  explicitMode,
+  env = process.env,
+  cliBaseUrl = null,
+) {
+  const strictRemote = explicitMode === "strict-remote";
+  const cliNormalized = normalizeBaseUrl(cliBaseUrl);
+  const envNormalized = normalizeBaseUrl(resolveRemoteBaseUrl(env));
+  const baseUrl = cliNormalized ?? envNormalized;
+
+  if (explicitMode === "local") {
+    return { mode: "local", baseUrl: null, strictRemote: false };
+  }
+
+  if (explicitMode === "remote" || explicitMode === "strict-remote") {
+    return {
+      mode: "remote",
+      baseUrl,
+      strictRemote: explicitMode === "strict-remote",
+    };
+  }
+
+  if (baseUrl) {
+    return { mode: "remote", baseUrl, strictRemote: false };
+  }
+
+  return { mode: "local", baseUrl: null, strictRemote: false };
 }
 
 /** @param {string} baseUrl */
@@ -687,6 +791,15 @@ function runLocalPythonGenerator() {
   writeFlooringSnapshot(FLOORING_V2_SEED);
 }
 
+function runLocalSeedMode({ explicit = false } = {}) {
+  console.log(
+    explicit
+      ? "[generate-snapshot] mode: local (explicit seed fallback)"
+      : "[generate-snapshot] mode: local (auto — no remote base URL)",
+  );
+  runLocalPythonGenerator();
+}
+
 async function runRemoteMode(baseUrl) {
   const url = buildSnapshotUrl(baseUrl);
   const warmFloorUrl = buildWarmFloorSnapshotUrl(baseUrl);
@@ -718,14 +831,43 @@ async function runRemoteMode(baseUrl) {
 }
 
 async function main() {
-  const baseUrl = resolveRemoteBaseUrl();
-  if (baseUrl) {
-    await runRemoteMode(baseUrl);
+  let explicitMode = null;
+  try {
+    explicitMode = parseSnapshotMode();
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error(`[generate-snapshot] failure: ${message}`);
+    process.exit(1);
+  }
+
+  const cliBaseUrl = parseSnapshotBaseUrlArg();
+  const plan = resolveSnapshotRunPlan(explicitMode, process.env, cliBaseUrl);
+
+  if (plan.strictRemote && !plan.baseUrl) {
+    console.error(
+      "[generate-snapshot] failure: strict-remote requires PUBLIC_SNAPSHOT_BASE_URL, VITE_API_BASE_URL, or --base-url=",
+    );
+    process.exit(1);
+  }
+
+  if (explicitMode === "remote" && !plan.baseUrl) {
+    console.error(
+      "[generate-snapshot] failure: remote mode requires PUBLIC_SNAPSHOT_BASE_URL, VITE_API_BASE_URL, or --base-url=",
+    );
+    process.exit(1);
+  }
+
+  if (plan.mode === "remote" && plan.baseUrl) {
+    await runRemoteMode(plan.baseUrl);
     return;
   }
 
-  console.log("[generate-snapshot] mode: local (Python seed fallback)");
-  runLocalPythonGenerator();
+  if (explicitMode === "local") {
+    runLocalSeedMode({ explicit: true });
+    return;
+  }
+
+  runLocalSeedMode({ explicit: false });
 }
 
 const isDirectRun = process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1]);

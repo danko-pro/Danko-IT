@@ -103,12 +103,16 @@ describe("generate-snapshot validation", () => {
     expect(validateFlooringSnapshotPayload(FLOORING_V2_SEED)).toEqual({ ok: true });
   });
 
-  it("accepts legacy flooring v1 payloads", () => {
+  it("accepts legacy flooring v1 payloads without specLines", () => {
     const legacyPayload = {
       ...FLOORING_V2_SEED,
       version: "flooring-v1",
-      coverings: FLOORING_V2_SEED.coverings.map((item) => ({ ...item, laborPricePerM2: 1000 })),
-      layouts: FLOORING_V2_SEED.layouts.map(({ laborPricePerM2: _legacy, ...item }) => item),
+      coverings: FLOORING_V2_SEED.coverings.map(({ specLines: _specLines, ...item }) => ({
+        ...item,
+        laborPricePerM2: 1000,
+      })),
+      layouts: FLOORING_V2_SEED.layouts.map(({ specLines: _specLines, laborPricePerM2: _legacy, ...item }) => item),
+      preparations: FLOORING_V2_SEED.preparations.map(({ specLines: _specLines, ...item }) => item),
     };
 
     expect(validateFlooringSnapshotPayload(legacyPayload)).toEqual({ ok: true });
@@ -202,8 +206,16 @@ describe("generate-snapshot validation", () => {
     expect(validateFlooringSnapshotPayload(payload)).toEqual({ ok: true });
   });
 
-  it("accepts v2 catalog rows without specLines", () => {
-    expect(validateFlooringSnapshotPayload(FLOORING_V2_SEED)).toEqual({ ok: true });
+  it("rejects flooring-v2 catalog rows without specLines", () => {
+    const payload = {
+      ...FLOORING_V2_SEED,
+      coverings: FLOORING_V2_SEED.coverings.map(({ specLines: _specLines, ...item }) => item),
+    };
+
+    expect(validateFlooringSnapshotPayload(payload)).toEqual({
+      ok: false,
+      reason: "coverings[porcelain] missing required specLines",
+    });
   });
 
   it("rejects invalid specLines category, basis, and numeric fields", () => {

@@ -13,6 +13,9 @@ from supply_bot.estimates.application.flooring_package_projection import (
     build_flooring_package_projection,
     catalog_update_values_from_projection,
 )
+from supply_bot.utils import normalize_text
+
+DEFAULT_PUBLIC_UNDERLAY_PRICE_PER_M2 = 220.0
 
 FLOORING_SYNTHETIC_ASSEMBLY_VERSION = FLOORING_CATALOG_ASSEMBLY_VERSION
 FLOORING_SYNTHETIC_ASSEMBLY_TITLE_SUFFIX = "(технический пакет PF2)"
@@ -145,6 +148,25 @@ def _covering_synthetic_rows(row: Mapping[str, Any]) -> list[dict[str, Any]]:
         )
     )
     sort_order += 10
+
+    underlay_mode = normalize_text(str(row.get("underlay_mode") or "")) or "none"
+    if underlay_mode != "none":
+        underlay_consumption = _non_negative(row.get("underlay_consumption_per_m2")) or 1.0
+        rows.append(
+            _base_row(
+                section="consumable",
+                kind="consumable",
+                formula="unit_consumption",
+                title="Подложка",
+                unit="m2",
+                price=DEFAULT_PUBLIC_UNDERLAY_PRICE_PER_M2,
+                consumption_per_m2=underlay_consumption,
+                public_category="consumables",
+                public_title="Подложка",
+                sort_order=sort_order,
+            )
+        )
+        sort_order += 10
 
     consumables = (
         ("Клей", row.get("glue_unit"), row.get("glue_consumption_per_m2"), row.get("glue_price_per_unit")),

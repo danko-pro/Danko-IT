@@ -1,0 +1,489 @@
+{
+  "version": "flooring-v2",
+  "coverings": [
+    {
+      "code": "porcelain",
+      "title": "Керамогранит",
+      "materialPricePerM2": 2900,
+      "baseWastePercent": 10,
+      "underlayPricePerM2": 0,
+      "adhesivePricePerM2": 450,
+      "primerPricePerM2": 25,
+      "svpPricePerM2": 120,
+      "groutPricePerM2": 90,
+      "toolConsumablesPerM2": 40,
+      "specLines": [
+        {
+          "code": "covering_materials_keramogranit_1",
+          "title": "Керамогранит",
+          "category": "materials",
+          "basis": "area",
+          "unit": "m2",
+          "quantityPerBasis": 1.0,
+          "unitPrice": 2900.0,
+          "aggregationKey": "covering_materials_keramogranit_1"
+        },
+        {
+          "code": "covering_consumables_kley_2",
+          "title": "Клей",
+          "category": "consumables",
+          "basis": "area",
+          "unit": "kg",
+          "quantityPerBasis": 1.5,
+          "unitPrice": 300.0,
+          "aggregationKey": "covering_consumables_kley_2",
+          "calculationNote": "1.5 kg/m²"
+        },
+        {
+          "code": "covering_consumables_grunt_3",
+          "title": "Грунт",
+          "category": "consumables",
+          "basis": "area",
+          "unit": "l",
+          "quantityPerBasis": 0.1,
+          "unitPrice": 250.0,
+          "aggregationKey": "covering_consumables_grunt_3",
+          "calculationNote": "0.1 l/m²"
+        },
+        {
+          "code": "covering_consumables_svp_4",
+          "title": "СВП",
+          "category": "consumables",
+          "basis": "area",
+          "unit": "pcs",
+          "quantityPerBasis": 4.0,
+          "unitPrice": 30.0,
+          "aggregationKey": "covering_consumables_svp_4",
+          "calculationNote": "4 pcs/m²"
+        },
+        {
+          "code": "covering_consumables_zatirka_5",
+          "title": "Затирка",
+          "category": "consumables",
+          "basis": "area",
+          "unit": "kg",
+          "quantityPerBasis": 0.5,
+          "unitPrice": 180.0,
+          "aggregationKey": "covering_consumables_zatirka_5",
+          "calculationNote": "0.5 kg/m²"
+        },
+        {
+          "code": "covering_tools_instrument_i_melkiy_rashodnik_6",
+          "title": "Инструмент и мелкий расходник",
+          "category": "tools",
+          "basis": "area",
+          "unit": "m2",
+          "quantityPerBasis": 1.0,
+          "unitPrice": 40.0,
+          "aggregationKey": "covering_tools_instrument_i_melkiy_rashodnik_6"
+        }
+      ]
+    },
+    {
+      "code": "quartz_vinyl",
+      "title": "Кварцвинил",
+      "materialPricePerM2": 1700,
+      "baseWastePercent": 5,
+      "underlayPricePerM2": 220,
+      "adhesivePricePerM2": 0,
+      "primerPricePerM2": 25,
+      "svpPricePerM2": 0,
+      "groutPricePerM2": 0,
+      "toolConsumablesPerM2": 80,
+      "specLines": [
+        {
+          "code": "covering_materials_kvarcvinil_1",
+          "title": "Кварцвинил",
+          "category": "materials",
+          "basis": "area",
+          "unit": "m2",
+          "quantityPerBasis": 1.0,
+          "unitPrice": 1700.0,
+          "aggregationKey": "covering_materials_kvarcvinil_1"
+        },
+        {
+          "code": "covering_consumables_podlozhka_2",
+          "title": "Подложка",
+          "category": "consumables",
+          "basis": "area",
+          "unit": "m2",
+          "quantityPerBasis": 1.0,
+          "unitPrice": 220.0,
+          "aggregationKey": "covering_consumables_podlozhka_2",
+          "calculationNote": "1 m2/m²"
+        },
+        {
+          "code": "covering_consumables_grunt_3",
+          "title": "Грунт",
+          "category": "consumables",
+          "basis": "area",
+          "unit": "l",
+          "quantityPerBasis": 0.1,
+          "unitPrice": 250.0,
+          "aggregationKey": "covering_consumables_grunt_3",
+          "calculationNote": "0.1 l/m²"
+        },
+        {
+          "code": "covering_tools_instrument_i_melkiy_rashodnik_4",
+          "title": "Инструмент и мелкий расходник",
+          "category": "tools",
+          "basis": "area",
+          "unit": "m2",
+          "quantityPerBasis": 1.0,
+          "unitPrice": 80.0,
+          "aggregationKey": "covering_tools_instrument_i_melkiy_rashodnik_4"
+        }
+      ]
+    },
+    {
+      "code": "laminate",
+      "title": "Ламинат",
+      "materialPricePerM2": 930,
+      "baseWastePercent": 10,
+      "underlayPricePerM2": 220,
+      "adhesivePricePerM2": 0,
+      "primerPricePerM2": 25,
+      "svpPricePerM2": 0,
+      "groutPricePerM2": 0,
+      "toolConsumablesPerM2": 40,
+      "specLines": [
+        {
+          "code": "covering_materials_laminat_1",
+          "title": "Ламинат",
+          "category": "materials",
+          "basis": "area",
+          "unit": "m2",
+          "quantityPerBasis": 1.0,
+          "unitPrice": 930.0,
+          "aggregationKey": "covering_materials_laminat_1"
+        },
+        {
+          "code": "covering_consumables_podlozhka_2",
+          "title": "Подложка",
+          "category": "consumables",
+          "basis": "area",
+          "unit": "m2",
+          "quantityPerBasis": 1.0,
+          "unitPrice": 220.0,
+          "aggregationKey": "covering_consumables_podlozhka_2",
+          "calculationNote": "1 m2/m²"
+        },
+        {
+          "code": "covering_consumables_grunt_3",
+          "title": "Грунт",
+          "category": "consumables",
+          "basis": "area",
+          "unit": "l",
+          "quantityPerBasis": 0.1,
+          "unitPrice": 250.0,
+          "aggregationKey": "covering_consumables_grunt_3",
+          "calculationNote": "0.1 l/m²"
+        },
+        {
+          "code": "covering_tools_instrument_i_melkiy_rashodnik_4",
+          "title": "Инструмент и мелкий расходник",
+          "category": "tools",
+          "basis": "area",
+          "unit": "m2",
+          "quantityPerBasis": 1.0,
+          "unitPrice": 40.0,
+          "aggregationKey": "covering_tools_instrument_i_melkiy_rashodnik_4"
+        }
+      ]
+    },
+    {
+      "code": "carpet",
+      "title": "Ковролин",
+      "materialPricePerM2": 1500,
+      "baseWastePercent": 7,
+      "underlayPricePerM2": 0,
+      "adhesivePricePerM2": 250,
+      "primerPricePerM2": 25,
+      "svpPricePerM2": 0,
+      "groutPricePerM2": 0,
+      "toolConsumablesPerM2": 40,
+      "specLines": [
+        {
+          "code": "covering_materials_kovrolin_1",
+          "title": "Ковролин",
+          "category": "materials",
+          "basis": "area",
+          "unit": "m2",
+          "quantityPerBasis": 1.0,
+          "unitPrice": 1500.0,
+          "aggregationKey": "covering_materials_kovrolin_1"
+        },
+        {
+          "code": "covering_consumables_kley_2",
+          "title": "Клей",
+          "category": "consumables",
+          "basis": "area",
+          "unit": "kg",
+          "quantityPerBasis": 0.833333,
+          "unitPrice": 300.0,
+          "aggregationKey": "covering_consumables_kley_2",
+          "calculationNote": "0.833333 kg/m²"
+        },
+        {
+          "code": "covering_consumables_grunt_3",
+          "title": "Грунт",
+          "category": "consumables",
+          "basis": "area",
+          "unit": "l",
+          "quantityPerBasis": 0.1,
+          "unitPrice": 250.0,
+          "aggregationKey": "covering_consumables_grunt_3",
+          "calculationNote": "0.1 l/m²"
+        },
+        {
+          "code": "covering_tools_instrument_i_melkiy_rashodnik_4",
+          "title": "Инструмент и мелкий расходник",
+          "category": "tools",
+          "basis": "area",
+          "unit": "m2",
+          "quantityPerBasis": 1.0,
+          "unitPrice": 40.0,
+          "aggregationKey": "covering_tools_instrument_i_melkiy_rashodnik_4"
+        }
+      ]
+    },
+    {
+      "code": "engineered_wood",
+      "title": "Инженерная доска",
+      "materialPricePerM2": 6000,
+      "baseWastePercent": 10,
+      "underlayPricePerM2": 0,
+      "adhesivePricePerM2": 900,
+      "primerPricePerM2": 120,
+      "svpPricePerM2": 0,
+      "groutPricePerM2": 0,
+      "toolConsumablesPerM2": 120,
+      "specLines": [
+        {
+          "code": "covering_materials_inzhenernaya_doska_1",
+          "title": "Инженерная доска",
+          "category": "materials",
+          "basis": "area",
+          "unit": "m2",
+          "quantityPerBasis": 1.0,
+          "unitPrice": 6000.0,
+          "aggregationKey": "covering_materials_inzhenernaya_doska_1"
+        },
+        {
+          "code": "covering_consumables_kley_2",
+          "title": "Клей",
+          "category": "consumables",
+          "basis": "area",
+          "unit": "kg",
+          "quantityPerBasis": 3.0,
+          "unitPrice": 300.0,
+          "aggregationKey": "covering_consumables_kley_2",
+          "calculationNote": "3 kg/m²"
+        },
+        {
+          "code": "covering_consumables_grunt_3",
+          "title": "Грунт",
+          "category": "consumables",
+          "basis": "area",
+          "unit": "l",
+          "quantityPerBasis": 0.48,
+          "unitPrice": 250.0,
+          "aggregationKey": "covering_consumables_grunt_3",
+          "calculationNote": "0.48 l/m²"
+        },
+        {
+          "code": "covering_tools_instrument_i_melkiy_rashodnik_4",
+          "title": "Инструмент и мелкий расходник",
+          "category": "tools",
+          "basis": "area",
+          "unit": "m2",
+          "quantityPerBasis": 1.0,
+          "unitPrice": 120.0,
+          "aggregationKey": "covering_tools_instrument_i_melkiy_rashodnik_4"
+        }
+      ]
+    }
+  ],
+  "preparations": [
+    {
+      "code": "none",
+      "title": "Без подготовки",
+      "laborPricePerM2": 300,
+      "materialPricePerM2": 100,
+      "specLines": [
+        {
+          "code": "preparation_works_bez_podgotovki_1",
+          "title": "Без подготовки",
+          "category": "works",
+          "basis": "area",
+          "unit": "m2",
+          "quantityPerBasis": 1.0,
+          "unitPrice": 300.0,
+          "aggregationKey": "preparation_works_bez_podgotovki_1"
+        }
+      ]
+    },
+    {
+      "code": "primer",
+      "title": "Грунтование",
+      "laborPricePerM2": 250,
+      "materialPricePerM2": 120,
+      "specLines": [
+        {
+          "code": "preparation_works_gruntovanie_1",
+          "title": "Грунтование",
+          "category": "works",
+          "basis": "area",
+          "unit": "m2",
+          "quantityPerBasis": 1.0,
+          "unitPrice": 250.0,
+          "aggregationKey": "preparation_works_gruntovanie_1"
+        }
+      ]
+    },
+    {
+      "code": "self_leveling",
+      "title": "Наливной пол",
+      "laborPricePerM2": 650,
+      "materialPricePerM2": 120,
+      "specLines": [
+        {
+          "code": "preparation_works_nalivnoy_pol_1",
+          "title": "Наливной пол",
+          "category": "works",
+          "basis": "area",
+          "unit": "m2",
+          "quantityPerBasis": 1.0,
+          "unitPrice": 650.0,
+          "aggregationKey": "preparation_works_nalivnoy_pol_1"
+        }
+      ]
+    },
+    {
+      "code": "waterproofing",
+      "title": "Гидроизоляция",
+      "laborPricePerM2": 300,
+      "materialPricePerM2": 80,
+      "specLines": [
+        {
+          "code": "preparation_works_gidroizolyaciya_1",
+          "title": "Гидроизоляция",
+          "category": "works",
+          "basis": "area",
+          "unit": "m2",
+          "quantityPerBasis": 1.0,
+          "unitPrice": 300.0,
+          "aggregationKey": "preparation_works_gidroizolyaciya_1"
+        }
+      ]
+    }
+  ],
+  "layouts": [
+    {
+      "code": "straight",
+      "title": "Прямая",
+      "laborPricePerM2": 1000,
+      "laborFactor": 1.1,
+      "additionalWastePercent": 5,
+      "specLines": [
+        {
+          "code": "layout_works_pryamaya_1",
+          "title": "Прямая",
+          "category": "works",
+          "basis": "area",
+          "unit": "m2",
+          "quantityPerBasis": 1.1,
+          "unitPrice": 1000.0,
+          "aggregationKey": "layout_works_pryamaya_1",
+          "calculationNote": "1.1 m²/m²"
+        }
+      ]
+    },
+    {
+      "code": "large_format_straight",
+      "title": "Крупный формат",
+      "laborPricePerM2": 2000,
+      "laborFactor": 1.2,
+      "additionalWastePercent": 10,
+      "specLines": [
+        {
+          "code": "layout_works_krupnyy_format_1",
+          "title": "Крупный формат",
+          "category": "works",
+          "basis": "area",
+          "unit": "m2",
+          "quantityPerBasis": 1.2,
+          "unitPrice": 2000.0,
+          "aggregationKey": "layout_works_krupnyy_format_1",
+          "calculationNote": "1.2 m²/m²"
+        }
+      ]
+    },
+    {
+      "code": "glue",
+      "title": "Клеевая",
+      "laborPricePerM2": 800,
+      "laborFactor": 1.25,
+      "additionalWastePercent": 5,
+      "specLines": [
+        {
+          "code": "layout_works_kleevaya_1",
+          "title": "Клеевая",
+          "category": "works",
+          "basis": "area",
+          "unit": "m2",
+          "quantityPerBasis": 1.25,
+          "unitPrice": 800.0,
+          "aggregationKey": "layout_works_kleevaya_1",
+          "calculationNote": "1.25 m²/m²"
+        }
+      ]
+    },
+    {
+      "code": "floating",
+      "title": "Плавающая",
+      "laborPricePerM2": 1000,
+      "laborFactor": 1,
+      "additionalWastePercent": 3,
+      "specLines": [
+        {
+          "code": "layout_works_plavayuschaya_1",
+          "title": "Плавающая",
+          "category": "works",
+          "basis": "area",
+          "unit": "m2",
+          "quantityPerBasis": 1.0,
+          "unitPrice": 1000.0,
+          "aggregationKey": "layout_works_plavayuschaya_1"
+        }
+      ]
+    }
+  ],
+  "plinthTypes": [
+    {
+      "code": "none",
+      "title": "Без плинтуса",
+      "materialPricePerMeter": 0,
+      "laborPricePerMeter": 0,
+      "factor": 1
+    },
+    {
+      "code": "duropolymer",
+      "title": "Дюрополимерный",
+      "materialPricePerMeter": 450,
+      "laborPricePerMeter": 450,
+      "factor": 1
+    },
+    {
+      "code": "painted_mdf",
+      "title": "МДФ окрашенный",
+      "materialPricePerMeter": 650,
+      "laborPricePerMeter": 500,
+      "factor": 1
+    }
+  ],
+  "globalAddons": {
+    "thresholdPrice": 900,
+    "demolitionPricePerM2": 150
+  }
+}

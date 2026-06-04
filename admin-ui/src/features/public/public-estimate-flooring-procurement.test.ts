@@ -9,6 +9,7 @@ import {
   FLOORING_GOLDEN_SNAPSHOT,
   FLOORING_GOLDEN_TOTAL,
   getFlooringGoldenSnapshotCatalog,
+  getFlooringGoldenSnapshotCatalogWithoutSpecLines,
   getFlooringGoldenSnapshotRates,
 } from "./flooring-golden.fixture";
 import { buildFlooringProcurementSummary } from "./public-estimate-flooring-procurement";
@@ -332,6 +333,7 @@ describe("calculateFlooring procurement integration", () => {
 
   it("populates procurementLines from catalog specLines without changing flat totals", () => {
     const laminate = FLOORING_GOLDEN_SNAPSHOT.coverings.find((item) => item.code === "laminate")!;
+    const noSpecCatalog = getFlooringGoldenSnapshotCatalogWithoutSpecLines();
 
     vi.spyOn(flooringSnapshotModule, "getFlooringSnapshotCatalog").mockReturnValue({
       coverings: {
@@ -366,8 +368,8 @@ describe("calculateFlooring procurement integration", () => {
           ],
         },
       },
-      preparations: getFlooringGoldenSnapshotCatalog().preparations,
-      layouts: getFlooringGoldenSnapshotCatalog().layouts,
+      preparations: noSpecCatalog.preparations,
+      layouts: noSpecCatalog.layouts,
     });
 
     const result = calculateFlooring([room], options);
@@ -379,6 +381,10 @@ describe("calculateFlooring procurement integration", () => {
   });
 
   it("without specLines procurementLines is empty", () => {
+    vi.spyOn(flooringSnapshotModule, "getFlooringSnapshotCatalog").mockReturnValue(
+      getFlooringGoldenSnapshotCatalogWithoutSpecLines(),
+    );
+
     const result = calculateFlooring([room], options);
     expect(result.procurementLines).toEqual([]);
   });

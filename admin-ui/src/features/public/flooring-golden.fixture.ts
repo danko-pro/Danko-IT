@@ -32,6 +32,16 @@ function catalogItemsByCode<T extends { code: string }>(items: T[]): Record<stri
   return Object.fromEntries(items.map((item) => [item.code, item]));
 }
 
+function stripSpecLinesFromItems<T extends { specLines?: unknown }>(itemsByCode: Record<string, T>): Record<string, T> {
+  return Object.fromEntries(
+    Object.entries(itemsByCode).map(([code, item]) => {
+      const { specLines: _specLines, ...withoutSpecLines } = item;
+      void _specLines;
+      return [code, withoutSpecLines as T];
+    }),
+  );
+}
+
 function pickRates<T extends Record<string, unknown>, K extends keyof T>(
   item: T,
   keys: readonly K[],
@@ -50,6 +60,16 @@ export function getFlooringGoldenSnapshotCatalog(): FlooringSnapshotCatalog {
     coverings: catalogItemsByCode(snapshot.coverings),
     preparations: catalogItemsByCode(snapshot.preparations),
     layouts: catalogItemsByCode(snapshot.layouts),
+  };
+}
+
+export function getFlooringGoldenSnapshotCatalogWithoutSpecLines(): FlooringSnapshotCatalog {
+  const catalog = getFlooringGoldenSnapshotCatalog();
+
+  return {
+    coverings: stripSpecLinesFromItems(catalog.coverings),
+    preparations: stripSpecLinesFromItems(catalog.preparations),
+    layouts: stripSpecLinesFromItems(catalog.layouts),
   };
 }
 

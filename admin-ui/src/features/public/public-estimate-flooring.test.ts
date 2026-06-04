@@ -9,6 +9,7 @@ import {
   FLOORING_GOLDEN_SNAPSHOT,
   FLOORING_GOLDEN_TOTAL,
   getFlooringGoldenSnapshotCatalog,
+  getFlooringGoldenSnapshotCatalogWithoutSpecLines,
   getFlooringGoldenSnapshotRates,
 } from "./flooring-golden.fixture";
 import * as flooringSnapshotModule from "./public-flooring-snapshot";
@@ -96,6 +97,10 @@ describe("calculateFlooring", () => {
   });
 
   it("без specLines использует flat section как specification fallback", () => {
+    vi.spyOn(flooringSnapshotModule, "getFlooringSnapshotCatalog").mockReturnValue(
+      getFlooringGoldenSnapshotCatalogWithoutSpecLines(),
+    );
+
     const result = calculateFlooring([room], options);
 
     expect(result.specificationLines).toEqual([]);
@@ -153,17 +158,16 @@ describe("calculateFlooring", () => {
   });
 
   it("legacy flooring-v1 snapshot без specLines сохраняет golden totals", () => {
-    const legacyCoverings = FLOORING_GOLDEN_SNAPSHOT.coverings.map((item) => ({
+    const noSpecCatalog = getFlooringGoldenSnapshotCatalogWithoutSpecLines();
+    const legacyCoverings = Object.values(noSpecCatalog.coverings).map((item) => ({
       ...item,
       laborPricePerM2: item.code === "laminate" ? 1000 : 0,
     }));
-    const legacyLayouts = FLOORING_GOLDEN_SNAPSHOT.layouts.map(({ laborPricePerM2: _legacy, ...item }) => item);
+    const legacyLayouts = Object.values(noSpecCatalog.layouts).map(({ laborPricePerM2: _legacy, ...item }) => item);
 
     const catalogSpy = vi.spyOn(flooringSnapshotModule, "getFlooringSnapshotCatalog").mockReturnValue({
       coverings: Object.fromEntries(legacyCoverings.map((item) => [item.code, { ...item }])),
-      preparations: Object.fromEntries(
-        FLOORING_GOLDEN_SNAPSHOT.preparations.map((item) => [item.code, { ...item }]),
-      ),
+      preparations: noSpecCatalog.preparations,
       layouts: Object.fromEntries(legacyLayouts.map((item) => [item.code, { ...item }])),
     });
 

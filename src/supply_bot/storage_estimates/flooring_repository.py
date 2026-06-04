@@ -7,6 +7,7 @@ from sqlalchemy.exc import IntegrityError
 
 from supply_bot.application.errors import ConflictError
 from supply_bot.estimates.application.flooring_catalog_assembly import (
+    FLOORING_CATALOG_ASSEMBLY_VERSION,
     validate_flooring_catalog_assembly_target_kind,
 )
 from supply_bot.storage_estimates.repository import (
@@ -197,6 +198,54 @@ class SqlAlchemyEstimateFlooringRepository(SqlAlchemyEstimateRepository):
                     if not updated:
                         raise ConflictError("Flooring catalog target could not be updated with assembly projection")
                 return assembly_id
+
+    async def create_estimate_flooring_catalog_with_assembly(
+        self,
+        *,
+        target_kind: str,
+        catalog_values: dict[str, Any],
+        assembly_title: str,
+        assembly_rows: list[dict[str, Any]],
+        version: str = FLOORING_CATALOG_ASSEMBLY_VERSION,
+    ) -> int:
+        """Insert catalog row and assembly in one transaction (PF4)."""
+
+        normalized_kind = validate_flooring_catalog_assembly_target_kind(target_kind)
+        owner_value = self._catalog_write_owner_value()
+        table_by_kind = {
+            "covering": estimate_flooring_coverings,
+            "preparation": estimate_flooring_preparations,
+            "layout": estimate_flooring_layouts,
+        }
+        table = table_by_kind[normalized_kind]
+        values = dict(catalog_values)
+        values["owner_user_id"] = owner_value
+        if normalized_kind == "covering":
+            values["needs_plinth"] = _bool_int(bool(values.get("needs_plinth")))
+
+        try:
+            async with self._session_factory() as session:
+                async with session.begin():
+                    result = await session.execute(insert(table).values(**values))
+                    target_id = int(result.inserted_primary_key[0])
+                    assembly_id = await self._upsert_catalog_assembly(
+                        session,
+                        target_kind=normalized_kind,
+                        target_id=target_id,
+                        title=assembly_title,
+                        version=version,
+                        owner_user_id=owner_value,
+                    )
+                    for index, row in enumerate(assembly_rows, start=1):
+                        await session.execute(
+                            insert(estimate_flooring_catalog_assembly_rows).values(
+                                assembly_id=assembly_id,
+                                **self._catalog_assembly_row_values(row, index=index),
+                            )
+                        )
+                    return target_id
+        except IntegrityError as exc:
+            raise ConflictError("Flooring catalog item with this title or code already exists") from exc
 
     async def delete_estimate_flooring_catalog_assembly(self, target_kind: str, target_id: int) -> bool:
         target_kind = validate_flooring_catalog_assembly_target_kind(target_kind)

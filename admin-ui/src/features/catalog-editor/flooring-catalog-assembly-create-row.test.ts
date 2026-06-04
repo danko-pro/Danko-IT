@@ -5,9 +5,9 @@ import { getKeramogranit120x60Preset } from "./flooring-assembly";
 import { createFlooringCatalogRowFromAssembly } from "./flooring-catalog-assembly-create-row";
 
 vi.mock("./api/flooring-client", () => ({
-  createFlooringCovering: vi.fn(),
-  createFlooringLayout: vi.fn(),
-  createFlooringPreparation: vi.fn(),
+  createFlooringCoveringFromAssembly: vi.fn(),
+  createFlooringLayoutFromAssembly: vi.fn(),
+  createFlooringPreparationFromAssembly: vi.fn(),
   fetchFlooringSnapshot: vi.fn(),
   listFlooringCoverings: vi.fn(),
   listFlooringLayouts: vi.fn(),
@@ -23,7 +23,7 @@ vi.mock("./flooring-catalog-assembly-save", async (importOriginal) => {
 });
 
 import {
-  createFlooringCovering,
+  createFlooringCoveringFromAssembly,
   fetchFlooringSnapshot,
   listFlooringCoverings,
 } from "./api/flooring-client";
@@ -66,7 +66,7 @@ describe("createFlooringCatalogRowFromAssembly", () => {
   });
 
   it("covering: flat create payload из projection, не из aggregates UI", async () => {
-    vi.mocked(createFlooringCovering).mockResolvedValue({ id: 42 });
+    vi.mocked(createFlooringCoveringFromAssembly).mockResolvedValue({ id: 42 });
     vi.mocked(fetchFlooringSnapshot).mockResolvedValue({ coverings: [], preparations: [], layouts: [], plinthTypes: [], globalAddons: { thresholdPrice: 0, demolitionPricePerM2: 0 } });
     vi.mocked(listFlooringCoverings).mockResolvedValue([{ id: 42, title: "Керамогранит" } as never]);
 
@@ -88,11 +88,12 @@ describe("createFlooringCatalogRowFromAssembly", () => {
       getKeramogranit120x60Preset(),
     );
 
-    expect(createFlooringCovering).toHaveBeenCalledTimes(1);
-    const callPayload = vi.mocked(createFlooringCovering).mock.calls[0][0];
-    expect(callPayload.material_price_per_m2).toBe(2900);
-    expect(callPayload.glue_price_per_unit).toBe(180);
-    expect(callPayload.instrument_price_per_m2).toBe(40);
+    expect(createFlooringCoveringFromAssembly).toHaveBeenCalledTimes(1);
+    const callPayload = vi.mocked(createFlooringCoveringFromAssembly).mock.calls[0][0];
+    expect(callPayload.catalog.material_price_per_m2).toBe(2900);
+    expect(callPayload.catalog.glue_price_per_unit).toBe(180);
+    expect(callPayload.catalog.instrument_price_per_m2).toBe(40);
+    expect(callPayload.assembly.rows.length).toBeGreaterThan(0);
   });
 
   it("невалидный kind для covering → error без create", async () => {
@@ -115,7 +116,7 @@ describe("createFlooringCatalogRowFromAssembly", () => {
     );
 
     expect(ok).toBe(false);
-    expect(createFlooringCovering).not.toHaveBeenCalled();
+    expect(createFlooringCoveringFromAssembly).not.toHaveBeenCalled();
     expect(setError).toHaveBeenCalledWith("Invalid flooring package row kind for covering");
   });
 });

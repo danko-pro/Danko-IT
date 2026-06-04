@@ -12,6 +12,7 @@ from fastapi.testclient import TestClient
 from supply_bot.admin_api.app import create_admin_app
 from supply_bot.admin_api.auth import SESSION_COOKIE_NAME, create_admin_session_token
 from supply_bot.config import Settings, load_settings
+from supply_bot.estimates.application.flooring_catalog_assembly import FLOORING_FLAT_CATALOG_CREATE_BLOCKED
 from supply_bot.estimates.application.flooring_snapshot import BuildFlooringSnapshotUseCase
 from tests.admin_projects_routes_case import AdminProjectsRouteCase
 from tests.test_public_flooring_snapshot_whitelist import _minimal_covering_kwargs
@@ -248,122 +249,101 @@ class AdminCalculatorFlooringRouteTests(AdminProjectsRouteCase):
             with self._build_client() as client:
                 self._login_admin(client)
 
-                covering = client.post(
-                    "/api/calculator/flooring/coverings",
-                    json=_minimal_covering_kwargs(
+                covering_rows = [
+                    _assembly_row(
                         title=covering_title,
-                        material_price_per_m2=3456,
-                        labor_price_per_m2=0,
-                        underlay_mode="none",
+                        public_title=covering_title,
+                        price=3456,
+                        consumption_per_m2=1,
                     ),
+                    _assembly_row(
+                        section="consumable",
+                        kind="consumable",
+                        formula="unit_consumption",
+                        title="Грунт",
+                        public_title="Грунт",
+                        unit="l",
+                        price=250,
+                        consumption_per_m2=0.1,
+                        public_category="consumables",
+                        sort_order=20,
+                    ),
+                    _assembly_row(
+                        section="tool",
+                        kind="tool",
+                        formula="flat_per_m2",
+                        title="Tool consumables",
+                        public_title="Tool consumables",
+                        unit="m2",
+                        price=40,
+                        consumption_per_m2=1,
+                        public_category="tools",
+                        sort_order=30,
+                    ),
+                ]
+                covering = _post_covering_from_assembly(
+                    client,
+                    covering_title,
+                    covering_rows,
+                    material_price_per_m2=3456,
+                    labor_price_per_m2=0,
+                    underlay_mode="none",
                 )
                 self.assertEqual(covering.status_code, 200)
                 self.assertEqual(covering.json()["title"], covering_title)
 
                 preparation = client.post(
-                    "/api/calculator/flooring/preparations",
+                    "/api/calculator/flooring/preparations/from-assembly",
                     json={
-                        "title": preparation_title,
-                        "labor_price_per_m2": 456,
-                        "material_price_per_m2": 0,
+                        "catalog": {
+                            "title": preparation_title,
+                            "labor_price_per_m2": 456,
+                            "material_price_per_m2": 0,
+                        },
+                        "assembly": {
+                            "title": preparation_title,
+                            "rows": [
+                                _assembly_row(
+                                    section="work",
+                                    kind="work",
+                                    title=preparation_title,
+                                    public_title=preparation_title,
+                                    price=456,
+                                    consumption_per_m2=1,
+                                    public_category="works",
+                                )
+                            ],
+                        },
                     },
                 )
                 self.assertEqual(preparation.status_code, 200)
-                self.assertEqual(preparation.json()["title"], preparation_title)
 
                 layout = client.post(
-                    "/api/calculator/flooring/layouts",
+                    "/api/calculator/flooring/layouts/from-assembly",
                     json={
-                        "title": layout_title,
-                        "labor_price_per_m2": 2345,
-                        "labor_multiplier": 1.2,
-                        "extra_waste_percent": 7,
+                        "catalog": {
+                            "title": layout_title,
+                            "labor_price_per_m2": 2345,
+                            "labor_multiplier": 1.2,
+                            "extra_waste_percent": 7,
+                        },
+                        "assembly": {
+                            "title": layout_title,
+                            "rows": [
+                                _assembly_row(
+                                    section="work",
+                                    kind="work",
+                                    title=layout_title,
+                                    public_title=layout_title,
+                                    price=2345,
+                                    consumption_per_m2=1.2,
+                                    public_category="works",
+                                )
+                            ],
+                        },
                     },
                 )
                 self.assertEqual(layout.status_code, 200)
-                self.assertEqual(layout.json()["title"], layout_title)
-
-                covering_id = int(covering.json()["id"])
-                preparation_id = int(preparation.json()["id"])
-                layout_id = int(layout.json()["id"])
-
-                covering_put = client.put(
-                    f"/api/calculator/flooring/covering/{covering_id}/assembly",
-                    json={
-                        "title": f"{covering_title} (package)",
-                        "rows": [
-                            _assembly_row(
-                                title=covering_title,
-                                public_title=covering_title,
-                                price=3456,
-                                consumption_per_m2=1,
-                            ),
-                            _assembly_row(
-                                section="consumable",
-                                kind="consumable",
-                                formula="unit_consumption",
-                                title="Грунт",
-                                public_title="Грунт",
-                                unit="l",
-                                price=250,
-                                consumption_per_m2=0.1,
-                                public_category="consumables",
-                                sort_order=20,
-                            ),
-                            _assembly_row(
-                                section="tool",
-                                kind="tool",
-                                formula="flat_per_m2",
-                                title="Tool consumables",
-                                public_title="Tool consumables",
-                                unit="m2",
-                                price=40,
-                                consumption_per_m2=1,
-                                public_category="tools",
-                                sort_order=30,
-                            ),
-                        ],
-                    },
-                )
-                self.assertEqual(covering_put.status_code, 200)
-
-                preparation_put = client.put(
-                    f"/api/calculator/flooring/preparation/{preparation_id}/assembly",
-                    json={
-                        "title": f"{preparation_title} (package)",
-                        "rows": [
-                            _assembly_row(
-                                section="work",
-                                kind="work",
-                                title=preparation_title,
-                                public_title=preparation_title,
-                                price=456,
-                                consumption_per_m2=1,
-                                public_category="works",
-                            )
-                        ],
-                    },
-                )
-                self.assertEqual(preparation_put.status_code, 200)
-
-                layout_put = client.put(
-                    f"/api/calculator/flooring/layout/{layout_id}/assembly",
-                    json={
-                        "title": f"{layout_title} (package)",
-                        "rows": [
-                            _assembly_row(
-                                section="work",
-                                kind="work",
-                                title=layout_title,
-                                public_title=layout_title,
-                                price=2345,
-                                consumption_per_m2=1.2,
-                                public_category="works",
-                            )
-                        ],
-                    },
-                )
-                self.assertEqual(layout_put.status_code, 200)
 
                 snapshot = client.get("/api/public/catalog/flooring/snapshot")
                 self.assertEqual(snapshot.status_code, 200)
@@ -389,15 +369,17 @@ class AdminCalculatorFlooringRouteTests(AdminProjectsRouteCase):
 
             with self._build_client() as client:
                 self._login_admin(client)
-                first = client.post(
-                    "/api/calculator/flooring/coverings",
-                    json=_minimal_covering_kwargs(title=title),
+                first = _post_covering_from_assembly(
+                    client,
+                    title,
+                    [_assembly_row(title=title, public_title=title)],
                 )
                 self.assertEqual(first.status_code, 200)
 
-                duplicate = client.post(
-                    "/api/calculator/flooring/coverings",
-                    json=_minimal_covering_kwargs(title=title),
+                duplicate = _post_covering_from_assembly(
+                    client,
+                    title,
+                    [_assembly_row(title=title, public_title=title, price=1)],
                 )
                 self.assertEqual(duplicate.status_code, 409)
                 self.assertIn("already exists", duplicate.json()["detail"])
@@ -410,18 +392,9 @@ class AdminCalculatorFlooringRouteTests(AdminProjectsRouteCase):
             with self._build_client() as client:
                 self._login_admin(client)
 
-                covering = client.post(
-                    "/api/calculator/flooring/coverings",
-                    json=_minimal_covering_kwargs(title=f"Удаляемое покрытие {suffix}"),
-                ).json()
-                preparation = client.post(
-                    "/api/calculator/flooring/preparations",
-                    json={"title": f"Удаляемая подготовка {suffix}", "labor_price_per_m2": 100},
-                ).json()
-                layout = client.post(
-                    "/api/calculator/flooring/layouts",
-                    json={"title": f"Удаляемая укладка {suffix}", "labor_price_per_m2": 100},
-                ).json()
+                covering = {"id": _repo_create_covering(client.app.state.estimate_repository.for_owner(None), title=f"Удаляемое покрытие {suffix}")}
+                preparation = {"id": _repo_create_preparation(client.app.state.estimate_repository.for_owner(None), f"Удаляемая подготовка {suffix}")}
+                layout = {"id": _repo_create_layout(client.app.state.estimate_repository.for_owner(None), f"Удаляемая укладка {suffix}")}
                 assembly = client.post(
                     "/api/calculator/flooring/assembly-items",
                     json={
@@ -543,6 +516,50 @@ class AdminCalculatorFlooringRouteTests(AdminProjectsRouteCase):
                 self.assertEqual(material_price, 4321)
 
 
+def _repo_create_covering(repo, title: str) -> int:
+    return asyncio.run(
+        repo.create_estimate_flooring_covering(**_minimal_covering_kwargs(title=title)),
+    )
+
+
+def _repo_create_preparation(repo, title: str) -> int:
+    return asyncio.run(
+        repo.create_estimate_flooring_preparation(
+            title=title,
+            labor_price_per_m2=100,
+            material_price_per_m2=0,
+            primer_consumption_per_m2=0,
+            primer_unit="л",
+            primer_price_per_unit=0,
+        ),
+    )
+
+
+def _repo_create_layout(repo, title: str) -> int:
+    return asyncio.run(
+        repo.create_estimate_flooring_layout(
+            title=title,
+            labor_price_per_m2=100,
+            labor_multiplier=1,
+            extra_waste_percent=0,
+        ),
+    )
+
+
+def _from_assembly_covering_body(title: str, rows: list[dict[str, object]], **catalog_overrides: object) -> dict[str, object]:
+    return {
+        "catalog": _minimal_covering_kwargs(title=title, **catalog_overrides),
+        "assembly": {"title": title, "rows": rows},
+    }
+
+
+def _post_covering_from_assembly(client: TestClient, title: str, rows: list[dict[str, object]], **catalog_overrides: object):
+    return client.post(
+        "/api/calculator/flooring/coverings/from-assembly",
+        json=_from_assembly_covering_body(title, rows, **catalog_overrides),
+    )
+
+
 def _assembly_row(**overrides: object) -> dict[str, object]:
     values: dict[str, object] = {
         "section": "covering",
@@ -584,12 +601,12 @@ class AdminCalculatorFlooringCatalogAssemblyRouteTests(AdminProjectsRouteCase):
             self._root = Path(tmp_dir)
             with self._build_client() as client:
                 self._login_admin(client)
-                covering = client.post(
-                    "/api/calculator/flooring/coverings",
-                    json=_minimal_covering_kwargs(title=f"Assembly empty {uuid4().hex}"),
+                repo = client.app.state.estimate_repository.for_owner(None)
+                covering_id = asyncio.run(
+                    repo.create_estimate_flooring_covering(
+                        **_minimal_covering_kwargs(title=f"Assembly empty {uuid4().hex}")
+                    )
                 )
-                self.assertEqual(covering.status_code, 200)
-                covering_id = covering.json()["id"]
 
                 response = client.get(f"/api/calculator/flooring/covering/{covering_id}/assembly")
                 self.assertEqual(response.status_code, 200)
@@ -605,10 +622,9 @@ class AdminCalculatorFlooringCatalogAssemblyRouteTests(AdminProjectsRouteCase):
             self._root = Path(tmp_dir)
             with self._build_client() as client:
                 self._login_admin(client)
-                covering = client.post(
-                    "/api/calculator/flooring/coverings",
-                    json=_minimal_covering_kwargs(title=f"Assembly save {uuid4().hex}"),
-                ).json()
+                repo = client.app.state.estimate_repository.for_owner(None)
+                covering_id = asyncio.run(repo.create_estimate_flooring_covering(**_minimal_covering_kwargs(title=f"Assembly save {uuid4().hex}")))
+                covering = {"id": covering_id}
 
                 put = client.put(
                     f"/api/calculator/flooring/covering/{covering['id']}/assembly",
@@ -652,10 +668,9 @@ class AdminCalculatorFlooringCatalogAssemblyRouteTests(AdminProjectsRouteCase):
             self._root = Path(tmp_dir)
             with self._build_client() as client:
                 self._login_admin(client)
-                covering = client.post(
-                    "/api/calculator/flooring/coverings",
-                    json=_minimal_covering_kwargs(title=f"Assembly work reject {uuid4().hex}"),
-                ).json()
+                repo = client.app.state.estimate_repository.for_owner(None)
+                covering_id = asyncio.run(repo.create_estimate_flooring_covering(**_minimal_covering_kwargs(title=f"Assembly work reject {uuid4().hex}")))
+                covering = {"id": covering_id}
 
                 response = client.put(
                     f"/api/calculator/flooring/covering/{covering['id']}/assembly",
@@ -678,10 +693,7 @@ class AdminCalculatorFlooringCatalogAssemblyRouteTests(AdminProjectsRouteCase):
             self._root = Path(tmp_dir)
             with self._build_client() as client:
                 self._login_admin(client)
-                preparation = client.post(
-                    "/api/calculator/flooring/preparations",
-                    json={"title": f"Assembly prep {uuid4().hex}", "labor_price_per_m2": 100},
-                ).json()
+                preparation = {"id": _repo_create_preparation(client.app.state.estimate_repository.for_owner(None), f"Assembly prep {uuid4().hex}")}
 
                 response = client.put(
                     f"/api/calculator/flooring/preparation/{preparation['id']}/assembly",
@@ -697,10 +709,7 @@ class AdminCalculatorFlooringCatalogAssemblyRouteTests(AdminProjectsRouteCase):
             self._root = Path(tmp_dir)
             with self._build_client() as client:
                 self._login_admin(client)
-                layout = client.post(
-                    "/api/calculator/flooring/layouts",
-                    json={"title": f"Assembly layout {uuid4().hex}", "labor_price_per_m2": 100},
-                ).json()
+                layout = {"id": _repo_create_layout(client.app.state.estimate_repository.for_owner(None), f"Assembly layout {uuid4().hex}")}
 
                 response = client.put(
                     f"/api/calculator/flooring/layout/{layout['id']}/assembly",
@@ -738,10 +747,9 @@ class AdminCalculatorFlooringCatalogAssemblyRouteTests(AdminProjectsRouteCase):
             self._root = Path(tmp_dir)
             with self._build_client() as client:
                 self._login_admin(client)
-                covering = client.post(
-                    "/api/calculator/flooring/coverings",
-                    json=_minimal_covering_kwargs(title=f"Assembly delete {uuid4().hex}"),
-                ).json()
+                repo = client.app.state.estimate_repository.for_owner(None)
+                covering_id = asyncio.run(repo.create_estimate_flooring_covering(**_minimal_covering_kwargs(title=f"Assembly delete {uuid4().hex}")))
+                covering = {"id": covering_id}
                 path = f"/api/calculator/flooring/covering/{covering['id']}/assembly"
 
                 put = client.put(
@@ -764,13 +772,12 @@ class AdminCalculatorFlooringCatalogAssemblyRouteTests(AdminProjectsRouteCase):
             self._root = Path(tmp_dir)
             with self._build_client() as client:
                 self._login_admin(client)
-                covering = client.post(
-                    "/api/calculator/flooring/coverings",
-                    json=_minimal_covering_kwargs(
+                repo = client.app.state.estimate_repository.for_owner(None)
+                covering_id = asyncio.run(repo.create_estimate_flooring_covering(**_minimal_covering_kwargs(
                         title=f"FP3b covering {uuid4().hex}",
                         material_price_per_m2=50,
-                    ),
-                ).json()
+                    )))
+                covering = {"id": covering_id}
 
                 put = client.put(
                     f"/api/calculator/flooring/covering/{covering['id']}/assembly",
@@ -798,10 +805,7 @@ class AdminCalculatorFlooringCatalogAssemblyRouteTests(AdminProjectsRouteCase):
             self._root = Path(tmp_dir)
             with self._build_client() as client:
                 self._login_admin(client)
-                preparation = client.post(
-                    "/api/calculator/flooring/preparations",
-                    json={"title": f"FP3b prep {uuid4().hex}", "labor_price_per_m2": 1, "material_price_per_m2": 2},
-                ).json()
+                preparation = {"id": _repo_create_preparation(client.app.state.estimate_repository.for_owner(None), f"FP3b prep {uuid4().hex}")}
 
                 put = client.put(
                     f"/api/calculator/flooring/preparation/{preparation['id']}/assembly",
@@ -833,13 +837,12 @@ class AdminCalculatorFlooringCatalogAssemblyRouteTests(AdminProjectsRouteCase):
             self._root = Path(tmp_dir)
             with self._build_client() as client:
                 self._login_admin(client)
-                covering = client.post(
-                    "/api/calculator/flooring/coverings",
-                    json=_minimal_covering_kwargs(
+                repo = client.app.state.estimate_repository.for_owner(None)
+                covering_id = asyncio.run(repo.create_estimate_flooring_covering(**_minimal_covering_kwargs(
                         title=f"FP3b reject {uuid4().hex}",
                         material_price_per_m2=333,
-                    ),
-                ).json()
+                    )))
+                covering = {"id": covering_id}
 
                 response = client.put(
                     f"/api/calculator/flooring/covering/{covering['id']}/assembly",
@@ -866,10 +869,9 @@ class AdminCalculatorFlooringCatalogAssemblyRouteTests(AdminProjectsRouteCase):
             self._root = Path(tmp_dir)
             with self._build_client() as client:
                 self._login_admin(client)
-                covering = client.post(
-                    "/api/calculator/flooring/coverings",
-                    json=_minimal_covering_kwargs(title=f"FP3b patch block {uuid4().hex}"),
-                ).json()
+                repo = client.app.state.estimate_repository.for_owner(None)
+                covering_id = asyncio.run(repo.create_estimate_flooring_covering(**_minimal_covering_kwargs(title=f"FP3b patch block {uuid4().hex}")))
+                covering = {"id": covering_id}
                 client.put(
                     f"/api/calculator/flooring/covering/{covering['id']}/assembly",
                     json={"title": "Состав", "rows": [_assembly_row()]},
@@ -887,13 +889,12 @@ class AdminCalculatorFlooringCatalogAssemblyRouteTests(AdminProjectsRouteCase):
             self._root = Path(tmp_dir)
             with self._build_client() as client:
                 self._login_admin(client)
-                covering = client.post(
-                    "/api/calculator/flooring/coverings",
-                    json=_minimal_covering_kwargs(
+                repo = client.app.state.estimate_repository.for_owner(None)
+                covering_id = asyncio.run(repo.create_estimate_flooring_covering(**_minimal_covering_kwargs(
                         title=f"FP3c empty shell {uuid4().hex}",
                         material_price_per_m2=55,
-                    ),
-                ).json()
+                    )))
+                covering = {"id": covering_id}
                 path = f"/api/calculator/flooring/covering/{covering['id']}/assembly"
                 put = client.put(path, json={"title": "Shell", "rows": []})
                 self.assertEqual(put.status_code, 400)
@@ -910,13 +911,12 @@ class AdminCalculatorFlooringCatalogAssemblyRouteTests(AdminProjectsRouteCase):
             self._root = Path(tmp_dir)
             with self._build_client() as client:
                 self._login_admin(client)
-                covering = client.post(
-                    "/api/calculator/flooring/coverings",
-                    json=_minimal_covering_kwargs(
+                repo = client.app.state.estimate_repository.for_owner(None)
+                covering_id = asyncio.run(repo.create_estimate_flooring_covering(**_minimal_covering_kwargs(
                         title=f"FP3c delete shell {uuid4().hex}",
                         material_price_per_m2=88,
-                    ),
-                ).json()
+                    )))
+                covering = {"id": covering_id}
                 path = f"/api/calculator/flooring/covering/{covering['id']}/assembly"
                 client.put(path, json={"title": "Package", "rows": [_assembly_row()]})
                 client.delete(path)
@@ -933,14 +933,13 @@ class AdminCalculatorFlooringCatalogAssemblyRouteTests(AdminProjectsRouteCase):
             self._root = Path(tmp_dir)
             with self._build_client() as client:
                 self._login_admin(client)
-                covering = client.post(
-                    "/api/calculator/flooring/coverings",
-                    json=_minimal_covering_kwargs(
+                repo = client.app.state.estimate_repository.for_owner(None)
+                covering_id = asyncio.run(repo.create_estimate_flooring_covering(**_minimal_covering_kwargs(
                         title=f"PF1 all disabled {uuid4().hex}",
                         material_price_per_m2=66,
                         labor_price_per_m2=77,
-                    ),
-                ).json()
+                    )))
+                covering = {"id": covering_id}
                 put = client.put(
                     f"/api/calculator/flooring/covering/{covering['id']}/assembly",
                     json={
@@ -960,10 +959,9 @@ class AdminCalculatorFlooringCatalogAssemblyRouteTests(AdminProjectsRouteCase):
             self._root = Path(tmp_dir)
             with self._build_client() as client:
                 self._login_admin(client)
-                covering = client.post(
-                    "/api/calculator/flooring/coverings",
-                    json=_minimal_covering_kwargs(title=f"PF1 disabled patch {uuid4().hex}"),
-                ).json()
+                repo = client.app.state.estimate_repository.for_owner(None)
+                covering_id = asyncio.run(repo.create_estimate_flooring_covering(**_minimal_covering_kwargs(title=f"PF1 disabled patch {uuid4().hex}")))
+                covering = {"id": covering_id}
                 client.put(
                     f"/api/calculator/flooring/covering/{covering['id']}/assembly",
                     json={
@@ -984,13 +982,12 @@ class AdminCalculatorFlooringCatalogAssemblyRouteTests(AdminProjectsRouteCase):
             self._root = Path(tmp_dir)
             with self._build_client() as client:
                 self._login_admin(client)
-                covering = client.post(
-                    "/api/calculator/flooring/coverings",
-                    json=_minimal_covering_kwargs(
+                repo = client.app.state.estimate_repository.for_owner(None)
+                covering_id = asyncio.run(repo.create_estimate_flooring_covering(**_minimal_covering_kwargs(
                         title=f"FP3b delete {uuid4().hex}",
                         material_price_per_m2=77,
-                    ),
-                ).json()
+                    )))
+                covering = {"id": covering_id}
                 path = f"/api/calculator/flooring/covering/{covering['id']}/assembly"
                 client.put(
                     path,
@@ -1015,10 +1012,9 @@ class AdminCalculatorFlooringCatalogAssemblyRouteTests(AdminProjectsRouteCase):
             self._root = Path(tmp_dir)
             with self._build_client() as client:
                 self._login_admin(client)
-                covering = client.post(
-                    "/api/calculator/flooring/coverings",
-                    json=_minimal_covering_kwargs(title=f"PF1 empty {uuid4().hex}"),
-                ).json()
+                repo = client.app.state.estimate_repository.for_owner(None)
+                covering_id = asyncio.run(repo.create_estimate_flooring_covering(**_minimal_covering_kwargs(title=f"PF1 empty {uuid4().hex}")))
+                covering = {"id": covering_id}
                 response = client.put(
                     f"/api/calculator/flooring/covering/{covering['id']}/assembly",
                     json={"title": "Empty", "rows": []},
@@ -1030,10 +1026,9 @@ class AdminCalculatorFlooringCatalogAssemblyRouteTests(AdminProjectsRouteCase):
             self._root = Path(tmp_dir)
             with self._build_client() as client:
                 self._login_admin(client)
-                covering = client.post(
-                    "/api/calculator/flooring/coverings",
-                    json=_minimal_covering_kwargs(title=f"PF1 no material {uuid4().hex}"),
-                ).json()
+                repo = client.app.state.estimate_repository.for_owner(None)
+                covering_id = asyncio.run(repo.create_estimate_flooring_covering(**_minimal_covering_kwargs(title=f"PF1 no material {uuid4().hex}")))
+                covering = {"id": covering_id}
                 response = client.put(
                     f"/api/calculator/flooring/covering/{covering['id']}/assembly",
                     json={
@@ -1067,10 +1062,9 @@ class AdminCalculatorFlooringCatalogAssemblyRouteTests(AdminProjectsRouteCase):
             self._root = Path(tmp_dir)
             with self._build_client() as client:
                 self._login_admin(client)
-                covering = client.post(
-                    "/api/calculator/flooring/coverings",
-                    json=_minimal_covering_kwargs(title=f"PF1 disabled invalid {uuid4().hex}"),
-                ).json()
+                repo = client.app.state.estimate_repository.for_owner(None)
+                covering_id = asyncio.run(repo.create_estimate_flooring_covering(**_minimal_covering_kwargs(title=f"PF1 disabled invalid {uuid4().hex}")))
+                covering = {"id": covering_id}
                 response = client.put(
                     f"/api/calculator/flooring/covering/{covering['id']}/assembly",
                     json={
@@ -1099,10 +1093,7 @@ class AdminCalculatorFlooringCatalogAssemblyRouteTests(AdminProjectsRouteCase):
             self._root = Path(tmp_dir)
             with self._build_client() as client:
                 self._login_admin(client)
-                preparation = client.post(
-                    "/api/calculator/flooring/preparations",
-                    json={"title": f"PF1 prep no work {uuid4().hex}", "labor_price_per_m2": 100},
-                ).json()
+                preparation = {"id": _repo_create_preparation(client.app.state.estimate_repository.for_owner(None), f"PF1 prep no work {uuid4().hex}")}
                 response = client.put(
                     f"/api/calculator/flooring/preparation/{preparation['id']}/assembly",
                     json={
@@ -1125,10 +1116,7 @@ class AdminCalculatorFlooringCatalogAssemblyRouteTests(AdminProjectsRouteCase):
             self._root = Path(tmp_dir)
             with self._build_client() as client:
                 self._login_admin(client)
-                layout = client.post(
-                    "/api/calculator/flooring/layouts",
-                    json={"title": f"PF1 layout no work {uuid4().hex}", "labor_price_per_m2": 100},
-                ).json()
+                layout = {"id": _repo_create_layout(client.app.state.estimate_repository.for_owner(None), f"PF1 layout no work {uuid4().hex}")}
                 response = client.put(
                     f"/api/calculator/flooring/layout/{layout['id']}/assembly",
                     json={"title": "No work", "rows": []},
@@ -1140,10 +1128,9 @@ class AdminCalculatorFlooringCatalogAssemblyRouteTests(AdminProjectsRouteCase):
             self._root = Path(tmp_dir)
             with self._build_client() as client:
                 self._login_admin(client)
-                covering = client.post(
-                    "/api/calculator/flooring/coverings",
-                    json=_minimal_covering_kwargs(title=f"PF1 missing pkg {uuid4().hex}"),
-                ).json()
+                repo = client.app.state.estimate_repository.for_owner(None)
+                covering_id = asyncio.run(repo.create_estimate_flooring_covering(**_minimal_covering_kwargs(title=f"PF1 missing pkg {uuid4().hex}")))
+                covering = {"id": covering_id}
                 response = client.put(
                     f"/api/calculator/flooring/covering/{covering['id']}/assembly",
                     json={
@@ -1170,10 +1157,9 @@ class AdminCalculatorFlooringCatalogAssemblyRouteTests(AdminProjectsRouteCase):
             self._root = Path(tmp_dir)
             with self._build_client() as client:
                 self._login_admin(client)
-                covering = client.post(
-                    "/api/calculator/flooring/coverings",
-                    json=_minimal_covering_kwargs(title=f"PF1 missing layer {uuid4().hex}"),
-                ).json()
+                repo = client.app.state.estimate_repository.for_owner(None)
+                covering_id = asyncio.run(repo.create_estimate_flooring_covering(**_minimal_covering_kwargs(title=f"PF1 missing layer {uuid4().hex}")))
+                covering = {"id": covering_id}
                 response = client.put(
                     f"/api/calculator/flooring/covering/{covering['id']}/assembly",
                     json={
@@ -1201,13 +1187,16 @@ class AdminCalculatorFlooringCatalogAssemblyRouteTests(AdminProjectsRouteCase):
             self._root = Path(tmp_dir)
             with self._build_client() as client:
                 self._login_admin(client)
-                covering = client.post(
-                    "/api/calculator/flooring/coverings",
-                    json=_minimal_covering_kwargs(
-                        title=f"PF1 patch after delete {uuid4().hex}",
-                        material_price_per_m2=50,
-                    ),
-                ).json()
+                repo = client.app.state.estimate_repository.for_owner(None)
+                covering_id = asyncio.run(
+                    repo.create_estimate_flooring_covering(
+                        **_minimal_covering_kwargs(
+                            title=f"PF1 patch after delete {uuid4().hex}",
+                            material_price_per_m2=50,
+                        )
+                    )
+                )
+                covering = {"id": covering_id}
                 path = f"/api/calculator/flooring/covering/{covering['id']}/assembly"
                 client.put(path, json={"title": "Valid", "rows": [_assembly_row()]})
                 client.delete(path)
@@ -1218,4 +1207,71 @@ class AdminCalculatorFlooringCatalogAssemblyRouteTests(AdminProjectsRouteCase):
                 )
                 self.assertEqual(patch.status_code, 200)
                 self.assertEqual(patch.json()["material_price_per_m2"], 321)
+
+
+class AdminCalculatorFlooringPf4CreateRouteTests(AdminProjectsRouteCase):
+    def _build_client(self) -> TestClient:
+        suffix = uuid4().hex
+        self._settings: Settings = replace(
+            load_settings(self._create_settings_file(self._root)),
+            admin_session_secret=f"flooring-pf4-route-secret-{suffix}",
+        )
+        return TestClient(create_admin_app(self._settings))
+
+    def _login_admin(self, client: TestClient) -> None:
+        client.cookies.clear()
+        token, _ = create_admin_session_token(
+            self._settings.admin_session_secret or "",
+            ttl_seconds=3600,
+            subject="admin@example.test",
+            role="admin",
+        )
+        client.cookies.set(SESSION_COOKIE_NAME, token)
+
+    def test_flat_post_covering_returns_400(self) -> None:
+        with TemporaryDirectory() as tmp_dir:
+            self._root = Path(tmp_dir)
+            with self._build_client() as client:
+                self._login_admin(client)
+                response = client.post(
+                    "/api/calculator/flooring/coverings",
+                    json=_minimal_covering_kwargs(title=f"Flat only {uuid4().hex}"),
+                )
+                self.assertEqual(response.status_code, 400)
+                self.assertIn(FLOORING_FLAT_CATALOG_CREATE_BLOCKED, response.json()["detail"])
+
+    def test_from_assembly_create_persists_assembly_and_projection(self) -> None:
+        with TemporaryDirectory() as tmp_dir:
+            self._root = Path(tmp_dir)
+            title = f"PF4 atomic {uuid4().hex}"
+            with self._build_client() as client:
+                self._login_admin(client)
+                created = _post_covering_from_assembly(
+                    client,
+                    title,
+                    [_assembly_row(title=title, public_title=title, price=1500)],
+                    material_price_per_m2=1,
+                )
+                self.assertEqual(created.status_code, 200)
+                covering_id = created.json()["id"]
+                self.assertEqual(created.json()["material_price_per_m2"], 1500)
+
+                assembly = client.get(f"/api/calculator/flooring/covering/{covering_id}/assembly")
+                self.assertEqual(assembly.status_code, 200)
+                self.assertGreaterEqual(len(assembly.json()["rows"]), 1)
+
+    def test_from_assembly_invalid_package_returns_400_without_row(self) -> None:
+        with TemporaryDirectory() as tmp_dir:
+            self._root = Path(tmp_dir)
+            title = f"PF4 invalid {uuid4().hex}"
+            with self._build_client() as client:
+                self._login_admin(client)
+                response = _post_covering_from_assembly(
+                    client,
+                    title,
+                    [_assembly_row(kind="work", section="work", public_category="works")],
+                )
+                self.assertEqual(response.status_code, 400)
+                listings = client.get("/api/calculator/flooring/coverings").json()
+                self.assertFalse(any(item["title"] == title for item in listings))
 

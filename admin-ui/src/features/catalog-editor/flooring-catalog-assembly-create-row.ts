@@ -1,7 +1,7 @@
 import {
-  createFlooringCovering,
-  createFlooringLayout,
-  createFlooringPreparation,
+  createFlooringCoveringFromAssembly,
+  createFlooringLayoutFromAssembly,
+  createFlooringPreparationFromAssembly,
   fetchFlooringSnapshot,
   listFlooringCoverings,
   listFlooringLayouts,
@@ -31,6 +31,7 @@ import {
   getAssemblyDefaultTitle,
 } from "./flooring-catalog-model";
 import {
+  buildFlooringCatalogAssemblyPayload,
   finalizeAssemblyTargetRowCreate,
   type AssemblyTargetSnapshotSection,
 } from "./flooring-catalog-assembly-save";
@@ -101,6 +102,13 @@ export async function createFlooringCatalogRowFromAssembly(
   deps.setWarningMessage(null);
 
   try {
+    const assemblyPayload = buildFlooringCatalogAssemblyPayload(
+      target === "covering" ? "covering" : target === "preparation" ? "preparation" : "layout",
+      0,
+      title,
+      rows,
+    );
+
     let createdDto: { id?: number };
     if (target === "covering") {
       const prepared = prepareCoveringDraftForCatalogSave({ ...emptyCoveringDraft(), title }, rows);
@@ -108,14 +116,20 @@ export async function createFlooringCatalogRowFromAssembly(
         deps.setError(prepared.message);
         return false;
       }
-      createdDto = await createFlooringCovering(coveringDraftToPayload(prepared.draft));
+      createdDto = await createFlooringCoveringFromAssembly({
+        catalog: coveringDraftToPayload(prepared.draft),
+        assembly: assemblyPayload,
+      });
     } else if (target === "preparation") {
       const prepared = preparePreparationDraftForCatalogSave({ ...emptyPreparationDraft(), title }, rows);
       if (prepared.status === "error") {
         deps.setError(prepared.message);
         return false;
       }
-      createdDto = await createFlooringPreparation(preparationDraftToPayload(prepared.draft));
+      createdDto = await createFlooringPreparationFromAssembly({
+        catalog: preparationDraftToPayload(prepared.draft),
+        assembly: assemblyPayload,
+      });
     } else {
       const prepared = prepareLayoutDraftForCatalogSave(
         { ...emptyLayoutDraft(), title, additionalWastePercent: 0 },
@@ -125,7 +139,10 @@ export async function createFlooringCatalogRowFromAssembly(
         deps.setError(prepared.message);
         return false;
       }
-      createdDto = await createFlooringLayout(layoutDraftToPayload(prepared.draft));
+      createdDto = await createFlooringLayoutFromAssembly({
+        catalog: layoutDraftToPayload(prepared.draft),
+        assembly: assemblyPayload,
+      });
     }
 
     return await finalizeAssemblyTargetRowCreate({
@@ -137,6 +154,7 @@ export async function createFlooringCatalogRowFromAssembly(
       reload: () => reloadAssemblyTargetCatalogPanel(target, deps),
       setStatusMessage: deps.setStatusMessage,
       setWarningMessage: deps.setWarningMessage,
+      assemblyAlreadyPersisted: true,
     });
   } catch (cause) {
     deps.setError(cause instanceof Error ? cause.message : ASSEMBLY_TARGET_CREATE_ERRORS[target]);

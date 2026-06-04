@@ -30,6 +30,16 @@ FLOORING_FLAT_UPDATE_BLOCKED_BY_ASSEMBLY = (
     "Flooring catalog row has an assembly; edit the assembly instead of flat fields"
 )
 
+FLOORING_FLAT_CATALOG_CREATE_BLOCKED = (
+    "Flooring catalog rows must be created with a valid package assembly; use from-assembly create"
+)
+
+
+def reject_flooring_flat_catalog_create() -> None:
+    """Reject flat-only catalog POST (PF4)."""
+
+    raise ValidationError(FLOORING_FLAT_CATALOG_CREATE_BLOCKED)
+
 _PACKAGE_AWARE_FORMULAS = frozenset(
     {
         "package_consumption",

@@ -3,6 +3,7 @@ ESTIMATE_METHODS = {
     "create_estimate_door_component_catalog_item",
     "create_estimate_ceiling_catalog_item",
     "create_estimate_project_ceiling_item",
+    "create_estimate_flooring_catalog_with_assembly",
     "create_estimate_flooring_covering",
     "create_estimate_flooring_assembly_item",
     "create_estimate_flooring_layout",

@@ -89,6 +89,21 @@ class CalculatorFlooringCatalogAssemblyReplacePayload(BaseModel):
     rows: list[CalculatorFlooringCatalogAssemblyRowPayload] = Field(default_factory=list)
 
 
+class CalculatorFlooringCoveringFromAssemblyPayload(BaseModel):
+    catalog: CalculatorFlooringCoveringPayload
+    assembly: CalculatorFlooringCatalogAssemblyReplacePayload
+
+
+class CalculatorFlooringPreparationFromAssemblyPayload(BaseModel):
+    catalog: CalculatorFlooringPreparationPayload
+    assembly: CalculatorFlooringCatalogAssemblyReplacePayload
+
+
+class CalculatorFlooringLayoutFromAssemblyPayload(BaseModel):
+    catalog: CalculatorFlooringLayoutPayload
+    assembly: CalculatorFlooringCatalogAssemblyReplacePayload
+
+
 class CalculatorFlooringRoomZonePayload(BaseModel):
     covering_id: int | None = None
     preparation_id: int | None = None

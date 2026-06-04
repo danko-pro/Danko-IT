@@ -126,6 +126,7 @@ export async function finalizeAssemblyTargetRowCreate(options: {
   setStatusMessage: (message: string | null) => void;
   setWarningMessage: (message: string | null) => void;
   saveAssembly?: SaveFlooringCatalogAssemblyFn;
+  assemblyAlreadyPersisted?: boolean;
 }): Promise<boolean> {
   const { snapshot: fresh, catalog: freshCatalog } = await options.reload();
   if (!snapshotHasTitle(fresh, options.snapshotSection, options.title)) {
@@ -133,6 +134,16 @@ export async function finalizeAssemblyTargetRowCreate(options: {
   }
 
   const targetId = resolveCreatedCatalogRowId(options.createdDto, options.title, freshCatalog);
+
+  if (options.assemblyAlreadyPersisted) {
+    if (targetId <= 0) {
+      options.setWarningMessage(assemblySaveFailedWarning(options.target));
+      return false;
+    }
+    options.setStatusMessage(FLOORING_ASSEMBLY_CREATE_SUCCESS_STATUS[options.target]);
+    return true;
+  }
+
   const assemblyResult = await persistFlooringCatalogAssembly({
     target: options.target,
     targetId,

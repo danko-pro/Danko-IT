@@ -7,7 +7,12 @@ import {
 import { buildFlooringProcurementSummary, type FlooringProcurementLine } from "./public-estimate-flooring-procurement";
 export type { FlooringProcurementLine } from "./public-estimate-flooring-procurement";
 import { buildFlooringSpecification, type FlooringSpecificationLine } from "./public-estimate-flooring-spec";
-import { getFlooringSnapshotCatalog, getFlooringSnapshotRates } from "./public-flooring-snapshot";
+import {
+  getFlooringSnapshotCatalog,
+  getFlooringSnapshotRates,
+  isFlooringPackageFirst,
+  loadFlooringSnapshot,
+} from "./public-flooring-snapshot";
 
 export type FlooringCoveringType = string;
 
@@ -115,13 +120,30 @@ const EMPTY_PLINTH_RATE = {
   factor: 1,
 };
 
+function isPackageFirstFlooringMode(): boolean {
+  try {
+    return isFlooringPackageFirst(loadFlooringSnapshot().version);
+  } catch {
+    return true;
+  }
+}
+
 function pickSnapshotRate<T extends object>(
   rates: Record<string, T | undefined>,
   code: string,
   preferredFallbackCode: string,
   emptyFallback: T,
 ): T {
-  return rates[code] ?? rates[preferredFallbackCode] ?? Object.values(rates)[0] ?? emptyFallback;
+  const direct = rates[code];
+  if (direct) {
+    return direct;
+  }
+
+  if (isPackageFirstFlooringMode()) {
+    return emptyFallback;
+  }
+
+  return rates[preferredFallbackCode] ?? Object.values(rates)[0] ?? emptyFallback;
 }
 
 function createLineItem(

@@ -5,7 +5,11 @@ import {
   type EstimateLineItem,
   type EstimateSection,
 } from "./public-estimate-model";
-import type { FlooringPackageSpecLine } from "./public-flooring-snapshot";
+import {
+  isFlooringPackageFirst,
+  loadFlooringSnapshot,
+  type FlooringPackageSpecLine,
+} from "./public-flooring-snapshot";
 
 export type FlooringSpecificationCategory = FlooringPackageSpecLine["category"];
 
@@ -174,14 +178,30 @@ function specificationLineToEstimateLineItem(line: FlooringSpecificationLine): E
   };
 }
 
+function resolvePackageFirstMode(packageFirstMode?: boolean): boolean {
+  if (packageFirstMode !== undefined) {
+    return packageFirstMode;
+  }
+
+  try {
+    return isFlooringPackageFirst(loadFlooringSnapshot().version);
+  } catch {
+    return true;
+  }
+}
+
 export function buildFlooringSpecification(params: {
   roomResults: FlooringRoomForSpecification[];
   flatSection: EstimateSection;
   coveringByCode: Record<string, FlooringSpecCatalogSource>;
   preparationByCode: Record<string, FlooringSpecCatalogSource>;
   layoutByCode: Record<string, FlooringSpecCatalogSource>;
+  /** When true (flooring-v2 default), room flat lines are not used as spec fallback. */
+  packageFirstMode?: boolean;
 }): { specificationLines: FlooringSpecificationLine[]; specificationSection: EstimateSection } {
-  const { roomResults, flatSection, coveringByCode, preparationByCode, layoutByCode } = params;
+  const { roomResults, flatSection, coveringByCode, preparationByCode, layoutByCode, packageFirstMode } =
+    params;
+  const packageFirst = resolvePackageFirstMode(packageFirstMode);
   const includedRooms = roomResults.filter((room) => room.isIncluded && room.area > 0);
   const specificationLines: FlooringSpecificationLine[] = [];
   const skippedFlatItemIds = new Set<string>();
@@ -220,9 +240,16 @@ export function buildFlooringSpecification(params: {
   }
 
   if (specificationLines.length === 0) {
+    const globalOnlyItems = flatSection.items.filter((item) => isGlobalFlatItem(item));
+
     return {
       specificationLines: [],
-      specificationSection: flatSection,
+      specificationSection:
+        packageFirst && globalOnlyItems.length > 0
+          ? { ...flatSection, items: globalOnlyItems }
+          : packageFirst
+            ? { ...flatSection, items: [] }
+            : flatSection,
     };
   }
 
@@ -233,6 +260,10 @@ export function buildFlooringSpecification(params: {
 
     if (isGlobalFlatItem(item)) {
       return true;
+    }
+
+    if (packageFirst) {
+      return false;
     }
 
     return includedRooms.some(

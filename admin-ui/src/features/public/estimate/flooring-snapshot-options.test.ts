@@ -7,16 +7,44 @@ import {
   getDefaultFlooringPreparation,
   getFlooringCoveringOptions,
   getFlooringLayoutOptions,
+  getFlooringPreparationOptions,
 } from "./flooring-snapshot-options";
 
+const minimalSpecLine = {
+  code: "line",
+  title: "Line",
+  category: "materials" as const,
+  basis: "area" as const,
+  unit: "m2",
+  quantityPerBasis: 1,
+  unitPrice: 1,
+};
+
+function packageBackedCovering(code: string, title: string) {
+  return {
+    code,
+    title,
+    materialPricePerM2: 1,
+    baseWastePercent: 0,
+    underlayPricePerM2: 0,
+    adhesivePricePerM2: 0,
+    primerPricePerM2: 0,
+    svpPricePerM2: 0,
+    groutPricePerM2: 0,
+    toolConsumablesPerM2: 0,
+    specLines: [minimalSpecLine],
+  };
+}
+
 describe("flooring snapshot options", () => {
-  it("includes custom active coverings from snapshot", () => {
+  it("dropdown options come only from package-backed snapshot rows", () => {
     const loadSpy = vi.spyOn(flooringSnapshotModule, "loadFlooringSnapshot").mockReturnValue({
       version: "flooring-v2",
       coverings: [
-        ...FALLBACK_FLOORING_COVERING_OPTIONS.map((option) => ({
-          code: option.value,
-          title: option.label,
+        packageBackedCovering("with_package", "С пакетом"),
+        {
+          code: "without_package",
+          title: "Без пакета",
           materialPricePerM2: 1,
           baseWastePercent: 0,
           underlayPricePerM2: 0,
@@ -25,22 +53,53 @@ describe("flooring snapshot options", () => {
           svpPricePerM2: 0,
           groutPricePerM2: 0,
           toolConsumablesPerM2: 0,
-        })),
-        {
-          code: "custom_covering",
-          title: "Кастомное покрытие",
-          materialPricePerM2: 0,
-          baseWastePercent: 0,
-          underlayPricePerM2: 0,
-          adhesivePricePerM2: 0,
-          primerPricePerM2: 0,
-          svpPricePerM2: 0,
-          groutPricePerM2: 0,
-          toolConsumablesPerM2: 0,
+          specLines: [],
         },
       ],
-      preparations: [{ code: "none", title: "Без", laborPricePerM2: 0, materialPricePerM2: 0 }],
-      layouts: [{ code: "straight", title: "Прямая", laborFactor: 1, additionalWastePercent: 0 }],
+      preparations: [
+        {
+          code: "primer",
+          title: "Грунт",
+          laborPricePerM2: 1,
+          materialPricePerM2: 0,
+          specLines: [minimalSpecLine],
+        },
+        { code: "no_spec", title: "Без spec", laborPricePerM2: 0, materialPricePerM2: 0, specLines: [] },
+      ],
+      layouts: [
+        { code: "straight", title: "Прямая", laborFactor: 1, additionalWastePercent: 0, specLines: [minimalSpecLine] },
+        { code: "no_layout_spec", title: "Без spec", laborFactor: 1, additionalWastePercent: 0, specLines: [] },
+      ],
+      plinthTypes: [{ code: "none", title: "Без", materialPricePerMeter: 0, laborPricePerMeter: 0, factor: 1 }],
+      globalAddons: { thresholdPrice: 0, demolitionPricePerM2: 0 },
+    });
+
+    expect(getFlooringCoveringOptions().map((option) => option.value)).toEqual(["with_package"]);
+    expect(getFlooringPreparationOptions().map((option) => option.value)).toEqual(["primer"]);
+    expect(getFlooringLayoutOptions().map((option) => option.value)).toEqual(["straight"]);
+
+    loadSpy.mockRestore();
+  });
+
+  it("includes custom active coverings from snapshot when package-backed", () => {
+    const loadSpy = vi.spyOn(flooringSnapshotModule, "loadFlooringSnapshot").mockReturnValue({
+      version: "flooring-v2",
+      coverings: [
+        packageBackedCovering("laminate", "Ламинат"),
+        packageBackedCovering("custom_covering", "Кастомное покрытие"),
+      ],
+      preparations: [
+        {
+          code: "none",
+          title: "Без",
+          laborPricePerM2: 0,
+          materialPricePerM2: 0,
+          specLines: [minimalSpecLine],
+        },
+      ],
+      layouts: [
+        { code: "straight", title: "Прямая", laborFactor: 1, additionalWastePercent: 0, specLines: [minimalSpecLine] },
+      ],
       plinthTypes: [{ code: "none", title: "Без", materialPricePerMeter: 0, laborPricePerMeter: 0, factor: 1 }],
       globalAddons: { thresholdPrice: 0, demolitionPricePerM2: 0 },
     });
@@ -54,9 +113,24 @@ describe("flooring snapshot options", () => {
     loadSpy.mockRestore();
   });
 
-  it("falls back to hardcoded covering options when snapshot load fails", () => {
+  it("returns empty covering options when snapshot load fails (package-first default)", () => {
     const loadSpy = vi.spyOn(flooringSnapshotModule, "loadFlooringSnapshot").mockImplementation(() => {
       throw new Error("invalid snapshot");
+    });
+
+    expect(getFlooringCoveringOptions()).toEqual([]);
+
+    loadSpy.mockRestore();
+  });
+
+  it("flooring-v1 uses hardcoded covering options when snapshot is empty", () => {
+    const loadSpy = vi.spyOn(flooringSnapshotModule, "loadFlooringSnapshot").mockReturnValue({
+      version: "flooring-v1",
+      coverings: [],
+      preparations: [],
+      layouts: [],
+      plinthTypes: [{ code: "none", title: "Без", materialPricePerMeter: 0, laborPricePerMeter: 0, factor: 1 }],
+      globalAddons: { thresholdPrice: 0, demolitionPricePerM2: 0 },
     });
 
     expect(getFlooringCoveringOptions()).toEqual(FALLBACK_FLOORING_COVERING_OPTIONS);
@@ -64,12 +138,39 @@ describe("flooring snapshot options", () => {
     loadSpy.mockRestore();
   });
 
+  it("flooring-v2 empty package-backed sections yield empty options", () => {
+    const loadSpy = vi.spyOn(flooringSnapshotModule, "loadFlooringSnapshot").mockReturnValue({
+      version: "flooring-v2",
+      coverings: [],
+      preparations: [],
+      layouts: [],
+      plinthTypes: [{ code: "none", title: "Без", materialPricePerMeter: 0, laborPricePerMeter: 0, factor: 1 }],
+      globalAddons: { thresholdPrice: 0, demolitionPricePerM2: 0 },
+    });
+
+    expect(getFlooringCoveringOptions()).toEqual([]);
+    expect(getFlooringPreparationOptions()).toEqual([]);
+    expect(getFlooringLayoutOptions()).toEqual([]);
+
+    loadSpy.mockRestore();
+  });
+
   it("uses first available covering when room heuristic is missing from snapshot", () => {
     const loadSpy = vi.spyOn(flooringSnapshotModule, "loadFlooringSnapshot").mockReturnValue({
       version: "flooring-v2",
-      coverings: [{ code: "custom_only", title: "Только кастом", materialPricePerM2: 1, baseWastePercent: 0, underlayPricePerM2: 0, adhesivePricePerM2: 0, primerPricePerM2: 0, svpPricePerM2: 0, groutPricePerM2: 0, toolConsumablesPerM2: 0 }],
-      preparations: [{ code: "primer", title: "Грунт", laborPricePerM2: 1, materialPricePerM2: 0 }],
-      layouts: [{ code: "straight", title: "Прямая", laborFactor: 1, additionalWastePercent: 0 }],
+      coverings: [packageBackedCovering("custom_only", "Только кастом")],
+      preparations: [
+        {
+          code: "primer",
+          title: "Грунт",
+          laborPricePerM2: 1,
+          materialPricePerM2: 0,
+          specLines: [minimalSpecLine],
+        },
+      ],
+      layouts: [
+        { code: "straight", title: "Прямая", laborFactor: 1, additionalWastePercent: 0, specLines: [minimalSpecLine] },
+      ],
       plinthTypes: [{ code: "none", title: "Без", materialPricePerMeter: 0, laborPricePerMeter: 0, factor: 1 }],
       globalAddons: { thresholdPrice: 0, demolitionPricePerM2: 0 },
     });
@@ -82,11 +183,19 @@ describe("flooring snapshot options", () => {
   it("picks large format layout for tile-like custom covering when available", () => {
     const loadSpy = vi.spyOn(flooringSnapshotModule, "loadFlooringSnapshot").mockReturnValue({
       version: "flooring-v2",
-      coverings: [{ code: "keram_test", title: "Керамика", materialPricePerM2: 1, baseWastePercent: 0, underlayPricePerM2: 0, adhesivePricePerM2: 0, primerPricePerM2: 0, svpPricePerM2: 0, groutPricePerM2: 0, toolConsumablesPerM2: 0 }],
-      preparations: [{ code: "none", title: "Без", laborPricePerM2: 0, materialPricePerM2: 0 }],
+      coverings: [packageBackedCovering("keram_test", "Керамика")],
+      preparations: [
+        { code: "none", title: "Без", laborPricePerM2: 0, materialPricePerM2: 0, specLines: [minimalSpecLine] },
+      ],
       layouts: [
-        { code: "straight", title: "Прямая", laborFactor: 1, additionalWastePercent: 0 },
-        { code: "large_format_straight", title: "Крупный", laborFactor: 1, additionalWastePercent: 0 },
+        { code: "straight", title: "Прямая", laborFactor: 1, additionalWastePercent: 0, specLines: [minimalSpecLine] },
+        {
+          code: "large_format_straight",
+          title: "Крупный",
+          laborFactor: 1,
+          additionalWastePercent: 0,
+          specLines: [minimalSpecLine],
+        },
       ],
       plinthTypes: [{ code: "none", title: "Без", materialPricePerMeter: 0, laborPricePerMeter: 0, factor: 1 }],
       globalAddons: { thresholdPrice: 0, demolitionPricePerM2: 0 },
@@ -101,9 +210,25 @@ describe("flooring snapshot options", () => {
   it("falls back to first layout when preferred layout code is absent", () => {
     const loadSpy = vi.spyOn(flooringSnapshotModule, "loadFlooringSnapshot").mockReturnValue({
       version: "flooring-v2",
-      coverings: [{ code: "laminate", title: "Ламинат", materialPricePerM2: 1, baseWastePercent: 0, underlayPricePerM2: 0, adhesivePricePerM2: 0, primerPricePerM2: 0, svpPricePerM2: 0, groutPricePerM2: 0, toolConsumablesPerM2: 0 }],
-      preparations: [{ code: "primer", title: "Грунт", laborPricePerM2: 1, materialPricePerM2: 0 }],
-      layouts: [{ code: "custom_layout", title: "Кастом", laborFactor: 1, additionalWastePercent: 0 }],
+      coverings: [packageBackedCovering("laminate", "Ламинат")],
+      preparations: [
+        {
+          code: "primer",
+          title: "Грунт",
+          laborPricePerM2: 1,
+          materialPricePerM2: 0,
+          specLines: [minimalSpecLine],
+        },
+      ],
+      layouts: [
+        {
+          code: "custom_layout",
+          title: "Кастом",
+          laborFactor: 1,
+          additionalWastePercent: 0,
+          specLines: [minimalSpecLine],
+        },
+      ],
       plinthTypes: [{ code: "none", title: "Без", materialPricePerMeter: 0, laborPricePerMeter: 0, factor: 1 }],
       globalAddons: { thresholdPrice: 0, demolitionPricePerM2: 0 },
     });

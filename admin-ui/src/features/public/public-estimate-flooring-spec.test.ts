@@ -230,7 +230,7 @@ describe("buildFlooringSpecification", () => {
     expect(specificationSection.totals.total).toBe(flatSection.totals.total);
   });
 
-  it("без specLines возвращает flat section как fallback", () => {
+  it("без specLines в package-first не подставляет flat room строки", () => {
     const flatSection = flatSectionForRoom();
     const { specificationLines, specificationSection } = buildFlooringSpecification({
       roomResults: [room],
@@ -238,13 +238,30 @@ describe("buildFlooringSpecification", () => {
       coveringByCode: { laminate: { code: "laminate", title: "Ламинат" } },
       preparationByCode: { none: { code: "none", title: "Без подготовки" } },
       layoutByCode: { straight: { code: "straight", title: "Прямая укладка" } },
+      packageFirstMode: true,
+    });
+
+    expect(specificationLines).toEqual([]);
+    expect(specificationSection.items.some((item) => item.id === "flooring-material-room-1")).toBe(false);
+    expect(specificationSection.items.some((item) => item.id === "flooring-plinth-material")).toBe(true);
+  });
+
+  it("без specLines в legacy mode возвращает flat section как fallback", () => {
+    const flatSection = flatSectionForRoom();
+    const { specificationLines, specificationSection } = buildFlooringSpecification({
+      roomResults: [room],
+      flatSection,
+      coveringByCode: { laminate: { code: "laminate", title: "Ламинат" } },
+      preparationByCode: { none: { code: "none", title: "Без подготовки" } },
+      layoutByCode: { straight: { code: "straight", title: "Прямая укладка" } },
+      packageFirstMode: false,
     });
 
     expect(specificationLines).toEqual([]);
     expect(specificationSection).toBe(flatSection);
   });
 
-  it("частичные specLines оставляют flat строки для остальных источников", () => {
+  it("частичные specLines в legacy mode оставляют flat строки для остальных источников", () => {
     const flatSection = flatSectionForRoom();
     const { specificationSection } = buildFlooringSpecification({
       roomResults: [room],
@@ -268,6 +285,7 @@ describe("buildFlooringSpecification", () => {
       },
       preparationByCode: { none: { code: "none", title: "Без подготовки" } },
       layoutByCode: { straight: { code: "straight", title: "Прямая укладка" } },
+      packageFirstMode: false,
     });
 
     expect(specificationSection.items.some((item) => item.id === "flooring-material-room-1")).toBe(false);
@@ -343,7 +361,7 @@ describe("FP5c covering specLines completeness guard", () => {
     expect(specificationSection.items.some((item) => item.id.startsWith("flooring-spec-covering-"))).toBe(true);
   });
 
-  it("без specLines (backend omit) сохраняет flat covering строки", () => {
+  it("без specLines в legacy mode сохраняет flat covering строки", () => {
     const flatSection = flatSectionForRoom();
     const { specificationLines, specificationSection } = buildFlooringSpecification({
       roomResults: [room],
@@ -351,6 +369,7 @@ describe("FP5c covering specLines completeness guard", () => {
       coveringByCode: { laminate: { code: "laminate", title: "Ламинат" } },
       preparationByCode: { none: { code: "none", title: "Без подготовки" } },
       layoutByCode: { straight: { code: "straight", title: "Прямая укладка" } },
+      packageFirstMode: false,
     });
 
     expect(specificationLines).toEqual([]);
@@ -557,7 +576,7 @@ describe("FP5b specLines arithmetic guard", () => {
     expectCategoryTotalsNear(specWorks, flatWorks);
   });
 
-  it("partial fallback: expanded spec + remaining flat — no double-count", () => {
+  it("partial fallback in legacy mode: expanded spec + remaining flat — no double-count", () => {
     const flatSection = flatSectionForRoom();
     const { specificationSection } = buildFlooringSpecification({
       roomResults: [room],
@@ -581,6 +600,7 @@ describe("FP5b specLines arithmetic guard", () => {
       },
       preparationByCode: { none: { code: "none", title: "Без подготовки" } },
       layoutByCode: { straight: { code: "straight", title: "Прямая укладка", laborFactor: 1.1 } },
+      packageFirstMode: false,
     });
 
     const specIds = new Set(specificationSection.items.map((item) => item.id));

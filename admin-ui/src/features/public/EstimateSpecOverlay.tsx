@@ -1,6 +1,8 @@
 import { useEffect, useId, useRef } from "react";
 import { createPortal } from "react-dom";
+import type { AggregatedClientLine } from "./estimate/aggregate-client-lines";
 import type { FlooringProcurementLine } from "./public-estimate-flooring-procurement";
+import type { EstimateLineItem } from "./public-estimate-model";
 import type { EstimateSpecSection } from "./public-estimate-plumbing-zones";
 
 type EstimateSpecOverlayProps = {
@@ -15,6 +17,54 @@ type EstimateSpecOverlayProps = {
 
 const FOCUSABLE_SELECTOR =
   'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+type SpecModalLine = Pick<
+  EstimateLineItem,
+  "id" | "title" | "quantity" | "unit" | "unitPrice" | "total" | "note"
+>;
+
+function toSpecModalLine(line: EstimateLineItem | AggregatedClientLine): SpecModalLine {
+  return {
+    id: line.id,
+    title: line.title,
+    quantity: line.quantity,
+    unit: line.unit,
+    unitPrice: line.unitPrice,
+    total: line.total,
+    note: line.note,
+  };
+}
+
+function resolvePresentationGroups(section: EstimateSpecSection) {
+  return section.presentationGroups?.filter((group) => group.lines.length > 0) ?? [];
+}
+
+function SpecModalLineRow({
+  item,
+  formatMoney,
+  formatQuantity,
+}: {
+  item: SpecModalLine;
+  formatMoney: (value: number) => string;
+  formatQuantity: (value: number) => string;
+}) {
+  const pricePending = item.note === "уточняется";
+
+  return (
+    <li key={item.id}>
+      <span className="public-estimate-spec-modal-line-title">{item.title}</span>
+      <span className="public-estimate-spec-modal-line-meta">
+        {formatQuantity(item.quantity)} {item.unit}
+        {pricePending ? (
+          <> · уточняется</>
+        ) : (
+          <> × {formatMoney(item.unitPrice)}</>
+        )}
+      </span>
+      <strong>{pricePending ? "—" : formatMoney(item.total)}</strong>
+    </li>
+  );
+}
 
 export function EstimateSpecOverlay({
   title,
@@ -140,38 +190,53 @@ export function EstimateSpecOverlay({
           {sections.length === 0 ? (
             <p className="public-estimate-spec-modal-empty">В этом разделе пока нет позиций.</p>
           ) : (
-            sections.map((section) => (
-              <div className="public-estimate-spec-modal-section" key={section.id}>
-                {grouped ? (
-                  <div className="public-estimate-spec-modal-section-head">
-                    <h3>{section.title}</h3>
-                    <strong>{formatMoney(section.totals.total)}</strong>
-                  </div>
-                ) : null}
-                {section.specIntro ? (
-                  <p className="public-estimate-spec-modal-intro">{section.specIntro}</p>
-                ) : null}
-                <ul className="public-estimate-spec-modal-list">
-                  {section.items.map((item) => {
-                    const pricePending = item.note === "уточняется";
-                    return (
-                      <li key={item.id}>
-                        <span className="public-estimate-spec-modal-line-title">{item.title}</span>
-                        <span className="public-estimate-spec-modal-line-meta">
-                          {formatQuantity(item.quantity)} {item.unit}
-                          {pricePending ? (
-                            <> · уточняется</>
-                          ) : (
-                            <> × {formatMoney(item.unitPrice)}</>
-                          )}
-                        </span>
-                        <strong>{pricePending ? "—" : formatMoney(item.total)}</strong>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </div>
-            ))
+            sections.map((section) => {
+              const presentationGroups = resolvePresentationGroups(section);
+
+              return (
+                <div className="public-estimate-spec-modal-section" key={section.id}>
+                  {grouped ? (
+                    <div className="public-estimate-spec-modal-section-head">
+                      <h3>{section.title}</h3>
+                      <strong>{formatMoney(section.totals.total)}</strong>
+                    </div>
+                  ) : null}
+                  {section.specIntro ? (
+                    <p className="public-estimate-spec-modal-intro">{section.specIntro}</p>
+                  ) : null}
+                  {presentationGroups.length > 0 ? (
+                    presentationGroups.map((group) => (
+                      <div key={group.kind}>
+                        <div className="public-estimate-spec-modal-section-head">
+                          <h3>{group.title}</h3>
+                        </div>
+                        <ul className="public-estimate-spec-modal-list">
+                          {group.lines.map((line) => (
+                            <SpecModalLineRow
+                              key={line.id}
+                              item={toSpecModalLine(line)}
+                              formatMoney={formatMoney}
+                              formatQuantity={formatQuantity}
+                            />
+                          ))}
+                        </ul>
+                      </div>
+                    ))
+                  ) : (
+                    <ul className="public-estimate-spec-modal-list">
+                      {section.items.map((item) => (
+                        <SpecModalLineRow
+                          key={item.id}
+                          item={toSpecModalLine(item)}
+                          formatMoney={formatMoney}
+                          formatQuantity={formatQuantity}
+                        />
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              );
+            })
           )}
         </div>
 

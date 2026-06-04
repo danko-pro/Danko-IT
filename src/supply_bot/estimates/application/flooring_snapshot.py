@@ -599,6 +599,12 @@ def build_flooring_v2_local_package_seed() -> dict[str, Any]:
     }
 
 
+def _package_backed_catalog_rows(rows: Sequence[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Bridge-1: runtime snapshot must never leak flat-only catalog rows."""
+
+    return [row for row in rows if row.get("specLines")]
+
+
 def _assembly_for_row(
     row: Mapping[str, Any],
     assemblies_by_target_id: Mapping[int, Mapping[str, Any]] | None,
@@ -663,9 +669,9 @@ def build_public_flooring_snapshot_from_catalog(
 
     return {
         "version": DEFAULT_PUBLIC_FLOORING_SNAPSHOT["version"],
-        "coverings": mapped_coverings,
-        "preparations": mapped_preparations,
-        "layouts": mapped_layouts,
+        "coverings": _package_backed_catalog_rows(mapped_coverings),
+        "preparations": _package_backed_catalog_rows(mapped_preparations),
+        "layouts": _package_backed_catalog_rows(mapped_layouts),
         **_default_plinth_and_addons(),
     }
 

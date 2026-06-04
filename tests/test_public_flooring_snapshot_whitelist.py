@@ -177,6 +177,18 @@ class FlooringSnapshotSpecLinesTests(unittest.IsolatedAsyncioTestCase):
         payload = await BuildFlooringSnapshotUseCase(self.repository).build_public()
         self.assertEqual(payload["coverings"], [])
 
+    async def test_preparation_without_assembly_is_omitted_from_snapshot(self) -> None:
+        await self.repository.create_estimate_flooring_preparation(
+            title="Грунтование",
+            labor_price_per_m2=250,
+            material_price_per_m2=120,
+            primer_consumption_per_m2=0,
+            primer_unit="л",
+            primer_price_per_unit=0,
+        )
+        payload = await BuildFlooringSnapshotUseCase(self.repository).build_public()
+        self.assertEqual(payload["preparations"], [])
+
     async def test_covering_with_global_assembly_has_spec_lines(self) -> None:
         covering_id = await self.repository.create_estimate_flooring_covering(
             **_minimal_covering_kwargs(title="Ламинат", material_price_per_m2=930)
@@ -360,6 +372,66 @@ class FlooringSnapshotSpecLinesTests(unittest.IsolatedAsyncioTestCase):
         payload = await BuildFlooringSnapshotUseCase(self.repository).build_public()
         self.assertEqual(payload["coverings"], [])
 
+    async def test_layout_without_assembly_is_omitted_from_snapshot(self) -> None:
+        await self.repository.create_estimate_flooring_layout(
+            title="Крупный формат",
+            labor_price_per_m2=2000,
+            labor_multiplier=1.2,
+            extra_waste_percent=10,
+        )
+        await self.repository.create_estimate_flooring_layout(
+            title="Клеевая",
+            labor_price_per_m2=800,
+            labor_multiplier=1.25,
+            extra_waste_percent=5,
+        )
+        payload = await BuildFlooringSnapshotUseCase(self.repository).build_public()
+        self.assertEqual(payload["layouts"], [])
+
+    async def test_layout_with_invalid_assembly_is_omitted(self) -> None:
+        layout_id = await self.repository.create_estimate_flooring_layout(
+            title="Клеевая",
+            labor_price_per_m2=800,
+            labor_multiplier=1.25,
+            extra_waste_percent=5,
+        )
+        await self.repository.replace_estimate_flooring_catalog_assembly(
+            "layout",
+            layout_id,
+            "Invalid layout package",
+            [_sample_assembly_row(kind="material", section="covering", public_category="materials")],
+        )
+        payload = await BuildFlooringSnapshotUseCase(self.repository).build_public()
+        self.assertEqual(payload["layouts"], [])
+
+    async def test_layout_default_labor_fallback_does_not_publish_without_package(self) -> None:
+        await self.repository.create_estimate_flooring_layout(
+            title="Клеевая",
+            labor_price_per_m2=0,
+            labor_multiplier=1.25,
+            extra_waste_percent=5,
+        )
+        payload = await BuildFlooringSnapshotUseCase(self.repository).build_public()
+        self.assertEqual(payload["layouts"], [])
+        self.assertNotIn(
+            "glue",
+            {item["code"] for item in payload["layouts"]},
+        )
+
+    def test_legacy_attach_spec_lines_helper_does_not_gate_publication(self) -> None:
+        from supply_bot.estimates.application.flooring_snapshot import _attach_spec_lines_to_snapshot_row
+
+        flat_row = {
+            "code": "glue",
+            "title": "Клеевая",
+            "laborPricePerM2": 800,
+            "laborFactor": 1.25,
+            "additionalWastePercent": 5,
+        }
+        attached = _attach_spec_lines_to_snapshot_row(flat_row, target_kind="layout", assembly=None)
+        self.assertNotIn("specLines", attached)
+        self.assertEqual(attached, flat_row)
+
     def test_empty_assembly_rows_are_not_published(self) -> None:
         published = _publish_package_backed_snapshot_row(
             {"code": "laminate", "title": "Ламинат", "materialPricePerM2": 930},
@@ -472,6 +544,43 @@ class FlooringSnapshotRepositoryTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(payload["layouts"], [])
         self.assertEqual(payload["plinthTypes"], DEFAULT_PUBLIC_FLOORING_SNAPSHOT["plinthTypes"])
         self.assertEqual(payload["globalAddons"], DEFAULT_PUBLIC_FLOORING_SNAPSHOT["globalAddons"])
+
+    async def test_all_published_layouts_include_spec_lines_for_known_codes(self) -> None:
+        await _seed_f1_complete_global_catalog(self.repository)
+        payload = await BuildFlooringSnapshotUseCase(self.repository).build_public()
+        for code in ("straight", "large_format_straight", "glue", "floating"):
+            layout = next(item for item in payload["layouts"] if item["code"] == code)
+            self.assertIn("specLines", layout)
+            self.assertGreater(len(layout["specLines"]), 0)
+
+    async def test_partial_layout_assemblies_publish_only_package_backed_rows(self) -> None:
+        straight_id = await self.repository.create_estimate_flooring_layout(
+            title="Прямая",
+            labor_price_per_m2=1000,
+            labor_multiplier=1.1,
+            extra_waste_percent=5,
+        )
+        await self.repository.create_estimate_flooring_layout(
+            title="Крупный формат",
+            labor_price_per_m2=2000,
+            labor_multiplier=1.2,
+            extra_waste_percent=10,
+        )
+        await self.repository.create_estimate_flooring_layout(
+            title="Клеевая",
+            labor_price_per_m2=800,
+            labor_multiplier=1.25,
+            extra_waste_percent=5,
+        )
+        await self.repository.replace_estimate_flooring_catalog_assembly(
+            "layout",
+            straight_id,
+            "Straight only",
+            [_work_assembly_row(title="Lay straight", public_title="Укладка прямая", price=1000, consumption_per_m2=1.1)],
+        )
+        payload = await BuildFlooringSnapshotUseCase(self.repository).build_public()
+        self.assertEqual({item["code"] for item in payload["layouts"]}, {"straight"})
+        self.assertIn("specLines", payload["layouts"][0])
 
     async def test_known_global_rows_with_synthetic_assemblies_are_published(self) -> None:
         await _seed_f1_complete_global_catalog(self.repository)
@@ -641,6 +750,41 @@ class PublicFlooringSnapshotWhitelistTests(AdminProjectsRouteCase):
         self.assertEqual(payload["layouts"], [])
         self.assertEqual(payload["plinthTypes"], DEFAULT_PUBLIC_FLOORING_SNAPSHOT["plinthTypes"])
         self.assertEqual(payload["globalAddons"], DEFAULT_PUBLIC_FLOORING_SNAPSHOT["globalAddons"])
+
+    def test_build_from_catalog_omits_layout_without_assembly_even_with_default_labor(self) -> None:
+        payload = build_public_flooring_snapshot_from_catalog(
+            [],
+            [],
+            [
+                {
+                    "id": 21,
+                    "title": "Клеевая",
+                    "labor_price_per_m2": 0,
+                    "labor_multiplier": 1.25,
+                    "extra_waste_percent": 5,
+                }
+            ],
+        )
+        self.assertEqual(payload["layouts"], [])
+
+    def test_build_from_catalog_omits_layout_with_invalid_assembly(self) -> None:
+        payload = build_public_flooring_snapshot_from_catalog(
+            [],
+            [],
+            [{"id": 22, "title": "Крупный формат", "labor_price_per_m2": 2000, "labor_multiplier": 1.2, "extra_waste_percent": 10}],
+            layout_assemblies={
+                22: {
+                    "rows": [
+                        _sample_assembly_row(
+                            kind="material",
+                            section="covering",
+                            public_category="materials",
+                        )
+                    ]
+                }
+            },
+        )
+        self.assertEqual(payload["layouts"], [])
 
     def test_build_from_catalog_publishes_only_package_backed_rows(self) -> None:
         coverings = [

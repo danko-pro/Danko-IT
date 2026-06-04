@@ -1,10 +1,12 @@
 import type { EstimateObjectMeta } from "./context";
-import { buildPlumbingSpecExpansionOptions } from "./spec";
-import type { EstimateSpecModalState } from "./spec";
 import type { FlooringCalculationResult } from "../public-estimate-flooring";
 import type { FlooringProcurementLine } from "../public-estimate-flooring-procurement";
 import type { PlumbingCalculationResult, PlumbingOptions } from "../public-estimate-plumbing";
-import { expandPlumbingSectionForSpec } from "../public-estimate-plumbing-zones";
+import {
+  expandPlumbingSectionForSpec,
+  type EstimateSpecSection,
+  type ExpandPlumbingSectionForSpecOptions,
+} from "../public-estimate-plumbing-zones";
 import {
   type EstimateCategoryTotals,
   type EstimateCostCategory,
@@ -75,6 +77,18 @@ export type PublicEstimateDocument = {
   totals: EstimateDocumentTotals;
 };
 
+export type EstimateSpecModalState = {
+  kind: "section" | "full";
+  sectionId?: EstimateSectionId;
+};
+
+export type EstimateSpecModalData = {
+  title: string;
+  subtitle?: string;
+  sections: EstimateSpecSection[];
+  procurementLines?: FlooringProcurementLine[];
+};
+
 export type BuildPublicEstimateDocumentContext = {
   floorArea: number;
   objectMeta?: EstimateObjectMeta;
@@ -91,6 +105,94 @@ export type BuildPublicEstimateDocumentInput = {
   result: PublicEstimateResult;
   context: BuildPublicEstimateDocumentContext;
 };
+
+export type DocumentToEstimateSpecModalOptions = {
+  subtitle?: string;
+  legacySections: EstimateSection[];
+  includeProcurement: boolean;
+};
+
+export function buildPlumbingSpecExpansionOptions(
+  plumbingOptions: PlumbingOptions,
+  plumbingResult: PlumbingCalculationResult,
+): ExpandPlumbingSectionForSpecOptions {
+  return {
+    kitchenSinkPackageLevel: plumbingOptions.kitchenSinkPackageLevel,
+    includeKitchenSink: plumbingResult.hasKitchen && plumbingOptions.includeKitchenSink,
+    dishwasherPackageLevel: plumbingOptions.dishwasherPackageLevel,
+    includeDishwasher: plumbingResult.hasKitchen && plumbingOptions.includeDishwasherOutput,
+    showerPackageLevel: plumbingOptions.showerPackageLevel,
+    includeShower: plumbingResult.bathroomCount > 0 && plumbingOptions.includeShowerZone,
+    includeInstallRelocation: plumbingResult.bathroomCount > 0 && plumbingOptions.includeInstallRelocation,
+    includeBathroomSet: plumbingResult.bathroomCount > 0 && plumbingOptions.includeBathroomSet,
+    includeBath:
+      plumbingResult.bathroomCount > 0 &&
+      plumbingOptions.includeBath &&
+      !plumbingOptions.includeShowerZone,
+    includeHygienicShower: plumbingResult.bathroomCount > 0 && plumbingOptions.includeHygienicShower,
+    includeElectricTowelRail: plumbingResult.bathroomCount > 0 && plumbingOptions.includeElectricTowelRail,
+    includeWasherOutput: plumbingOptions.includeWasherOutput,
+    includeWaterNode: plumbingOptions.includeWaterNode && plumbingResult.hasPlumbingRooms,
+    includeLeakProtection:
+      plumbingOptions.includeWaterNode &&
+      plumbingResult.hasPlumbingRooms &&
+      plumbingOptions.includeLeakProtection,
+  };
+}
+
+function documentLineToEstimateLineItem(line: EstimateDocumentLine, sectionId: EstimateSectionId): EstimateLineItem {
+  return {
+    id: line.id,
+    sectionId,
+    title: line.title,
+    category: line.category,
+    quantity: line.quantity,
+    unit: line.unit,
+    unitPrice: line.unitPrice,
+    total: line.total,
+    isIncluded: line.isIncluded,
+    note: line.note,
+  };
+}
+
+export function documentToEstimateSpecSections(
+  document: PublicEstimateDocument,
+  legacySections: EstimateSection[],
+): EstimateSpecSection[] {
+  const legacyById = new Map(legacySections.map((section) => [section.id, section]));
+
+  return document.sections.map((documentSection) => {
+    const legacy = legacyById.get(documentSection.sectionId);
+    const items = collectDocumentSectionLines(documentSection).map((line) =>
+      documentLineToEstimateLineItem(line, documentSection.sectionId),
+    );
+    const section: EstimateSpecSection = {
+      id: documentSection.sectionId,
+      title: documentSection.title,
+      description: documentSection.description,
+      items,
+      totals: legacy?.totals ?? documentSection.totals,
+    };
+
+    if (documentSection.specIntro) {
+      section.specIntro = documentSection.specIntro;
+    }
+
+    return section;
+  });
+}
+
+export function documentToEstimateSpecModalData(
+  document: PublicEstimateDocument,
+  options: DocumentToEstimateSpecModalOptions,
+): EstimateSpecModalData {
+  return {
+    title: document.meta.title,
+    subtitle: options.subtitle,
+    sections: documentToEstimateSpecSections(document, options.legacySections),
+    procurementLines: options.includeProcurement ? (document.appendices?.procurement ?? []) : undefined,
+  };
+}
 
 const DEFAULT_BRAND: NonNullable<PublicEstimateDocument["meta"]["brand"]> = {
   name: "DANKO BUILTECH",

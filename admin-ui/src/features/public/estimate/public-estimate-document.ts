@@ -1,3 +1,7 @@
+import {
+  buildAggregatedClientPresentation,
+  type AggregatedClientPresentation,
+} from "./aggregate-client-lines";
 import type { EstimateObjectMeta } from "./context";
 import type { FlooringCalculationResult } from "../public-estimate-flooring";
 import type { FlooringProcurementLine } from "../public-estimate-flooring-procurement";
@@ -259,6 +263,27 @@ export function collectDocumentSectionLines(section: EstimateDocumentSection): E
   );
 
   return [...packageLines, ...(section.flatLines ?? [])];
+}
+
+/** Shadow PF5c1: aggregated client presentation; not used by modal/PDF. */
+export function getAggregatedPresentationForSection(
+  document: PublicEstimateDocument,
+  sectionId: EstimateSectionId,
+): AggregatedClientPresentation | undefined {
+  if (sectionId !== "flooring") {
+    return undefined;
+  }
+
+  const section = document.sections.find((candidate) => candidate.sectionId === sectionId);
+
+  if (!section) {
+    return undefined;
+  }
+
+  return buildAggregatedClientPresentation({
+    lines: collectDocumentSectionLines(section),
+    procurement: document.appendices?.procurement,
+  });
 }
 
 export function calculateDocumentSectionTotals(section: EstimateDocumentSection): EstimateDocumentTotals {

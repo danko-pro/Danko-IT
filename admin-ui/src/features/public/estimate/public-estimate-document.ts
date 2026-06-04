@@ -1,7 +1,10 @@
 import {
   buildAggregatedClientPresentation,
   type AggregatedClientPresentation,
+  type EstimatePresentationGroup,
 } from "./aggregate-client-lines";
+
+export type { AggregatedClientLine, EstimatePresentationGroup } from "./aggregate-client-lines";
 import type { EstimateObjectMeta } from "./context";
 import type { FlooringCalculationResult } from "../public-estimate-flooring";
 import type { FlooringProcurementLine } from "../public-estimate-flooring-procurement";
@@ -61,6 +64,7 @@ export type EstimateDocumentSection = {
   specIntro?: string;
   groups: EstimateDocumentGroup[];
   flatLines?: EstimateDocumentLine[];
+  presentationGroups?: EstimatePresentationGroup[];
   totals: EstimateDocumentTotals;
 };
 
@@ -265,7 +269,45 @@ export function collectDocumentSectionLines(section: EstimateDocumentSection): E
   return [...packageLines, ...(section.flatLines ?? [])];
 }
 
-/** Shadow PF5c1: aggregated client presentation; not used by modal/PDF. */
+function presentationGroupsToAggregatedPresentation(
+  presentationGroups: EstimatePresentationGroup[],
+): AggregatedClientPresentation | undefined {
+  const worksGroup = presentationGroups.find((group) => group.kind === "works");
+  const materialsGroup = presentationGroups.find((group) => group.kind === "materials");
+
+  if (!worksGroup || !materialsGroup) {
+    return undefined;
+  }
+
+  return {
+    workLines: worksGroup.lines,
+    materialLines: materialsGroup.lines,
+    workTotals: worksGroup.totals,
+    materialTotals: materialsGroup.totals,
+    presentationGroups,
+  };
+}
+
+function attachFlooringPresentationGroups(
+  section: EstimateDocumentSection,
+  procurement?: FlooringProcurementLine[],
+): EstimateDocumentSection {
+  if (section.sectionId !== "flooring") {
+    return section;
+  }
+
+  const aggregated = buildAggregatedClientPresentation({
+    lines: collectDocumentSectionLines(section),
+    procurement,
+  });
+
+  return {
+    ...section,
+    presentationGroups: aggregated.presentationGroups,
+  };
+}
+
+/** PF5c2: reads attached presentationGroups; not used by modal/PDF. */
 export function getAggregatedPresentationForSection(
   document: PublicEstimateDocument,
   sectionId: EstimateSectionId,
@@ -276,14 +318,11 @@ export function getAggregatedPresentationForSection(
 
   const section = document.sections.find((candidate) => candidate.sectionId === sectionId);
 
-  if (!section) {
+  if (!section?.presentationGroups) {
     return undefined;
   }
 
-  return buildAggregatedClientPresentation({
-    lines: collectDocumentSectionLines(section),
-    procurement: document.appendices?.procurement,
-  });
+  return presentationGroupsToAggregatedPresentation(section.presentationGroups);
 }
 
 export function calculateDocumentSectionTotals(section: EstimateDocumentSection): EstimateDocumentTotals {
@@ -429,6 +468,9 @@ export function buildPublicEstimateDocument(input: BuildPublicEstimateDocumentIn
   }
 
   const hasAppendices = appendices.procurement !== undefined || appendices.disclaimers !== undefined;
+  const sectionsWithPresentation = sections.map((section) =>
+    attachFlooringPresentationGroups(section, appendices.procurement),
+  );
 
   return {
     meta: {
@@ -439,8 +481,8 @@ export function buildPublicEstimateDocument(input: BuildPublicEstimateDocumentIn
       brand: context.brand ?? DEFAULT_BRAND,
       floorArea: context.floorArea,
     },
-    sections,
+    sections: sectionsWithPresentation,
     appendices: hasAppendices ? appendices : undefined,
-    totals: calculateDocumentTotals(sections, context.floorArea),
+    totals: calculateDocumentTotals(sectionsWithPresentation, context.floorArea),
   };
 }

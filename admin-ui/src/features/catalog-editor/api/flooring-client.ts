@@ -9,6 +9,7 @@ import type {
   FlooringCatalogAssemblyDto,
   FlooringCatalogAssemblyPayload,
   FlooringCatalogAssemblyTarget,
+  FlooringCatalogFromAssemblyPayload,
   FlooringCoveringCreatePayload,
   FlooringCoveringDto,
   FlooringCoveringUpdatePayload,
@@ -47,7 +48,16 @@ export async function listFlooringAssemblyItems(): Promise<FlooringAssemblyItemD
 export async function createFlooringCovering(
   payload: FlooringCoveringCreatePayload,
 ): Promise<FlooringCoveringDto> {
-  return fetchJson<FlooringCoveringDto>(`${FLOORING_API}/coverings`, {
+  return fetchJson<FlooringCoveringDto>(`${FLOORING_API}/coverings/from-flat-bootstrap`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function createFlooringCoveringFromAssembly(
+  payload: FlooringCatalogFromAssemblyPayload & { catalog: FlooringCoveringCreatePayload },
+): Promise<FlooringCoveringDto> {
+  return fetchJson<FlooringCoveringDto>(`${FLOORING_API}/coverings/from-assembly`, {
     method: "POST",
     body: JSON.stringify(payload),
   });
@@ -56,14 +66,32 @@ export async function createFlooringCovering(
 export async function createFlooringPreparation(
   payload: FlooringPreparationCreatePayload,
 ): Promise<FlooringPreparationDto> {
-  return fetchJson<FlooringPreparationDto>(`${FLOORING_API}/preparations`, {
+  return fetchJson<FlooringPreparationDto>(`${FLOORING_API}/preparations/from-flat-bootstrap`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function createFlooringPreparationFromAssembly(
+  payload: FlooringCatalogFromAssemblyPayload & { catalog: FlooringPreparationCreatePayload },
+): Promise<FlooringPreparationDto> {
+  return fetchJson<FlooringPreparationDto>(`${FLOORING_API}/preparations/from-assembly`, {
     method: "POST",
     body: JSON.stringify(payload),
   });
 }
 
 export async function createFlooringLayout(payload: FlooringLayoutCreatePayload): Promise<FlooringLayoutDto> {
-  return fetchJson<FlooringLayoutDto>(`${FLOORING_API}/layouts`, {
+  return fetchJson<FlooringLayoutDto>(`${FLOORING_API}/layouts/from-flat-bootstrap`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function createFlooringLayoutFromAssembly(
+  payload: FlooringCatalogFromAssemblyPayload & { catalog: FlooringLayoutCreatePayload },
+): Promise<FlooringLayoutDto> {
+  return fetchJson<FlooringLayoutDto>(`${FLOORING_API}/layouts/from-assembly`, {
     method: "POST",
     body: JSON.stringify(payload),
   });

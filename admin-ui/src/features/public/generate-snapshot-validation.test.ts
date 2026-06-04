@@ -118,11 +118,40 @@ describe("generate-snapshot validation", () => {
     expect(validateFlooringSnapshotPayload(legacyPayload)).toEqual({ ok: true });
   });
 
-  it("rejects flooring payloads missing required catalog codes", () => {
+  it("accepts flooring-v2 payloads without legacy seed codes", () => {
     expect(
       validateFlooringSnapshotPayload({
         ...FLOORING_V2_SEED,
         coverings: FLOORING_V2_SEED.coverings.filter((item) => item.code !== "porcelain"),
+      }),
+    ).toEqual({ ok: true });
+  });
+
+  it("rejects flooring-v2 payloads with empty package sections", () => {
+    expect(
+      validateFlooringSnapshotPayload({
+        ...FLOORING_V2_SEED,
+        coverings: [],
+      }),
+    ).toEqual({
+      ok: false,
+      reason: "coverings must contain at least one item",
+    });
+  });
+
+  it("keeps required seed codes for legacy flooring-v1 payloads", () => {
+    expect(
+      validateFlooringSnapshotPayload({
+        ...FLOORING_V2_SEED,
+        version: "flooring-v1",
+        coverings: FLOORING_V2_SEED.coverings
+          .filter((item) => item.code !== "porcelain")
+          .map(({ specLines: _specLines, ...item }) => ({
+            ...item,
+            laborPricePerM2: 1000,
+          })),
+        layouts: FLOORING_V2_SEED.layouts.map(({ specLines: _specLines, laborPricePerM2: _legacy, ...item }) => item),
+        preparations: FLOORING_V2_SEED.preparations.map(({ specLines: _specLines, ...item }) => item),
       }),
     ).toEqual({
       ok: false,
@@ -298,6 +327,27 @@ describe("generate-snapshot validation", () => {
     ).toEqual({
       ok: false,
       reason: "coverings[carpet].specLines[0].quantityPerBasis must be a finite number",
+    });
+  });
+
+  it("rejects numeric-looking flooring specLine units", () => {
+    expect(
+      validateFlooringSnapshotPayload({
+        ...FLOORING_V2_SEED,
+        coverings: FLOORING_V2_SEED.coverings.map((item) =>
+          item.code === "laminate"
+            ? {
+                ...item,
+                specLines: item.specLines.map((line, index) =>
+                  index === 0 ? { ...line, unit: "0,08" } : line,
+                ),
+              }
+            : item,
+        ),
+      }),
+    ).toEqual({
+      ok: false,
+      reason: "coverings[laminate].specLines[0].unit must be a measurement unit",
     });
   });
 

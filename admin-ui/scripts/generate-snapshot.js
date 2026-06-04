@@ -328,6 +328,8 @@ const FLOORING_SPEC_LINE_REQUIRED_KEYS = [
   "unitPrice",
 ];
 
+const FLOORING_NUMERIC_UNIT_PATTERN = /^\d+(?:[,.]\d+)?$/;
+
 /**
  * @param {unknown} specLines
  * @param {string} arrayName
@@ -361,6 +363,9 @@ function validateSpecLines(specLines, arrayName) {
     }
     if (typeof line.unit !== "string" || line.unit.length === 0) {
       return { ok: false, reason: `${arrayName}.specLines[${index}].unit must be a non-empty string` };
+    }
+    if (FLOORING_NUMERIC_UNIT_PATTERN.test(line.unit.trim())) {
+      return { ok: false, reason: `${arrayName}.specLines[${index}].unit must be a measurement unit` };
     }
     if (typeof line.quantityPerBasis !== "number" || !Number.isFinite(line.quantityPerBasis)) {
       return {
@@ -421,6 +426,9 @@ function validateSpecLines(specLines, arrayName) {
 function validateFlooringCatalogItems(items, arrayName, rateKeys, { requireSpecLines = false } = {}) {
   if (!Array.isArray(items)) {
     return { ok: false, reason: `${arrayName} must be an array` };
+  }
+  if (items.length === 0) {
+    return { ok: false, reason: `${arrayName} must contain at least one item` };
   }
 
   const seenCodes = new Set();
@@ -546,31 +554,33 @@ export function validateFlooringSnapshotPayload(payload) {
     return { ok: false, reason: "globalAddons rates must be finite numbers" };
   }
 
-  const requiredCoverings = validateFlooringRequiredCodes(
-    payload.coverings,
-    "coverings",
-    EXPECTED_FLOORING_COVERING_CODES,
-  );
-  if (!requiredCoverings.ok) {
-    return requiredCoverings;
-  }
+  if (isLegacyV1) {
+    const requiredCoverings = validateFlooringRequiredCodes(
+      payload.coverings,
+      "coverings",
+      EXPECTED_FLOORING_COVERING_CODES,
+    );
+    if (!requiredCoverings.ok) {
+      return requiredCoverings;
+    }
 
-  const requiredPreparations = validateFlooringRequiredCodes(
-    payload.preparations,
-    "preparations",
-    EXPECTED_FLOORING_PREPARATION_CODES,
-  );
-  if (!requiredPreparations.ok) {
-    return requiredPreparations;
-  }
+    const requiredPreparations = validateFlooringRequiredCodes(
+      payload.preparations,
+      "preparations",
+      EXPECTED_FLOORING_PREPARATION_CODES,
+    );
+    if (!requiredPreparations.ok) {
+      return requiredPreparations;
+    }
 
-  const requiredLayouts = validateFlooringRequiredCodes(
-    payload.layouts,
-    "layouts",
-    EXPECTED_FLOORING_LAYOUT_CODES,
-  );
-  if (!requiredLayouts.ok) {
-    return requiredLayouts;
+    const requiredLayouts = validateFlooringRequiredCodes(
+      payload.layouts,
+      "layouts",
+      EXPECTED_FLOORING_LAYOUT_CODES,
+    );
+    if (!requiredLayouts.ok) {
+      return requiredLayouts;
+    }
   }
 
   const requiredPlinthTypes = validateFlooringRequiredCodes(

@@ -8,6 +8,7 @@ from supply_bot.application.errors import ValidationError
 from supply_bot.database.metadata import metadata
 from supply_bot.estimates.application.flooring_catalog_assembly import (
     validate_flooring_catalog_assembly_target_kind,
+    validate_flooring_package_for_publication,
 )
 from supply_bot.storage_estimates.runtime_repository import SqlAlchemyEstimateRuntimeRepository
 
@@ -242,3 +243,105 @@ class SqlAlchemyEstimateFlooringCatalogAssemblyTest(unittest.IsolatedAsyncioTest
         covering_id = await self.repository.create_estimate_flooring_covering(**_sample_covering_kwargs())
         with self.assertRaises(ValidationError):
             await self.repository.get_estimate_flooring_catalog_assembly("invalid", covering_id)
+
+
+def _valid_row(**overrides: object) -> dict[str, object]:
+    values: dict[str, object] = {
+        "section": "covering",
+        "kind": "material",
+        "formula": "flat_per_m2",
+        "title": "Tile",
+        "unit": "m2",
+        "price": 1000,
+        "consumption_per_m2": 1,
+        "package_size": None,
+        "layer_mm": None,
+        "sort_order": 10,
+        "is_enabled": True,
+        "public_category": "materials",
+        "public_title": "Tile",
+    }
+    values.update(overrides)
+    return values
+
+
+class ValidateFlooringPackageForPublicationTests(unittest.TestCase):
+    def test_accepts_valid_covering_preparation_layout(self) -> None:
+        validate_flooring_package_for_publication("covering", [_valid_row()])
+        validate_flooring_package_for_publication(
+            "preparation",
+            [_valid_row(section="work", kind="work", public_category="works")],
+        )
+        validate_flooring_package_for_publication(
+            "layout",
+            [_valid_row(section="work", kind="work", public_category="works")],
+        )
+
+    def test_rejects_empty_all_disabled_and_wrong_kind(self) -> None:
+        with self.assertRaises(ValidationError):
+            validate_flooring_package_for_publication("covering", [])
+        with self.assertRaises(ValidationError):
+            validate_flooring_package_for_publication("covering", [_valid_row(is_enabled=False)])
+        with self.assertRaises(ValidationError):
+            validate_flooring_package_for_publication(
+                "covering",
+                [_valid_row(kind="consumable", public_category="consumables", section="consumable")],
+            )
+        with self.assertRaises(ValidationError):
+            validate_flooring_package_for_publication(
+                "preparation",
+                [_valid_row(section="work", kind="work", public_category="works", is_enabled=False)],
+            )
+
+    def test_rejects_package_aware_formula_missing_fields(self) -> None:
+        with self.assertRaises(ValidationError):
+            validate_flooring_package_for_publication(
+                "covering",
+                [
+                    _valid_row(),
+                    _valid_row(
+                        kind="consumable",
+                        section="consumable",
+                        public_category="consumables",
+                        formula="package_consumption",
+                        price=600,
+                        consumption_per_m2=1.5,
+                        package_size=None,
+                    ),
+                ],
+            )
+        with self.assertRaises(ValidationError):
+            validate_flooring_package_for_publication(
+                "covering",
+                [
+                    _valid_row(),
+                    _valid_row(
+                        kind="consumable",
+                        section="consumable",
+                        public_category="consumables",
+                        formula="kg_layer_consumption",
+                        price=600,
+                        consumption_per_m2=1.5,
+                        package_size=25,
+                        layer_mm=0,
+                    ),
+                ],
+            )
+
+    def test_allows_disabled_invalid_package_rows_when_enabled_minimum_valid(self) -> None:
+        validate_flooring_package_for_publication(
+            "covering",
+            [
+                _valid_row(),
+                _valid_row(
+                    kind="consumable",
+                    section="consumable",
+                    public_category="consumables",
+                    formula="package_consumption",
+                    price=600,
+                    consumption_per_m2=1.5,
+                    package_size=None,
+                    is_enabled=False,
+                ),
+            ],
+        )

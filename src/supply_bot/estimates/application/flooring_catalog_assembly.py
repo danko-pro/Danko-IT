@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from typing import Any, Protocol
 
 from supply_bot.application.errors import NotFoundError, ValidationError
+from supply_bot.estimates.application.flooring_assembly_catalog import FLOORING_ASSEMBLY_FORMULAS
 from supply_bot.estimates.application.shared import (
     clamp_non_negative,
     normalize_required_text,
@@ -26,6 +27,18 @@ LAYOUT_ALLOWED_ROW_KINDS = frozenset({"work"})
 
 FLOORING_FLAT_UPDATE_BLOCKED_BY_ASSEMBLY = (
     "Flooring catalog row has an assembly; edit the assembly instead of flat fields"
+)
+
+_PACKAGE_AWARE_FORMULAS = frozenset(
+    {
+        "package_consumption",
+        "layer_consumption",
+        "piece_consumption",
+        "kg_layer_consumption",
+        "liquid_layers",
+        "roll_meter_consumption",
+        "sheet_area_consumption",
+    }
 )
 
 
@@ -121,6 +134,7 @@ class ReplaceFlooringCatalogAssemblyUseCase:
         )
         version = _normalize_version(command.version)
         normalized_rows = _normalize_rows(command.rows or [], target_kind=target_kind)
+        validate_flooring_package_for_publication(target_kind, normalized_rows)
         catalog_updates: dict[str, Any] | None = None
         if _has_enabled_assembly_rows(normalized_rows):
             from supply_bot.estimates.application.flooring_package_projection import (
@@ -291,3 +305,75 @@ def _normalize_sort_order(value: int | None, *, index: int) -> int:
     except (TypeError, ValueError) as exc:
         raise ValidationError("Invalid flooring catalog assembly row sort order") from exc
     return normalized
+
+
+def validate_flooring_package_for_publication(
+    target_kind: str,
+    rows: list[dict[str, Any]],
+) -> None:
+    """Reject empty, all-disabled, or structurally invalid flooring catalog assemblies."""
+
+    if not rows:
+        raise ValidationError("Flooring catalog assembly must have at least one row")
+
+    enabled_rows = [row for row in rows if row.get("is_enabled")]
+    if not enabled_rows:
+        raise ValidationError("Flooring catalog assembly must have at least one enabled row")
+
+    _validate_enabled_row_kinds_for_target(target_kind, enabled_rows)
+
+    for row in enabled_rows:
+        _validate_enabled_row_formula_params(row)
+
+
+def _validate_enabled_row_kinds_for_target(target_kind: str, enabled_rows: list[dict[str, Any]]) -> None:
+    if target_kind == "covering":
+        if not any(row.get("kind") == "material" for row in enabled_rows):
+            raise ValidationError("Floor covering assembly requires at least one enabled material row")
+        return
+    if not any(row.get("kind") == "work" for row in enabled_rows):
+        label = "preparation" if target_kind == "preparation" else "layout"
+        raise ValidationError(f"Floor {label} assembly requires at least one enabled work row")
+
+
+def _validate_enabled_row_formula_params(row: dict[str, Any]) -> None:
+    formula = (row.get("formula") or "").strip()
+    if formula not in FLOORING_ASSEMBLY_FORMULAS:
+        raise ValidationError("Invalid flooring catalog assembly row formula")
+
+    price = _positive_number(row.get("price"), allow_zero=True)
+    consumption = _positive_number(row.get("consumption_per_m2"), allow_zero=True)
+    package_size = _positive_number(row.get("package_size"))
+    layer_mm = _positive_number(row.get("layer_mm"))
+
+    if formula == "unit_consumption":
+        if consumption <= 0:
+            raise ValidationError("Assembly row unit_consumption requires consumption_per_m2 > 0")
+        return
+
+    if formula == "flat_per_m2":
+        return
+
+    if formula in _PACKAGE_AWARE_FORMULAS:
+        if consumption <= 0:
+            raise ValidationError(f"Assembly row {formula} requires consumption_per_m2 > 0")
+        if package_size <= 0:
+            raise ValidationError(f"Assembly row {formula} requires package_size > 0")
+        if price <= 0:
+            raise ValidationError(f"Assembly row {formula} requires price > 0")
+        if formula in {"layer_consumption", "kg_layer_consumption", "liquid_layers"} and layer_mm <= 0:
+            raise ValidationError(f"Assembly row {formula} requires layer_mm > 0")
+
+
+def _positive_number(value: Any, *, allow_zero: bool = False) -> float:
+    if value in (None, ""):
+        return 0.0
+    if isinstance(value, bool):
+        return 0.0
+    try:
+        parsed = float(value)
+    except (TypeError, ValueError):
+        return 0.0
+    if parsed < 0 or (not allow_zero and parsed <= 0):
+        return 0.0
+    return parsed

@@ -22,10 +22,17 @@ export type AggregatedClientLineSource = {
   packageCode?: string;
   procurementCode?: string;
   lineId?: string;
+  rawQuantity?: number;
+  rawUnit?: string;
+  purchaseMode?: "raw" | "package";
 };
 
 export type AggregatedClientLine = EstimateDocumentLine & {
   sources?: AggregatedClientLineSource[];
+  displayQuantity?: number;
+  displayUnit?: string;
+  displayUnitPrice?: number;
+  presentationNote?: string;
 };
 
 export type EstimatePresentationGroupKind = "works" | "materials" | "detail";
@@ -60,6 +67,56 @@ function roundMoney(value: number) {
 
 function lineTotal(quantity: number, unitPrice: number) {
   return roundMoney(safeMoney(quantity) * safeMoney(unitPrice));
+}
+
+const DISPLAY_UNIT_ALIASES: Record<string, string> = {
+  kg: "кг",
+  l: "л",
+  liter: "л",
+  litre: "л",
+  pcs: "шт",
+  pc: "шт",
+  m2: "м²",
+  "m²": "м²",
+  m: "м",
+  package: "уп.",
+  уп: "уп.",
+  "уп.": "уп.",
+};
+
+export function formatDisplayUnit(unit: string): string {
+  const trimmed = unit.trim();
+
+  if (!trimmed) {
+    return "уп.";
+  }
+
+  const mapped = DISPLAY_UNIT_ALIASES[trimmed.toLowerCase()];
+
+  return mapped ?? trimmed;
+}
+
+function formatRawConsumptionNote(rawQuantity: number, rawUnit: string): string {
+  return `Исходный расход: ${safeMoney(rawQuantity)} ${formatDisplayUnit(rawUnit)}`;
+}
+
+export function formatAggregatedLinePresentation(line: AggregatedClientLine): AggregatedClientLine {
+  if (line.displayQuantity !== undefined && line.displayUnit !== undefined) {
+    return line;
+  }
+
+  return {
+    ...line,
+    displayQuantity: line.quantity,
+    displayUnit: formatDisplayUnit(line.unit),
+    displayUnitPrice: line.displayUnitPrice ?? line.unitPrice,
+  };
+}
+
+function enrichPresentationLines(lines: AggregatedClientLine[]): AggregatedClientLine[] {
+  return lines.map((line) =>
+    line.category === "works" ? line : formatAggregatedLinePresentation(line),
+  );
 }
 
 export function stripRoomSuffix(title: string): string {
@@ -174,10 +231,31 @@ function mapProcurementCategoryToEstimateCategory(
 
 function procurementLineToAggregatedLine(line: FlooringProcurementLine): AggregatedClientLine {
   const category = mapProcurementCategoryToEstimateCategory(line.category);
-  const unitPrice =
-    line.purchaseMode === "package" && line.packagePrice !== undefined
-      ? line.packagePrice
-      : line.unitPrice;
+  const source = {
+    procurementCode: line.code,
+    rawQuantity: line.rawQuantity,
+    rawUnit: line.rawUnit,
+    purchaseMode: line.purchaseMode,
+  };
+
+  if (line.purchaseMode === "package" && line.packagePrice !== undefined) {
+    return {
+      id: stableAggregatedId("procurement", line.aggregationKey),
+      title: line.title,
+      category,
+      quantity: line.purchaseQuantity,
+      unit: line.purchaseUnit,
+      unitPrice: line.packagePrice,
+      total: line.total,
+      isIncluded: true,
+      note: line.calculationNote ?? line.note,
+      displayQuantity: line.purchaseQuantity,
+      displayUnit: formatDisplayUnit(line.purchaseUnit),
+      displayUnitPrice: line.packagePrice,
+      presentationNote: formatRawConsumptionNote(line.rawQuantity, line.rawUnit),
+      sources: [source],
+    };
+  }
 
   return {
     id: stableAggregatedId("procurement", line.aggregationKey),
@@ -185,12 +263,76 @@ function procurementLineToAggregatedLine(line: FlooringProcurementLine): Aggrega
     category,
     quantity: line.purchaseQuantity,
     unit: line.purchaseUnit,
-    unitPrice,
+    unitPrice: line.unitPrice,
     total: line.total,
     isIncluded: true,
     note: line.calculationNote ?? line.note,
-    sources: [{ procurementCode: line.code }],
+    displayQuantity: line.purchaseQuantity,
+    displayUnit: formatDisplayUnit(line.purchaseUnit),
+    displayUnitPrice: line.unitPrice,
+    sources: [source],
   };
+}
+
+function materialPresentationMergeKey(line: AggregatedClientLine): string {
+  return [line.title, line.category, line.unit, line.unitPrice].join("|");
+}
+
+function mergePresentationNotes(
+  left: string | undefined,
+  right: string | undefined,
+  mergedSources: AggregatedClientLineSource[],
+): string | undefined {
+  const rawSources = mergedSources.filter(
+    (source) => source.purchaseMode === "package" && source.rawQuantity !== undefined && source.rawUnit,
+  );
+
+  if (rawSources.length === 0) {
+    return left ?? right;
+  }
+
+  const rawByUnit = new Map<string, number>();
+
+  for (const source of rawSources) {
+    const unitKey = source.rawUnit!;
+    rawByUnit.set(unitKey, safeMoney(rawByUnit.get(unitKey) ?? 0) + safeMoney(source.rawQuantity!));
+  }
+
+  return [...rawByUnit.entries()]
+    .map(([rawUnit, rawQuantity]) => formatRawConsumptionNote(rawQuantity, rawUnit))
+    .join("; ");
+}
+
+function mergeDuplicateMaterialLines(lines: AggregatedClientLine[]): AggregatedClientLine[] {
+  const buckets = new Map<string, AggregatedClientLine>();
+
+  for (const line of lines) {
+    const key = materialPresentationMergeKey(line);
+    const existing = buckets.get(key);
+
+    if (!existing) {
+      buckets.set(key, line);
+      continue;
+    }
+
+    const quantity = safeMoney(existing.quantity) + safeMoney(line.quantity);
+    const displayQuantity =
+      existing.displayQuantity !== undefined || line.displayQuantity !== undefined
+        ? safeMoney(existing.displayQuantity ?? existing.quantity) + safeMoney(line.displayQuantity ?? line.quantity)
+        : undefined;
+    const sources = [...(existing.sources ?? []), ...(line.sources ?? [])];
+
+    buckets.set(key, {
+      ...existing,
+      quantity,
+      displayQuantity,
+      total: lineTotal(quantity, existing.unitPrice),
+      sources,
+      presentationNote: mergePresentationNotes(existing.presentationNote, line.presentationNote, sources),
+    });
+  }
+
+  return [...buckets.values()];
 }
 
 function isGlobalMaterialLine(line: EstimateDocumentLine): boolean {
@@ -228,7 +370,7 @@ export function materialLinesFromProcurement(
     });
   }
 
-  return materialLines;
+  return enrichPresentationLines(mergeDuplicateMaterialLines(materialLines));
 }
 
 export function aggregateMaterialLinesFromDocumentLines(
@@ -236,15 +378,17 @@ export function aggregateMaterialLinesFromDocumentLines(
 ): AggregatedClientLine[] {
   const materialLines = lines.filter((line) => MATERIAL_DOCUMENT_CATEGORIES.has(line.category));
 
-  return aggregateLinesByKey(
-    materialLines,
-    documentMaterialAggregationKey,
-    "material",
-    (line) => ({
-      roomName: line.roomName,
-      packageCode: line.packageCode,
-      lineId: line.id,
-    }),
+  return enrichPresentationLines(
+    aggregateLinesByKey(
+      materialLines,
+      documentMaterialAggregationKey,
+      "material",
+      (line) => ({
+        roomName: line.roomName,
+        packageCode: line.packageCode,
+        lineId: line.id,
+      }),
+    ),
   );
 }
 

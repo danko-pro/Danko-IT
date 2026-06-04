@@ -4,8 +4,11 @@ import {
   buildFlatDocumentSection,
   buildPublicEstimateDocument,
   calculateDocumentLineTotals,
+  documentToEstimateSpecModalData,
+  documentToEstimateSpecSections,
   type BuildPublicEstimateDocumentInput,
 } from "./public-estimate-document";
+import { mapSectionsForSpec } from "./spec";
 import { calculateFlooring, type FlooringOptions, type FlooringRoomInput } from "../public-estimate-flooring";
 import {
   FLOORING_GOLDEN_SNAPSHOT,
@@ -343,6 +346,66 @@ describe("buildPublicEstimateDocument flooring", () => {
 
     expect(flooringResult.procurementLines.length).toBeGreaterThan(0);
     expect(document.appendices?.procurement).toEqual(flooringResult.procurementLines);
+  });
+});
+
+describe("documentToEstimateSpecModalData", () => {
+  it("matches mapSectionsForSpec sections with legacy totals for full modal", () => {
+    const wallsSection = createEstimateSection("walls", "Стены", [
+      makeItem("wall-works", "walls", "works", 10, 100),
+    ]);
+    const plumbingSection = createEstimateSection("plumbing", "Сантехника", []);
+    const estimateResult = { sections: [wallsSection, plumbingSection], totals: wallsSection.totals };
+
+    const document = buildPublicEstimateDocument(
+      buildDocumentInput(estimateResult, {
+        plumbingOptions: defaultPlumbingOptions(),
+        plumbingResult: emptyPlumbingResult(),
+        modalState: { kind: "full" },
+      }),
+    );
+
+    const legacyModal = mapSectionsForSpec(
+      estimateResult.sections,
+      defaultPlumbingOptions(),
+      emptyPlumbingResult(),
+      { specificationSection: createEstimateSection("flooring", "Полы", []) },
+    );
+    const adapted = documentToEstimateSpecSections(document, estimateResult.sections);
+
+    expect(adapted).toEqual(legacyModal);
+    expect(
+      documentToEstimateSpecModalData(document, {
+        subtitle: "Все разделы текущей сметы по позициям",
+        legacySections: estimateResult.sections,
+        includeProcurement: true,
+      }),
+    ).toMatchObject({
+      title: "Полная спецификация",
+      subtitle: "Все разделы текущей сметы по позициям",
+      sections: legacyModal,
+    });
+  });
+
+  it("preserves legacy section totals when document line totals differ", () => {
+    const flatSection = createEstimateSection("flooring", "Полы", [
+      makeItem("flooring-material-room", "flooring", "materials", 1, 100, true),
+    ]);
+    const specSection = createEstimateSection("flooring", "Полы", [
+      makeItem("flooring-spec-line", "flooring", "materials", 16, 930, true),
+    ]);
+    const document = buildPublicEstimateDocument(
+      buildDocumentInput({ sections: [flatSection], totals: flatSection.totals }, {
+        flooringResult: { specificationSection: specSection, procurementLines: [] },
+        modalState: { kind: "section", sectionId: "flooring" },
+      }),
+    );
+
+    const [adapted] = documentToEstimateSpecSections(document, [flatSection]);
+
+    expect(adapted?.items[0]?.id).toBe("flooring-spec-line");
+    expect(adapted?.totals.total).toBe(flatSection.totals.total);
+    expect(adapted?.totals.total).not.toBe(specSection.totals.total);
   });
 });
 

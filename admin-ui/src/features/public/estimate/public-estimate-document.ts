@@ -186,6 +186,10 @@ export function documentToEstimateSpecSections(
       section.specIntro = documentSection.specIntro;
     }
 
+    if (documentSection.presentationGroups?.length) {
+      section.presentationGroups = documentSection.presentationGroups;
+    }
+
     return section;
   });
 }

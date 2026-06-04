@@ -1,5 +1,6 @@
 import plumbingSnapshotData from "./generated/plumbing.snapshot.json";
 
+import type { EstimatePresentationGroup } from "./estimate/aggregate-client-lines";
 import type {
   EstimateCostCategory,
   EstimateLineItem,
@@ -822,6 +823,7 @@ function isLegacyBathLine(item: EstimateLineItem): boolean {
 
 export type EstimateSpecSection = EstimateSection & {
   specIntro?: string;
+  presentationGroups?: EstimatePresentationGroup[];
 };
 
 export type ExpandPlumbingSectionForSpecOptions = {

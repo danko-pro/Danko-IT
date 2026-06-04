@@ -435,17 +435,24 @@ class AdminCalculatorFlooringRouteTests(AdminProjectsRouteCase):
                 covering_id = asyncio.run(_laminate_id(global_repo))
 
                 self._login_admin(client)
-                patch = client.patch(
-                    f"/api/calculator/flooring/coverings/{covering_id}",
-                    json=_minimal_covering_kwargs(
-                        title="Ламинат",
-                        material_price_per_m2=4321,
-                        labor_price_per_m2=5432,
-                        underlay_mode="none",
-                    ),
+                assembly_path = f"/api/calculator/flooring/covering/{covering_id}/assembly"
+                existing = client.get(assembly_path)
+                self.assertEqual(existing.status_code, 200)
+                rows = existing.json().get("rows") or []
+                material_rows = [row for row in rows if row.get("kind") == "material"]
+                self.assertGreaterEqual(len(material_rows), 1)
+                material_rows[0]["price"] = 4321
+                material_rows[0]["consumption_per_m2"] = 1
+
+                put = client.put(
+                    assembly_path,
+                    json={
+                        "title": existing.json()["title"] or "Ламинат (технический пакет PF2)",
+                        "rows": rows if rows else [_assembly_row(price=4321, consumption_per_m2=1, public_title="Ламинат")],
+                    },
                 )
-                self.assertEqual(patch.status_code, 200)
-                self.assertEqual(patch.json()["material_price_per_m2"], 4321)
+                self.assertEqual(put.status_code, 200)
+                self.assertEqual(put.json()["rows"][0]["price"], 4321)
 
                 material_price = asyncio.run(_laminate_material_from_snapshot(global_repo))
                 self.assertEqual(material_price, 4321)

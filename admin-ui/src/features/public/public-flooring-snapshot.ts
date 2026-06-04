@@ -469,13 +469,130 @@ export function validateFlooringSnapshot(payload: unknown) {
   return { ok: true as const };
 }
 
-export function loadFlooringSnapshot(): FlooringSnapshot {
+const DEV_API_BASE = "http://127.0.0.1:8000";
+const PUBLIC_FLOORING_SNAPSHOT_PATH = "/api/public/catalog/flooring/snapshot";
+
+export type FlooringSnapshotSource = "bundled" | "remote";
+
+function resolvePublicFlooringSnapshotUrl(): string {
+  const rawApiBase = import.meta.env.VITE_API_BASE_URL?.trim();
+  const base = rawApiBase ? rawApiBase.replace(/\/+$/, "") : DEV_API_BASE;
+  return `${base}${PUBLIC_FLOORING_SNAPSHOT_PATH}`;
+}
+
+function loadBundledFlooringSnapshot(): FlooringSnapshot {
   const validation = validateFlooringSnapshot(flooringSnapshotData);
   if (!validation.ok) {
     throw new Error(`flooring.snapshot: ${validation.reason}`);
   }
 
   return flooringSnapshotData as FlooringSnapshot;
+}
+
+const bundledFlooringSnapshot = loadBundledFlooringSnapshot();
+
+let currentFlooringSnapshot: FlooringSnapshot = bundledFlooringSnapshot;
+let flooringSnapshotSource: FlooringSnapshotSource = "bundled";
+let flooringSnapshotRevision = 0;
+const flooringSnapshotListeners = new Set<() => void>();
+
+/**
+ * One fetch per page load (module lifetime). Concurrent callers share the same promise
+ * (covers React StrictMode double mount invoking refresh twice before completion).
+ */
+let flooringSnapshotRefreshPromise: Promise<void> | null = null;
+let flooringSnapshotRefreshDone = false;
+
+function notifyFlooringSnapshotListeners(): void {
+  flooringSnapshotRevision += 1;
+  for (const listener of flooringSnapshotListeners) {
+    listener();
+  }
+}
+
+function applyRemoteFlooringSnapshot(payload: unknown): boolean {
+  const validation = validateFlooringSnapshot(payload);
+  if (!validation.ok) {
+    if (import.meta.env.DEV) {
+      console.warn(`flooring snapshot remote ignored: ${validation.reason}`);
+    }
+    return false;
+  }
+
+  currentFlooringSnapshot = payload as FlooringSnapshot;
+  flooringSnapshotSource = "remote";
+  notifyFlooringSnapshotListeners();
+  return true;
+}
+
+export function getCurrentFlooringSnapshot(): FlooringSnapshot {
+  return currentFlooringSnapshot;
+}
+
+export function getFlooringSnapshotSource(): FlooringSnapshotSource {
+  return flooringSnapshotSource;
+}
+
+export function getFlooringSnapshotRevision(): number {
+  return flooringSnapshotRevision;
+}
+
+export function subscribeFlooringSnapshot(listener: () => void): () => void {
+  flooringSnapshotListeners.add(listener);
+  return () => {
+    flooringSnapshotListeners.delete(listener);
+  };
+}
+
+export function loadFlooringSnapshot(): FlooringSnapshot {
+  return currentFlooringSnapshot;
+}
+
+/**
+ * Fetches public flooring snapshot once per page load. Invalid or failed responses keep bundled data.
+ */
+export async function refreshFlooringSnapshotOnce(): Promise<void> {
+  if (flooringSnapshotRefreshDone) {
+    return;
+  }
+
+  if (flooringSnapshotRefreshPromise) {
+    return flooringSnapshotRefreshPromise;
+  }
+
+  flooringSnapshotRefreshPromise = (async () => {
+    try {
+      const response = await fetch(resolvePublicFlooringSnapshotUrl());
+      if (!response.ok) {
+        return;
+      }
+
+      const payload = await response.json();
+      applyRemoteFlooringSnapshot(payload);
+    } catch (error) {
+      if (import.meta.env.DEV) {
+        console.warn("flooring snapshot remote fetch failed", error);
+      }
+    } finally {
+      flooringSnapshotRefreshDone = true;
+      flooringSnapshotRefreshPromise = null;
+    }
+  })();
+
+  return flooringSnapshotRefreshPromise;
+}
+
+/** @internal test helper */
+export function resetFlooringSnapshotRuntimeForTests(
+  snapshot: FlooringSnapshot = bundledFlooringSnapshot,
+  source: FlooringSnapshotSource = "bundled",
+): void {
+  currentFlooringSnapshot = snapshot;
+  flooringSnapshotSource = source;
+  flooringSnapshotRevision = 0;
+  flooringSnapshotRefreshDone = false;
+  flooringSnapshotRefreshPromise = null;
+  flooringSnapshotListeners.clear();
 }
 
 export function isFlooringLegacyV1(version: string): boolean {

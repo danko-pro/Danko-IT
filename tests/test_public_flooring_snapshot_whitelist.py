@@ -366,6 +366,33 @@ class FlooringSnapshotSpecLinesTests(unittest.IsolatedAsyncioTestCase):
         payload = await BuildFlooringSnapshotUseCase(self.repository).build_public()
         self.assertEqual(payload["coverings"], [])
 
+    async def test_numeric_unit_assembly_is_not_published(self) -> None:
+        covering_id = await self.repository.create_estimate_flooring_covering(**_minimal_covering_kwargs(title="Ламинат"))
+        await self.repository.replace_estimate_flooring_catalog_assembly(
+            "covering",
+            covering_id,
+            "Invalid unit package",
+            [_sample_assembly_row(title="Primer", public_title="Грунт", unit="0,08")],
+        )
+        payload = await BuildFlooringSnapshotUseCase(self.repository).build_public()
+        self.assertEqual(payload["coverings"], [])
+
+    async def test_zero_price_layout_work_is_not_published(self) -> None:
+        layout_id = await self.repository.create_estimate_flooring_layout(
+            title="Прямой",
+            labor_price_per_m2=0,
+            labor_multiplier=1.1,
+            extra_waste_percent=5,
+        )
+        await self.repository.replace_estimate_flooring_catalog_assembly(
+            "layout",
+            layout_id,
+            "Zero layout package",
+            [_work_assembly_row(title="Straight", public_title="Прямой", price=0, consumption_per_m2=1.1)],
+        )
+        payload = await BuildFlooringSnapshotUseCase(self.repository).build_public()
+        self.assertEqual(payload["layouts"], [])
+
     async def test_layout_without_assembly_is_omitted_from_snapshot(self) -> None:
         await self.repository.create_estimate_flooring_layout(
             title="Крупный формат",

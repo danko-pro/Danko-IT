@@ -15,9 +15,6 @@ import {
 } from "./public-flooring-snapshot";
 import packageSeed from "../../../scripts/flooring-v2-package-seed.json";
 
-const EXPECTED_COVERING_CODES = ["porcelain", "quartz_vinyl", "laminate", "carpet", "engineered_wood"];
-const EXPECTED_PREPARATION_CODES = ["none", "primer", "self_leveling", "waterproofing"];
-const EXPECTED_LAYOUT_CODES = ["straight", "large_format_straight", "glue", "floating"];
 const EXPECTED_PLINTH_CODES = ["none", "duropolymer", "painted_mdf"];
 
 function expectCodesPresent(items: Array<{ code: string }>, expectedCodes: string[]) {
@@ -46,11 +43,14 @@ describe("flooring snapshot", () => {
     expect(snapshot.coverings.every((item) => Array.isArray(item.specLines) && item.specLines.length > 0)).toBe(true);
   });
 
-  it("contains all expected catalog codes", () => {
+  it("contains non-empty package-backed catalog sections", () => {
     const snapshot = loadFlooringSnapshot();
-    expectCodesPresent(snapshot.coverings, EXPECTED_COVERING_CODES);
-    expectCodesPresent(snapshot.preparations, EXPECTED_PREPARATION_CODES);
-    expectCodesPresent(snapshot.layouts, EXPECTED_LAYOUT_CODES);
+    expect(snapshot.coverings.length).toBeGreaterThan(0);
+    expect(snapshot.preparations.length).toBeGreaterThan(0);
+    expect(snapshot.layouts.length).toBeGreaterThan(0);
+    expect(snapshot.coverings.every((item) => item.specLines.length > 0)).toBe(true);
+    expect(snapshot.preparations.every((item) => item.specLines.length > 0)).toBe(true);
+    expect(snapshot.layouts.every((item) => item.specLines.length > 0)).toBe(true);
     expectCodesPresent(snapshot.plinthTypes, EXPECTED_PLINTH_CODES);
   });
 
@@ -158,6 +158,25 @@ describe("flooring snapshot", () => {
     });
   });
 
+  it("rejects numeric-looking specLine units", () => {
+    const payload = {
+      ...packageSeed,
+      coverings: packageSeed.coverings.map((item) =>
+        item.code === "laminate"
+          ? {
+              ...item,
+              specLines: item.specLines.map((line, index) => (index === 0 ? { ...line, unit: "0,08" } : line)),
+            }
+          : item,
+      ),
+    };
+
+    expect(validateFlooringSnapshot(payload)).toEqual({
+      ok: false,
+      reason: "coverings[laminate].specLines[0].unit must be a measurement unit",
+    });
+  });
+
   it("has no forbidden internal keys in the package seed", () => {
     expect(validateFlooringSnapshot(packageSeed)).toEqual({ ok: true });
   });
@@ -179,7 +198,7 @@ describe("flooring snapshot", () => {
       }),
     ).toEqual({
       ok: false,
-      reason: "coverings missing required code: porcelain",
+      reason: "coverings must contain at least one item",
     });
 
     expect(
@@ -193,6 +212,36 @@ describe("flooring snapshot", () => {
     ).toEqual({
       ok: false,
       reason: "forbidden internal keys: note",
+    });
+  });
+
+  it("accepts flooring-v2 payloads without legacy seed codes when rows are package-backed", () => {
+    expect(
+      validateFlooringSnapshot({
+        ...packageSeed,
+        layouts: packageSeed.layouts.filter((item) => item.code !== "large_format_straight"),
+      }),
+    ).toEqual({ ok: true });
+  });
+
+  it("keeps required seed codes for legacy flooring-v1 payloads", () => {
+    expect(
+      validateFlooringSnapshot({
+        version: "flooring-v1",
+        coverings: packageSeed.coverings
+          .filter((item) => item.code !== "porcelain")
+          .map(({ specLines: _specLines, ...item }) => ({
+            ...item,
+            laborPricePerM2: 1000,
+          })),
+        preparations: packageSeed.preparations.map(({ specLines: _specLines, ...item }) => item),
+        layouts: packageSeed.layouts.map(({ specLines: _specLines, laborPricePerM2: _legacy, ...item }) => item),
+        plinthTypes: packageSeed.plinthTypes,
+        globalAddons: packageSeed.globalAddons,
+      }),
+    ).toEqual({
+      ok: false,
+      reason: "coverings missing required code: porcelain",
     });
   });
 
@@ -223,15 +272,16 @@ describe("flooring snapshot", () => {
   });
 
   it("getFlooringSnapshotCatalog returns full catalog items by code", () => {
+    const snapshot = loadFlooringSnapshot();
     const catalog = getFlooringSnapshotCatalog();
+    const covering = snapshot.coverings[0];
+    const preparation = snapshot.preparations[0];
+    const layout = snapshot.layouts[0];
 
-    expect(catalog.coverings.laminate.code).toBe("laminate");
-    expect(catalog.preparations.none.code).toBe("none");
-    expect(catalog.layouts.straight.code).toBe("straight");
-    expect(catalog.coverings.laminate.materialPricePerM2).toBe(
-      packageSeed.coverings.find((item) => item.code === "laminate")?.materialPricePerM2,
-    );
-    expect(catalog.coverings.laminate.specLines.length).toBeGreaterThan(0);
+    expect(catalog.coverings[covering.code]).toEqual(covering);
+    expect(catalog.preparations[preparation.code]).toEqual(preparation);
+    expect(catalog.layouts[layout.code]).toEqual(layout);
+    expect(catalog.coverings[covering.code].specLines.length).toBeGreaterThan(0);
   });
 
   it("getFlooringSnapshotCatalog exposes custom active snapshot codes with specLines", () => {

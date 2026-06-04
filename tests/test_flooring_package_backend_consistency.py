@@ -298,6 +298,51 @@ class FlooringPackageBackendConsistencyTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(covering["material_price_per_m2"], 11)
         self.assertEqual(covering["labor_price_per_m2"], 22)
 
+    async def test_numeric_unit_rejected_on_assembly_save(self) -> None:
+        covering_id = await self.repository.create_estimate_flooring_covering(**_sample_covering_kwargs())
+        with self.assertRaises(ValidationError) as ctx:
+            await ReplaceFlooringCatalogAssemblyUseCase(self.repository).execute(
+                ReplaceFlooringCatalogAssemblyCommand(
+                    target_kind="covering",
+                    target_id=covering_id,
+                    title="Invalid unit",
+                    version=None,
+                    rows=[_assembly_row_command(unit="0,08")],
+                )
+            )
+
+        self.assertIn("measurement unit", str(ctx.exception))
+
+    async def test_zero_price_layout_work_rejected_on_assembly_save(self) -> None:
+        layout_id = await self.repository.create_estimate_flooring_layout(
+            title="Layout",
+            labor_price_per_m2=1,
+            labor_multiplier=1,
+            extra_waste_percent=0,
+        )
+        with self.assertRaises(ValidationError) as ctx:
+            await ReplaceFlooringCatalogAssemblyUseCase(self.repository).execute(
+                ReplaceFlooringCatalogAssemblyCommand(
+                    target_kind="layout",
+                    target_id=layout_id,
+                    title="Zero layout",
+                    version=None,
+                    rows=[
+                        _assembly_row_command(
+                            section="work",
+                            kind="work",
+                            formula="flat_per_m2",
+                            title="Lay",
+                            price=0,
+                            public_category="works",
+                            public_title="Lay",
+                        )
+                    ],
+                )
+            )
+
+        self.assertIn("require price > 0", str(ctx.exception))
+
     async def test_flat_patch_allowed_when_all_disabled_assembly_rejected(self) -> None:
         covering_id = await self.repository.create_estimate_flooring_covering(**_sample_covering_kwargs())
         with self.assertRaises(ValidationError):

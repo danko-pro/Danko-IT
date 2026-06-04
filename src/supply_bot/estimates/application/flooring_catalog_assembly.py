@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import re
 from typing import Any, Protocol
 
 from supply_bot.application.errors import NotFoundError, ValidationError
@@ -40,6 +41,8 @@ _PACKAGE_AWARE_FORMULAS = frozenset(
         "sheet_area_consumption",
     }
 )
+
+_NUMERIC_UNIT_RE = re.compile(r"^\d+(?:[,.]\d+)?$")
 
 
 def validate_flooring_catalog_assembly_target_kind(target_kind: str) -> str:
@@ -256,7 +259,7 @@ def _normalize_rows(
                 "kind": kind,
                 "formula": normalize_required_text(row.formula, error_message="Assembly row formula is required"),
                 "title": normalize_required_text(row.title, error_message="Assembly row title is required"),
-                "unit": normalize_required_text(row.unit, error_message="Assembly row unit is required"),
+                "unit": _normalize_public_unit(row.unit),
                 "price": clamp_non_negative(row.price),
                 "consumption_per_m2": clamp_non_negative(row.consumption_per_m2),
                 "package_size": _optional_non_negative(row.package_size),
@@ -323,7 +326,7 @@ def validate_flooring_package_for_publication(
     _validate_enabled_row_kinds_for_target(target_kind, enabled_rows)
 
     for row in enabled_rows:
-        _validate_enabled_row_formula_params(row)
+        _validate_enabled_row_formula_params(target_kind, row)
 
 
 def _validate_enabled_row_kinds_for_target(target_kind: str, enabled_rows: list[dict[str, Any]]) -> None:
@@ -336,15 +339,19 @@ def _validate_enabled_row_kinds_for_target(target_kind: str, enabled_rows: list[
         raise ValidationError(f"Floor {label} assembly requires at least one enabled work row")
 
 
-def _validate_enabled_row_formula_params(row: dict[str, Any]) -> None:
+def _validate_enabled_row_formula_params(target_kind: str, row: dict[str, Any]) -> None:
     formula = (row.get("formula") or "").strip()
     if formula not in FLOORING_ASSEMBLY_FORMULAS:
         raise ValidationError("Invalid flooring catalog assembly row formula")
+    _normalize_public_unit(row.get("unit"))
 
     price = _positive_number(row.get("price"), allow_zero=True)
     consumption = _positive_number(row.get("consumption_per_m2"), allow_zero=True)
     package_size = _positive_number(row.get("package_size"))
     layer_mm = _positive_number(row.get("layer_mm"))
+
+    if target_kind == "layout" and row.get("kind") == "work" and price <= 0:
+        raise ValidationError("Floor layout assembly work rows require price > 0")
 
     if formula == "unit_consumption":
         if consumption <= 0:
@@ -363,6 +370,13 @@ def _validate_enabled_row_formula_params(row: dict[str, Any]) -> None:
             raise ValidationError(f"Assembly row {formula} requires price > 0")
         if formula in {"layer_consumption", "kg_layer_consumption", "liquid_layers"} and layer_mm <= 0:
             raise ValidationError(f"Assembly row {formula} requires layer_mm > 0")
+
+
+def _normalize_public_unit(value: Any) -> str:
+    unit = normalize_required_text(value, error_message="Assembly row unit is required")
+    if _NUMERIC_UNIT_RE.fullmatch(unit):
+        raise ValidationError("Assembly row unit must be a measurement unit, not a number")
+    return unit
 
 
 def _positive_number(value: Any, *, allow_zero: bool = False) -> float:

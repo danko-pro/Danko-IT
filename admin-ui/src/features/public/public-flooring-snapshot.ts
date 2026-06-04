@@ -181,6 +181,8 @@ const FLOORING_SPEC_LINE_REQUIRED_KEYS = [
   "unitPrice",
 ] as const;
 
+const NUMERIC_UNIT_PATTERN = /^\d+(?:[,.]\d+)?$/;
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
@@ -239,6 +241,9 @@ function validateSpecLines(
     if (typeof line.unit !== "string" || line.unit.length === 0) {
       return { ok: false, reason: `${arrayName}.specLines[${index}].unit must be a non-empty string` };
     }
+    if (NUMERIC_UNIT_PATTERN.test(line.unit.trim())) {
+      return { ok: false, reason: `${arrayName}.specLines[${index}].unit must be a measurement unit` };
+    }
     if (typeof line.quantityPerBasis !== "number" || !Number.isFinite(line.quantityPerBasis)) {
       return { ok: false, reason: `${arrayName}.specLines[${index}].quantityPerBasis must be a finite number` };
     }
@@ -295,6 +300,9 @@ function validateCatalogItems(
   const { requireSpecLines = false } = options;
   if (!Array.isArray(items)) {
     return { ok: false, reason: `${arrayName} must be an array` };
+  }
+  if (items.length === 0) {
+    return { ok: false, reason: `${arrayName} must contain at least one item` };
   }
 
   const seenCodes = new Set<string>();
@@ -424,23 +432,25 @@ export function validateFlooringSnapshot(payload: unknown) {
     return { ok: false as const, reason: "globalAddons rates must be finite numbers" };
   }
 
-  const requiredCoverings = validateRequiredCodes(payload.coverings, "coverings", EXPECTED_COVERING_CODES);
-  if (!requiredCoverings.ok) {
-    return requiredCoverings;
-  }
+  if (isLegacyV1) {
+    const requiredCoverings = validateRequiredCodes(payload.coverings, "coverings", EXPECTED_COVERING_CODES);
+    if (!requiredCoverings.ok) {
+      return requiredCoverings;
+    }
 
-  const requiredPreparations = validateRequiredCodes(
-    payload.preparations,
-    "preparations",
-    EXPECTED_PREPARATION_CODES,
-  );
-  if (!requiredPreparations.ok) {
-    return requiredPreparations;
-  }
+    const requiredPreparations = validateRequiredCodes(
+      payload.preparations,
+      "preparations",
+      EXPECTED_PREPARATION_CODES,
+    );
+    if (!requiredPreparations.ok) {
+      return requiredPreparations;
+    }
 
-  const requiredLayouts = validateRequiredCodes(payload.layouts, "layouts", EXPECTED_LAYOUT_CODES);
-  if (!requiredLayouts.ok) {
-    return requiredLayouts;
+    const requiredLayouts = validateRequiredCodes(payload.layouts, "layouts", EXPECTED_LAYOUT_CODES);
+    if (!requiredLayouts.ok) {
+      return requiredLayouts;
+    }
   }
 
   const requiredPlinthTypes = validateRequiredCodes(payload.plinthTypes, "plinthTypes", EXPECTED_PLINTH_CODES);

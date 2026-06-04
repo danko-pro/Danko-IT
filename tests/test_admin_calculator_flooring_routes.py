@@ -282,19 +282,104 @@ class AdminCalculatorFlooringRouteTests(AdminProjectsRouteCase):
                 self.assertEqual(layout.status_code, 200)
                 self.assertEqual(layout.json()["title"], layout_title)
 
+                covering_id = int(covering.json()["id"])
+                preparation_id = int(preparation.json()["id"])
+                layout_id = int(layout.json()["id"])
+
+                covering_put = client.put(
+                    f"/api/calculator/flooring/covering/{covering_id}/assembly",
+                    json={
+                        "title": f"{covering_title} (package)",
+                        "rows": [
+                            _assembly_row(
+                                title=covering_title,
+                                public_title=covering_title,
+                                price=3456,
+                                consumption_per_m2=1,
+                            ),
+                            _assembly_row(
+                                section="consumable",
+                                kind="consumable",
+                                formula="unit_consumption",
+                                title="Грунт",
+                                public_title="Грунт",
+                                unit="l",
+                                price=250,
+                                consumption_per_m2=0.1,
+                                public_category="consumables",
+                                sort_order=20,
+                            ),
+                            _assembly_row(
+                                section="tool",
+                                kind="tool",
+                                formula="flat_per_m2",
+                                title="Tool consumables",
+                                public_title="Tool consumables",
+                                unit="m2",
+                                price=40,
+                                consumption_per_m2=1,
+                                public_category="tools",
+                                sort_order=30,
+                            ),
+                        ],
+                    },
+                )
+                self.assertEqual(covering_put.status_code, 200)
+
+                preparation_put = client.put(
+                    f"/api/calculator/flooring/preparation/{preparation_id}/assembly",
+                    json={
+                        "title": f"{preparation_title} (package)",
+                        "rows": [
+                            _assembly_row(
+                                section="work",
+                                kind="work",
+                                title=preparation_title,
+                                public_title=preparation_title,
+                                price=456,
+                                consumption_per_m2=1,
+                                public_category="works",
+                            )
+                        ],
+                    },
+                )
+                self.assertEqual(preparation_put.status_code, 200)
+
+                layout_put = client.put(
+                    f"/api/calculator/flooring/layout/{layout_id}/assembly",
+                    json={
+                        "title": f"{layout_title} (package)",
+                        "rows": [
+                            _assembly_row(
+                                section="work",
+                                kind="work",
+                                title=layout_title,
+                                public_title=layout_title,
+                                price=2345,
+                                consumption_per_m2=1.2,
+                                public_category="works",
+                            )
+                        ],
+                    },
+                )
+                self.assertEqual(layout_put.status_code, 200)
+
                 snapshot = client.get("/api/public/catalog/flooring/snapshot")
                 self.assertEqual(snapshot.status_code, 200)
                 payload = snapshot.json()
 
                 custom_covering = next(item for item in payload["coverings"] if item["title"] == covering_title)
                 self.assertEqual(custom_covering["materialPricePerM2"], 3456)
+                self.assertIn("specLines", custom_covering)
                 custom_preparation = next(
                     item for item in payload["preparations"] if item["title"] == preparation_title
                 )
                 self.assertEqual(custom_preparation["laborPricePerM2"], 456)
+                self.assertIn("specLines", custom_preparation)
                 custom_layout = next(item for item in payload["layouts"] if item["title"] == layout_title)
-                self.assertEqual(custom_layout["laborPricePerM2"], 2345)
+                self.assertEqual(custom_layout["laborPricePerM2"], 2814)
                 self.assertEqual(custom_layout["laborFactor"], 1.2)
+                self.assertIn("specLines", custom_layout)
 
     def test_duplicate_flooring_catalog_title_returns_conflict(self) -> None:
         with TemporaryDirectory() as tmp_dir:

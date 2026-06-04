@@ -13,7 +13,7 @@ import {
   loadFlooringSnapshot,
   validateFlooringSnapshot,
 } from "./public-flooring-snapshot";
-import flooringSnapshotData from "./generated/flooring.snapshot.json";
+import packageSeed from "../../../scripts/flooring-v2-package-seed.json";
 
 const EXPECTED_COVERING_CODES = ["porcelain", "quartz_vinyl", "laminate", "carpet", "engineered_wood"];
 const EXPECTED_PREPARATION_CODES = ["none", "primer", "self_leveling", "waterproofing"];
@@ -29,14 +29,21 @@ function expectCodesPresent(items: Array<{ code: string }>, expectedCodes: strin
 }
 
 describe("flooring snapshot", () => {
-  it("loads and validates the generated v2 snapshot", () => {
+  it("loads and validates the package-first v2 seed", () => {
+    expect(validateFlooringSnapshot(packageSeed)).toEqual({ ok: true });
+    expect(packageSeed.version).toBe("flooring-v2");
+    expect(packageSeed.coverings.find((item) => item.code === "laminate")?.materialPricePerM2).toBe(930);
+    expect(packageSeed.layouts.find((item) => item.code === "straight")?.laborPricePerM2).toBe(1000);
+    expect(packageSeed.globalAddons.thresholdPrice).toBe(900);
+    expect(packageSeed.coverings.every((item) => Array.isArray(item.specLines) && item.specLines.length > 0)).toBe(
+      true,
+    );
+  });
+
+  it("loads generated snapshot after package-first prebuild", () => {
     const snapshot = loadFlooringSnapshot();
     expect(snapshot.version).toBe("flooring-v2");
-    expect(snapshot.coverings.find((item) => item.code === "laminate")?.materialPricePerM2).toBe(
-      flooringSnapshotData.coverings.find((item) => item.code === "laminate")?.materialPricePerM2,
-    );
-    expect(snapshot.layouts.find((item) => item.code === "straight")?.laborPricePerM2).toBe(1000);
-    expect(snapshot.globalAddons.thresholdPrice).toBe(900);
+    expect(snapshot.coverings.every((item) => Array.isArray(item.specLines) && item.specLines.length > 0)).toBe(true);
   });
 
   it("contains all expected catalog codes", () => {
@@ -47,10 +54,22 @@ describe("flooring snapshot", () => {
     expectCodesPresent(snapshot.plinthTypes, EXPECTED_PLINTH_CODES);
   });
 
+  it("rejects flooring-v2 catalog rows without specLines", () => {
+    const payload = {
+      ...packageSeed,
+      coverings: packageSeed.coverings.map(({ specLines: _specLines, ...item }) => item),
+    };
+
+    expect(validateFlooringSnapshot(payload)).toEqual({
+      ok: false,
+      reason: "coverings[porcelain] missing required specLines",
+    });
+  });
+
   it("accepts optional procurement fields on specLines", () => {
     const payload = {
-      ...flooringSnapshotData,
-      coverings: flooringSnapshotData.coverings.map((item) =>
+      ...packageSeed,
+      coverings: packageSeed.coverings.map((item) =>
         item.code === "laminate"
           ? {
               ...item,
@@ -80,36 +99,10 @@ describe("flooring snapshot", () => {
     expect(validateFlooringSnapshot(payload)).toEqual({ ok: true });
   });
 
-  it("accepts optional specLines on catalog items", () => {
-    const payload = {
-      ...flooringSnapshotData,
-      coverings: flooringSnapshotData.coverings.map((item) =>
-        item.code === "laminate"
-          ? {
-              ...item,
-              specLines: [
-                {
-                  code: "flooring-line-laminate-materials",
-                  title: "Ламинат доска",
-                  category: "materials",
-                  basis: "area",
-                  unit: "m2",
-                  quantityPerBasis: 1,
-                  unitPrice: 930,
-                },
-              ],
-            }
-          : item,
-      ),
-    };
-
-    expect(validateFlooringSnapshot(payload)).toEqual({ ok: true });
-  });
-
   it("rejects forbidden keys inside specLines", () => {
     const payload = {
-      ...flooringSnapshotData,
-      coverings: flooringSnapshotData.coverings.map((item) =>
+      ...packageSeed,
+      coverings: packageSeed.coverings.map((item) =>
         item.code === "laminate"
           ? {
               ...item,
@@ -138,12 +131,22 @@ describe("flooring snapshot", () => {
 
   it("rejects invalid specLines shape", () => {
     const payload = {
-      ...flooringSnapshotData,
-      preparations: flooringSnapshotData.preparations.map((item) =>
+      ...packageSeed,
+      preparations: packageSeed.preparations.map((item) =>
         item.code === "primer"
           ? {
               ...item,
-              specLines: [{ code: "line", title: "Work", category: "invalid", basis: "area", unit: "m2", quantityPerBasis: 1, unitPrice: 10 }],
+              specLines: [
+                {
+                  code: "line",
+                  title: "Work",
+                  category: "invalid",
+                  basis: "area",
+                  unit: "m2",
+                  quantityPerBasis: 1,
+                  unitPrice: 10,
+                },
+              ],
             }
           : item,
       ),
@@ -155,8 +158,8 @@ describe("flooring snapshot", () => {
     });
   });
 
-  it("has no forbidden internal keys in the seed snapshot", () => {
-    expect(validateFlooringSnapshot(flooringSnapshotData)).toEqual({ ok: true });
+  it("has no forbidden internal keys in the package seed", () => {
+    expect(validateFlooringSnapshot(packageSeed)).toEqual({ ok: true });
   });
 
   it("rejects invalid snapshot payloads", () => {
@@ -181,9 +184,9 @@ describe("flooring snapshot", () => {
 
     expect(
       validateFlooringSnapshot({
-        ...flooringSnapshotData,
+        ...packageSeed,
         globalAddons: {
-          ...flooringSnapshotData.globalAddons,
+          ...packageSeed.globalAddons,
           note: "internal",
         },
       }),
@@ -195,13 +198,15 @@ describe("flooring snapshot", () => {
 
   it("keeps flooring-v1 payloads valid for legacy fallback", () => {
     const legacyPayload = {
-      ...flooringSnapshotData,
       version: "flooring-v1",
-      coverings: flooringSnapshotData.coverings.map((item) => ({
+      coverings: packageSeed.coverings.map(({ specLines: _specLines, ...item }) => ({
         ...item,
         laborPricePerM2: item.code === "laminate" ? 1000 : 0,
       })),
-      layouts: flooringSnapshotData.layouts.map(({ laborPricePerM2: _legacy, ...item }) => item),
+      preparations: packageSeed.preparations.map(({ specLines: _specLines, ...item }) => item),
+      layouts: packageSeed.layouts.map(({ specLines: _specLines, laborPricePerM2: _legacy, ...item }) => item),
+      plinthTypes: packageSeed.plinthTypes,
+      globalAddons: packageSeed.globalAddons,
     };
 
     expect(validateFlooringSnapshot(legacyPayload)).toEqual({ ok: true });
@@ -224,15 +229,16 @@ describe("flooring snapshot", () => {
     expect(catalog.preparations.none.code).toBe("none");
     expect(catalog.layouts.straight.code).toBe("straight");
     expect(catalog.coverings.laminate.materialPricePerM2).toBe(
-      flooringSnapshotData.coverings.find((item) => item.code === "laminate")?.materialPricePerM2,
+      packageSeed.coverings.find((item) => item.code === "laminate")?.materialPricePerM2,
     );
+    expect(catalog.coverings.laminate.specLines.length).toBeGreaterThan(0);
   });
 
-  it("getFlooringSnapshotCatalog exposes custom active snapshot codes", () => {
+  it("getFlooringSnapshotCatalog exposes custom active snapshot codes with specLines", () => {
     const payload = {
-      ...flooringSnapshotData,
+      ...packageSeed,
       coverings: [
-        ...flooringSnapshotData.coverings,
+        ...packageSeed.coverings,
         {
           code: "custom_covering",
           title: "Кастомное покрытие",
@@ -244,6 +250,17 @@ describe("flooring snapshot", () => {
           svpPricePerM2: 0,
           groutPricePerM2: 0,
           toolConsumablesPerM2: 0,
+          specLines: [
+            {
+              code: "custom-covering-material",
+              title: "Кастомное покрытие",
+              category: "materials",
+              basis: "area",
+              unit: "m2",
+              quantityPerBasis: 1,
+              unitPrice: 0,
+            },
+          ],
         },
       ],
     };

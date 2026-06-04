@@ -15,7 +15,7 @@
  *
  * Также пишет `generated/flooring.snapshot.json`:
  * - remote mode: GET /api/public/catalog/flooring/snapshot;
- * - local/dev mode: детерминированный FLOORING_V2_SEED fallback.
+ * - local/dev mode: package-first FLOORING_V2_SEED fallback (scripts/flooring-v2-package-seed.json).
  *
  * Запуск: `node scripts/generate-snapshot.js`.
  */
@@ -23,6 +23,8 @@ import { spawnSync } from "node:child_process";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+
+import flooringV2PackageSeed from "./flooring-v2-package-seed.json" with { type: "json" };
 
 const FORBIDDEN_KEYS = new Set([
   "riskPercent",
@@ -101,155 +103,28 @@ export const WARM_FLOOR_V1_SEED = {
   },
 };
 
-/** Детерминированный seed публичных тарифов полов v2 (работы укладки живут в layouts). */
-export const FLOORING_V2_SEED = {
-  version: "flooring-v2",
-  coverings: [
-    {
-      code: "porcelain",
-      title: "Керамогранит",
-      materialPricePerM2: 2900,
-      baseWastePercent: 10,
-      underlayPricePerM2: 0,
-      adhesivePricePerM2: 450,
-      primerPricePerM2: 25,
-      svpPricePerM2: 120,
-      groutPricePerM2: 90,
-      toolConsumablesPerM2: 40,
-    },
-    {
-      code: "quartz_vinyl",
-      title: "Кварцвинил",
-      materialPricePerM2: 1700,
-      baseWastePercent: 5,
-      underlayPricePerM2: 220,
-      adhesivePricePerM2: 0,
-      primerPricePerM2: 25,
-      svpPricePerM2: 0,
-      groutPricePerM2: 0,
-      toolConsumablesPerM2: 80,
-    },
-    {
-      code: "laminate",
-      title: "Ламинат",
-      materialPricePerM2: 930,
-      baseWastePercent: 10,
-      underlayPricePerM2: 220,
-      adhesivePricePerM2: 0,
-      primerPricePerM2: 25,
-      svpPricePerM2: 0,
-      groutPricePerM2: 0,
-      toolConsumablesPerM2: 40,
-    },
-    {
-      code: "carpet",
-      title: "Ковролин",
-      materialPricePerM2: 1500,
-      baseWastePercent: 7,
-      underlayPricePerM2: 0,
-      adhesivePricePerM2: 250,
-      primerPricePerM2: 25,
-      svpPricePerM2: 0,
-      groutPricePerM2: 0,
-      toolConsumablesPerM2: 40,
-    },
-    {
-      code: "engineered_wood",
-      title: "Инженерная доска",
-      materialPricePerM2: 6000,
-      baseWastePercent: 10,
-      underlayPricePerM2: 0,
-      adhesivePricePerM2: 900,
-      primerPricePerM2: 120,
-      svpPricePerM2: 0,
-      groutPricePerM2: 0,
-      toolConsumablesPerM2: 120,
-    },
-  ],
-  preparations: [
-    {
-      code: "none",
-      title: "Без подготовки",
-      laborPricePerM2: 300,
-      materialPricePerM2: 100,
-    },
-    {
-      code: "primer",
-      title: "Грунтование",
-      laborPricePerM2: 250,
-      materialPricePerM2: 120,
-    },
-    {
-      code: "self_leveling",
-      title: "Наливной пол",
-      laborPricePerM2: 650,
-      materialPricePerM2: 120,
-    },
-    {
-      code: "waterproofing",
-      title: "Гидроизоляция",
-      laborPricePerM2: 300,
-      materialPricePerM2: 80,
-    },
-  ],
-  layouts: [
-    {
-      code: "straight",
-      title: "Прямая",
-      laborPricePerM2: 1000,
-      laborFactor: 1.1,
-      additionalWastePercent: 5,
-    },
-    {
-      code: "large_format_straight",
-      title: "Крупный формат",
-      laborPricePerM2: 2000,
-      laborFactor: 1.2,
-      additionalWastePercent: 10,
-    },
-    {
-      code: "glue",
-      title: "Клеевая",
-      laborPricePerM2: 800,
-      laborFactor: 1.25,
-      additionalWastePercent: 5,
-    },
-    {
-      code: "floating",
-      title: "Плавающая",
-      laborPricePerM2: 1000,
-      laborFactor: 1,
-      additionalWastePercent: 3,
-    },
-  ],
-  plinthTypes: [
-    {
-      code: "none",
-      title: "Без плинтуса",
-      materialPricePerMeter: 0,
-      laborPricePerMeter: 0,
-      factor: 1,
-    },
-    {
-      code: "duropolymer",
-      title: "Дюрополимерный",
-      materialPricePerMeter: 450,
-      laborPricePerMeter: 450,
-      factor: 1,
-    },
-    {
-      code: "painted_mdf",
-      title: "МДФ окрашенный",
-      materialPricePerMeter: 650,
-      laborPricePerMeter: 500,
-      factor: 1,
-    },
-  ],
-  globalAddons: {
-    thresholdPrice: 900,
-    demolitionPricePerM2: 150,
-  },
-};
+/** Package-first local dev seed for flooring-v2 (catalog items include required specLines). */
+export const FLOORING_V2_SEED = flooringV2PackageSeed;
+
+/** @returns {unknown} */
+export function loadFlooringV2PackageSeedFromPython() {
+  const pythonExecutable = process.env.PYTHON ?? "python";
+  const generatorScript = resolve(repoRoot, "tools", "generate_flooring_package_seed.py");
+  const result = spawnSync(pythonExecutable, [generatorScript], {
+    cwd: repoRoot,
+    env: { ...process.env, PYTHONPATH: resolve(repoRoot, "src") },
+    encoding: "utf-8",
+  });
+
+  if (result.error) {
+    throw result.error;
+  }
+  if (typeof result.status === "number" && result.status !== 0) {
+    throw new Error(result.stderr || `flooring package seed generator exited with ${result.status}`);
+  }
+
+  return JSON.parse(result.stdout);
+}
 
 /** @returns {string | null} */
 export function resolveRemoteBaseUrl() {
@@ -543,7 +418,7 @@ function validateSpecLines(specLines, arrayName) {
  * @param {string[]} rateKeys
  * @returns {{ ok: true } | { ok: false; reason: string }}
  */
-function validateFlooringCatalogItems(items, arrayName, rateKeys) {
+function validateFlooringCatalogItems(items, arrayName, rateKeys, { requireSpecLines = false } = {}) {
   if (!Array.isArray(items)) {
     return { ok: false, reason: `${arrayName} must be an array` };
   }
@@ -566,6 +441,9 @@ function validateFlooringCatalogItems(items, arrayName, rateKeys) {
     seenCodes.add(item.code);
     if (!hasNumericRates(item, rateKeys)) {
       return { ok: false, reason: `${arrayName} rates must be finite numbers` };
+    }
+    if (requireSpecLines && !("specLines" in item)) {
+      return { ok: false, reason: `${arrayName}[${item.code}] missing required specLines` };
     }
     if ("specLines" in item) {
       const specLinesValidation = validateSpecLines(item.specLines, `${arrayName}[${item.code}]`);
@@ -620,11 +498,13 @@ export function validateFlooringSnapshotPayload(payload) {
   const isLegacyV1 = payload.version === "flooring-v1";
   const coveringRateKeys = isLegacyV1 ? FLOORING_LEGACY_COVERING_RATE_KEYS : FLOORING_COVERING_RATE_KEYS;
   const layoutRateKeys = isLegacyV1 ? FLOORING_LEGACY_LAYOUT_RATE_KEYS : FLOORING_LAYOUT_RATE_KEYS;
+  const requirePackageSpecLines = !isLegacyV1;
 
   const coveringsValidation = validateFlooringCatalogItems(
     payload.coverings,
     "coverings",
     coveringRateKeys,
+    { requireSpecLines: requirePackageSpecLines },
   );
   if (!coveringsValidation.ok) {
     return coveringsValidation;
@@ -634,6 +514,7 @@ export function validateFlooringSnapshotPayload(payload) {
     payload.preparations,
     "preparations",
     FLOORING_PREPARATION_RATE_KEYS,
+    { requireSpecLines: requirePackageSpecLines },
   );
   if (!preparationsValidation.ok) {
     return preparationsValidation;
@@ -643,6 +524,7 @@ export function validateFlooringSnapshotPayload(payload) {
     payload.layouts,
     "layouts",
     layoutRateKeys,
+    { requireSpecLines: requirePackageSpecLines },
   );
   if (!layoutsValidation.ok) {
     return layoutsValidation;

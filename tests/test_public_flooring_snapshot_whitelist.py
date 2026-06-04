@@ -18,16 +18,19 @@ from supply_bot.estimates.application.flooring_package_projection import build_f
 from supply_bot.estimates.application.flooring_snapshot import (
     DEFAULT_PUBLIC_FLOORING_SNAPSHOT,
     EXPECTED_COVERING_CODES,
-    EXPECTED_LAYOUT_CODES,
     EXPECTED_PLINTH_CODES,
-    EXPECTED_PREPARATION_CODES,
     PUBLIC_FLOORING_FORBIDDEN_KEYS,
     BuildFlooringSnapshotUseCase,
     _aggregate_covering_consumables,
-    _attach_spec_lines_to_snapshot_row,
+    _publish_package_backed_snapshot_row,
     _resolve_public_code,
+    build_flooring_v2_local_package_seed,
+    build_public_flooring_snapshot,
     build_public_flooring_snapshot_from_catalog,
     covering_spec_lines_are_complete,
+)
+from supply_bot.estimates.application.migrate_flooring_synthetic_assemblies import (
+    MigrateGlobalFlooringSyntheticAssembliesUseCase,
 )
 from supply_bot.storage_estimates.runtime_repository import SqlAlchemyEstimateRuntimeRepository
 from tests.admin_projects_routes_case import AdminProjectsRouteCase
@@ -169,11 +172,10 @@ class FlooringSnapshotSpecLinesTests(unittest.IsolatedAsyncioTestCase):
     async def asyncTearDown(self) -> None:
         await self.engine.dispose()
 
-    async def test_row_without_assembly_has_no_spec_lines(self) -> None:
+    async def test_row_without_assembly_is_omitted_from_snapshot(self) -> None:
         await self.repository.create_estimate_flooring_covering(**_minimal_covering_kwargs(title="Ламинат"))
         payload = await BuildFlooringSnapshotUseCase(self.repository).build_public()
-        laminate = next(item for item in payload["coverings"] if item["code"] == "laminate")
-        self.assertNotIn("specLines", laminate)
+        self.assertEqual(payload["coverings"], [])
 
     async def test_covering_with_global_assembly_has_spec_lines(self) -> None:
         covering_id = await self.repository.create_estimate_flooring_covering(
@@ -227,7 +229,7 @@ class FlooringSnapshotSpecLinesTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(laminate["specLines"][0]["title"], "Ламинат доска")
         self.assertEqual(laminate["materialPricePerM2"], 930)
 
-    async def test_partial_covering_assembly_omits_spec_lines(self) -> None:
+    async def test_partial_covering_assembly_is_omitted_from_snapshot(self) -> None:
         covering_id = await self.repository.create_estimate_flooring_covering(
             **_minimal_covering_kwargs(title="Ламинат", material_price_per_m2=930)
         )
@@ -238,11 +240,7 @@ class FlooringSnapshotSpecLinesTests(unittest.IsolatedAsyncioTestCase):
             [_sample_assembly_row(title="Laminate board only", public_title="Ламинат доска")],
         )
         payload = await BuildFlooringSnapshotUseCase(self.repository).build_public()
-        laminate = next(item for item in payload["coverings"] if item["code"] == "laminate")
-        self.assertNotIn("specLines", laminate)
-        self.assertEqual(laminate["materialPricePerM2"], 930)
-        self.assertGreater(laminate["primerPricePerM2"], 0)
-        self.assertGreater(laminate["toolConsumablesPerM2"], 0)
+        self.assertEqual(payload["coverings"], [])
 
     def test_covering_spec_lines_completeness_guard(self) -> None:
         flat_rates = {
@@ -265,7 +263,7 @@ class FlooringSnapshotSpecLinesTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(covering_spec_lines_are_complete(flat_rates, complete_lines))
         self.assertFalse(covering_spec_lines_are_complete(flat_rates, partial_lines))
 
-    def test_partial_covering_attach_omits_spec_lines(self) -> None:
+    def test_partial_covering_publish_gate_returns_none(self) -> None:
         flat_row = {
             "code": "laminate",
             "title": "Ламинат",
@@ -277,13 +275,12 @@ class FlooringSnapshotSpecLinesTests(unittest.IsolatedAsyncioTestCase):
             "groutPricePerM2": 0,
             "toolConsumablesPerM2": 40,
         }
-        row = _attach_spec_lines_to_snapshot_row(
+        published = _publish_package_backed_snapshot_row(
             flat_row,
             target_kind="covering",
             assembly={"rows": [_sample_assembly_row(title="Material only", public_title="Ламинат доска")]},
         )
-        self.assertNotIn("specLines", row)
-        self.assertEqual(row["materialPricePerM2"], 930)
+        self.assertIsNone(published)
 
     async def test_preparation_and_layout_work_spec_lines(self) -> None:
         preparation_id = await self.repository.create_estimate_flooring_preparation(
@@ -348,28 +345,36 @@ class FlooringSnapshotSpecLinesTests(unittest.IsolatedAsyncioTestCase):
             [_sample_assembly_row(title="Owner-only line")],
         )
         payload = await BuildFlooringSnapshotUseCase(self.repository).build_public()
-        laminate = next(item for item in payload["coverings"] if item["code"] == "laminate")
-        self.assertNotIn("specLines", laminate)
-        self.assertEqual(
-            laminate["materialPricePerM2"],
-            DEFAULT_PUBLIC_FLOORING_SNAPSHOT["coverings"][2]["materialPricePerM2"],
-        )
+        self.assertEqual(payload["coverings"], [])
 
-    def test_empty_assembly_rows_omit_spec_lines(self) -> None:
-        row = _attach_spec_lines_to_snapshot_row(
+    async def test_invalid_assembly_is_not_published(self) -> None:
+        covering_id = await self.repository.create_estimate_flooring_covering(
+            **_minimal_covering_kwargs(title="Ламинат")
+        )
+        await self.repository.replace_estimate_flooring_catalog_assembly(
+            "covering",
+            covering_id,
+            "Invalid package",
+            [_sample_assembly_row(kind="work", section="work", public_category="works")],
+        )
+        payload = await BuildFlooringSnapshotUseCase(self.repository).build_public()
+        self.assertEqual(payload["coverings"], [])
+
+    def test_empty_assembly_rows_are_not_published(self) -> None:
+        published = _publish_package_backed_snapshot_row(
             {"code": "laminate", "title": "Ламинат", "materialPricePerM2": 930},
             target_kind="covering",
             assembly={"rows": []},
         )
-        self.assertNotIn("specLines", row)
+        self.assertIsNone(published)
 
-    def test_shell_assembly_with_disabled_rows_omits_spec_lines(self) -> None:
-        row = _attach_spec_lines_to_snapshot_row(
+    def test_shell_assembly_with_disabled_rows_is_not_published(self) -> None:
+        published = _publish_package_backed_snapshot_row(
             {"code": "laminate", "title": "Ламинат", "materialPricePerM2": 930},
             target_kind="covering",
             assembly={"rows": [_sample_assembly_row(is_enabled=False)]},
         )
-        self.assertNotIn("specLines", row)
+        self.assertIsNone(published)
 
 
 class FlooringSnapshotAggregationTests(unittest.TestCase):
@@ -445,6 +450,7 @@ async def _seed_f1_complete_global_catalog(repo: SqlAlchemyEstimateRuntimeReposi
             labor_multiplier=factor,
             extra_waste_percent=waste,
         )
+    await MigrateGlobalFlooringSyntheticAssembliesUseCase(repo).execute()
 
 
 class FlooringSnapshotRepositoryTests(unittest.IsolatedAsyncioTestCase):
@@ -458,11 +464,16 @@ class FlooringSnapshotRepositoryTests(unittest.IsolatedAsyncioTestCase):
     async def asyncTearDown(self) -> None:
         await self.engine.dispose()
 
-    async def test_empty_global_catalog_falls_back_to_default_snapshot(self) -> None:
+    async def test_empty_global_catalog_returns_empty_package_first_catalog(self) -> None:
         payload = await BuildFlooringSnapshotUseCase(self.repository).build_public()
-        self.assertEqual(payload, DEFAULT_PUBLIC_FLOORING_SNAPSHOT)
+        self.assertEqual(payload, build_public_flooring_snapshot())
+        self.assertEqual(payload["coverings"], [])
+        self.assertEqual(payload["preparations"], [])
+        self.assertEqual(payload["layouts"], [])
+        self.assertEqual(payload["plinthTypes"], DEFAULT_PUBLIC_FLOORING_SNAPSHOT["plinthTypes"])
+        self.assertEqual(payload["globalAddons"], DEFAULT_PUBLIC_FLOORING_SNAPSHOT["globalAddons"])
 
-    async def test_known_global_rows_override_default_values(self) -> None:
+    async def test_known_global_rows_with_synthetic_assemblies_are_published(self) -> None:
         await _seed_f1_complete_global_catalog(self.repository)
         coverings = await self.repository.list_estimate_flooring_coverings()
         laminate_row = next(item for item in coverings if item["title"] == "Ламинат")
@@ -490,19 +501,59 @@ class FlooringSnapshotRepositoryTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(laminate["materialPricePerM2"], 1111)
         self.assertNotIn("laborPricePerM2", laminate)
         self.assertEqual(laminate["underlayPricePerM2"], 0)
+        self.assertIn("specLines", laminate)
         straight = next(item for item in payload["layouts"] if item["code"] == "straight")
         self.assertEqual(straight["laborPricePerM2"], 1234)
+        self.assertIn("specLines", straight)
         self.assertEqual({item["code"] for item in payload["coverings"]}, EXPECTED_COVERING_CODES)
 
-    async def test_custom_global_row_appears_with_stable_code(self) -> None:
+    async def test_custom_global_row_without_assembly_is_not_published(self) -> None:
         await self.repository.create_estimate_flooring_covering(
             **_minimal_covering_kwargs(title="Паркет ручной работы", material_price_per_m2=7777)
+        )
+        payload = await BuildFlooringSnapshotUseCase(self.repository).build_public()
+        self.assertEqual([item for item in payload["coverings"] if item["code"] not in EXPECTED_COVERING_CODES], [])
+
+    async def test_custom_global_row_with_valid_assembly_is_published(self) -> None:
+        covering_id = await self.repository.create_estimate_flooring_covering(
+            **_minimal_covering_kwargs(title="Паркет ручной работы", material_price_per_m2=7777, underlay_mode="none")
+        )
+        await self.repository.replace_estimate_flooring_catalog_assembly(
+            "covering",
+            covering_id,
+            "Custom parquet package",
+            [
+                _sample_assembly_row(title="Parquet board", public_title="Паркет"),
+                _sample_assembly_row(
+                    section="consumable",
+                    kind="consumable",
+                    formula="unit_consumption",
+                    title="Грунт",
+                    public_title="Грунт",
+                    unit="l",
+                    price=250,
+                    consumption_per_m2=0.1,
+                    public_category="consumables",
+                ),
+                _sample_assembly_row(
+                    section="tool",
+                    kind="tool",
+                    formula="flat_per_m2",
+                    title="Tool consumables",
+                    public_title="Tool consumables",
+                    unit="m2",
+                    price=40,
+                    consumption_per_m2=1,
+                    public_category="tools",
+                ),
+            ],
         )
         first = await BuildFlooringSnapshotUseCase(self.repository).build_public()
         second = await BuildFlooringSnapshotUseCase(self.repository).build_public()
         custom_rows = [item for item in first["coverings"] if item["code"] not in EXPECTED_COVERING_CODES]
         self.assertEqual(len(custom_rows), 1)
         self.assertEqual(custom_rows[0]["materialPricePerM2"], 7777)
+        self.assertIn("specLines", custom_rows[0])
         self.assertEqual(
             [item for item in second["coverings"] if item["code"] not in EXPECTED_COVERING_CODES][0]["code"],
             custom_rows[0]["code"],
@@ -514,10 +565,7 @@ class FlooringSnapshotRepositoryTests(unittest.IsolatedAsyncioTestCase):
             **_minimal_covering_kwargs(title="Ламинат", material_price_per_m2=9999)
         )
         payload = await BuildFlooringSnapshotUseCase(self.repository).build_public()
-        laminate = next(item for item in payload["coverings"] if item["code"] == "laminate")
-        self.assertEqual(
-            laminate["materialPricePerM2"], DEFAULT_PUBLIC_FLOORING_SNAPSHOT["coverings"][2]["materialPricePerM2"]
-        )
+        self.assertEqual(payload["coverings"], [])
 
 
 class PublicFlooringSnapshotWhitelistTests(AdminProjectsRouteCase):
@@ -544,39 +592,37 @@ class PublicFlooringSnapshotWhitelistTests(AdminProjectsRouteCase):
                 self.assertIn("plinthTypes", payload)
                 self.assertIn("globalAddons", payload)
 
-                covering_codes = {item["code"] for item in payload["coverings"]}
-                preparation_codes = {item["code"] for item in payload["preparations"]}
-                layout_codes = {item["code"] for item in payload["layouts"]}
                 plinth_codes = {item["code"] for item in payload["plinthTypes"]}
-
-                self.assertTrue(EXPECTED_COVERING_CODES.issubset(covering_codes))
-                self.assertTrue(EXPECTED_PREPARATION_CODES.issubset(preparation_codes))
-                self.assertTrue(EXPECTED_LAYOUT_CODES.issubset(layout_codes))
                 self.assertEqual(plinth_codes, EXPECTED_PLINTH_CODES)
+
+                for section in ("coverings", "preparations", "layouts"):
+                    for item in payload[section]:
+                        self.assertIn("specLines", item)
+                        self.assertGreater(len(item["specLines"]), 0)
 
                 present_keys = _walk_keys(payload)
                 leaked = present_keys & PUBLIC_FLOORING_FORBIDDEN_KEYS
                 self.assertEqual(leaked, set(), f"Публичный снапшот раскрыл internal-поля: {sorted(leaked)}")
 
-    def test_public_snapshot_matches_generated_golden_numbers(self) -> None:
+    def test_public_snapshot_matches_local_package_seed(self) -> None:
         with TemporaryDirectory() as tmp_dir:
             self._root = Path(tmp_dir)
             with self._build_client() as client:
                 payload = client.get("/api/public/catalog/flooring/snapshot").json()
+                package_seed = build_flooring_v2_local_package_seed()
 
-                generated_snapshot = json.loads(_FLOORING_SNAPSHOT_PATH.read_text(encoding="utf-8"))
-                self.assertEqual(generated_snapshot, DEFAULT_PUBLIC_FLOORING_SNAPSHOT)
-                self.assertEqual(payload["version"], generated_snapshot["version"])
+                self.assertEqual(payload["version"], package_seed["version"])
+                self.assertEqual(payload["plinthTypes"], package_seed["plinthTypes"])
+                self.assertEqual(payload["globalAddons"], package_seed["globalAddons"])
 
-                laminate = next(item for item in payload["coverings"] if item["code"] == "laminate")
-                self.assertGreater(laminate["materialPricePerM2"], 0)
-                self.assertNotIn("laborPricePerM2", laminate)
-                straight = next(item for item in payload["layouts"] if item["code"] == "straight")
-                self.assertGreater(straight["laborPricePerM2"], 0)
-                self.assertEqual(payload["globalAddons"]["thresholdPrice"], 900)
-                self.assertEqual(payload["globalAddons"]["demolitionPricePerM2"], 150)
+                for item in payload["coverings"]:
+                    self.assertIn("specLines", item)
+                for item in payload["preparations"]:
+                    self.assertIn("specLines", item)
+                for item in payload["layouts"]:
+                    self.assertIn("specLines", item)
 
-    def test_build_from_catalog_keeps_defaults_when_db_incomplete(self) -> None:
+    def test_build_from_catalog_omits_rows_without_valid_package(self) -> None:
         payload = build_public_flooring_snapshot_from_catalog(
             [
                 {
@@ -590,18 +636,16 @@ class PublicFlooringSnapshotWhitelistTests(AdminProjectsRouteCase):
             [],
             [],
         )
-        self.assertTrue(EXPECTED_COVERING_CODES.issubset({item["code"] for item in payload["coverings"]}))
-        laminate = next(item for item in payload["coverings"] if item["code"] == "laminate")
-        self.assertEqual(laminate["materialPricePerM2"], 555)
-        porcelain = next(item for item in payload["coverings"] if item["code"] == "porcelain")
-        self.assertEqual(
-            porcelain["materialPricePerM2"],
-            DEFAULT_PUBLIC_FLOORING_SNAPSHOT["coverings"][0]["materialPricePerM2"],
-        )
+        self.assertEqual(payload["coverings"], [])
+        self.assertEqual(payload["preparations"], [])
+        self.assertEqual(payload["layouts"], [])
+        self.assertEqual(payload["plinthTypes"], DEFAULT_PUBLIC_FLOORING_SNAPSHOT["plinthTypes"])
+        self.assertEqual(payload["globalAddons"], DEFAULT_PUBLIC_FLOORING_SNAPSHOT["globalAddons"])
 
-    def test_build_from_catalog_overrides_defaults_when_f1_complete(self) -> None:
+    def test_build_from_catalog_publishes_only_package_backed_rows(self) -> None:
         coverings = [
             {
+                "id": index + 1,
                 "title": title,
                 "material_price_per_m2": 1000 + index,
                 "labor_price_per_m2": 2000 + index,
@@ -611,11 +655,12 @@ class PublicFlooringSnapshotWhitelistTests(AdminProjectsRouteCase):
             for index, title in enumerate(("Керамогранит", "Кварцвинил", "Ламинат", "Ковролин", "Инженерная доска"))
         ]
         preparations = [
-            {"title": title, "labor_price_per_m2": 100 + index, "material_price_per_m2": 200 + index}
+            {"id": 10 + index, "title": title, "labor_price_per_m2": 100 + index, "material_price_per_m2": 200 + index}
             for index, title in enumerate(("Без подготовки", "Грунтование", "Наливной пол", "Гидроизоляция"))
         ]
         layouts = [
             {
+                "id": 20 + index,
                 "title": title,
                 "labor_price_per_m2": 700 + index,
                 "labor_multiplier": 1.1 + index * 0.05,
@@ -623,11 +668,55 @@ class PublicFlooringSnapshotWhitelistTests(AdminProjectsRouteCase):
             }
             for index, title in enumerate(("Прямая", "Крупный формат", "Клеевая", "Плавающая"))
         ]
-        payload = build_public_flooring_snapshot_from_catalog(coverings, preparations, layouts)
-        self.assertEqual(
-            next(item for item in payload["coverings"] if item["code"] == "laminate")["materialPricePerM2"],
-            1002,
+
+        covering_assemblies = {
+            int(row["id"]): {
+                "rows": [
+                    _sample_assembly_row(
+                        title=row["title"], public_title=row["title"], price=row["material_price_per_m2"]
+                    )
+                ]
+            }
+            for row in coverings
+        }
+        preparation_assemblies = {
+            int(row["id"]): {
+                "rows": [
+                    _work_assembly_row(
+                        title=row["title"],
+                        public_title=row["title"],
+                        price=row["labor_price_per_m2"],
+                        consumption_per_m2=1,
+                    )
+                ]
+            }
+            for row in preparations
+        }
+        layout_assemblies = {
+            int(row["id"]): {
+                "rows": [
+                    _work_assembly_row(
+                        title=row["title"],
+                        public_title=row["title"],
+                        price=row["labor_price_per_m2"],
+                        consumption_per_m2=row["labor_multiplier"],
+                    )
+                ]
+            }
+            for row in layouts
+        }
+
+        payload = build_public_flooring_snapshot_from_catalog(
+            coverings,
+            preparations,
+            layouts,
+            covering_assemblies=covering_assemblies,
+            preparation_assemblies=preparation_assemblies,
+            layout_assemblies=layout_assemblies,
         )
+        laminate = next(item for item in payload["coverings"] if item["code"] == "laminate")
+        self.assertEqual(laminate["materialPricePerM2"], 1002)
+        self.assertIn("specLines", laminate)
         self.assertEqual(
             next(item for item in payload["preparations"] if item["code"] == "primer")["laborPricePerM2"],
             101,
@@ -641,26 +730,47 @@ class PublicFlooringSnapshotWhitelistTests(AdminProjectsRouteCase):
             702,
         )
 
-    def test_known_layout_zero_labor_falls_back_to_default_v2_rate(self) -> None:
+    def test_known_layout_zero_labor_uses_default_v2_rate_before_publication(self) -> None:
         coverings = [
             {
+                "id": index + 1,
                 "title": title,
                 "material_price_per_m2": 1000,
                 "labor_price_per_m2": 0,
                 "base_waste_percent": 8,
                 "underlay_mode": "none",
             }
-            for title in ("Керамогранит", "Кварцвинил", "Ламинат", "Ковролин", "Инженерная доска")
+            for index, title in enumerate(("Керамогранит", "Кварцвинил", "Ламинат", "Ковролин", "Инженерная доска"))
         ]
         preparations = [
-            {"title": title, "labor_price_per_m2": 100, "material_price_per_m2": 200}
-            for title in ("Без подготовки", "Грунтование", "Наливной пол", "Гидроизоляция")
+            {"id": 10 + index, "title": title, "labor_price_per_m2": 100, "material_price_per_m2": 200}
+            for index, title in enumerate(("Без подготовки", "Грунтование", "Наливной пол", "Гидроизоляция"))
         ]
         layouts = [
-            {"title": title, "labor_price_per_m2": 0, "labor_multiplier": 1, "extra_waste_percent": 0}
-            for title in ("Прямая", "Крупный формат", "Клеевая", "Плавающая")
+            {"id": 20 + index, "title": title, "labor_price_per_m2": 0, "labor_multiplier": 1, "extra_waste_percent": 0}
+            for index, title in enumerate(("Прямая", "Крупный формат", "Клеевая", "Плавающая"))
         ]
-        payload = build_public_flooring_snapshot_from_catalog(coverings, preparations, layouts)
+        layout_assemblies = {
+            int(row["id"]): {
+                "rows": [
+                    _work_assembly_row(
+                        title=row["title"],
+                        public_title=row["title"],
+                        price=DEFAULT_PUBLIC_FLOORING_SNAPSHOT["layouts"][index]["laborPricePerM2"],
+                        consumption_per_m2=1,
+                    )
+                ]
+            }
+            for index, row in enumerate(layouts)
+        }
+        payload = build_public_flooring_snapshot_from_catalog(
+            coverings,
+            preparations,
+            layouts,
+            layout_assemblies=layout_assemblies,
+        )
+        self.assertEqual(payload["coverings"], [])
+        self.assertEqual(payload["preparations"], [])
         self.assertEqual(
             next(item for item in payload["layouts"] if item["code"] == "straight")["laborPricePerM2"],
             DEFAULT_PUBLIC_FLOORING_SNAPSHOT["layouts"][0]["laborPricePerM2"],

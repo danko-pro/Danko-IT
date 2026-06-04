@@ -36,7 +36,7 @@ export type FlooringCoveringSnapshotItem = {
   svpPricePerM2: number;
   groutPricePerM2: number;
   toolConsumablesPerM2: number;
-  specLines?: FlooringPackageSpecLine[];
+  specLines: FlooringPackageSpecLine[];
 };
 
 export type FlooringPreparationSnapshotItem = {
@@ -44,7 +44,7 @@ export type FlooringPreparationSnapshotItem = {
   title: string;
   laborPricePerM2: number;
   materialPricePerM2: number;
-  specLines?: FlooringPackageSpecLine[];
+  specLines: FlooringPackageSpecLine[];
 };
 
 export type FlooringLayoutSnapshotItem = {
@@ -53,7 +53,7 @@ export type FlooringLayoutSnapshotItem = {
   laborPricePerM2?: number;
   laborFactor: number;
   additionalWastePercent: number;
-  specLines?: FlooringPackageSpecLine[];
+  specLines: FlooringPackageSpecLine[];
 };
 
 export type FlooringPlinthSnapshotItem = {
@@ -78,9 +78,9 @@ export type FlooringSnapshot = {
   globalAddons: FlooringGlobalAddons;
 };
 
-export type FlooringCoveringRates = Omit<FlooringCoveringSnapshotItem, "code" | "title">;
-export type FlooringPreparationRates = Omit<FlooringPreparationSnapshotItem, "code" | "title">;
-export type FlooringLayoutRates = Omit<FlooringLayoutSnapshotItem, "code" | "title">;
+export type FlooringCoveringRates = Omit<FlooringCoveringSnapshotItem, "code" | "title" | "specLines">;
+export type FlooringPreparationRates = Omit<FlooringPreparationSnapshotItem, "code" | "title" | "specLines">;
+export type FlooringLayoutRates = Omit<FlooringLayoutSnapshotItem, "code" | "title" | "specLines">;
 export type FlooringPlinthRates = Omit<FlooringPlinthSnapshotItem, "code" | "title">;
 
 export type FlooringSnapshotRates = {
@@ -290,7 +290,9 @@ function validateCatalogItems(
   items: unknown,
   arrayName: string,
   rateKeys: readonly string[],
+  options: { requireSpecLines?: boolean } = {},
 ): { ok: true } | { ok: false; reason: string } {
+  const { requireSpecLines = false } = options;
   if (!Array.isArray(items)) {
     return { ok: false, reason: `${arrayName} must be an array` };
   }
@@ -313,6 +315,9 @@ function validateCatalogItems(
     seenCodes.add(item.code);
     if (!hasNumericRates(item, rateKeys)) {
       return { ok: false, reason: `${arrayName} rates must be finite numbers` };
+    }
+    if (requireSpecLines && !("specLines" in item)) {
+      return { ok: false, reason: `${arrayName}[${item.code}] missing required specLines` };
     }
     if ("specLines" in item) {
       const specLinesValidation = validateSpecLines(item.specLines, `${arrayName}[${item.code}]`);
@@ -381,8 +386,11 @@ export function validateFlooringSnapshot(payload: unknown) {
   const isLegacyV1 = payload.version === "flooring-v1";
   const coveringRateKeys = isLegacyV1 ? LEGACY_COVERING_RATE_KEYS : COVERING_RATE_KEYS;
   const layoutRateKeys = isLegacyV1 ? LEGACY_LAYOUT_RATE_KEYS : LAYOUT_RATE_KEYS;
+  const requirePackageSpecLines = !isLegacyV1;
 
-  const coveringsValidation = validateCatalogItems(payload.coverings, "coverings", coveringRateKeys);
+  const coveringsValidation = validateCatalogItems(payload.coverings, "coverings", coveringRateKeys, {
+    requireSpecLines: requirePackageSpecLines,
+  });
   if (!coveringsValidation.ok) {
     return coveringsValidation;
   }
@@ -391,12 +399,15 @@ export function validateFlooringSnapshot(payload: unknown) {
     payload.preparations,
     "preparations",
     PREPARATION_RATE_KEYS,
+    { requireSpecLines: requirePackageSpecLines },
   );
   if (!preparationsValidation.ok) {
     return preparationsValidation;
   }
 
-  const layoutsValidation = validateCatalogItems(payload.layouts, "layouts", layoutRateKeys);
+  const layoutsValidation = validateCatalogItems(payload.layouts, "layouts", layoutRateKeys, {
+    requireSpecLines: requirePackageSpecLines,
+  });
   if (!layoutsValidation.ok) {
     return layoutsValidation;
   }

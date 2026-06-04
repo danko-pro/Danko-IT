@@ -3,6 +3,8 @@ import {
   aggregateMaterialLinesFromDocumentLines,
   aggregateWorkLines,
   buildAggregatedClientPresentation,
+  formatAggregatedLinePresentation,
+  formatDisplayUnit,
   materialLinesFromProcurement,
   stripRoomSuffix,
   type AggregatedClientLine,
@@ -17,6 +19,7 @@ import {
 import { buildPublicEstimateResult } from "./engine";
 import { calculateFlooring, type FlooringOptions, type FlooringRoomInput } from "../public-estimate-flooring";
 import {
+  FLOORING_GOLDEN_TOTAL,
   getFlooringGoldenSnapshotCatalog,
   getFlooringGoldenSnapshotRates,
 } from "../flooring-golden.fixture";
@@ -141,6 +144,137 @@ describe("aggregateWorkLines", () => {
 
     expect(aggregated).toHaveLength(1);
     expect(aggregated[0]?.quantity).toBe(3);
+  });
+});
+
+describe("formatDisplayUnit", () => {
+  it("normalizes common unit codes for display", () => {
+    expect(formatDisplayUnit("kg")).toBe("кг");
+    expect(formatDisplayUnit("l")).toBe("л");
+    expect(formatDisplayUnit("pcs")).toBe("шт");
+    expect(formatDisplayUnit("m2")).toBe("м²");
+    expect(formatDisplayUnit("m")).toBe("м");
+    expect(formatDisplayUnit("package")).toBe("уп.");
+  });
+});
+
+describe("PF5c4 aggregated material presentation", () => {
+  it("shows package purchase qty, unit, and package price in display fields", () => {
+    const procurement: FlooringProcurementLine[] = [
+      {
+        aggregationKey: "glue",
+        code: "glue",
+        title: "Клей плиточный",
+        category: "consumables",
+        rawQuantity: 143,
+        rawUnit: "kg",
+        purchaseMode: "package",
+        purchaseQuantity: 6,
+        purchaseUnit: "kg",
+        unitPrice: 20,
+        packageSize: 25,
+        packagePrice: 500,
+        total: 3000,
+      },
+    ];
+
+    const [line] = materialLinesFromProcurement(procurement);
+
+    expect(line?.quantity).toBe(6);
+    expect(line?.unitPrice).toBe(500);
+    expect(line?.total).toBe(3000);
+    expect(line?.displayQuantity).toBe(6);
+    expect(line?.displayUnit).toBe("кг");
+    expect(line?.displayUnitPrice).toBe(500);
+    expect(line?.presentationNote).toContain("143");
+    expect(line?.presentationNote).toContain("кг");
+    expect(formatAggregatedLinePresentation(line!)).toEqual(line);
+  });
+
+  it("keeps linear raw presentation when package metadata is absent", () => {
+    const procurement: FlooringProcurementLine[] = [
+      {
+        aggregationKey: "primer",
+        code: "primer",
+        title: "Грунт",
+        category: "consumables",
+        rawQuantity: 143,
+        rawUnit: "kg",
+        purchaseMode: "raw",
+        purchaseQuantity: 143,
+        purchaseUnit: "kg",
+        unitPrice: 45,
+        total: 6435,
+      },
+    ];
+
+    const [line] = materialLinesFromProcurement(procurement);
+
+    expect(line?.displayQuantity).toBe(143);
+    expect(line?.displayUnit).toBe("кг");
+    expect(line?.displayUnitPrice).toBe(45);
+    expect(line?.presentationNote).toBeUndefined();
+  });
+
+  it("merges duplicate tool lines with same title, unit, unitPrice, and category", () => {
+    const toolLine = (aggregationKey: string, rawQuantity: number): FlooringProcurementLine => ({
+      aggregationKey,
+      code: aggregationKey,
+      title: "Инструмент и мелкий расходник",
+      category: "tools",
+      rawQuantity,
+      rawUnit: "m2",
+      purchaseMode: "raw",
+      purchaseQuantity: rawQuantity,
+      purchaseUnit: "m2",
+      unitPrice: 40,
+      total: rawQuantity * 40,
+    });
+
+    const lines = materialLinesFromProcurement([
+      toolLine("covering_tools", 16),
+      toolLine("preparation_tools", 12),
+    ]);
+
+    expect(lines).toHaveLength(1);
+    expect(lines[0]?.title).toBe("Инструмент и мелкий расходник");
+    expect(lines[0]?.quantity).toBe(28);
+    expect(lines[0]?.displayUnit).toBe("м²");
+    expect(lines[0]?.total).toBe(28 * 40);
+    expect(lines[0]?.sources).toHaveLength(2);
+  });
+
+  it("does not merge material lines with different unitPrice", () => {
+    const lines = materialLinesFromProcurement([
+      {
+        aggregationKey: "tool-a",
+        code: "tool-a",
+        title: "Инструмент и мелкий расходник",
+        category: "tools",
+        rawQuantity: 10,
+        rawUnit: "m2",
+        purchaseMode: "raw",
+        purchaseQuantity: 10,
+        purchaseUnit: "m2",
+        unitPrice: 40,
+        total: 400,
+      },
+      {
+        aggregationKey: "tool-b",
+        code: "tool-b",
+        title: "Инструмент и мелкий расходник",
+        category: "tools",
+        rawQuantity: 10,
+        rawUnit: "m2",
+        purchaseMode: "raw",
+        purchaseQuantity: 10,
+        purchaseUnit: "m2",
+        unitPrice: 80,
+        total: 800,
+      },
+    ]);
+
+    expect(lines).toHaveLength(2);
   });
 });
 
@@ -442,5 +576,40 @@ describe("getAggregatedPresentationForSection (shadow)", () => {
     expect(document.sections.find((section) => section.sectionId === "flooring")?.flatLines).toEqual(
       flooringSection?.flatLines,
     );
+  });
+
+  it("keeps golden section totals unchanged after presentation polish", () => {
+    const flooringResult = calculateFlooring([flooringRoom], flooringOptions);
+    const document = buildPublicEstimateDocument({
+      result: buildPublicEstimateResult({
+        warmFloorResult: { selectedArea: 0, section: createEstimateSection("warm_floor", "Тёплый пол", []) },
+        flooringResult: { flooringArea: flooringResult.flooringArea, section: flooringResult.section },
+        wallsResult: { wallFinishArea: 0, section: createEstimateSection("walls", "Стены", []) },
+        ceilingResult: { ceilingArea: 0, section: createEstimateSection("ceiling", "Потолки", []) },
+        electricResult: { section: createEstimateSection("electric", "Электрика", []) },
+        plumbingResult: { section: createEstimateSection("plumbing", "Сантехника", []) },
+        doorsResult: { section: createEstimateSection("doors", "Двери", []) },
+        completionResult: { section: createEstimateSection("completion", "Отделка", []) },
+        appliancesResult: { section: createEstimateSection("appliances", "Техника", []) },
+        looseFurnitureResult: { section: createEstimateSection("loose_furniture", "Мебель", []) },
+        homeGoodsResult: { section: createEstimateSection("home_goods", "Товары", []) },
+        floorArea: 16,
+      }),
+      context: {
+        floorArea: 16,
+        flooringResult: {
+          specificationSection: flooringResult.specificationSection,
+          procurementLines: flooringResult.procurementLines,
+        },
+      },
+    });
+
+    const flooringSection = document.sections.find((section) => section.sectionId === "flooring");
+    const materialsGroup = flooringSection?.presentationGroups?.find((group) => group.kind === "materials");
+
+    expect(flooringResult.section.totals.total).toBeCloseTo(FLOORING_GOLDEN_TOTAL, 2);
+
+    expect(materialsGroup?.lines.every((line) => (line.displayQuantity ?? line.quantity) > 0)).toBe(true);
+    expect(materialsGroup?.totals).toEqual(calculateDocumentLineTotals(materialsGroup?.lines ?? []));
   });
 });

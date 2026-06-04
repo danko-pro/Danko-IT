@@ -24,14 +24,16 @@ type SpecModalLine = Pick<
 >;
 
 function toSpecModalLine(line: EstimateLineItem | AggregatedClientLine): SpecModalLine {
+  const aggregated = line as AggregatedClientLine;
+
   return {
     id: line.id,
     title: line.title,
-    quantity: line.quantity,
-    unit: line.unit,
-    unitPrice: line.unitPrice,
+    quantity: aggregated.displayQuantity ?? line.quantity,
+    unit: aggregated.displayUnit ?? line.unit,
+    unitPrice: aggregated.displayUnitPrice ?? line.unitPrice,
     total: line.total,
-    note: line.note,
+    note: aggregated.presentationNote ?? line.note,
   };
 }
 

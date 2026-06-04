@@ -478,6 +478,40 @@ export function loadFlooringSnapshot(): FlooringSnapshot {
   return flooringSnapshotData as FlooringSnapshot;
 }
 
+export function isFlooringLegacyV1(version: string): boolean {
+  return version === "flooring-v1";
+}
+
+export function isFlooringPackageFirst(version: string): boolean {
+  return !isFlooringLegacyV1(version);
+}
+
+export function isPackageBackedFlooringCatalogRow<T extends { specLines?: FlooringPackageSpecLine[] }>(
+  item: T,
+): boolean {
+  return Array.isArray(item.specLines) && item.specLines.length > 0;
+}
+
+export function getPackageBackedFlooringRows(snapshot: FlooringSnapshot): {
+  coverings: FlooringCoveringSnapshotItem[];
+  preparations: FlooringPreparationSnapshotItem[];
+  layouts: FlooringLayoutSnapshotItem[];
+} {
+  if (isFlooringLegacyV1(snapshot.version)) {
+    return {
+      coverings: snapshot.coverings,
+      preparations: snapshot.preparations,
+      layouts: snapshot.layouts,
+    };
+  }
+
+  return {
+    coverings: snapshot.coverings.filter(isPackageBackedFlooringCatalogRow),
+    preparations: snapshot.preparations.filter(isPackageBackedFlooringCatalogRow),
+    layouts: snapshot.layouts.filter(isPackageBackedFlooringCatalogRow),
+  };
+}
+
 function catalogItemsByCode<T extends { code: string }>(items: T[]): Record<string, T> {
   const result: Record<string, T> = {};
 
@@ -496,29 +530,31 @@ export type FlooringSnapshotCatalog = {
 
 export function getFlooringSnapshotCatalog(): FlooringSnapshotCatalog {
   const snapshot = loadFlooringSnapshot();
+  const packageBacked = getPackageBackedFlooringRows(snapshot);
 
   return {
-    coverings: catalogItemsByCode(snapshot.coverings),
-    preparations: catalogItemsByCode(snapshot.preparations),
-    layouts: catalogItemsByCode(snapshot.layouts),
+    coverings: catalogItemsByCode(packageBacked.coverings),
+    preparations: catalogItemsByCode(packageBacked.preparations),
+    layouts: catalogItemsByCode(packageBacked.layouts),
   };
 }
 
 export function getFlooringSnapshotRates(): FlooringSnapshotRates {
   const snapshot = loadFlooringSnapshot();
-  const isLegacyV1 = snapshot.version === "flooring-v1";
+  const isLegacyV1 = isFlooringLegacyV1(snapshot.version);
+  const packageBacked = getPackageBackedFlooringRows(snapshot);
 
   return {
     flooringCoveringRates: catalogItemsToRecord(
-      snapshot.coverings,
+      packageBacked.coverings,
       isLegacyV1 ? LEGACY_COVERING_RATE_KEYS : COVERING_RATE_KEYS,
     ) as Record<FlooringCoveringType, FlooringCoveringRates>,
     flooringPreparationRates: catalogItemsToRecord(
-      snapshot.preparations,
+      packageBacked.preparations,
       PREPARATION_RATE_KEYS,
     ) as Record<FlooringPreparationType, FlooringPreparationRates>,
     flooringLayoutRates: catalogItemsToRecord(
-      snapshot.layouts,
+      packageBacked.layouts,
       isLegacyV1 ? LEGACY_LAYOUT_RATE_KEYS : LAYOUT_RATE_KEYS,
     ) as Record<FlooringLayoutType, FlooringLayoutRates>,
     flooringPlinthRates: catalogItemsToRecord(

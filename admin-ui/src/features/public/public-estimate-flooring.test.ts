@@ -96,7 +96,7 @@ describe("calculateFlooring", () => {
     expect(result.total).toBe(0);
   });
 
-  it("без specLines использует flat section как specification fallback", () => {
+  it("без specLines в package-first не маскирует отсутствие пакета flat room fallback", () => {
     vi.spyOn(flooringSnapshotModule, "getFlooringSnapshotCatalog").mockReturnValue(
       getFlooringGoldenSnapshotCatalogWithoutSpecLines(),
     );
@@ -104,7 +104,10 @@ describe("calculateFlooring", () => {
     const result = calculateFlooring([room], options);
 
     expect(result.specificationLines).toEqual([]);
-    expect(result.specificationSection).toBe(result.section);
+    expect(result.specificationSection.items.some((item) => item.id.startsWith("flooring-material-"))).toBe(
+      false,
+    );
+    expect(result.specificationSection.items.some((item) => item.id === "flooring-plinth-material")).toBe(true);
   });
 
   it("с specLines строит specificationLines без изменения flat totals", () => {
@@ -157,6 +160,17 @@ describe("calculateFlooring", () => {
     catalogSpy.mockRestore();
   });
 
+  it("unknown covering code in package-first не подставляет silent default rates", () => {
+    const result = calculateFlooring(
+      [{ ...room, coveringType: "unknown_covering_code" }],
+      { ...options, includePlinth: false },
+    );
+
+    const coveringMaterial = result.section.items.find((item) => item.id.startsWith("flooring-material-"));
+    expect(coveringMaterial?.total ?? 0).toBe(0);
+    expect(result.roomResults[0]?.materialCost).toBe(0);
+  });
+
   it("legacy flooring-v1 snapshot без specLines сохраняет golden totals", () => {
     const noSpecCatalog = getFlooringGoldenSnapshotCatalogWithoutSpecLines();
     const legacyCoverings = Object.values(noSpecCatalog.coverings).map((item) => ({
@@ -170,6 +184,10 @@ describe("calculateFlooring", () => {
       preparations: noSpecCatalog.preparations,
       layouts: Object.fromEntries(legacyLayouts.map((item) => [item.code, { ...item }])),
     });
+    const loadSpy = vi.spyOn(flooringSnapshotModule, "loadFlooringSnapshot").mockReturnValue({
+      ...FLOORING_GOLDEN_SNAPSHOT,
+      version: "flooring-v1",
+    });
 
     const result = calculateFlooring([room], options);
 
@@ -178,6 +196,7 @@ describe("calculateFlooring", () => {
     expect(result.specificationSection).toBe(result.section);
 
     catalogSpy.mockRestore();
+    loadSpy.mockRestore();
   });
 
   it("считает помещение с кастомным кодом покрытия из снапшота", () => {

@@ -10,6 +10,8 @@ import {
 import {
   getFlooringSnapshotCatalog,
   getFlooringSnapshotRates,
+  getPackageBackedFlooringRows,
+  isPackageBackedFlooringCatalogRow,
   loadFlooringSnapshot,
   validateFlooringSnapshot,
 } from "./public-flooring-snapshot";
@@ -269,6 +271,28 @@ describe("flooring snapshot", () => {
     expect(rates.flooringLayoutRates).toEqual(flooringLayoutRates);
     expect(rates.flooringPlinthRates).toEqual(flooringPlinthRates);
     expect(rates.flooringExtraRates).toEqual(flooringExtraRates);
+  });
+
+  it("getPackageBackedFlooringRows excludes v2 rows without specLines", () => {
+    const payload = {
+      ...packageSeed,
+      coverings: [
+        packageSeed.coverings[0]!,
+        {
+          ...packageSeed.coverings[0]!,
+          code: "flat_only",
+          title: "Flat only",
+          specLines: [],
+        },
+      ],
+    };
+
+    expect(isPackageBackedFlooringCatalogRow(packageSeed.coverings[0]!)).toBe(true);
+    expect(isPackageBackedFlooringCatalogRow({ ...packageSeed.coverings[0]!, specLines: [] })).toBe(false);
+
+    const backed = getPackageBackedFlooringRows(payload);
+    expect(backed.coverings.map((item) => item.code)).not.toContain("flat_only");
+    expect(backed.coverings.length).toBe(1);
   });
 
   it("getFlooringSnapshotCatalog returns full catalog items by code", () => {

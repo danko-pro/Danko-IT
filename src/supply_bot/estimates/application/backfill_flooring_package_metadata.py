@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Protocol
 
+from supply_bot.application.errors import ValidationError
 from supply_bot.estimates.application.flooring_catalog_assembly import (
     FLOORING_CATALOG_ASSEMBLY_VERSION,
     validate_flooring_package_for_publication,
@@ -31,8 +32,10 @@ _PACKAGE_AWARE_FORMULAS = frozenset(
 @dataclass
 class FlooringPackageMetadataBackfillReport:
     assemblies_updated: int = 0
+    assemblies_skipped: int = 0
     rows_backfilled: int = 0
     updated_target_ids: list[int] = field(default_factory=list)
+    skipped_target_ids: list[int] = field(default_factory=list)
 
     @property
     def changed(self) -> bool:
@@ -138,13 +141,19 @@ class BackfillFlooringPackageMetadataUseCase:
             if row_changes <= 0:
                 continue
 
-            validate_flooring_package_for_publication("covering", updated_rows)
-            projection = build_flooring_package_projection("covering", updated_rows)
-            catalog_updates = catalog_update_values_from_projection(
-                "covering",
-                projection,
-                assembly_rows=updated_rows,
-            )
+            try:
+                validate_flooring_package_for_publication("covering", updated_rows)
+                projection = build_flooring_package_projection("covering", updated_rows)
+                catalog_updates = catalog_update_values_from_projection(
+                    "covering",
+                    projection,
+                    assembly_rows=updated_rows,
+                )
+            except ValidationError:
+                report.assemblies_skipped += 1
+                report.skipped_target_ids.append(target_id)
+                continue
+
             await self._storage.replace_estimate_flooring_catalog_assembly(
                 "covering",
                 target_id,

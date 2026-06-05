@@ -17,6 +17,14 @@ from supply_bot.utils import normalize_text
 
 DEFAULT_PUBLIC_UNDERLAY_PRICE_PER_M2 = 220.0
 
+# Standard retail pack sizes for PF2 synthetic rows derived from flat CRM columns.
+_SYNTHETIC_CONSUMABLE_PACKAGE_DEFAULTS: dict[str, tuple[str, float]] = {
+    "клей": ("package_consumption", 25.0),
+    "грунт": ("package_consumption", 10.0),
+    "свп": ("piece_consumption", 500.0),
+    "затирка": ("package_consumption", 5.0),
+}
+
 FLOORING_SYNTHETIC_ASSEMBLY_VERSION = FLOORING_CATALOG_ASSEMBLY_VERSION
 FLOORING_SYNTHETIC_ASSEMBLY_TITLE_SUFFIX = "(технический пакет PF2)"
 
@@ -260,6 +268,23 @@ def _consumable_row_from_flat_fields(
         return None
 
     if consumption > 0 and price > 0:
+        package_defaults = _synthetic_consumable_package_defaults(title)
+        if package_defaults is not None:
+            formula, package_size = package_defaults
+            return _base_row(
+                section="consumable",
+                kind="consumable",
+                formula=formula,
+                title=title,
+                unit=unit,
+                price=round(price * package_size, 6),
+                consumption_per_m2=consumption,
+                package_size=package_size,
+                public_category="consumables",
+                public_title=title,
+                sort_order=sort_order,
+            )
+
         return _base_row(
             section="consumable",
             kind="consumable",
@@ -287,6 +312,14 @@ def _consumable_row_from_flat_fields(
     )
 
 
+def _synthetic_consumable_package_defaults(title: str) -> tuple[str, float] | None:
+    normalized = normalize_text(title)
+    for key, value in _SYNTHETIC_CONSUMABLE_PACKAGE_DEFAULTS.items():
+        if key in normalized:
+            return value
+    return None
+
+
 def _base_row(
     *,
     section: str,
@@ -299,6 +332,7 @@ def _base_row(
     public_category: str,
     public_title: str,
     sort_order: int,
+    package_size: float | None = None,
 ) -> dict[str, Any]:
     return {
         "assembly_item_id": None,
@@ -309,7 +343,7 @@ def _base_row(
         "unit": unit,
         "price": price,
         "consumption_per_m2": consumption_per_m2,
-        "package_size": None,
+        "package_size": package_size,
         "layer_mm": None,
         "sort_order": sort_order,
         "is_enabled": True,

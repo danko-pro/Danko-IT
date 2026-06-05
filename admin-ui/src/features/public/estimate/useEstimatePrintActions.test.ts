@@ -24,4 +24,11 @@ describe("PublicEstimate estimate PDF wiring", () => {
     expect(publicEstimateSource).toContain("isEstimatePdfPrintVisible");
     expect(publicEstimateSource).not.toContain("downloadSpecExportCsv");
   });
+
+  it("renders PDF document outside calculator screen wrapper for print layout", () => {
+    expect(publicEstimateSource).toContain("public-estimate-screen-root");
+    expect(publicEstimateSource).toMatch(
+      /public-estimate-screen-root[\s\S]*<\/div>[\s\S]*PublicEstimatePdfDocument/,
+    );
+  });
 });

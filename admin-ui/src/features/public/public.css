@@ -8142,11 +8142,7 @@
 }
 
 .public-estimate-pdf-document {
-  position: absolute;
-  left: -9999px;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
+  display: none;
 }
 
 .public-estimate-rail {
@@ -10484,21 +10480,18 @@ html:has(.public-estimate-page) {
     margin: 0;
   }
 
-  body.public-estimate-print-estimate * {
-    visibility: hidden !important;
+  @page estimate-document {
+    size: A4;
+    margin: 14mm 12mm;
   }
 
-  body.public-estimate-print-estimate .public-estimate-pdf-document,
-  body.public-estimate-print-estimate .public-estimate-pdf-document * {
-    visibility: visible !important;
+  body.public-estimate-print-estimate .public-estimate-screen-root {
+    display: none !important;
   }
 
   body.public-estimate-print-estimate .public-estimate-pdf-document {
-    position: static !important;
-    left: auto !important;
-    width: auto !important;
-    height: auto !important;
-    overflow: visible !important;
+    display: block !important;
+    page: estimate-document;
     padding: 0 !important;
     color: #111111 !important;
     font-size: 10pt;

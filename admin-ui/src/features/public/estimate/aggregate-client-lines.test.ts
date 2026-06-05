@@ -170,7 +170,7 @@ describe("PF5c4 aggregated material presentation", () => {
         rawUnit: "kg",
         purchaseMode: "package",
         purchaseQuantity: 6,
-        purchaseUnit: "kg",
+        purchaseUnit: "уп.",
         unitPrice: 20,
         packageSize: 25,
         packagePrice: 500,
@@ -184,7 +184,7 @@ describe("PF5c4 aggregated material presentation", () => {
     expect(line?.unitPrice).toBe(500);
     expect(line?.total).toBe(3000);
     expect(line?.displayQuantity).toBe(6);
-    expect(line?.displayUnit).toBe("кг");
+    expect(line?.displayUnit).toBe("уп.");
     expect(line?.displayUnitPrice).toBe(500);
     expect(line?.presentationNote).toContain("143");
     expect(line?.presentationNote).toContain("кг");
@@ -611,5 +611,59 @@ describe("getAggregatedPresentationForSection (shadow)", () => {
 
     expect(materialsGroup?.lines.every((line) => (line.displayQuantity ?? line.quantity) > 0)).toBe(true);
     expect(materialsGroup?.totals).toEqual(calculateDocumentLineTotals(materialsGroup?.lines ?? []));
+  });
+});
+
+describe("PF5c5 package procurement display chain", () => {
+  const flooringOptions: FlooringOptions = {
+    includePlinth: false,
+    plinthType: "none",
+    includeThresholds: false,
+    thresholdCount: 0,
+    includeDemolition: false,
+  };
+
+  beforeEach(() => {
+    installFlooringGoldenSnapshotMocks();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("porcelain glue and SVP propagate package metadata through procurement to display fields", () => {
+    const porcelainRoom: FlooringRoomInput = {
+      roomId: "room",
+      roomName: "Комната",
+      area: 100,
+      perimeter: 40,
+      plinthLength: 0,
+      coveringType: "porcelain",
+      preparationType: "none",
+      layoutType: "large_format_straight",
+      isIncluded: true,
+    };
+
+    const flooringResult = calculateFlooring([porcelainRoom], flooringOptions);
+    const glueProc = flooringResult.procurementLines.find((line) => line.title === "Клей");
+    const svpProc = flooringResult.procurementLines.find((line) => line.title === "СВП");
+
+    expect(glueProc?.purchaseMode).toBe("package");
+    expect(glueProc?.purchaseUnit).toBe("уп.");
+    expect(glueProc?.packageSize).toBe(25);
+    expect(svpProc?.purchaseMode).toBe("package");
+    expect(svpProc?.purchaseUnit).toBe("уп.");
+    expect(svpProc?.packageSize).toBe(500);
+
+    const materialLines = materialLinesFromProcurement(flooringResult.procurementLines);
+    const glueLine = materialLines.find((line) => line.title === "Клей");
+    const svpLine = materialLines.find((line) => line.title === "СВП");
+
+    expect(glueLine?.displayUnit).toBe("уп.");
+    expect(glueLine?.displayQuantity).toBe(glueProc?.purchaseQuantity);
+    expect(glueLine?.displayUnitPrice).toBe(glueProc?.packagePrice);
+    expect(svpLine?.displayUnit).toBe("уп.");
+    expect(svpLine?.displayQuantity).toBe(svpProc?.purchaseQuantity);
+    expect(svpLine?.displayUnitPrice).toBe(svpProc?.packagePrice);
   });
 });

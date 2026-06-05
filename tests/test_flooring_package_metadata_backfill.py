@@ -288,6 +288,51 @@ class BackfillFlooringPackageMetadataUseCaseTests(unittest.IsolatedAsyncioTestCa
         self.assertEqual(glue["purchaseMode"], "package")
         self.assertEqual(glue["packageSize"], 25)
 
+    async def test_invalid_legacy_assembly_is_skipped_without_aborting_backfill(self) -> None:
+        valid_covering_id = await self.repository.create_estimate_flooring_covering(**_porcelain_kwargs())
+        await self._save_raw_porcelain_assembly(valid_covering_id)
+
+        invalid_covering_id = await self.repository.create_estimate_flooring_covering(
+            **{
+                **_porcelain_kwargs(),
+                "title": "Керамогранит с битой строкой",
+            }
+        )
+        await self.repository.replace_estimate_flooring_catalog_assembly(
+            "covering",
+            invalid_covering_id,
+            "Legacy invalid unit",
+            [
+                _material_row(title="Керамогранит"),
+                _consumable_row(title="Клей", unit="0,08", price=45, consumption_per_m2=4.5),
+            ],
+        )
+
+        report = await BackfillFlooringPackageMetadataUseCase(self.repository).execute()
+
+        self.assertEqual(report.assemblies_updated, 1)
+        self.assertEqual(report.assemblies_skipped, 1)
+        self.assertIn(valid_covering_id, report.updated_target_ids)
+        self.assertIn(invalid_covering_id, report.skipped_target_ids)
+
+        valid_assembly = await self.repository.get_estimate_flooring_catalog_assembly(
+            "covering",
+            valid_covering_id,
+        )
+        assert valid_assembly is not None
+        glue_row = next(row for row in valid_assembly["rows"] if row["title"] == "Клей")
+        self.assertEqual(glue_row["formula"], "package_consumption")
+        self.assertEqual(glue_row["package_size"], 25)
+
+        invalid_assembly = await self.repository.get_estimate_flooring_catalog_assembly(
+            "covering",
+            invalid_covering_id,
+        )
+        assert invalid_assembly is not None
+        invalid_glue = next(row for row in invalid_assembly["rows"] if row["title"] == "Клей")
+        self.assertEqual(invalid_glue["formula"], "unit_consumption")
+        self.assertEqual(invalid_glue["unit"], "0,08")
+
 
 if __name__ == "__main__":
     unittest.main()

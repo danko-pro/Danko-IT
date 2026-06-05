@@ -8,7 +8,6 @@ export function useEstimatePrintActions() {
 
   const handlePrintEstimate = useCallback(() => {
     setIsEstimatePdfPrintVisible(true);
-    document.body.classList.add(ESTIMATE_PRINT_BODY_CLASS);
 
     const cleanup = () => {
       document.body.classList.remove(ESTIMATE_PRINT_BODY_CLASS);
@@ -19,7 +18,10 @@ export function useEstimatePrintActions() {
 
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
-        window.print();
+        document.body.classList.add(ESTIMATE_PRINT_BODY_CLASS);
+        requestAnimationFrame(() => {
+          window.print();
+        });
       });
     });
   }, []);

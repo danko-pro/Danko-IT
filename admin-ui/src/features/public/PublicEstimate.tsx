@@ -329,8 +329,10 @@ export function PublicEstimate() {
   const { handlePrintEstimate, handlePrintVolumes, isEstimatePdfPrintVisible } = useEstimatePrintActions();
 
   return (
-    <main className="public-landing public-estimate-page">
-      <header className="public-estimate-header">
+    <>
+      <div className="public-estimate-screen-root">
+        <main className="public-landing public-estimate-page">
+          <header className="public-estimate-header">
         <a className="public-brand public-privacy-brand" href="/" aria-label="Danko, на главную">
           <img className="public-brand-mark" src="/brand/danko-logo-mark.png" alt="" aria-hidden="true" />
           <span className="public-brand-copy">
@@ -617,13 +619,15 @@ export function PublicEstimate() {
         onNavigateToCosts={() => scrollToEstimateSection("estimate-costs")}
       />
 
-      <EstimateVolumesPrint summaryItems={summaryItems} />
+          <EstimateVolumesPrint summaryItems={summaryItems} />
+
+          <EstimateSpecModal data={specModalData} onClose={closeSpecModal} />
+        </main>
+      </div>
 
       {isEstimatePdfPrintVisible ? (
         <PublicEstimatePdfDocument document={estimatePdfDocument} />
       ) : null}
-
-      <EstimateSpecModal data={specModalData} onClose={closeSpecModal} />
-    </main>
+    </>
   );
 }

@@ -10,6 +10,7 @@ import {
   wallsPreparationOptions,
 } from "./estimate/defaults";
 import { useEstimateSpecModal } from "./estimate/useEstimateSpecModal";
+import { buildPublicEstimateDocument } from "./estimate/public-estimate-document";
 import { useEstimatePrintActions } from "./estimate/useEstimatePrintActions";
 import {
   buildCompactVolumeItems,
@@ -46,6 +47,7 @@ import { EstimatePassportSidebar } from "./components/estimate/EstimatePassportS
 import { EstimateRail } from "./components/estimate/EstimateRail";
 import { EstimateSpecModal } from "./components/estimate/EstimateSpecModal";
 import { EstimateVolumesPrint } from "./components/estimate/EstimateVolumesPrint";
+import { PublicEstimatePdfDocument } from "./components/estimate/PublicEstimatePdfDocument";
 import { CostsSection } from "./sections/costs/CostsSection";
 import { DoorsSection } from "./sections/doors/DoorsSection";
 import { ElectricSection } from "./sections/electric/ElectricSection";
@@ -298,7 +300,33 @@ export function PublicEstimate() {
     plumbingResult,
     flooringResult,
   });
-  const { handlePrintEstimate, handlePrintVolumes } = useEstimatePrintActions();
+  const estimatePdfDocument = useMemo(
+    () =>
+      buildPublicEstimateDocument({
+        result: estimateResult,
+        context: {
+          floorArea: totals.floorArea,
+          objectMeta,
+          flooringResult: {
+            specificationSection: flooringResult.specificationSection,
+            procurementLines: flooringResult.procurementLines,
+          },
+          plumbingOptions,
+          plumbingResult,
+          title: "Смета",
+        },
+      }),
+    [
+      estimateResult,
+      flooringResult.procurementLines,
+      flooringResult.specificationSection,
+      objectMeta,
+      plumbingOptions,
+      plumbingResult,
+      totals.floorArea,
+    ],
+  );
+  const { handlePrintEstimate, handlePrintVolumes, isEstimatePdfPrintVisible } = useEstimatePrintActions();
 
   return (
     <main className="public-landing public-estimate-page">
@@ -590,6 +618,10 @@ export function PublicEstimate() {
       />
 
       <EstimateVolumesPrint summaryItems={summaryItems} />
+
+      {isEstimatePdfPrintVisible ? (
+        <PublicEstimatePdfDocument document={estimatePdfDocument} />
+      ) : null}
 
       <EstimateSpecModal data={specModalData} onClose={closeSpecModal} />
     </main>

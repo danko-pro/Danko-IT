@@ -31,6 +31,9 @@ from supply_bot.storage_dashboard import SqlAlchemyDashboardReadModel
 from supply_bot.storage_estimates.plumbing_seed import ensure_global_plumbing_defaults
 from supply_bot.storage_estimates.runtime_repository import SqlAlchemyEstimateRuntimeRepository
 from supply_bot.storage_estimates.flooring_assembly_seed import ensure_global_flooring_assembly_defaults
+from supply_bot.storage_estimates.flooring_package_metadata_backfill_seed import (
+    ensure_flooring_package_metadata_backfill,
+)
 from supply_bot.storage_estimates.flooring_synthetic_assembly_seed import (
     ensure_global_flooring_synthetic_catalog_assemblies,
 )
@@ -264,6 +267,7 @@ def _build_admin_lifespan(
         await ensure_global_warm_floor_defaults(database_runtime.session_factory)
         await ensure_global_flooring_assembly_defaults(database_runtime.session_factory)
         await ensure_global_flooring_synthetic_catalog_assemblies(database_runtime.session_factory)
+        await ensure_flooring_package_metadata_backfill(database_runtime.session_factory)
         await storage.ensure_runtime_settings(
             delivery_start=settings.default_delivery_start.strftime("%H:%M"),
             delivery_end=settings.default_delivery_end.strftime("%H:%M"),

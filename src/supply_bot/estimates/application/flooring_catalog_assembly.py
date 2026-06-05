@@ -6,6 +6,9 @@ from typing import Any, Protocol
 
 from supply_bot.application.errors import NotFoundError, ValidationError
 from supply_bot.estimates.application.flooring_assembly_catalog import FLOORING_ASSEMBLY_FORMULAS
+from supply_bot.estimates.application.flooring_consumable_package_defaults import (
+    consumable_package_defaults_for_title,
+)
 from supply_bot.estimates.application.shared import (
     clamp_non_negative,
     normalize_required_text,
@@ -366,7 +369,17 @@ def _validate_enabled_row_formula_params(target_kind: str, row: dict[str, Any]) 
     if formula == "unit_consumption":
         if consumption <= 0:
             raise ValidationError("Assembly row unit_consumption requires consumption_per_m2 > 0")
+        if target_kind == "covering" and row.get("kind") == "consumable" and _covering_consumable_requires_package(row):
+            raise ValidationError(
+                "Covering consumable requires package metadata (package_size and package formula)"
+            )
         return
+
+    if formula == "piece_consumption" and target_kind == "covering" and row.get("kind") == "consumable":
+        if _covering_consumable_requires_package(row) and package_size <= 0:
+            raise ValidationError(
+                "Covering consumable requires package metadata (package_size and package formula)"
+            )
 
     if formula == "flat_per_m2":
         return
@@ -387,6 +400,11 @@ def _normalize_public_unit(value: Any) -> str:
     if _NUMERIC_UNIT_RE.fullmatch(unit):
         raise ValidationError("Assembly row unit must be a measurement unit, not a number")
     return unit
+
+
+def _covering_consumable_requires_package(row: dict[str, Any]) -> bool:
+    title = str(row.get("public_title") or row.get("title") or "").strip()
+    return consumable_package_defaults_for_title(title) is not None
 
 
 def _positive_number(value: Any, *, allow_zero: bool = False) -> float:

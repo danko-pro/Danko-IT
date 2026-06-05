@@ -328,6 +328,26 @@ class ValidateFlooringPackageForPublicationTests(unittest.TestCase):
                 ],
             )
 
+    def test_rejects_raw_glue_consumable_on_covering(self) -> None:
+        with self.assertRaises(ValidationError):
+            validate_flooring_package_for_publication(
+                "covering",
+                [
+                    _valid_row(),
+                    _valid_row(
+                        kind="consumable",
+                        section="consumable",
+                        public_category="consumables",
+                        formula="unit_consumption",
+                        title="Клей",
+                        public_title="Клей",
+                        unit="kg",
+                        price=45,
+                        consumption_per_m2=4.5,
+                    ),
+                ],
+            )
+
     def test_allows_disabled_invalid_package_rows_when_enabled_minimum_valid(self) -> None:
         validate_flooring_package_for_publication(
             "covering",

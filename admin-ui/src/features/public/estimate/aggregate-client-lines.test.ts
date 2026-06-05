@@ -9,6 +9,7 @@ import {
   stripRoomSuffix,
   type AggregatedClientLine,
 } from "./aggregate-client-lines";
+import { formatDisplayQuantity, formatPresentationNote } from "./format";
 import {
   buildPublicEstimateDocument,
   calculateDocumentLineTotals,
@@ -155,6 +156,26 @@ describe("formatDisplayUnit", () => {
     expect(formatDisplayUnit("m2")).toBe("м²");
     expect(formatDisplayUnit("m")).toBe("м");
     expect(formatDisplayUnit("package")).toBe("уп.");
+    expect(formatDisplayUnit("pack")).toBe("уп.");
+  });
+});
+
+describe("PF6d display formatting helpers", () => {
+  it("formats quantities without float artifacts", () => {
+    expect(formatDisplayQuantity(21.749999999999996)).toBe("21,75");
+    expect(formatDisplayQuantity(143.01000000000005)).toBe("143,01");
+    expect(formatDisplayQuantity(687.5)).toBe("687,5");
+    expect(formatDisplayQuantity(143)).toBe("143");
+  });
+
+  it("reformats raw consumption presentation notes", () => {
+    expect(formatPresentationNote("Исходный расход: 143.01000000000005 kg")).toBe(
+      "Исходный расход: 143,01 кг",
+    );
+    expect(formatPresentationNote("Исходный расход: 21.749999999999996 l")).toBe(
+      "Исходный расход: 21,75 л",
+    );
+    expect(formatPresentationNote("уточняется")).toBe("уточняется");
   });
 });
 
@@ -186,8 +207,7 @@ describe("PF5c4 aggregated material presentation", () => {
     expect(line?.displayQuantity).toBe(6);
     expect(line?.displayUnit).toBe("уп.");
     expect(line?.displayUnitPrice).toBe(500);
-    expect(line?.presentationNote).toContain("143");
-    expect(line?.presentationNote).toContain("кг");
+    expect(line?.presentationNote).toBe("Исходный расход: 143 кг");
     expect(formatAggregatedLinePresentation(line!)).toEqual(line);
   });
 

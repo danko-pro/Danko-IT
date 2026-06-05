@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef } from "react";
 import { createPortal } from "react-dom";
 import type { AggregatedClientLine } from "./estimate/aggregate-client-lines";
+import { formatDisplayUnit, formatPresentationNote } from "./estimate/format";
 import type { FlooringProcurementLine } from "./public-estimate-flooring-procurement";
 import type { EstimateLineItem } from "./public-estimate-model";
 import type { EstimateSpecSection } from "./public-estimate-plumbing-zones";
@@ -25,15 +26,16 @@ type SpecModalLine = Pick<
 
 function toSpecModalLine(line: EstimateLineItem | AggregatedClientLine): SpecModalLine {
   const aggregated = line as AggregatedClientLine;
+  const note = aggregated.presentationNote ?? line.note;
 
   return {
     id: line.id,
     title: line.title,
     quantity: aggregated.displayQuantity ?? line.quantity,
-    unit: aggregated.displayUnit ?? line.unit,
+    unit: formatDisplayUnit(aggregated.displayUnit ?? line.unit),
     unitPrice: aggregated.displayUnitPrice ?? line.unitPrice,
     total: line.total,
-    note: aggregated.presentationNote ?? line.note,
+    note: note ? formatPresentationNote(note) : note,
   };
 }
 

@@ -1,11 +1,14 @@
 import type { FlooringProcurementLine } from "../public-estimate-flooring-procurement";
 import type { FlooringSpecificationCategory } from "../public-estimate-flooring-spec";
 import type { EstimateCostCategory } from "../public-estimate-model";
+import { formatDisplayQuantity, formatDisplayUnit } from "./format";
 import {
   calculateDocumentLineTotals,
   type EstimateDocumentLine,
   type EstimateDocumentTotals,
 } from "./public-estimate-document";
+
+export { formatDisplayUnit } from "./format";
 
 const ROOM_SUFFIX_SEPARATOR = " — ";
 
@@ -69,35 +72,8 @@ function lineTotal(quantity: number, unitPrice: number) {
   return roundMoney(safeMoney(quantity) * safeMoney(unitPrice));
 }
 
-const DISPLAY_UNIT_ALIASES: Record<string, string> = {
-  kg: "кг",
-  l: "л",
-  liter: "л",
-  litre: "л",
-  pcs: "шт",
-  pc: "шт",
-  m2: "м²",
-  "m²": "м²",
-  m: "м",
-  package: "уп.",
-  уп: "уп.",
-  "уп.": "уп.",
-};
-
-export function formatDisplayUnit(unit: string): string {
-  const trimmed = unit.trim();
-
-  if (!trimmed) {
-    return "уп.";
-  }
-
-  const mapped = DISPLAY_UNIT_ALIASES[trimmed.toLowerCase()];
-
-  return mapped ?? trimmed;
-}
-
 function formatRawConsumptionNote(rawQuantity: number, rawUnit: string): string {
-  return `Исходный расход: ${safeMoney(rawQuantity)} ${formatDisplayUnit(rawUnit)}`;
+  return `Исходный расход: ${formatDisplayQuantity(safeMoney(rawQuantity))} ${formatDisplayUnit(rawUnit)}`;
 }
 
 export function formatAggregatedLinePresentation(line: AggregatedClientLine): AggregatedClientLine {

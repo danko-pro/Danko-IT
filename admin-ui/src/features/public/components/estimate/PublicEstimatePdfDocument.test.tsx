@@ -8,9 +8,11 @@ import {
 } from "../../estimate/public-estimate-document";
 import { calculateFlooring, type FlooringOptions, type FlooringRoomInput } from "../../public-estimate-flooring";
 import {
+  FLOORING_GOLDEN_TOTAL,
   getFlooringGoldenSnapshotCatalog,
   getFlooringGoldenSnapshotRates,
 } from "../../flooring-golden.fixture";
+import { calculateDocumentLineTotals } from "../../estimate/public-estimate-document";
 import * as flooringSnapshotModule from "../../public-flooring-snapshot";
 import {
   createEstimateSection,
@@ -237,5 +239,95 @@ describe("PublicEstimatePdfDocument flooring integration", () => {
 
     expect(markup).toContain("Материалы и расходники");
     expect(markup).not.toMatch(/\.csv|CSV|downloadSpecExportCsv/i);
+  });
+});
+
+describe("PF6d PDF quantity formatting polish", () => {
+  beforeEach(() => {
+    installFlooringGoldenSnapshotMocks();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("renders Russian units and rounded quantities without float artifacts", () => {
+    const flooringResult = calculateFlooring([flooringRoom], flooringOptions);
+    const estimateResult = buildPublicEstimateResult({
+      warmFloorResult: { selectedArea: 0, section: createEstimateSection("warm_floor", "Тёплый пол", []) },
+      flooringResult: { flooringArea: flooringResult.flooringArea, section: flooringResult.section },
+      wallsResult: { wallFinishArea: 0, section: createEstimateSection("walls", "Стены", []) },
+      ceilingResult: { ceilingArea: 0, section: createEstimateSection("ceiling", "Потолки", []) },
+      electricResult: { section: createEstimateSection("electric", "Электрика", []) },
+      plumbingResult: { section: createEstimateSection("plumbing", "Сантехника", []) },
+      doorsResult: { section: createEstimateSection("doors", "Двери", []) },
+      completionResult: { section: createEstimateSection("completion", "Отделка", []) },
+      appliancesResult: { section: createEstimateSection("appliances", "Техника", []) },
+      looseFurnitureResult: { section: createEstimateSection("loose_furniture", "Мебель", []) },
+      homeGoodsResult: { section: createEstimateSection("home_goods", "Товары", []) },
+      floorArea: 16,
+    });
+
+    const document = buildPublicEstimateDocument(
+      buildDocumentInput(estimateResult, {
+        floorArea: 16,
+        flooringResult: {
+          specificationSection: flooringResult.specificationSection,
+          procurementLines: flooringResult.procurementLines,
+        },
+      }),
+    );
+    const markup = renderToStaticMarkup(<PublicEstimatePdfDocument document={document} />);
+    const materialsGroup = document.sections
+      .find((section) => section.sectionId === "flooring")
+      ?.presentationGroups?.find((group) => group.kind === "materials");
+
+    expect(markup).toContain("м²");
+    expect(markup).not.toMatch(/>\s*m2\s*</);
+    expect(markup).not.toMatch(/999999999/);
+    expect(materialsGroup?.lines.some((line) => line.presentationNote?.includes("Исходный расход"))).toBe(
+      true,
+    );
+    materialsGroup?.lines.forEach((line) => {
+      if (line.presentationNote) {
+        expect(line.presentationNote).not.toMatch(/999999999/);
+      }
+    });
+  });
+
+  it("keeps golden section totals unchanged in the document builder", () => {
+    const flooringResult = calculateFlooring([flooringRoom], flooringOptions);
+
+    expect(flooringResult.section.totals.total).toBeCloseTo(FLOORING_GOLDEN_TOTAL, 2);
+
+    const estimateResult = buildPublicEstimateResult({
+      warmFloorResult: { selectedArea: 0, section: createEstimateSection("warm_floor", "Тёплый пол", []) },
+      flooringResult: { flooringArea: flooringResult.flooringArea, section: flooringResult.section },
+      wallsResult: { wallFinishArea: 0, section: createEstimateSection("walls", "Стены", []) },
+      ceilingResult: { ceilingArea: 0, section: createEstimateSection("ceiling", "Потолки", []) },
+      electricResult: { section: createEstimateSection("electric", "Электрика", []) },
+      plumbingResult: { section: createEstimateSection("plumbing", "Сантехника", []) },
+      doorsResult: { section: createEstimateSection("doors", "Двери", []) },
+      completionResult: { section: createEstimateSection("completion", "Отделка", []) },
+      appliancesResult: { section: createEstimateSection("appliances", "Техника", []) },
+      looseFurnitureResult: { section: createEstimateSection("loose_furniture", "Мебель", []) },
+      homeGoodsResult: { section: createEstimateSection("home_goods", "Товары", []) },
+      floorArea: 16,
+    });
+
+    const document = buildPublicEstimateDocument(
+      buildDocumentInput(estimateResult, {
+        floorArea: 16,
+        flooringResult: {
+          specificationSection: flooringResult.specificationSection,
+          procurementLines: flooringResult.procurementLines,
+        },
+      }),
+    );
+    const flooringSection = document.sections.find((section) => section.sectionId === "flooring");
+    const materialsGroup = flooringSection?.presentationGroups?.find((group) => group.kind === "materials");
+
+    expect(flooringResult.section.totals.total).toBeCloseTo(FLOORING_GOLDEN_TOTAL, 2);
+    expect(materialsGroup?.totals).toEqual(calculateDocumentLineTotals(materialsGroup?.lines ?? []));
   });
 });

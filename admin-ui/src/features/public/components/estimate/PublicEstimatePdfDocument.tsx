@@ -1,5 +1,10 @@
 import type { AggregatedClientLine } from "../../estimate/aggregate-client-lines";
-import { formatEstimateQuantity, formatMoney } from "../../estimate/format";
+import {
+  formatDisplayQuantity,
+  formatDisplayUnit,
+  formatMoney,
+  formatPresentationNote,
+} from "../../estimate/format";
 import {
   collectDocumentSectionLines,
   type EstimateDocumentLine,
@@ -25,15 +30,16 @@ type PdfLineRow = {
 
 function toPdfLineRow(line: EstimateDocumentLine | AggregatedClientLine): PdfLineRow {
   const aggregated = line as AggregatedClientLine;
+  const note = aggregated.presentationNote ?? line.note;
 
   return {
     id: line.id,
     title: line.title,
     quantity: aggregated.displayQuantity ?? line.quantity,
-    unit: aggregated.displayUnit ?? line.unit,
+    unit: formatDisplayUnit(aggregated.displayUnit ?? line.unit),
     unitPrice: aggregated.displayUnitPrice ?? line.unitPrice,
     total: line.total,
-    note: aggregated.presentationNote ?? line.note,
+    note: note ? formatPresentationNote(note) : note,
   };
 }
 
@@ -136,7 +142,7 @@ function PdfLineTable({ lines }: { lines: PdfLineRow[] }) {
                   <span className="public-estimate-pdf-document-line-note">{line.note}</span>
                 ) : null}
               </td>
-              <td>{formatEstimateQuantity(line.quantity)}</td>
+              <td>{formatDisplayQuantity(line.quantity)}</td>
               <td>{line.unit}</td>
               <td>{pricePending ? "—" : formatMoney(line.unitPrice)}</td>
               <td>{pricePending ? "—" : formatMoney(line.total)}</td>

@@ -373,7 +373,9 @@ class FlooringSnapshotSpecLinesTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(payload["coverings"], [])
 
     async def test_numeric_unit_assembly_is_not_published(self) -> None:
-        covering_id = await self.repository.create_estimate_flooring_covering(**_minimal_covering_kwargs(title="Ламинат"))
+        covering_id = await self.repository.create_estimate_flooring_covering(
+            **_minimal_covering_kwargs(title="Ламинат")
+        )
         await self.repository.replace_estimate_flooring_catalog_assembly(
             "covering",
             covering_id,
@@ -603,7 +605,11 @@ class FlooringSnapshotRepositoryTests(unittest.IsolatedAsyncioTestCase):
             "layout",
             straight_id,
             "Straight only",
-            [_work_assembly_row(title="Lay straight", public_title="Укладка прямая", price=1000, consumption_per_m2=1.1)],
+            [
+                _work_assembly_row(
+                    title="Lay straight", public_title="Укладка прямая", price=1000, consumption_per_m2=1.1
+                )
+            ],
         )
         payload = await BuildFlooringSnapshotUseCase(self.repository).build_public()
         self.assertEqual({item["code"] for item in payload["layouts"]}, {"straight"})
@@ -798,7 +804,15 @@ class PublicFlooringSnapshotWhitelistTests(AdminProjectsRouteCase):
         payload = build_public_flooring_snapshot_from_catalog(
             [],
             [],
-            [{"id": 22, "title": "Крупный формат", "labor_price_per_m2": 2000, "labor_multiplier": 1.2, "extra_waste_percent": 10}],
+            [
+                {
+                    "id": 22,
+                    "title": "Крупный формат",
+                    "labor_price_per_m2": 2000,
+                    "labor_multiplier": 1.2,
+                    "extra_waste_percent": 10,
+                }
+            ],
             layout_assemblies={
                 22: {
                     "rows": [

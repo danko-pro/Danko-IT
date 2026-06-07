@@ -1,10 +1,8 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
-import json
 import unittest
 
 from supply_bot.application.errors import ValidationError
-from supply_bot.estimates.application.flooring_catalog_assembly import FLOORING_FLAT_CATALOG_CREATE_BLOCKED
 from supply_bot.estimates.application.create_flooring_catalog import (
     CreateFlooringCoveringCommand,
     CreateFlooringCoveringConsumableCommand,
@@ -14,6 +12,7 @@ from supply_bot.estimates.application.create_flooring_catalog import (
     CreateFlooringPreparationCommand,
     CreateFlooringPreparationUseCase,
 )
+from supply_bot.estimates.application.flooring_catalog_assembly import FLOORING_FLAT_CATALOG_CREATE_BLOCKED
 
 
 class FakeFlooringCatalogStorage:

@@ -57,7 +57,6 @@ class CreateFlooringCatalogFromAssemblyUseCase:
         self._storage = storage
 
     async def execute(self, command: CreateFlooringCatalogFromAssemblyCommand) -> int:
-        target_kind = (command.target_kind or "").strip()
         catalog_values, normalized_kind = _catalog_values_for_target(command)
         assembly_title = normalize_required_text(
             command.assembly_title,
@@ -132,11 +131,7 @@ class CreateFlooringCatalogFromFlatBootstrapUseCase:
 def _catalog_values_for_target(
     command: CreateFlooringCatalogFromAssemblyCommand | CreateFlooringCatalogFromFlatBootstrapCommand,
 ) -> tuple[dict[str, Any], str]:
-    provided = sum(
-        1
-        for payload in (command.covering, command.preparation, command.layout)
-        if payload is not None
-    )
+    provided = sum(1 for payload in (command.covering, command.preparation, command.layout) if payload is not None)
     if provided != 1:
         raise ValidationError("Exactly one flooring catalog target payload is required")
 

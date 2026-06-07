@@ -16,7 +16,9 @@ class FlooringSyntheticMigrationReport:
     preparations_migrated: int = 0
     layouts_migrated: int = 0
     skipped_existing_assembly: int = 0
-    migrated_target_ids: dict[str, list[int]] = field(default_factory=lambda: {"covering": [], "preparation": [], "layout": []})
+    migrated_target_ids: dict[str, list[int]] = field(
+        default_factory=lambda: {"covering": [], "preparation": [], "layout": []}
+    )
 
     @property
     def migrated_total(self) -> int:

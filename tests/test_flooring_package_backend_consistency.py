@@ -11,7 +11,6 @@ from supply_bot.estimates.application.flooring_catalog_assembly import (
     FlooringCatalogAssemblyRowCommand,
     ReplaceFlooringCatalogAssemblyCommand,
     ReplaceFlooringCatalogAssemblyUseCase,
-    validate_flooring_package_for_publication,
 )
 from supply_bot.estimates.application.flooring_package_projection import (
     build_flooring_package_projection,

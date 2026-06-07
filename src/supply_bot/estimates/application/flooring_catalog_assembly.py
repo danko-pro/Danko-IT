@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 import re
+from dataclasses import dataclass
 from typing import Any, Protocol
 
 from supply_bot.application.errors import NotFoundError, ValidationError
@@ -39,6 +39,7 @@ def reject_flooring_flat_catalog_create() -> None:
     """Reject flat-only catalog POST (PF4)."""
 
     raise ValidationError(FLOORING_FLAT_CATALOG_CREATE_BLOCKED)
+
 
 _PACKAGE_AWARE_FORMULAS = frozenset(
     {

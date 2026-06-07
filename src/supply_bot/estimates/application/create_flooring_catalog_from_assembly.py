@@ -57,7 +57,6 @@ class CreateFlooringCatalogFromAssemblyUseCase:
         self._storage = storage
 
     async def execute(self, command: CreateFlooringCatalogFromAssemblyCommand) -> int:
-        target_kind = (command.target_kind or "").strip()
         catalog_values, normalized_kind = _catalog_values_for_target(command)
         assembly_title = normalize_required_text(
             command.assembly_title,

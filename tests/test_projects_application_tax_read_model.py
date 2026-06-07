@@ -16,9 +16,7 @@ TAX_READ_MODEL_PATH = REPO_ROOT / "src" / "supply_bot" / "projects" / "applicati
 
 class ProjectTaxReadModelTests(unittest.TestCase):
     def test_default_tax_config_uses_zero_rate_and_received_total_base(self) -> None:
-        config = build_project_tax_runtime_config(
-            _project_row(tax_rate_percent=None, tax_base_mode=None)
-        )
+        config = build_project_tax_runtime_config(_project_row(tax_rate_percent=None, tax_base_mode=None))
 
         self.assertEqual(config.tax_rate_percent, 0.0)
         self.assertEqual(config.tax_base_mode, TAX_BASE_MODE_RECEIVED_TOTAL)
@@ -37,9 +35,7 @@ class ProjectTaxReadModelTests(unittest.TestCase):
         self.assertEqual(tax_base, 100000.0)
 
     def test_planned_margin_percent_is_ignored_for_tax_rate(self) -> None:
-        config = build_project_tax_runtime_config(
-            _project_row(planned_margin_percent=30, tax_rate_percent=6)
-        )
+        config = build_project_tax_runtime_config(_project_row(planned_margin_percent=30, tax_rate_percent=6))
 
         self.assertEqual(config.tax_rate_percent, 6.0)
 
@@ -60,15 +56,21 @@ class ProjectTaxReadModelTests(unittest.TestCase):
 
     def test_invalid_or_missing_received_total_resolves_to_zero(self) -> None:
         self.assertEqual(
-            resolve_project_tax_base(project=_project_row(received_total=None), tax_base_mode=TAX_BASE_MODE_RECEIVED_TOTAL),
+            resolve_project_tax_base(
+                project=_project_row(received_total=None), tax_base_mode=TAX_BASE_MODE_RECEIVED_TOTAL
+            ),
             0.0,
         )
         self.assertEqual(
-            resolve_project_tax_base(project=_project_row(received_total=""), tax_base_mode=TAX_BASE_MODE_RECEIVED_TOTAL),
+            resolve_project_tax_base(
+                project=_project_row(received_total=""), tax_base_mode=TAX_BASE_MODE_RECEIVED_TOTAL
+            ),
             0.0,
         )
         self.assertEqual(
-            resolve_project_tax_base(project=_project_row(received_total="abc"), tax_base_mode=TAX_BASE_MODE_RECEIVED_TOTAL),
+            resolve_project_tax_base(
+                project=_project_row(received_total="abc"), tax_base_mode=TAX_BASE_MODE_RECEIVED_TOTAL
+            ),
             0.0,
         )
         self.assertEqual(

@@ -192,9 +192,7 @@ PUBLIC_FLOORING_FORBIDDEN_KEYS = frozenset(
     }
 )
 
-EXPECTED_COVERING_CODES = frozenset(
-    {"porcelain", "quartz_vinyl", "laminate", "carpet", "engineered_wood"}
-)
+EXPECTED_COVERING_CODES = frozenset({"porcelain", "quartz_vinyl", "laminate", "carpet", "engineered_wood"})
 EXPECTED_PREPARATION_CODES = frozenset({"none", "primer", "self_leveling", "waterproofing"})
 EXPECTED_LAYOUT_CODES = frozenset({"straight", "large_format_straight", "glue", "floating"})
 EXPECTED_PLINTH_CODES = frozenset({"none", "duropolymer", "painted_mdf"})
@@ -203,8 +201,7 @@ EXPECTED_PLINTH_CODES = frozenset({"none", "duropolymer", "painted_mdf"})
 DEFAULT_PUBLIC_UNDERLAY_PRICE_PER_M2 = 220.0
 
 _DEFAULT_LAYOUT_LABOR_BY_CODE = {
-    str(item["code"]): float(item["laborPricePerM2"])
-    for item in DEFAULT_PUBLIC_FLOORING_SNAPSHOT["layouts"]
+    str(item["code"]): float(item["laborPricePerM2"]) for item in DEFAULT_PUBLIC_FLOORING_SNAPSHOT["layouts"]
 }
 
 _COVERING_TITLE_TO_CODE: dict[str, str] = {
@@ -299,7 +296,9 @@ def _aggregate_covering_consumables(
         "groutPricePerM2": _public_number(
             _consumable_price_per_m2(row.get("grout_consumption_per_m2"), row.get("grout_price_per_unit"))
         ),
-        "toolConsumablesPerM2": _public_number(float(_public_number(row.get("instrument_price_per_m2"))) + custom_total),
+        "toolConsumablesPerM2": _public_number(
+            float(_public_number(row.get("instrument_price_per_m2"))) + custom_total
+        ),
     }
 
 

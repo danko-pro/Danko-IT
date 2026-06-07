@@ -5,11 +5,17 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from .config import GuardConfig
-from .events import create_hygiene_event, create_layer_event, create_size_event, create_topology_event, create_ui_motion_event
+from .events import (
+    create_hygiene_event,
+    create_layer_event,
+    create_size_event,
+    create_topology_event,
+    create_ui_motion_event,
+)
 from .hygiene import collect_hygiene_violations
 from .layers import LayerViolation, collect_layer_violations
 from .models import FileMeasure, ScanSnapshot, Violation, ViolationEvent
-from .topology import TopologyViolation, collect_topology_violations
+from .topology import collect_topology_violations
 from .ui_motion import UiMotionViolation, collect_ui_motion_violations
 
 

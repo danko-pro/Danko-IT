@@ -6,7 +6,6 @@ import sys
 import time
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1]
 STATE_DIR = ROOT / ".tmp"
 STATE_PATH = STATE_DIR / "project_guard_state.json"

@@ -35,16 +35,26 @@ class FlooringPackageProjectionTests(unittest.TestCase):
     def test_row_total_matches_catalog_editor_formula_semantics(self) -> None:
         self.assertEqual(
             calculate_flooring_assembly_row_total(
-                row(kind="material", formula="flat_per_m2", public_category="materials", price=1000, consumption_per_m2=1.1)
+                row(
+                    kind="material",
+                    formula="flat_per_m2",
+                    public_category="materials",
+                    price=1000,
+                    consumption_per_m2=1.1,
+                )
             ),
             1100,
         )
         self.assertEqual(
-            calculate_flooring_assembly_row_total(row(formula="package_consumption", price=600, package_size=25, consumption_per_m2=1.5)),
+            calculate_flooring_assembly_row_total(
+                row(formula="package_consumption", price=600, package_size=25, consumption_per_m2=1.5)
+            ),
             36,
         )
         self.assertEqual(
-            calculate_flooring_assembly_row_total(row(formula="kg_layer_consumption", price=600, package_size=25, consumption_per_m2=1.5, layer_mm=5)),
+            calculate_flooring_assembly_row_total(
+                row(formula="kg_layer_consumption", price=600, package_size=25, consumption_per_m2=1.5, layer_mm=5)
+            ),
             180,
         )
         self.assertEqual(
@@ -52,7 +62,9 @@ class FlooringPackageProjectionTests(unittest.TestCase):
             120,
         )
         self.assertEqual(
-            calculate_flooring_assembly_row_total(row(kind="tool", formula="fixed_area_allocation", public_category="tools", price=5000, package_size=50)),
+            calculate_flooring_assembly_row_total(
+                row(kind="tool", formula="fixed_area_allocation", public_category="tools", price=5000, package_size=50)
+            ),
             100,
         )
 
@@ -70,8 +82,22 @@ class FlooringPackageProjectionTests(unittest.TestCase):
                     consumption_per_m2=1.1,
                     public_category="materials",
                 ),
-                row(title="Клей плиточный", formula="kg_layer_consumption", price=600, package_size=25, consumption_per_m2=1.5, layer_mm=5),
-                row(title="Грунт", formula="package_consumption", unit="l", price=1250, package_size=10, consumption_per_m2=0.2),
+                row(
+                    title="Клей плиточный",
+                    formula="kg_layer_consumption",
+                    price=600,
+                    package_size=25,
+                    consumption_per_m2=1.5,
+                    layer_mm=5,
+                ),
+                row(
+                    title="Грунт",
+                    formula="package_consumption",
+                    unit="l",
+                    price=1250,
+                    package_size=10,
+                    consumption_per_m2=0.2,
+                ),
                 row(title="СВП 2 мм", formula="piece_consumption", unit="pcs", price=30, consumption_per_m2=4),
                 row(title="Затирка", formula="package_consumption", price=180, package_size=5, consumption_per_m2=0.5),
                 row(
@@ -84,7 +110,13 @@ class FlooringPackageProjectionTests(unittest.TestCase):
                     consumption_per_m2=10,
                     public_category="tools",
                 ),
-                row(title="Disabled glue", formula="unit_consumption", price=999, consumption_per_m2=999, is_enabled=False),
+                row(
+                    title="Disabled glue",
+                    formula="unit_consumption",
+                    price=999,
+                    consumption_per_m2=999,
+                    is_enabled=False,
+                ),
             ],
         )
 
@@ -97,7 +129,16 @@ class FlooringPackageProjectionTests(unittest.TestCase):
         self.assertEqual(projection["flat"]["toolConsumablesPerM2"], 40)
         self.assertEqual(len(projection["specLines"]), 6)
 
-        forbidden = {"id", "assembly_id", "assembly_item_id", "owner_user_id", "note", "source", "created_at", "updated_at"}
+        forbidden = {
+            "id",
+            "assembly_id",
+            "assembly_item_id",
+            "owner_user_id",
+            "note",
+            "source",
+            "created_at",
+            "updated_at",
+        }
         for line in projection["specLines"]:
             self.assertFalse(forbidden & set(line))
             self.assertEqual(line["basis"], "area")
@@ -106,11 +147,31 @@ class FlooringPackageProjectionTests(unittest.TestCase):
     def test_preparation_and_layout_projection_accept_work_only(self) -> None:
         preparation = build_flooring_package_projection(
             "preparation",
-            [row(section="work", kind="work", formula="flat_per_m2", title="Level floor", price=900, consumption_per_m2=1.2, public_category="works")],
+            [
+                row(
+                    section="work",
+                    kind="work",
+                    formula="flat_per_m2",
+                    title="Level floor",
+                    price=900,
+                    consumption_per_m2=1.2,
+                    public_category="works",
+                )
+            ],
         )
         layout = build_flooring_package_projection(
             "layout",
-            [row(section="work", kind="work", formula="flat_per_m2", title="Lay tile", price=2000, consumption_per_m2=1.25, public_category="works")],
+            [
+                row(
+                    section="work",
+                    kind="work",
+                    formula="flat_per_m2",
+                    title="Lay tile",
+                    price=2000,
+                    consumption_per_m2=1.25,
+                    public_category="works",
+                )
+            ],
         )
 
         self.assertEqual(preparation["flat"], {"laborPricePerM2": 1080, "materialPricePerM2": 0.0})
@@ -120,7 +181,16 @@ class FlooringPackageProjectionTests(unittest.TestCase):
         with self.assertRaises(ValidationError):
             build_flooring_package_projection(
                 "covering",
-                [row(section="work", kind="work", formula="flat_per_m2", title="Install", price=1000, public_category="works")],
+                [
+                    row(
+                        section="work",
+                        kind="work",
+                        formula="flat_per_m2",
+                        title="Install",
+                        price=1000,
+                        public_category="works",
+                    )
+                ],
             )
 
     def test_spec_line_price_times_quantity_matches_flat_row_total(self) -> None:
@@ -157,8 +227,22 @@ class FlooringPackageProjectionTests(unittest.TestCase):
                     consumption_per_m2=1.5,
                     layer_mm=5,
                 ),
-                row(title="Грунт", formula="package_consumption", unit="l", price=1250, package_size=10, consumption_per_m2=0.2),
-                row(title="СВП 2 мм", formula="piece_consumption", unit="pcs", price=30, package_size=100, consumption_per_m2=4),
+                row(
+                    title="Грунт",
+                    formula="package_consumption",
+                    unit="l",
+                    price=1250,
+                    package_size=10,
+                    consumption_per_m2=0.2,
+                ),
+                row(
+                    title="СВП 2 мм",
+                    formula="piece_consumption",
+                    unit="pcs",
+                    price=30,
+                    package_size=100,
+                    consumption_per_m2=4,
+                ),
             ],
         )
 

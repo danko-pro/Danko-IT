@@ -211,7 +211,9 @@ class BackfillFlooringPackageMetadataUseCaseTests(unittest.IsolatedAsyncioTestCa
                 _material_row(title="Керамогранит"),
                 _consumable_row(title="Клей", unit="kg", price=45, consumption_per_m2=4.5),
                 _consumable_row(title="СВП", formula="unit_consumption", unit="pcs", price=6, consumption_per_m2=25),
-                _consumable_row(title="Грунт", formula="unit_consumption", unit="l", price=120, consumption_per_m2=0.15),
+                _consumable_row(
+                    title="Грунт", formula="unit_consumption", unit="l", price=120, consumption_per_m2=0.15
+                ),
             ],
         )
 

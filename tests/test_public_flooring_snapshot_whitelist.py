@@ -18,9 +18,7 @@ from supply_bot.estimates.application.flooring_package_projection import build_f
 from supply_bot.estimates.application.flooring_snapshot import (
     DEFAULT_PUBLIC_FLOORING_SNAPSHOT,
     EXPECTED_COVERING_CODES,
-    EXPECTED_LAYOUT_CODES,
     EXPECTED_PLINTH_CODES,
-    EXPECTED_PREPARATION_CODES,
     PUBLIC_FLOORING_FORBIDDEN_KEYS,
     BuildFlooringSnapshotUseCase,
     _aggregate_covering_consumables,
@@ -322,7 +320,11 @@ class FlooringSnapshotSpecLinesTests(unittest.IsolatedAsyncioTestCase):
             "layout",
             layout_id,
             "Straight layout package",
-            [_work_assembly_row(title="Lay straight", public_title="Укладка прямая", price=1000, consumption_per_m2=1.1)],
+            [
+                _work_assembly_row(
+                    title="Lay straight", public_title="Укладка прямая", price=1000, consumption_per_m2=1.1
+                )
+            ],
         )
         payload = await BuildFlooringSnapshotUseCase(self.repository).build_public()
         primer = next(item for item in payload["preparations"] if item["code"] == "primer")
@@ -331,7 +333,9 @@ class FlooringSnapshotSpecLinesTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(straight["specLines"][0]["title"], "Укладка прямая")
 
     async def test_spec_lines_contain_no_forbidden_keys(self) -> None:
-        covering_id = await self.repository.create_estimate_flooring_covering(**_minimal_covering_kwargs(title="Ламинат"))
+        covering_id = await self.repository.create_estimate_flooring_covering(
+            **_minimal_covering_kwargs(title="Ламинат")
+        )
         await self.repository.replace_estimate_flooring_catalog_assembly(
             "covering",
             covering_id,
@@ -357,7 +361,9 @@ class FlooringSnapshotSpecLinesTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(payload["coverings"], [])
 
     async def test_invalid_assembly_is_not_published(self) -> None:
-        covering_id = await self.repository.create_estimate_flooring_covering(**_minimal_covering_kwargs(title="Ламинат"))
+        covering_id = await self.repository.create_estimate_flooring_covering(
+            **_minimal_covering_kwargs(title="Ламинат")
+        )
         await self.repository.replace_estimate_flooring_catalog_assembly(
             "covering",
             covering_id,
@@ -368,7 +374,9 @@ class FlooringSnapshotSpecLinesTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(payload["coverings"], [])
 
     async def test_numeric_unit_assembly_is_not_published(self) -> None:
-        covering_id = await self.repository.create_estimate_flooring_covering(**_minimal_covering_kwargs(title="Ламинат"))
+        covering_id = await self.repository.create_estimate_flooring_covering(
+            **_minimal_covering_kwargs(title="Ламинат")
+        )
         await self.repository.replace_estimate_flooring_catalog_assembly(
             "covering",
             covering_id,
@@ -598,7 +606,11 @@ class FlooringSnapshotRepositoryTests(unittest.IsolatedAsyncioTestCase):
             "layout",
             straight_id,
             "Straight only",
-            [_work_assembly_row(title="Lay straight", public_title="Укладка прямая", price=1000, consumption_per_m2=1.1)],
+            [
+                _work_assembly_row(
+                    title="Lay straight", public_title="Укладка прямая", price=1000, consumption_per_m2=1.1
+                )
+            ],
         )
         payload = await BuildFlooringSnapshotUseCase(self.repository).build_public()
         self.assertEqual({item["code"] for item in payload["layouts"]}, {"straight"})
@@ -756,7 +768,15 @@ class PublicFlooringSnapshotWhitelistTests(AdminProjectsRouteCase):
 
     def test_build_from_catalog_omits_rows_without_valid_package(self) -> None:
         payload = build_public_flooring_snapshot_from_catalog(
-            [{"title": "Ламинат", "material_price_per_m2": 555, "labor_price_per_m2": 666, "base_waste_percent": 8, "underlay_mode": "none"}],
+            [
+                {
+                    "title": "Ламинат",
+                    "material_price_per_m2": 555,
+                    "labor_price_per_m2": 666,
+                    "base_waste_percent": 8,
+                    "underlay_mode": "none",
+                }
+            ],
             [],
             [],
         )
@@ -786,7 +806,15 @@ class PublicFlooringSnapshotWhitelistTests(AdminProjectsRouteCase):
         payload = build_public_flooring_snapshot_from_catalog(
             [],
             [],
-            [{"id": 22, "title": "Крупный формат", "labor_price_per_m2": 2000, "labor_multiplier": 1.2, "extra_waste_percent": 10}],
+            [
+                {
+                    "id": 22,
+                    "title": "Крупный формат",
+                    "labor_price_per_m2": 2000,
+                    "labor_multiplier": 1.2,
+                    "extra_waste_percent": 10,
+                }
+            ],
             layout_assemblies={
                 22: {
                     "rows": [
@@ -803,7 +831,14 @@ class PublicFlooringSnapshotWhitelistTests(AdminProjectsRouteCase):
 
     def test_build_from_catalog_publishes_only_package_backed_rows(self) -> None:
         coverings = [
-            {"id": 1, "title": title, "material_price_per_m2": 1000 + index, "labor_price_per_m2": 2000 + index, "base_waste_percent": 8, "underlay_mode": "none"}
+            {
+                "id": 1,
+                "title": title,
+                "material_price_per_m2": 1000 + index,
+                "labor_price_per_m2": 2000 + index,
+                "base_waste_percent": 8,
+                "underlay_mode": "none",
+            }
             for index, title in enumerate(("Керамогранит", "Кварцвинил", "Ламинат", "Ковролин", "Инженерная доска"))
         ]
         preparations = [
@@ -822,7 +857,13 @@ class PublicFlooringSnapshotWhitelistTests(AdminProjectsRouteCase):
         ]
 
         covering_assemblies = {
-            int(row["id"]): {"rows": [_sample_assembly_row(title=row["title"], public_title=row["title"], price=row["material_price_per_m2"])]}
+            int(row["id"]): {
+                "rows": [
+                    _sample_assembly_row(
+                        title=row["title"], public_title=row["title"], price=row["material_price_per_m2"]
+                    )
+                ]
+            }
             for row in coverings
         }
         preparation_assemblies = {
@@ -878,7 +919,14 @@ class PublicFlooringSnapshotWhitelistTests(AdminProjectsRouteCase):
 
     def test_known_layout_zero_labor_uses_default_v2_rate_before_publication(self) -> None:
         coverings = [
-            {"id": 1, "title": title, "material_price_per_m2": 1000, "labor_price_per_m2": 0, "base_waste_percent": 8, "underlay_mode": "none"}
+            {
+                "id": 1,
+                "title": title,
+                "material_price_per_m2": 1000,
+                "labor_price_per_m2": 0,
+                "base_waste_percent": 8,
+                "underlay_mode": "none",
+            }
             for title in ("Керамогранит", "Кварцвинил", "Ламинат", "Ковролин", "Инженерная доска")
         ]
         preparations = [

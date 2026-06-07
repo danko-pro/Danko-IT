@@ -9,6 +9,7 @@ from supply_bot.estimates.application.create_flooring_catalog import (
     _flooring_custom_consumables_to_json,
     _normalize_required_text,
 )
+
 # FP3b: reject flat PATCH when a package assembly exists (safer than silent re-projection).
 from supply_bot.estimates.application.flooring_catalog_assembly import (
     reject_flooring_flat_update_when_assembly_present,

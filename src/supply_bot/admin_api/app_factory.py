@@ -28,8 +28,6 @@ from supply_bot.storage_auth import SqlAlchemyUserAuthRepository
 from supply_bot.storage_auth.tables import app_users
 from supply_bot.storage_catalog import SqlAlchemyCatalogRepository
 from supply_bot.storage_dashboard import SqlAlchemyDashboardReadModel
-from supply_bot.storage_estimates.plumbing_seed import ensure_global_plumbing_defaults
-from supply_bot.storage_estimates.runtime_repository import SqlAlchemyEstimateRuntimeRepository
 from supply_bot.storage_estimates.flooring_assembly_seed import ensure_global_flooring_assembly_defaults
 from supply_bot.storage_estimates.flooring_package_metadata_backfill_seed import (
     ensure_flooring_package_metadata_backfill,
@@ -37,6 +35,8 @@ from supply_bot.storage_estimates.flooring_package_metadata_backfill_seed import
 from supply_bot.storage_estimates.flooring_synthetic_assembly_seed import (
     ensure_global_flooring_synthetic_catalog_assemblies,
 )
+from supply_bot.storage_estimates.plumbing_seed import ensure_global_plumbing_defaults
+from supply_bot.storage_estimates.runtime_repository import SqlAlchemyEstimateRuntimeRepository
 from supply_bot.storage_estimates.tables import estimate_flooring_assembly_items, estimate_public_warm_floor_configs
 from supply_bot.storage_estimates.warm_floor_seed import ensure_global_warm_floor_defaults
 from supply_bot.storage_notifications import SqlAlchemyTelegramNotificationRepository

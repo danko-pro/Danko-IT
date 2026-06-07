@@ -13,8 +13,8 @@ from typing import Any, Mapping
 from supply_bot.projects.domain.common import (
     ALLOWED_PROJECT_ADVANCE_STATUSES,
     ALLOWED_PROJECT_TAX_BASE_MODES,
-    DEFAULT_PROJECT_TAX_BASE_MODE,
     DEFAULT_PROJECT_ESTIMATE_SOURCE,
+    DEFAULT_PROJECT_TAX_BASE_MODE,
     ProjectValidationError,
     normalize_project_date,
     normalize_project_name,

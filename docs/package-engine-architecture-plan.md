@@ -293,6 +293,10 @@ Snapshot любого раздела публикует только package-bac
 Общий loader:
 
 - валидирует package snapshot;
+- стартует с bundled snapshot как fallback;
+- при загрузке страницы один раз запрашивает fresh remote snapshot через public API;
+- принимает remote snapshot только после такой же package validation, как build-time JSON;
+- не делает periodic polling на первом этапе;
 - строит dropdown options;
 - отдает projection для быстрых итогов;
 - отдает spec/procurement для estimate document.
@@ -300,8 +304,9 @@ Snapshot любого раздела публикует только package-bac
 Результат:
 
 - public UI не держит hardcoded options как нормальный путь;
-- fallback допускается только как dev seed, а не как production behavior;
-- custom/admin-created позиции появляются на сайте после snapshot generation.
+- fallback допускается только как bundled safety snapshot, а не как silent production override;
+- custom/admin-created позиции появляются на сайте после перезагрузки страницы, если backend отдает валидный remote snapshot;
+- если remote snapshot недоступен или invalid, сайт остается на bundled snapshot и не ломает калькулятор.
 
 ### PE6. Estimate document renderer
 
@@ -803,7 +808,8 @@ NEXT: PF4 → PF3 hardening → PF5 → PF6 → PF8 → PE generalization
 | **PF5** | Public estimate document | `buildPublicEstimateDocument()`; убрать flat fallback в spec | golden: totals = spec totals |
 | **PF6** | Modal/CSV/PDF | `spec.ts`, `spec-export.ts` на unified doc | CSV parity test |
 | **PF7** | Local dev reliability | ENV docs; fail if seed overwrites remote | prebuild remote mode CI |
-| **PF8** | E2E chain | admin → API → generate-snapshot → dropdown → calc → modal → CSV | smoke + pytest/vitest |
+| **PF7b** | Runtime snapshot refresh | bundled fallback + one remote fetch on page load | loader tests: valid remote replaces bundled, invalid remote ignored |
+| **PF8** | E2E chain | admin → API → runtime/generate snapshot → dropdown → calc → modal → CSV | smoke + pytest/vitest |
 | **PE1** | Shared contract types | extract validators | shared forbidden-key test |
 | **PE2–PE3** | Generic validation + projection | section adapters | per-section unit tests |
 | **PE4–PE6** | Snapshot gateway, loader, estimate doc | generalize flooring modules | plumbing pilot #2 |
@@ -813,7 +819,7 @@ NEXT: PF4 → PF3 hardening → PF5 → PF6 → PF8 → PE generalization
 **Минимальный порядок для стабильного пилота полов** (из flooring audit):
 
 ```text
-PF1 → PF2 → PF3 → PF4 → PF7 → PF8
+PF1 → PF2 → PF3 → PF4 → PF7 → PF7b → PF8
 ```
 
 Затем:
@@ -863,4 +869,3 @@ PF5 → PF6
 ### Следующий практический шаг
 
 См. §12: runtime drift flooring → package-first snapshot → ограничить flat fallback → package-view estimate document → проверка dropdown/modal/CSV локально.
-

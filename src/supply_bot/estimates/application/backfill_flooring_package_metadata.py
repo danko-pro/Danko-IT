@@ -8,12 +8,12 @@ from supply_bot.estimates.application.flooring_catalog_assembly import (
     FLOORING_CATALOG_ASSEMBLY_VERSION,
     validate_flooring_package_for_publication,
 )
+from supply_bot.estimates.application.flooring_consumable_package_defaults import (
+    consumable_package_defaults_for_title,
+)
 from supply_bot.estimates.application.flooring_package_projection import (
     build_flooring_package_projection,
     catalog_update_values_from_projection,
-)
-from supply_bot.estimates.application.flooring_consumable_package_defaults import (
-    consumable_package_defaults_for_title,
 )
 
 _PACKAGE_AWARE_FORMULAS = frozenset(

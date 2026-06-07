@@ -73,9 +73,7 @@ def load_topology_rules(
 
         severity = str(item.get("severity", "error")).strip().lower()
         if severity not in severity_names:
-            raise ValueError(
-                f"topology_rules[{index}].severity must be one of: {', '.join(sorted(severity_names))}."
-            )
+            raise ValueError(f"topology_rules[{index}].severity must be one of: {', '.join(sorted(severity_names))}.")
 
         message = str(item.get("message", "")).strip()
         rules.append(
@@ -133,7 +131,9 @@ def collect_topology_violations(config, discovered_directories: set[str]) -> dic
                 )
                 violations[violation.violation_id] = violation
 
-            if rule.required_any_of and not any(matches_any_in_names(child_names, pattern) for pattern in rule.required_any_of):
+            if rule.required_any_of and not any(
+                matches_any_in_names(child_names, pattern) for pattern in rule.required_any_of
+            ):
                 expected = ", ".join(rule.required_any_of)
                 message = _compose_message(rule.message, f"Missing required entrypoint. Expected one of: {expected}.")
                 violation = TopologyViolation(

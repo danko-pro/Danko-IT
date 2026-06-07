@@ -2,13 +2,13 @@ from __future__ import annotations
 
 from typing import Any, Mapping
 
-from supply_bot.projects.domain.finance import (
-    ProjectLedgerFinanceInput,
-    calculate_project_finance_summary,
-)
 from supply_bot.projects.application.tax_read_model import (
     build_project_tax_runtime_config,
     resolve_project_tax_base,
+)
+from supply_bot.projects.domain.finance import (
+    ProjectLedgerFinanceInput,
+    calculate_project_finance_summary,
 )
 
 FINANCE_SUMMARY_PAYLOAD_KEYS = (

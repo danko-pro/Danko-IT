@@ -11,7 +11,6 @@ from .snapshot import serialize_event, serialize_snapshot, summarize_severity_co
 from .topology import TopologyViolation
 from .ui_motion import UiMotionViolation
 
-
 SEVERITY_LABELS = {
     "note": "NOTE",
     "warn": "WARNING",
@@ -186,8 +185,7 @@ def render_layer_event_message(event: ViolationEvent) -> str:
 def render_topology_event_message(event: ViolationEvent) -> str:
     if event.kind == "violation_cleared":
         return (
-            f"[architecture-guard][INFO] Topology restored: {event.relative_path} no longer violates "
-            f"{event.rule_name}."
+            f"[architecture-guard][INFO] Topology restored: {event.relative_path} no longer violates {event.rule_name}."
         )
 
     prefix = "Existing topology violation" if event.kind == "violation_present" else "Topology violation after save"
@@ -200,7 +198,10 @@ def render_topology_event_message(event: ViolationEvent) -> str:
 
 def render_ui_motion_event_message(event: ViolationEvent) -> str:
     if event.kind == "violation_cleared":
-        return f"[architecture-guard][INFO] UI motion restored: {event.relative_path} no longer violates {event.rule_name}."
+        return (
+            f"[architecture-guard][INFO] UI motion restored: {event.relative_path} "
+            f"no longer violates {event.rule_name}."
+        )
 
     prefix = "Existing UI motion violation" if event.kind == "violation_present" else "UI motion violation after save"
     label = severity_label(event.severity)
@@ -214,12 +215,11 @@ def render_hygiene_event_message(event: ViolationEvent) -> str:
     if event.kind == "violation_cleared":
         return f"[architecture-guard][INFO] Workspace hygiene restored: {event.relative_path} was removed."
 
-    prefix = "Existing workspace hygiene violation" if event.kind == "violation_present" else "Workspace hygiene violation"
-    label = severity_label(event.severity)
-    return (
-        f"[architecture-guard][{label}] {prefix}: {event.relative_path}, "
-        f"rule {event.rule_name}. {event.message}"
+    prefix = (
+        "Existing workspace hygiene violation" if event.kind == "violation_present" else "Workspace hygiene violation"
     )
+    label = severity_label(event.severity)
+    return f"[architecture-guard][{label}] {prefix}: {event.relative_path}, rule {event.rule_name}. {event.message}"
 
 
 def format_violation_line(violation: Violation) -> str:
@@ -254,8 +254,7 @@ def format_ui_motion_violation_line(violation: UiMotionViolation) -> str:
 
 def format_hygiene_violation_line(violation: HygieneViolation) -> str:
     return (
-        f"- {violation.relative_path}: rule {violation.rule_name} | "
-        f"severity {violation.severity} | {violation.message}"
+        f"- {violation.relative_path}: rule {violation.rule_name} | severity {violation.severity} | {violation.message}"
     )
 
 

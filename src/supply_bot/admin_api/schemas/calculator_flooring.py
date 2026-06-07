@@ -45,9 +45,25 @@ class CalculatorFlooringPreparationPayload(BaseModel):
 
 class CalculatorFlooringLayoutPayload(BaseModel):
     title: str
+    labor_price_per_m2: float = 0
     labor_multiplier: float = 1
     extra_waste_percent: float = 0
     note: str | None = None
+
+
+class CalculatorFlooringAssemblyItemPayload(BaseModel):
+    source_code: str | None = None
+    section: str
+    title: str
+    kind: str
+    formula: str
+    unit: str = "pcs"
+    price: float = 0
+    consumption_per_m2: float = 0
+    package_size: float | None = None
+    layer_mm: float | None = None
+    note: str | None = None
+    sort_order: int | None = None
 
 
 class CalculatorFlooringRoomZonePayload(BaseModel):

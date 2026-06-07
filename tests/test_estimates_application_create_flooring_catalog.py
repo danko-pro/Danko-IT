@@ -189,6 +189,7 @@ class CreateFlooringCatalogUseCaseTests(unittest.IsolatedAsyncioTestCase):
         storage = FakeFlooringCatalogStorage()
         command = CreateFlooringLayoutCommand(
             title=" Layout ",
+            labor_price_per_m2=-700,
             labor_multiplier=0,
             extra_waste_percent=-5,
             note=" Note ",
@@ -202,6 +203,7 @@ class CreateFlooringCatalogUseCaseTests(unittest.IsolatedAsyncioTestCase):
             [
                 {
                     "title": "Layout",
+                    "labor_price_per_m2": 0.0,
                     "labor_multiplier": 0.1,
                     "extra_waste_percent": 0.0,
                     "note": "Note",
@@ -213,6 +215,7 @@ class CreateFlooringCatalogUseCaseTests(unittest.IsolatedAsyncioTestCase):
         storage = FakeFlooringCatalogStorage()
         command = CreateFlooringLayoutCommand(
             title="   ",
+            labor_price_per_m2=0,
             labor_multiplier=1,
             extra_waste_percent=0,
             note=None,

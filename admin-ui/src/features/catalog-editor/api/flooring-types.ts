@@ -1,4 +1,4 @@
-// DTO/payload-контракты REST API каталога полов и публичного flooring-v1 snapshot.
+// DTO/payload-контракты REST API каталога полов и публичного flooring-v2 snapshot.
 // Имена полей API — snake_case (как у backend); draft-модель редактора — camelCase в flooring-mappers.ts.
 
 import type { FlooringSnapshot } from "../../public/public-flooring-snapshot";
@@ -56,10 +56,46 @@ export type FlooringPreparationDto = {
 export type FlooringLayoutDto = {
   id: number;
   title: string;
+  labor_price_per_m2: number;
   labor_multiplier: number;
   extra_waste_percent: number;
   note?: string | null;
   is_active?: number;
+  created_at?: string;
+  updated_at?: string;
+};
+
+export type FlooringAssemblySection = "covering" | "work" | "preparation" | "consumable" | "tool";
+
+export type FlooringAssemblyRowKind = "work" | "material" | "consumable" | "tool";
+
+export type FlooringAssemblyFormula =
+  | "flat_per_m2"
+  | "unit_consumption"
+  | "package_consumption"
+  | "layer_consumption"
+  | "piece_consumption"
+  | "kg_layer_consumption"
+  | "liquid_layers"
+  | "roll_meter_consumption"
+  | "sheet_area_consumption"
+  | "fixed_area_allocation";
+
+export type FlooringAssemblyItemDto = {
+  id: number;
+  source_code: string;
+  section: FlooringAssemblySection;
+  title: string;
+  kind: FlooringAssemblyRowKind;
+  formula: FlooringAssemblyFormula;
+  unit: string;
+  price: number;
+  consumption_per_m2: number;
+  package_size?: number | null;
+  layer_mm?: number | null;
+  note?: string | null;
+  is_active?: number;
+  sort_order?: number;
   created_at?: string;
   updated_at?: string;
 };
@@ -108,16 +144,33 @@ export type FlooringPreparationCreatePayload = {
 
 export type FlooringLayoutCreatePayload = {
   title: string;
+  labor_price_per_m2: number;
   labor_multiplier: number;
   extra_waste_percent: number;
   note: string | null;
 };
 
+export type FlooringAssemblyItemPayload = {
+  source_code?: string | null;
+  section: FlooringAssemblySection;
+  title: string;
+  kind: FlooringAssemblyRowKind;
+  formula: FlooringAssemblyFormula;
+  unit: string;
+  price: number;
+  consumption_per_m2: number;
+  package_size?: number | null;
+  layer_mm?: number | null;
+  note: string | null;
+  sort_order?: number | null;
+};
+
 export type FlooringCoveringUpdatePayload = FlooringCoveringCreatePayload;
 export type FlooringPreparationUpdatePayload = FlooringPreparationCreatePayload;
 export type FlooringLayoutUpdatePayload = FlooringLayoutCreatePayload;
+export type FlooringAssemblyItemUpdatePayload = FlooringAssemblyItemPayload;
 
-/** Публичный ответ GET /api/public/catalog/flooring/snapshot (контракт flooring-v1). */
+/** Публичный ответ GET /api/public/catalog/flooring/snapshot (контракт flooring-v2 + legacy v1 fallback). */
 export type PublicFlooringSnapshotResponse = FlooringSnapshot;
 
 // --- Draft-модель catalog-editor (будущая вкладка «Полы») ---
@@ -169,9 +222,26 @@ export type FlooringPreparationDraft = {
 export type FlooringLayoutDraft = {
   id: number;
   title: string;
+  laborPricePerM2: number;
   laborFactor: number;
   additionalWastePercent: number;
   note: string;
+};
+
+export type FlooringAssemblyItemDraft = {
+  id: number;
+  sourceCode: string;
+  section: FlooringAssemblySection;
+  title: string;
+  kind: FlooringAssemblyRowKind;
+  formula: FlooringAssemblyFormula;
+  unit: string;
+  price: number;
+  consumptionPerM2: number;
+  packageSize: number | null;
+  layerMm: number | null;
+  note: string;
+  sortOrder: number;
 };
 
 export type FlooringCoveringConsumableRates = {

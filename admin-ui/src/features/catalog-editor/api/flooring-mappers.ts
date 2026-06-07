@@ -1,8 +1,11 @@
-// Маппинг REST DTO каталога полов ↔ draft catalog-editor и строки preview из flooring-v1 snapshot.
+// Маппинг REST DTO каталога полов ↔ draft catalog-editor и строки preview из flooring-v2 snapshot.
 // Без сетевых вызовов и React — покрывается unit-тестами.
 
 import type { FlooringSnapshot } from "../../public/public-flooring-snapshot";
 import type {
+  FlooringAssemblyItemDraft,
+  FlooringAssemblyItemDto,
+  FlooringAssemblyItemPayload,
   FlooringConsumableDraft,
   FlooringCoveringConsumableRates,
   FlooringCoveringCreatePayload,
@@ -151,9 +154,28 @@ export function dtoToFlooringLayoutDraft(dto: FlooringLayoutDto): FlooringLayout
   return {
     id: normalizeNum(dto.id),
     title: normalizeText(dto.title),
+    laborPricePerM2: normalizeNum(dto.labor_price_per_m2),
     laborFactor: normalizeNum(dto.labor_multiplier) > 0 ? normalizeNum(dto.labor_multiplier) : 1,
     additionalWastePercent: normalizeNum(dto.extra_waste_percent),
     note: normalizeText(dto.note),
+  };
+}
+
+export function dtoToFlooringAssemblyItemDraft(dto: FlooringAssemblyItemDto): FlooringAssemblyItemDraft {
+  return {
+    id: normalizeNum(dto.id),
+    sourceCode: normalizeText(dto.source_code),
+    section: dto.section,
+    title: normalizeText(dto.title),
+    kind: dto.kind,
+    formula: dto.formula,
+    unit: normalizeText(dto.unit) || "pcs",
+    price: normalizeNum(dto.price),
+    consumptionPerM2: normalizeNum(dto.consumption_per_m2),
+    packageSize: dto.package_size === null || dto.package_size === undefined ? null : normalizeNum(dto.package_size),
+    layerMm: dto.layer_mm === null || dto.layer_mm === undefined ? null : normalizeNum(dto.layer_mm),
+    note: normalizeText(dto.note),
+    sortOrder: normalizeNum(dto.sort_order) || 100,
   };
 }
 
@@ -169,11 +191,28 @@ export function layoutDraftToUpdatePayload(draft: FlooringLayoutDraft): Flooring
   return layoutDraftToPayload(draft);
 }
 
+export function assemblyItemDraftToPayload(draft: FlooringAssemblyItemDraft): FlooringAssemblyItemPayload {
+  return {
+    source_code: draft.sourceCode.trim() || null,
+    section: draft.section,
+    title: draft.title,
+    kind: draft.kind,
+    formula: draft.formula,
+    unit: draft.unit || "pcs",
+    price: normalizeNum(draft.price),
+    consumption_per_m2: normalizeNum(draft.consumptionPerM2),
+    package_size: draft.packageSize === null ? null : normalizeNum(draft.packageSize),
+    layer_mm: draft.layerMm === null ? null : normalizeNum(draft.layerMm),
+    note: draft.note.trim() || null,
+    sort_order: normalizeNum(draft.sortOrder) || 100,
+  };
+}
+
 export function coveringDraftToPayload(draft: FlooringCoveringDraft): FlooringCoveringCreatePayload {
   return {
     title: draft.title,
     material_price_per_m2: normalizeNum(draft.materialPricePerM2),
-    labor_price_per_m2: normalizeNum(draft.laborPricePerM2),
+    labor_price_per_m2: 0,
     base_waste_percent: normalizeNum(draft.baseWastePercent),
     underlay_mode: draft.underlayMode || "none",
     underlay_consumption_per_m2: normalizeNum(draft.underlayConsumptionPerM2),
@@ -216,6 +255,7 @@ export function preparationDraftToPayload(draft: FlooringPreparationDraft): Floo
 export function layoutDraftToPayload(draft: FlooringLayoutDraft): FlooringLayoutCreatePayload {
   return {
     title: draft.title,
+    labor_price_per_m2: normalizeNum(draft.laborPricePerM2),
     labor_multiplier: draft.laborFactor > 0 ? draft.laborFactor : 1,
     extra_waste_percent: normalizeNum(draft.additionalWastePercent),
     note: draft.note.trim() || null,
@@ -280,7 +320,6 @@ export function snapshotToDisplayRows(snapshot: FlooringSnapshot): FlooringSnaps
     rows.push(
       snapshotItemToRow("coverings", item, [
         "materialPricePerM2",
-        "laborPricePerM2",
         "baseWastePercent",
         "underlayPricePerM2",
         "adhesivePricePerM2",
@@ -295,7 +334,7 @@ export function snapshotToDisplayRows(snapshot: FlooringSnapshot): FlooringSnaps
     rows.push(snapshotItemToRow("preparations", item, ["laborPricePerM2", "materialPricePerM2"]));
   }
   for (const item of snapshot.layouts) {
-    rows.push(snapshotItemToRow("layouts", item, ["laborFactor", "additionalWastePercent"]));
+    rows.push(snapshotItemToRow("layouts", item, ["laborPricePerM2", "laborFactor", "additionalWastePercent"]));
   }
   for (const item of snapshot.plinthTypes) {
     rows.push(

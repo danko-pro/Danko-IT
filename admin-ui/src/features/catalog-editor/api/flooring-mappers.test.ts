@@ -2,11 +2,13 @@ import { describe, expect, it } from "vitest";
 
 import type { FlooringSnapshot } from "../../public/public-flooring-snapshot";
 import {
+  assemblyItemDraftToPayload,
   attachCatalogIdsToDisplayRows,
   consumablePricePerM2,
   coveringDtoToConsumableRates,
   coveringDraftToPayload,
   coveringDraftToUpdatePayload,
+  dtoToFlooringAssemblyItemDraft,
   dtoToFlooringCoveringDraft,
   dtoToFlooringLayoutDraft,
   dtoToFlooringPreparationDraft,
@@ -17,7 +19,12 @@ import {
   preparationDraftToUpdatePayload,
   snapshotToDisplayRows,
 } from "./flooring-mappers";
-import type { FlooringCoveringDto, FlooringLayoutDto, FlooringPreparationDto } from "./flooring-types";
+import type {
+  FlooringAssemblyItemDto,
+  FlooringCoveringDto,
+  FlooringLayoutDto,
+  FlooringPreparationDto,
+} from "./flooring-types";
 
 function makeCoveringDto(overrides: Partial<FlooringCoveringDto> = {}): FlooringCoveringDto {
   return {
@@ -68,6 +75,7 @@ function makeLayoutDto(overrides: Partial<FlooringLayoutDto> = {}): FlooringLayo
   return {
     id: 3,
     title: "Прямая",
+    labor_price_per_m2: 1000,
     labor_multiplier: 1.1,
     extra_waste_percent: 5,
     note: null,
@@ -75,14 +83,32 @@ function makeLayoutDto(overrides: Partial<FlooringLayoutDto> = {}): FlooringLayo
   };
 }
 
+function makeAssemblyItemDto(overrides: Partial<FlooringAssemblyItemDto> = {}): FlooringAssemblyItemDto {
+  return {
+    id: 4,
+    source_code: "consumable-tile-glue",
+    section: "consumable",
+    title: "Клей плиточный",
+    kind: "consumable",
+    formula: "kg_layer_consumption",
+    unit: "kg",
+    price: 600,
+    consumption_per_m2: 1.5,
+    package_size: 25,
+    layer_mm: 5,
+    note: null,
+    sort_order: 70,
+    ...overrides,
+  };
+}
+
 const MINI_SNAPSHOT: FlooringSnapshot = {
-  version: "flooring-v1",
+  version: "flooring-v2",
   coverings: [
     {
       code: "porcelain",
       title: "Керамогранит",
       materialPricePerM2: 2900,
-      laborPricePerM2: 2000,
       baseWastePercent: 10,
       underlayPricePerM2: 0,
       adhesivePricePerM2: 450,
@@ -93,7 +119,7 @@ const MINI_SNAPSHOT: FlooringSnapshot = {
     },
   ],
   preparations: [{ code: "primer", title: "Грунтование", laborPricePerM2: 250, materialPricePerM2: 120 }],
-  layouts: [{ code: "straight", title: "Прямая", laborFactor: 1.1, additionalWastePercent: 5 }],
+  layouts: [{ code: "straight", title: "Прямая", laborPricePerM2: 1000, laborFactor: 1.1, additionalWastePercent: 5 }],
   plinthTypes: [
     { code: "none", title: "Без плинтуса", materialPricePerMeter: 0, laborPricePerMeter: 0, factor: 1 },
   ],
@@ -163,8 +189,9 @@ describe("dtoToFlooringPreparationDraft", () => {
 });
 
 describe("dtoToFlooringLayoutDraft", () => {
-  it("маппит laborFactor и additionalWastePercent", () => {
+  it("маппит laborPricePerM2, laborFactor и additionalWastePercent", () => {
     const draft = dtoToFlooringLayoutDraft(makeLayoutDto());
+    expect(draft.laborPricePerM2).toBe(1000);
     expect(draft.laborFactor).toBe(1.1);
     expect(draft.additionalWastePercent).toBe(5);
   });
@@ -172,6 +199,18 @@ describe("dtoToFlooringLayoutDraft", () => {
   it("нулевой labor_multiplier → laborFactor 1", () => {
     const draft = dtoToFlooringLayoutDraft(makeLayoutDto({ labor_multiplier: 0 }));
     expect(draft.laborFactor).toBe(1);
+  });
+});
+
+describe("dtoToFlooringAssemblyItemDraft", () => {
+  it("маппит кубик библиотеки полов", () => {
+    const draft = dtoToFlooringAssemblyItemDraft(makeAssemblyItemDto());
+    expect(draft.sourceCode).toBe("consumable-tile-glue");
+    expect(draft.section).toBe("consumable");
+    expect(draft.kind).toBe("consumable");
+    expect(draft.formula).toBe("kg_layer_consumption");
+    expect(draft.packageSize).toBe(25);
+    expect(draft.layerMm).toBe(5);
   });
 });
 
@@ -189,17 +228,28 @@ describe("draft payloads", () => {
     const draft = dtoToFlooringCoveringDraft(makeCoveringDto({ note: "  заметка  " }));
     const payload = coveringDraftToPayload(draft);
     expect(payload.material_price_per_m2).toBe(2900);
-    expect(payload.labor_price_per_m2).toBe(2000);
+    expect(payload.labor_price_per_m2).toBe(0);
     expect(payload.note).toBe("заметка");
     expect(payload.custom_consumables[0].title).toBe("Прокладка");
   });
 
-  it("layoutDraftToPayload отдаёт labor_multiplier и extra_waste_percent", () => {
+  it("layoutDraftToPayload отдаёт labor_price_per_m2, labor_multiplier и extra_waste_percent", () => {
     const draft = dtoToFlooringLayoutDraft(makeLayoutDto());
     const payload = layoutDraftToPayload(draft);
+    expect(payload.labor_price_per_m2).toBe(1000);
     expect(payload.labor_multiplier).toBe(1.1);
     expect(payload.extra_waste_percent).toBe(5);
     expect(payload.note).toBeNull();
+  });
+
+  it("assemblyItemDraftToPayload сохраняет snake_case поля", () => {
+    const draft = dtoToFlooringAssemblyItemDraft(makeAssemblyItemDto({ note: "  test  " }));
+    const payload = assemblyItemDraftToPayload(draft);
+    expect(payload.source_code).toBe("consumable-tile-glue");
+    expect(payload.consumption_per_m2).toBe(1.5);
+    expect(payload.package_size).toBe(25);
+    expect(payload.layer_mm).toBe(5);
+    expect(payload.note).toBe("test");
   });
 });
 
@@ -224,9 +274,10 @@ describe("snapshotToDisplayRows", () => {
     expect(rows[0]).toMatchObject({
       section: "coverings",
       code: "porcelain",
-      rates: { materialPricePerM2: 2900, laborPricePerM2: 2000 },
+      rates: { materialPricePerM2: 2900 },
     });
     expect(rows.find((row) => row.section === "layouts")?.rates).toEqual({
+      laborPricePerM2: 1000,
       laborFactor: 1.1,
       additionalWastePercent: 5,
     });

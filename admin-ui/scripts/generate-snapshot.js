@@ -15,7 +15,7 @@
  *
  * Также пишет `generated/flooring.snapshot.json`:
  * - remote mode: GET /api/public/catalog/flooring/snapshot;
- * - local/dev mode: детерминированный FLOORING_V1_SEED fallback.
+ * - local/dev mode: детерминированный FLOORING_V2_SEED fallback.
  *
  * Запуск: `node scripts/generate-snapshot.js`.
  */
@@ -101,15 +101,14 @@ export const WARM_FLOOR_V1_SEED = {
   },
 };
 
-/** Детерминированный seed публичных тарифов полов v1 (парити F1 / public-estimate-flooring.ts). */
-export const FLOORING_V1_SEED = {
-  version: "flooring-v1",
+/** Детерминированный seed публичных тарифов полов v2 (работы укладки живут в layouts). */
+export const FLOORING_V2_SEED = {
+  version: "flooring-v2",
   coverings: [
     {
       code: "porcelain",
       title: "Керамогранит",
       materialPricePerM2: 2900,
-      laborPricePerM2: 2000,
       baseWastePercent: 10,
       underlayPricePerM2: 0,
       adhesivePricePerM2: 450,
@@ -122,7 +121,6 @@ export const FLOORING_V1_SEED = {
       code: "quartz_vinyl",
       title: "Кварцвинил",
       materialPricePerM2: 1700,
-      laborPricePerM2: 800,
       baseWastePercent: 5,
       underlayPricePerM2: 220,
       adhesivePricePerM2: 0,
@@ -135,7 +133,6 @@ export const FLOORING_V1_SEED = {
       code: "laminate",
       title: "Ламинат",
       materialPricePerM2: 930,
-      laborPricePerM2: 1000,
       baseWastePercent: 10,
       underlayPricePerM2: 220,
       adhesivePricePerM2: 0,
@@ -148,7 +145,6 @@ export const FLOORING_V1_SEED = {
       code: "carpet",
       title: "Ковролин",
       materialPricePerM2: 1500,
-      laborPricePerM2: 900,
       baseWastePercent: 7,
       underlayPricePerM2: 0,
       adhesivePricePerM2: 250,
@@ -161,7 +157,6 @@ export const FLOORING_V1_SEED = {
       code: "engineered_wood",
       title: "Инженерная доска",
       materialPricePerM2: 6000,
-      laborPricePerM2: 2500,
       baseWastePercent: 10,
       underlayPricePerM2: 0,
       adhesivePricePerM2: 900,
@@ -201,24 +196,28 @@ export const FLOORING_V1_SEED = {
     {
       code: "straight",
       title: "Прямая",
+      laborPricePerM2: 1000,
       laborFactor: 1.1,
       additionalWastePercent: 5,
     },
     {
       code: "large_format_straight",
       title: "Крупный формат",
+      laborPricePerM2: 2000,
       laborFactor: 1.2,
       additionalWastePercent: 10,
     },
     {
       code: "glue",
       title: "Клеевая",
+      laborPricePerM2: 800,
       laborFactor: 1.25,
       additionalWastePercent: 5,
     },
     {
       code: "floating",
       title: "Плавающая",
+      laborPricePerM2: 1000,
       laborFactor: 1,
       additionalWastePercent: 3,
     },
@@ -400,7 +399,6 @@ export function validateWarmFloorSnapshotPayload(payload) {
 
 const FLOORING_COVERING_RATE_KEYS = [
   "materialPricePerM2",
-  "laborPricePerM2",
   "baseWastePercent",
   "underlayPricePerM2",
   "adhesivePricePerM2",
@@ -410,9 +408,16 @@ const FLOORING_COVERING_RATE_KEYS = [
   "toolConsumablesPerM2",
 ];
 
+const FLOORING_LEGACY_COVERING_RATE_KEYS = [
+  ...FLOORING_COVERING_RATE_KEYS,
+  "laborPricePerM2",
+];
+
 const FLOORING_PREPARATION_RATE_KEYS = ["laborPricePerM2", "materialPricePerM2"];
 
-const FLOORING_LAYOUT_RATE_KEYS = ["laborFactor", "additionalWastePercent"];
+const FLOORING_LAYOUT_RATE_KEYS = ["laborPricePerM2", "laborFactor", "additionalWastePercent"];
+
+const FLOORING_LEGACY_LAYOUT_RATE_KEYS = ["laborFactor", "additionalWastePercent"];
 
 const FLOORING_PLINTH_RATE_KEYS = ["materialPricePerMeter", "laborPricePerMeter", "factor"];
 
@@ -506,10 +511,14 @@ export function validateFlooringSnapshotPayload(payload) {
     return { ok: false, reason: "version must be a non-empty string" };
   }
 
+  const isLegacyV1 = payload.version === "flooring-v1";
+  const coveringRateKeys = isLegacyV1 ? FLOORING_LEGACY_COVERING_RATE_KEYS : FLOORING_COVERING_RATE_KEYS;
+  const layoutRateKeys = isLegacyV1 ? FLOORING_LEGACY_LAYOUT_RATE_KEYS : FLOORING_LAYOUT_RATE_KEYS;
+
   const coveringsValidation = validateFlooringCatalogItems(
     payload.coverings,
     "coverings",
-    FLOORING_COVERING_RATE_KEYS,
+    coveringRateKeys,
   );
   if (!coveringsValidation.ok) {
     return coveringsValidation;
@@ -527,7 +536,7 @@ export function validateFlooringSnapshotPayload(payload) {
   const layoutsValidation = validateFlooringCatalogItems(
     payload.layouts,
     "layouts",
-    FLOORING_LAYOUT_RATE_KEYS,
+    layoutRateKeys,
   );
   if (!layoutsValidation.ok) {
     return layoutsValidation;
@@ -677,7 +686,7 @@ function runLocalPythonGenerator() {
 
   console.log(`[generate-snapshot] success: local snapshot written to ${outputFile}`);
   writeWarmFloorSnapshot(WARM_FLOOR_V1_SEED);
-  writeFlooringSnapshot(FLOORING_V1_SEED);
+  writeFlooringSnapshot(FLOORING_V2_SEED);
 }
 
 async function runRemoteMode(baseUrl) {

@@ -15,6 +15,7 @@ ESTIMATE_OWNER_TABLES = (
     "estimate_flooring_coverings",
     "estimate_flooring_preparations",
     "estimate_flooring_layouts",
+    "estimate_flooring_assembly_items",
     "estimate_flooring_configs",
     "estimate_flooring_rooms",
     "estimate_flooring_room_zones",
@@ -129,12 +130,64 @@ async def apply_storage_migrations(connection_factory: ConnectionFactory) -> Non
             column="custom_consumables_json",
             definition="TEXT NOT NULL DEFAULT ''",
         )
+        await db.execute(
+            """
+            CREATE TABLE IF NOT EXISTS estimate_flooring_assembly_items (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                owner_user_id INTEGER REFERENCES app_users(id) ON DELETE CASCADE,
+                source_code TEXT NOT NULL,
+                section TEXT NOT NULL,
+                title TEXT NOT NULL,
+                kind TEXT NOT NULL,
+                formula TEXT NOT NULL,
+                unit TEXT NOT NULL DEFAULT 'pcs',
+                price REAL NOT NULL DEFAULT 0,
+                consumption_per_m2 REAL NOT NULL DEFAULT 0,
+                package_size REAL,
+                layer_mm REAL,
+                note TEXT,
+                is_active INTEGER NOT NULL DEFAULT 1,
+                sort_order INTEGER NOT NULL DEFAULT 100,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            )
+            """
+        )
+        await db.execute(
+            "CREATE INDEX IF NOT EXISTS ix_estimate_flooring_assembly_items_owner "
+            "ON estimate_flooring_assembly_items(owner_user_id)"
+        )
+        await db.execute(
+            "CREATE INDEX IF NOT EXISTS ix_estimate_flooring_assembly_items_section "
+            "ON estimate_flooring_assembly_items(section)"
+        )
+        await db.execute(
+            """
+            CREATE UNIQUE INDEX IF NOT EXISTS uq_estimate_flooring_assembly_items_global_code
+            ON estimate_flooring_assembly_items(source_code)
+            WHERE owner_user_id IS NULL
+            """
+        )
+        await db.execute(
+            """
+            CREATE UNIQUE INDEX IF NOT EXISTS uq_estimate_flooring_assembly_items_owner_code
+            ON estimate_flooring_assembly_items(owner_user_id, source_code)
+            WHERE owner_user_id IS NOT NULL
+            """
+        )
         await _ensure_column(
             db,
             table="estimate_wall_finish_coverings",
             column="custom_consumables_json",
             definition="TEXT NOT NULL DEFAULT ''",
         )
+        await _ensure_column(
+            db,
+            table="estimate_flooring_layouts",
+            column="labor_price_per_m2",
+            definition="REAL NOT NULL DEFAULT 0",
+        )
+        await _backfill_flooring_layout_labor_rates(db)
         await db.execute(
             """
             CREATE TABLE IF NOT EXISTS estimate_flooring_room_zones (
@@ -285,6 +338,31 @@ async def _ensure_column(
     if column in existing:
         return
     await db.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
+
+
+async def _backfill_flooring_layout_labor_rates(db: aiosqlite.Connection) -> None:
+    """Заполняет работу укладки после добавления labor_price_per_m2 в старых БД."""
+
+    for title, labor_price_per_m2 in (
+        ("Прямая", 1000),
+        ("Крупный формат", 2000),
+        ("Клеевая", 800),
+        ("Плавающая", 1000),
+        ("Разбежка", 1100),
+        ("Диагональ", 1300),
+        ("Ёлка", 1600),
+        ("Елка", 1600),
+        ("Сложная", 1800),
+    ):
+        await db.execute(
+            """
+            UPDATE estimate_flooring_layouts
+            SET labor_price_per_m2 = ?
+            WHERE title = ?
+              AND COALESCE(labor_price_per_m2, 0) = 0
+            """,
+            (labor_price_per_m2, title),
+        )
 
 
 __all__ = ["apply_storage_migrations"]

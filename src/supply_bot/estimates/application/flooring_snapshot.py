@@ -7,16 +7,15 @@ from typing import Any, Protocol
 from supply_bot.admin_api.calculator_payloads.flooring_custom_consumables import parse_flooring_custom_consumables
 from supply_bot.utils import normalize_text, slugify
 
-# Детерминированный публичный seed v1 — парити с F1 (public-estimate-flooring.ts /
+# Детерминированный публичный seed v2 — работа укладки находится в layouts.
 # generated/flooring.snapshot.json). CRM seed в estimate_flooring_* может отличаться.
 DEFAULT_PUBLIC_FLOORING_SNAPSHOT: dict[str, Any] = {
-    "version": "flooring-v1",
+    "version": "flooring-v2",
     "coverings": [
         {
             "code": "porcelain",
             "title": "Керамогранит",
             "materialPricePerM2": 2900,
-            "laborPricePerM2": 2000,
             "baseWastePercent": 10,
             "underlayPricePerM2": 0,
             "adhesivePricePerM2": 450,
@@ -29,7 +28,6 @@ DEFAULT_PUBLIC_FLOORING_SNAPSHOT: dict[str, Any] = {
             "code": "quartz_vinyl",
             "title": "Кварцвинил",
             "materialPricePerM2": 1700,
-            "laborPricePerM2": 800,
             "baseWastePercent": 5,
             "underlayPricePerM2": 220,
             "adhesivePricePerM2": 0,
@@ -42,7 +40,6 @@ DEFAULT_PUBLIC_FLOORING_SNAPSHOT: dict[str, Any] = {
             "code": "laminate",
             "title": "Ламинат",
             "materialPricePerM2": 930,
-            "laborPricePerM2": 1000,
             "baseWastePercent": 10,
             "underlayPricePerM2": 220,
             "adhesivePricePerM2": 0,
@@ -55,7 +52,6 @@ DEFAULT_PUBLIC_FLOORING_SNAPSHOT: dict[str, Any] = {
             "code": "carpet",
             "title": "Ковролин",
             "materialPricePerM2": 1500,
-            "laborPricePerM2": 900,
             "baseWastePercent": 7,
             "underlayPricePerM2": 0,
             "adhesivePricePerM2": 250,
@@ -68,7 +64,6 @@ DEFAULT_PUBLIC_FLOORING_SNAPSHOT: dict[str, Any] = {
             "code": "engineered_wood",
             "title": "Инженерная доска",
             "materialPricePerM2": 6000,
-            "laborPricePerM2": 2500,
             "baseWastePercent": 10,
             "underlayPricePerM2": 0,
             "adhesivePricePerM2": 900,
@@ -108,24 +103,28 @@ DEFAULT_PUBLIC_FLOORING_SNAPSHOT: dict[str, Any] = {
         {
             "code": "straight",
             "title": "Прямая",
+            "laborPricePerM2": 1000,
             "laborFactor": 1.1,
             "additionalWastePercent": 5,
         },
         {
             "code": "large_format_straight",
             "title": "Крупный формат",
+            "laborPricePerM2": 2000,
             "laborFactor": 1.2,
             "additionalWastePercent": 10,
         },
         {
             "code": "glue",
             "title": "Клеевая",
+            "laborPricePerM2": 800,
             "laborFactor": 1.25,
             "additionalWastePercent": 5,
         },
         {
             "code": "floating",
             "title": "Плавающая",
+            "laborPricePerM2": 1000,
             "laborFactor": 1,
             "additionalWastePercent": 3,
         },
@@ -189,8 +188,13 @@ EXPECTED_PREPARATION_CODES = frozenset({"none", "primer", "self_leveling", "wate
 EXPECTED_LAYOUT_CODES = frozenset({"straight", "large_format_straight", "glue", "floating"})
 EXPECTED_PLINTH_CODES = frozenset({"none", "duropolymer", "painted_mdf"})
 
-# Глобальная цена подложки для агрегации underlayPricePerM2 (как F1 / catalog-editor preview).
+# Глобальная цена подложки для агрегации underlayPricePerM2 (как public seed / catalog-editor preview).
 DEFAULT_PUBLIC_UNDERLAY_PRICE_PER_M2 = 220.0
+
+_DEFAULT_LAYOUT_LABOR_BY_CODE = {
+    str(item["code"]): float(item["laborPricePerM2"])
+    for item in DEFAULT_PUBLIC_FLOORING_SNAPSHOT["layouts"]
+}
 
 _COVERING_TITLE_TO_CODE: dict[str, str] = {
     "керамогранит": "porcelain",
@@ -227,6 +231,10 @@ _LAYOUT_TITLE_TO_CODE: dict[str, str] = {
 
 def _normalize_title(title: object) -> str:
     return normalize_text(str(title or "")).casefold()
+
+
+def _public_title(title: object) -> str:
+    return str(title or "").strip()
 
 
 def _public_number(value: object) -> float | int:
@@ -312,7 +320,7 @@ def _resolve_public_code(
 
 
 def _map_covering_row(row: Mapping[str, Any], *, used_codes: set[str]) -> dict[str, Any]:
-    title = normalize_text(str(row.get("title") or ""))
+    title = _public_title(row.get("title"))
     code = _resolve_public_code(title, section="coverings", known_titles=_COVERING_TITLE_TO_CODE, used_codes=used_codes)
     used_codes.add(code)
     consumables = _aggregate_covering_consumables(row)
@@ -320,14 +328,13 @@ def _map_covering_row(row: Mapping[str, Any], *, used_codes: set[str]) -> dict[s
         "code": code,
         "title": title,
         "materialPricePerM2": _public_number(row.get("material_price_per_m2")),
-        "laborPricePerM2": _public_number(row.get("labor_price_per_m2")),
         "baseWastePercent": _public_number(row.get("base_waste_percent")),
         **consumables,
     }
 
 
 def _map_preparation_row(row: Mapping[str, Any], *, used_codes: set[str]) -> dict[str, Any]:
-    title = normalize_text(str(row.get("title") or ""))
+    title = _public_title(row.get("title"))
     code = _resolve_public_code(
         title,
         section="preparations",
@@ -344,13 +351,17 @@ def _map_preparation_row(row: Mapping[str, Any], *, used_codes: set[str]) -> dic
 
 
 def _map_layout_row(row: Mapping[str, Any], *, used_codes: set[str]) -> dict[str, Any]:
-    title = normalize_text(str(row.get("title") or ""))
+    title = _public_title(row.get("title"))
     code = _resolve_public_code(title, section="layouts", known_titles=_LAYOUT_TITLE_TO_CODE, used_codes=used_codes)
     used_codes.add(code)
     labor_multiplier = float(_public_number(row.get("labor_multiplier")))
+    labor_price_per_m2 = _public_number(row.get("labor_price_per_m2"))
+    if float(labor_price_per_m2) == 0 and code in _DEFAULT_LAYOUT_LABOR_BY_CODE:
+        labor_price_per_m2 = _public_number(_DEFAULT_LAYOUT_LABOR_BY_CODE[code])
     return {
         "code": code,
         "title": title,
+        "laborPricePerM2": labor_price_per_m2,
         "laborFactor": labor_multiplier if labor_multiplier > 0 else 1,
         "additionalWastePercent": _public_number(row.get("extra_waste_percent")),
     }

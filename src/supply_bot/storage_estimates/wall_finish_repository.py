@@ -3,7 +3,9 @@ from __future__ import annotations
 from typing import Any
 
 from sqlalchemy import delete, func, insert, select, update
+from sqlalchemy.exc import IntegrityError
 
+from supply_bot.application.errors import ConflictError
 from supply_bot.storage_estimates.repository import (
     SqlAlchemyEstimateRepository,
     _bool_int,
@@ -182,10 +184,13 @@ class SqlAlchemyEstimateWallFinishRepository(SqlAlchemyEstimateRepository):
             return _rows_to_dicts(result.fetchall())
 
     async def _create_catalog_item(self, table, values: dict[str, Any]) -> int:
-        async with self._session_factory() as session:
-            async with session.begin():
-                result = await session.execute(insert(table).values(**values))
-                return int(result.inserted_primary_key[0])
+        try:
+            async with self._session_factory() as session:
+                async with session.begin():
+                    result = await session.execute(insert(table).values(**values))
+                    return int(result.inserted_primary_key[0])
+        except IntegrityError as exc:
+            raise ConflictError("Catalog item with this title or code already exists") from exc
 
     async def _list_project_rows(self, table, project_id: int, *columns: Any) -> list[dict[str, Any]]:
         self._required_owner_user_id()

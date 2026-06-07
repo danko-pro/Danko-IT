@@ -151,7 +151,7 @@ class EstimateFlooringCatalogStorageMixin:
         async with self.connection() as db:
             cursor = await db.execute(
                 """
-                SELECT id, title, labor_multiplier, extra_waste_percent,
+                SELECT id, title, labor_price_per_m2, labor_multiplier, extra_waste_percent,
                        note, is_active, created_at, updated_at
                 FROM estimate_flooring_layouts
                 WHERE is_active = 1
@@ -165,6 +165,7 @@ class EstimateFlooringCatalogStorageMixin:
         self,
         *,
         title: str,
+        labor_price_per_m2: float,
         labor_multiplier: float,
         extra_waste_percent: float,
         note: str | None = None,
@@ -173,11 +174,11 @@ class EstimateFlooringCatalogStorageMixin:
             cursor = await db.execute(
                 """
                 INSERT INTO estimate_flooring_layouts (
-                    title, labor_multiplier, extra_waste_percent, note
+                    title, labor_price_per_m2, labor_multiplier, extra_waste_percent, note
                 )
-                VALUES (?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?)
                 """,
-                (title, labor_multiplier, extra_waste_percent, note),
+                (title, labor_price_per_m2, labor_multiplier, extra_waste_percent, note),
             )
             await db.commit()
             return int(cursor.lastrowid)

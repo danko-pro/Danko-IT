@@ -208,10 +208,33 @@ estimate_flooring_layouts = Table(
     Column("id", Integer, primary_key=True, autoincrement=True),
     Column("owner_user_id", Integer, ForeignKey("app_users.id", ondelete="CASCADE"), nullable=True),
     Column("title", Text, nullable=False),
+    Column("labor_price_per_m2", Float, nullable=False, server_default=text("0")),
     Column("labor_multiplier", Float, nullable=False, server_default=text("1")),
     Column("extra_waste_percent", Float, nullable=False, server_default=text("0")),
     Column("note", Text, nullable=True),
     Column("is_active", Integer, nullable=False, server_default=text("1")),
+    Column("created_at", Text, nullable=False, server_default=text("CURRENT_TIMESTAMP")),
+    Column("updated_at", Text, nullable=False, server_default=text("CURRENT_TIMESTAMP")),
+)
+
+estimate_flooring_assembly_items = Table(
+    "estimate_flooring_assembly_items",
+    metadata,
+    Column("id", Integer, primary_key=True, autoincrement=True),
+    Column("owner_user_id", Integer, ForeignKey("app_users.id", ondelete="CASCADE"), nullable=True),
+    Column("source_code", Text, nullable=False),
+    Column("section", Text, nullable=False),
+    Column("title", Text, nullable=False),
+    Column("kind", Text, nullable=False),
+    Column("formula", Text, nullable=False),
+    Column("unit", Text, nullable=False, server_default=text("'pcs'")),
+    Column("price", Float, nullable=False, server_default=text("0")),
+    Column("consumption_per_m2", Float, nullable=False, server_default=text("0")),
+    Column("package_size", Float, nullable=True),
+    Column("layer_mm", Float, nullable=True),
+    Column("note", Text, nullable=True),
+    Column("is_active", Integer, nullable=False, server_default=text("1")),
+    Column("sort_order", Integer, nullable=False, server_default=text("100")),
     Column("created_at", Text, nullable=False, server_default=text("CURRENT_TIMESTAMP")),
     Column("updated_at", Text, nullable=False, server_default=text("CURRENT_TIMESTAMP")),
 )
@@ -789,6 +812,28 @@ Index(
     sqlite_where=estimate_flooring_layouts.c.owner_user_id.is_not(None),
     postgresql_where=estimate_flooring_layouts.c.owner_user_id.is_not(None),
 )
+Index("ix_estimate_flooring_assembly_items_owner", estimate_flooring_assembly_items.c.owner_user_id)
+Index("ix_estimate_flooring_assembly_items_section", estimate_flooring_assembly_items.c.section)
+Index(
+    "ix_estimate_flooring_assembly_items_owner_active",
+    estimate_flooring_assembly_items.c.owner_user_id,
+    estimate_flooring_assembly_items.c.is_active,
+)
+Index(
+    "uq_estimate_flooring_assembly_items_global_code",
+    estimate_flooring_assembly_items.c.source_code,
+    unique=True,
+    sqlite_where=estimate_flooring_assembly_items.c.owner_user_id.is_(None),
+    postgresql_where=estimate_flooring_assembly_items.c.owner_user_id.is_(None),
+)
+Index(
+    "uq_estimate_flooring_assembly_items_owner_code",
+    estimate_flooring_assembly_items.c.owner_user_id,
+    estimate_flooring_assembly_items.c.source_code,
+    unique=True,
+    sqlite_where=estimate_flooring_assembly_items.c.owner_user_id.is_not(None),
+    postgresql_where=estimate_flooring_assembly_items.c.owner_user_id.is_not(None),
+)
 Index(
     "ix_estimate_flooring_rooms_owner_project",
     estimate_flooring_rooms.c.owner_user_id,
@@ -1092,6 +1137,7 @@ __all__ = [
     "estimate_ceiling_rooms",
     "estimate_door_catalog",
     "estimate_door_component_catalog",
+    "estimate_flooring_assembly_items",
     "estimate_flooring_configs",
     "estimate_flooring_coverings",
     "estimate_flooring_layouts",

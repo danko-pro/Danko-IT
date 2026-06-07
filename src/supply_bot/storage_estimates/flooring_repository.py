@@ -3,7 +3,9 @@ from __future__ import annotations
 from typing import Any
 
 from sqlalchemy import delete, func, insert, select, update
+from sqlalchemy.exc import IntegrityError
 
+from supply_bot.application.errors import ConflictError
 from supply_bot.storage_estimates.repository import (
     SqlAlchemyEstimateRepository,
     _bool_int,
@@ -12,6 +14,7 @@ from supply_bot.storage_estimates.repository import (
     _rows_to_dicts,
 )
 from supply_bot.storage_estimates.tables import (
+    estimate_flooring_assembly_items,
     estimate_flooring_configs,
     estimate_flooring_coverings,
     estimate_flooring_layouts,
@@ -22,6 +25,28 @@ from supply_bot.storage_estimates.tables import (
 
 
 class SqlAlchemyEstimateFlooringRepository(SqlAlchemyEstimateRepository):
+    async def list_estimate_flooring_assembly_items(self) -> list[dict[str, Any]]:
+        return await self._list_catalog(
+            estimate_flooring_assembly_items,
+            estimate_flooring_assembly_items.c.section,
+            estimate_flooring_assembly_items.c.sort_order,
+            estimate_flooring_assembly_items.c.title,
+            estimate_flooring_assembly_items.c.id,
+        )
+
+    async def create_estimate_flooring_assembly_item(self, **values: Any) -> int:
+        values["owner_user_id"] = self._catalog_write_owner_value()
+        return await self._create_catalog_item(estimate_flooring_assembly_items, values)
+
+    async def get_estimate_flooring_assembly_item(self, item_id: int) -> dict[str, Any] | None:
+        return await self._get_global_catalog_item(estimate_flooring_assembly_items, item_id)
+
+    async def update_estimate_flooring_assembly_item(self, item_id: int, **values: Any) -> bool:
+        return await self._update_global_catalog_item(estimate_flooring_assembly_items, item_id, values)
+
+    async def delete_estimate_flooring_assembly_item(self, item_id: int) -> bool:
+        return await self._delete_global_catalog_item(estimate_flooring_assembly_items, item_id)
+
     async def list_estimate_flooring_coverings(self) -> list[dict[str, Any]]:
         return await self._list_catalog(
             estimate_flooring_coverings,
@@ -42,6 +67,9 @@ class SqlAlchemyEstimateFlooringRepository(SqlAlchemyEstimateRepository):
             values["needs_plinth"] = _bool_int(bool(values["needs_plinth"]))
         return await self._update_global_catalog_item(estimate_flooring_coverings, covering_id, values)
 
+    async def delete_estimate_flooring_covering(self, covering_id: int) -> bool:
+        return await self._delete_global_catalog_item(estimate_flooring_coverings, covering_id)
+
     async def list_estimate_flooring_preparations(self) -> list[dict[str, Any]]:
         return await self._list_catalog(
             estimate_flooring_preparations,
@@ -59,6 +87,9 @@ class SqlAlchemyEstimateFlooringRepository(SqlAlchemyEstimateRepository):
     async def update_estimate_flooring_preparation(self, preparation_id: int, **values: Any) -> bool:
         return await self._update_global_catalog_item(estimate_flooring_preparations, preparation_id, values)
 
+    async def delete_estimate_flooring_preparation(self, preparation_id: int) -> bool:
+        return await self._delete_global_catalog_item(estimate_flooring_preparations, preparation_id)
+
     async def list_estimate_flooring_layouts(self) -> list[dict[str, Any]]:
         return await self._list_catalog(
             estimate_flooring_layouts,
@@ -74,6 +105,9 @@ class SqlAlchemyEstimateFlooringRepository(SqlAlchemyEstimateRepository):
 
     async def update_estimate_flooring_layout(self, layout_id: int, **values: Any) -> bool:
         return await self._update_global_catalog_item(estimate_flooring_layouts, layout_id, values)
+
+    async def delete_estimate_flooring_layout(self, layout_id: int) -> bool:
+        return await self._delete_global_catalog_item(estimate_flooring_layouts, layout_id)
 
     async def get_estimate_flooring_config(self, project_id: int) -> dict[str, Any] | None:
         self._required_owner_user_id()
@@ -232,10 +266,13 @@ class SqlAlchemyEstimateFlooringRepository(SqlAlchemyEstimateRepository):
             return _rows_to_dicts(result.fetchall())
 
     async def _create_catalog_item(self, table, values: dict[str, Any]) -> int:
-        async with self._session_factory() as session:
-            async with session.begin():
-                result = await session.execute(insert(table).values(**values))
-                return int(result.inserted_primary_key[0])
+        try:
+            async with self._session_factory() as session:
+                async with session.begin():
+                    result = await session.execute(insert(table).values(**values))
+                    return int(result.inserted_primary_key[0])
+        except IntegrityError as exc:
+            raise ConflictError("Flooring catalog item with this title or code already exists") from exc
 
     async def _get_global_catalog_item(self, table, item_id: int) -> dict[str, Any] | None:
         async with self._session_factory() as session:
@@ -253,6 +290,25 @@ class SqlAlchemyEstimateFlooringRepository(SqlAlchemyEstimateRepository):
             return False
         if not values:
             return False
+        try:
+            async with self._session_factory() as session:
+                async with session.begin():
+                    result = await session.execute(
+                        update(table)
+                        .where(
+                            table.c.owner_user_id.is_(None),
+                            table.c.is_active == 1,
+                            table.c.id == item_id,
+                        )
+                        .values(**values, updated_at=func.current_timestamp())
+                    )
+                    return bool(result.rowcount)
+        except IntegrityError as exc:
+            raise ConflictError("Flooring catalog item with this title or code already exists") from exc
+
+    async def _delete_global_catalog_item(self, table, item_id: int) -> bool:
+        if self._owner_user_id is not None:
+            return False
         async with self._session_factory() as session:
             async with session.begin():
                 result = await session.execute(
@@ -262,7 +318,7 @@ class SqlAlchemyEstimateFlooringRepository(SqlAlchemyEstimateRepository):
                         table.c.is_active == 1,
                         table.c.id == item_id,
                     )
-                    .values(**values, updated_at=func.current_timestamp())
+                    .values(is_active=0, updated_at=func.current_timestamp())
                 )
                 return bool(result.rowcount)
 

@@ -62,9 +62,9 @@ async def ensure_estimate_flooring_defaults(connection_factory: ConnectionFactor
             rows=FLOORING_LAYOUT_DEFAULTS,
             insert_sql="""
                 INSERT INTO estimate_flooring_layouts (
-                    title, labor_multiplier, extra_waste_percent, note
+                    title, labor_price_per_m2, labor_multiplier, extra_waste_percent, note
                 )
-                VALUES (?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?)
             """,
         )
         await db.commit()

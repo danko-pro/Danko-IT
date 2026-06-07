@@ -90,6 +90,12 @@ export const CATALOG_EDITOR_STYLES = `
 
 .ce-meta { margin-bottom: 12px; color: var(--ce-muted); font-size: 12px; }
 .ce-meta strong { color: var(--ce-text); }
+.ce-service-toolbar {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  margin-top: 18px; padding-top: 12px; border-top: 1px solid var(--ce-border);
+}
+.ce-service-toolbar-copy { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; color: var(--ce-muted); font-size: 12px; }
+.ce-service-toolbar-copy strong { color: var(--ce-text); font-size: 12px; }
 
 .ce-note {
   display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
@@ -139,12 +145,17 @@ select.ce-cell-input { appearance: none; cursor: pointer; }
 .ce-num { text-align: right; }
 .ce-num.ce-cell-input { text-align: right; }
 .ce-readonly { padding: 0 10px; color: var(--ce-muted); font-size: 12px; }
+.ce-na {
+  display: block; width: 100%; height: 34px; line-height: 34px;
+  text-align: center; color: var(--ce-muted); user-select: none;
+}
 .ce-total-cell { color: var(--ce-ok); font-weight: 600; }
 
 .ce-col-id { min-width: 150px; }
 .ce-col-title { min-width: 200px; }
 .ce-col-tech { min-width: 220px; }
 .ce-col-select { min-width: 110px; }
+.ce-col-formula { min-width: 168px; }
 .ce-col-num { min-width: 92px; text-align: right; }
 .ce-col-total { min-width: 90px; }
 .ce-col-actions { width: 44px; text-align: center; }
@@ -155,6 +166,19 @@ select.ce-cell-input { appearance: none; cursor: pointer; }
   font-size: 13px; line-height: 1;
 }
 .ce-row-delete:hover { color: var(--ce-danger); border-color: rgba(255,93,93,.4); background: rgba(255,93,93,.1); }
+.ce-row-actions {
+  display: inline-flex; align-items: center; justify-content: flex-end; gap: 4px; flex-wrap: nowrap;
+  width: 100%; padding: 0 6px; white-space: nowrap;
+}
+.ce-row-action {
+  height: 24px; min-width: 42px; padding: 0 6px; border-radius: 6px; cursor: pointer;
+  background: var(--ce-panel); border: 1px solid var(--ce-border); color: var(--ce-text);
+  font-size: 11px; font-weight: 600; line-height: 22px; white-space: nowrap;
+}
+.ce-row-action:hover { border-color: var(--ce-accent); }
+.ce-row-action:disabled { opacity: .45; cursor: not-allowed; }
+.ce-row-action-danger { color: var(--ce-danger); }
+.ce-row-action-danger:hover { border-color: rgba(255,93,93,.45); background: rgba(255,93,93,.1); }
 
 .ce-empty { padding: 32px; text-align: center; color: var(--ce-muted); }
 
@@ -261,20 +285,157 @@ select.ce-cell-input { appearance: none; cursor: pointer; }
 /* --- Вкладка «Полы» (F5b) --- */
 .ce-flooring-section { margin-bottom: 20px; }
 .ce-flooring-section-title { margin: 0 0 10px; font-size: 15px; font-weight: 650; }
-.ce-flooring-table-wrap { margin-bottom: 10px; max-height: none; }
-.ce-flooring-table { min-width: 720px; }
+.ce-flooring-table-wrap { margin-bottom: 10px; max-height: none; overflow-x: hidden; }
+.ce-flooring-table { width: 100%; min-width: 0; table-layout: fixed; }
+.ce-flooring-table tbody td { height: 38px; }
+.ce-flooring-table .ce-readonly {
+  padding: 0 10px; line-height: 38px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.ce-flooring-table .ce-col-id { width: 170px; min-width: 0; }
+.ce-flooring-table .ce-col-title { width: 28%; min-width: 0; }
+.ce-flooring-table .ce-col-num { width: 118px; min-width: 0; }
+.ce-flooring-table .ce-col-tech { width: 28%; min-width: 0; }
+.ce-flooring-table .ce-col-actions {
+  width: 108px; min-width: 108px; max-width: 108px;
+  text-align: left; white-space: nowrap;
+}
 .ce-flooring-form {
-  padding: 12px; border: 1px solid var(--ce-border); border-radius: 10px;
+  padding: 10px 12px; border: 1px solid var(--ce-border); border-radius: 10px;
   background: var(--ce-panel);
 }
 .ce-flooring-form-head {
   display: flex; align-items: center; justify-content: space-between; gap: 12px;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
+}
+.ce-flooring-form-content {
+  display: flex; flex-direction: column; gap: 8px;
 }
 .ce-flooring-form-fields {
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(165px, 1fr)); gap: 0;
 }
-.ce-flooring-field { display: flex; flex-direction: column; gap: 4px; font-size: 12px; }
-.ce-flooring-field-label { color: var(--ce-muted); }
+.ce-flooring-field {
+  display: flex; flex-direction: column; min-width: 0; gap: 0; font-size: 11px;
+}
+.ce-flooring-field:not(.ce-flooring-field-note) {
+  background: var(--ce-panel);
+  border-left: 1px solid var(--ce-border);
+  border-top: 1px solid var(--ce-border);
+  box-shadow: inset -1px -1px 0 var(--ce-border);
+}
+.ce-flooring-field-label {
+  padding: 6px 8px 5px;
+  background: var(--ce-panel-2);
+  border-bottom: 1px solid var(--ce-border);
+  color: var(--ce-muted); line-height: 1.2;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
 .ce-flooring-field .ce-input { width: 100%; }
+.ce-flooring-field-note { grid-column: 1 / -1; margin-top: 8px; }
+.ce-flooring-field-note .ce-flooring-field-label {
+  padding: 0 0 4px;
+  background: transparent;
+  border-bottom: 0;
+}
+.ce-flooring-field .ce-input {
+  height: 32px; min-height: 32px; padding: 0 9px; border: 0; border-radius: 0;
+  background: transparent; font-size: 12px;
+}
+.ce-flooring-field .ce-input:focus {
+  box-shadow: inset 0 0 0 1px var(--ce-accent);
+}
+.ce-flooring-field textarea.ce-input {
+  min-height: 42px; padding-top: 6px; resize: vertical; line-height: 1.3;
+  border: 1px solid var(--ce-border); border-radius: 7px; background: var(--ce-panel);
+}
+.ce-flooring-form .ce-table-wrap {
+  border-radius: 8px; margin-bottom: 8px;
+}
+.ce-flooring-form .ce-table {
+  min-width: 0;
+}
+.ce-flooring-form .ce-empty {
+  padding: 10px 12px; text-align: left;
+}
+.ce-flooring-library-form { margin-top: 10px; }
+.ce-flooring-library-actions { justify-content: center; gap: 6px; flex-wrap: nowrap; padding: 0 6px; }
+
+/* --- Локальная сборка покрытия (FA1 spike) --- */
+.ce-flooring-assembly {
+  width: 100%; margin-bottom: 20px; padding: 14px; border: 1px solid rgba(76,141,255,.35); border-radius: 10px;
+  background: rgba(76,141,255,.04);
+}
+.ce-flooring-assembly-empty {
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  padding: 28px 16px; text-align: center; color: var(--ce-muted);
+  border: 1px dashed var(--ce-border); border-radius: 8px; margin-bottom: 10px;
+}
+.ce-flooring-assembly-empty p { margin: 0; font-size: 13px; }
+.ce-flooring-assembly-row-off { opacity: 0.45; }
+.ce-flooring-assembly-recommended { border-style: dashed; }
+.ce-flooring-assembly-summary-total .ce-flooring-assembly-summary-value { font-size: 14px; }
+.ce-flooring-assembly-status {
+  flex: 1; min-width: 200px; display: inline-flex; align-items: center; gap: 8px;
+  font-size: 12px; color: var(--ce-muted); line-height: 1.4;
+}
+.ce-flooring-assembly-actions { align-items: center; justify-content: space-between; }
+.ce-flooring-assembly-head {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.ce-flooring-assembly-title { margin: 0; font-size: 14px; font-weight: 650; }
+.ce-flooring-assembly-hint { margin: 4px 0 0; font-size: 11px; color: var(--ce-muted); line-height: 1.4; }
+.ce-flooring-assembly-toolbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.ce-flooring-assembly-library {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  margin-bottom: 10px; padding: 8px 10px; border-radius: 8px;
+  background: rgba(255,255,255,.025); border: 1px solid var(--ce-border);
+}
+.ce-flooring-assembly-library-label { font-size: 12px; color: var(--ce-muted); font-weight: 650; }
+.ce-flooring-assembly-library-select { width: 150px; }
+.ce-flooring-assembly-library-item { min-width: 280px; flex: 1; }
+.ce-flooring-assembly-library-hint { color: var(--ce-muted); font-size: 11px; line-height: 1.35; }
+.ce-flooring-assembly-table-wrap { margin-bottom: 10px; max-height: none; border-radius: 8px; }
+.ce-flooring-assembly-table { min-width: 1080px; width: 100%; table-layout: fixed; }
+.ce-flooring-assembly-table thead th { padding: 8px 7px; }
+.ce-flooring-assembly-table tbody td { height: 34px; }
+.ce-flooring-assembly-table .ce-col-check { width: 44px; text-align: center; }
+.ce-flooring-assembly-table .ce-col-kind { width: 100px; }
+.ce-flooring-assembly-table .ce-col-formula { width: 126px; }
+.ce-flooring-assembly-table .ce-col-title { width: auto; min-width: 220px; }
+.ce-flooring-assembly-table .ce-col-unit { width: 58px; }
+.ce-flooring-assembly-table .ce-col-num { width: 82px; }
+.ce-flooring-assembly-table .ce-col-total { width: 86px; }
+.ce-flooring-assembly-table .ce-col-actions { width: 38px; text-align: center; }
+.ce-flooring-assembly-table .ce-cell-input {
+  height: 34px; min-height: 34px; padding: 0 7px; font-size: 12px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.ce-flooring-assembly-table .ce-cell-select { padding-right: 16px; font-size: 11px; }
+.ce-flooring-assembly-table .ce-cell-formula { font-size: 10px; font-weight: 600; }
+.ce-flooring-assembly-table .ce-cell-unit { text-align: center; }
+.ce-flooring-assembly-table .ce-readonly { padding: 0 7px; line-height: 34px; }
+.ce-flooring-assembly-table .ce-total-cell { font-size: 12px; white-space: nowrap; }
+.ce-flooring-assembly-table .ce-row-delete { display: block; margin: 0 auto; }
+.ce-flooring-assembly-section-row td {
+  height: 26px !important; padding: 5px 8px !important;
+  border-top: 1px solid rgba(76,141,255,.35);
+  border-bottom: 1px solid rgba(76,141,255,.18);
+  background: rgba(76,141,255,.08) !important;
+  color: var(--ce-accent); font-size: 11px; font-weight: 650;
+  text-transform: uppercase; letter-spacing: .04em;
+}
+.ce-flooring-assembly-summary {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px;
+  margin-bottom: 10px; padding: 10px; border-radius: 8px;
+  background: var(--ce-panel-2); border: 1px solid var(--ce-border);
+}
+.ce-flooring-assembly-summary-item { font-size: 12px; }
+.ce-flooring-assembly-summary-label { display: block; color: var(--ce-muted); font-size: 11px; }
+.ce-flooring-assembly-summary-value { font-weight: 600; color: var(--ce-ok); }
+.ce-flooring-assembly-actions { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
+.ce-flooring-assembly-check { padding: 0; text-align: center; }
+.ce-flooring-assembly-check input {
+  display: block; width: 14px; height: 14px; margin: 0 auto;
+}
 `;

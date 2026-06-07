@@ -1,6 +1,6 @@
 from typing import Any
 
-from fastapi import Depends, FastAPI, Request
+from fastapi import Depends, FastAPI, HTTPException, Request
 
 from supply_bot.admin_api.auth import AdminSession
 from supply_bot.admin_api.calculator_routes.shared import (
@@ -19,6 +19,12 @@ from supply_bot.estimates.application.create_flooring_catalog import (
     CreateFlooringLayoutUseCase,
     CreateFlooringPreparationCommand,
     CreateFlooringPreparationUseCase,
+)
+from supply_bot.estimates.application.flooring_assembly_catalog import (
+    CreateFlooringAssemblyItemUseCase,
+    FlooringAssemblyItemCommand,
+    UpdateFlooringAssemblyItemCommand,
+    UpdateFlooringAssemblyItemUseCase,
 )
 from supply_bot.estimates.application.update_flooring import (
     UpdateFlooringCommand,
@@ -40,11 +46,85 @@ from supply_bot.estimates.application.update_flooring_catalog import (
 def register_calculator_flooring_routes(
     app: FastAPI,
     *,
+    calculator_flooring_assembly_item_payload_model,
     calculator_flooring_covering_payload_model,
     calculator_flooring_preparation_payload_model,
     calculator_flooring_layout_payload_model,
     calculator_flooring_update_payload_model,
 ) -> None:
+    @app.get("/api/calculator/flooring/assembly-items")
+    async def list_calculator_flooring_assembly_items(
+        request: Request,
+        _session: AdminSession = Depends(require_admin_role_session),
+    ) -> list[dict[str, Any]]:
+        storage_obj = get_global_estimate_catalog_storage(request)
+        return await storage_obj.list_estimate_flooring_assembly_items()
+
+    @app.post("/api/calculator/flooring/assembly-items")
+    async def create_calculator_flooring_assembly_item(
+        request: Request,
+        payload: calculator_flooring_assembly_item_payload_model,
+        _session: AdminSession = Depends(require_admin_role_session),
+    ) -> dict[str, Any]:
+        storage_obj = get_global_estimate_catalog_storage(request)
+        command = FlooringAssemblyItemCommand(
+            source_code=payload.source_code,
+            section=payload.section,
+            title=payload.title,
+            kind=payload.kind,
+            formula=payload.formula,
+            unit=payload.unit,
+            price=payload.price,
+            consumption_per_m2=payload.consumption_per_m2,
+            package_size=payload.package_size,
+            layer_mm=payload.layer_mm,
+            note=payload.note,
+            sort_order=payload.sort_order,
+        )
+        item_id = await resolve_application_result(CreateFlooringAssemblyItemUseCase(storage_obj).execute(command))
+        return await load_created_catalog_item(
+            storage_obj.list_estimate_flooring_assembly_items,
+            created_id=item_id,
+            detail="Flooring assembly item was not created",
+        )
+
+    @app.patch("/api/calculator/flooring/assembly-items/{item_id}")
+    async def update_calculator_flooring_assembly_item(
+        request: Request,
+        item_id: int,
+        payload: calculator_flooring_assembly_item_payload_model,
+        _session: AdminSession = Depends(require_admin_role_session),
+    ) -> dict[str, Any]:
+        storage_obj = get_global_estimate_catalog_storage(request)
+        command = UpdateFlooringAssemblyItemCommand(
+            source_code=payload.source_code,
+            section=payload.section,
+            title=payload.title,
+            kind=payload.kind,
+            formula=payload.formula,
+            unit=payload.unit,
+            price=payload.price,
+            consumption_per_m2=payload.consumption_per_m2,
+            package_size=payload.package_size,
+            layer_mm=payload.layer_mm,
+            note=payload.note,
+            sort_order=payload.sort_order,
+            item_id=item_id,
+        )
+        return await resolve_application_result(UpdateFlooringAssemblyItemUseCase(storage_obj).execute(command))
+
+    @app.delete("/api/calculator/flooring/assembly-items/{item_id}")
+    async def delete_calculator_flooring_assembly_item(
+        request: Request,
+        item_id: int,
+        _session: AdminSession = Depends(require_admin_role_session),
+    ) -> dict[str, Any]:
+        storage_obj = get_global_estimate_catalog_storage(request)
+        deleted = await storage_obj.delete_estimate_flooring_assembly_item(item_id)
+        if not deleted:
+            raise HTTPException(status_code=404, detail="Flooring assembly item not found")
+        return {"id": item_id, "deleted": True}
+
     @app.get("/api/calculator/flooring/coverings")
     async def list_calculator_flooring_coverings(
         request: Request,
@@ -57,8 +137,9 @@ def register_calculator_flooring_routes(
     async def create_calculator_flooring_covering(
         request: Request,
         payload: calculator_flooring_covering_payload_model,
+        _session: AdminSession = Depends(require_admin_role_session),
     ) -> dict[str, Any]:
-        storage_obj = get_calculator_route_storage(request)
+        storage_obj = get_global_estimate_catalog_storage(request)
         command = CreateFlooringCoveringCommand(
             title=payload.title,
             material_price_per_m2=payload.material_price_per_m2,
@@ -142,6 +223,18 @@ def register_calculator_flooring_routes(
         )
         return await resolve_application_result(UpdateFlooringCoveringUseCase(storage_obj).execute(command))
 
+    @app.delete("/api/calculator/flooring/coverings/{covering_id}")
+    async def delete_calculator_flooring_covering(
+        request: Request,
+        covering_id: int,
+        _session: AdminSession = Depends(require_admin_role_session),
+    ) -> dict[str, Any]:
+        storage_obj = get_global_estimate_catalog_storage(request)
+        deleted = await storage_obj.delete_estimate_flooring_covering(covering_id)
+        if not deleted:
+            raise HTTPException(status_code=404, detail="Floor covering catalog item not found")
+        return {"id": covering_id, "deleted": True}
+
     @app.get("/api/calculator/flooring/preparations")
     async def list_calculator_flooring_preparations(
         request: Request,
@@ -154,8 +247,9 @@ def register_calculator_flooring_routes(
     async def create_calculator_flooring_preparation(
         request: Request,
         payload: calculator_flooring_preparation_payload_model,
+        _session: AdminSession = Depends(require_admin_role_session),
     ) -> dict[str, Any]:
-        storage_obj = get_calculator_route_storage(request)
+        storage_obj = get_global_estimate_catalog_storage(request)
         command = CreateFlooringPreparationCommand(
             title=payload.title,
             labor_price_per_m2=payload.labor_price_per_m2,
@@ -195,6 +289,18 @@ def register_calculator_flooring_routes(
         )
         return await resolve_application_result(UpdateFlooringPreparationUseCase(storage_obj).execute(command))
 
+    @app.delete("/api/calculator/flooring/preparations/{preparation_id}")
+    async def delete_calculator_flooring_preparation(
+        request: Request,
+        preparation_id: int,
+        _session: AdminSession = Depends(require_admin_role_session),
+    ) -> dict[str, Any]:
+        storage_obj = get_global_estimate_catalog_storage(request)
+        deleted = await storage_obj.delete_estimate_flooring_preparation(preparation_id)
+        if not deleted:
+            raise HTTPException(status_code=404, detail="Floor preparation catalog item not found")
+        return {"id": preparation_id, "deleted": True}
+
     @app.get("/api/calculator/flooring/layouts")
     async def list_calculator_flooring_layouts(
         request: Request,
@@ -207,10 +313,12 @@ def register_calculator_flooring_routes(
     async def create_calculator_flooring_layout(
         request: Request,
         payload: calculator_flooring_layout_payload_model,
+        _session: AdminSession = Depends(require_admin_role_session),
     ) -> dict[str, Any]:
-        storage_obj = get_calculator_route_storage(request)
+        storage_obj = get_global_estimate_catalog_storage(request)
         command = CreateFlooringLayoutCommand(
             title=payload.title,
+            labor_price_per_m2=payload.labor_price_per_m2,
             labor_multiplier=payload.labor_multiplier,
             extra_waste_percent=payload.extra_waste_percent,
             note=payload.note,
@@ -234,11 +342,24 @@ def register_calculator_flooring_routes(
         command = UpdateFlooringLayoutCommand(
             layout_id=layout_id,
             title=payload.title,
+            labor_price_per_m2=payload.labor_price_per_m2,
             labor_multiplier=payload.labor_multiplier,
             extra_waste_percent=payload.extra_waste_percent,
             note=payload.note,
         )
         return await resolve_application_result(UpdateFlooringLayoutUseCase(storage_obj).execute(command))
+
+    @app.delete("/api/calculator/flooring/layouts/{layout_id}")
+    async def delete_calculator_flooring_layout(
+        request: Request,
+        layout_id: int,
+        _session: AdminSession = Depends(require_admin_role_session),
+    ) -> dict[str, Any]:
+        storage_obj = get_global_estimate_catalog_storage(request)
+        deleted = await storage_obj.delete_estimate_flooring_layout(layout_id)
+        if not deleted:
+            raise HTTPException(status_code=404, detail="Floor layout catalog item not found")
+        return {"id": layout_id, "deleted": True}
 
     @app.patch("/api/calculator/projects/{project_id}/flooring")
     async def update_calculator_flooring(

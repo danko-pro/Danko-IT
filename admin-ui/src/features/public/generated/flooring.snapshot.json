@@ -1,11 +1,10 @@
 {
-  "version": "flooring-v1",
+  "version": "flooring-v2",
   "coverings": [
     {
       "code": "porcelain",
       "title": "Керамогранит",
       "materialPricePerM2": 2900,
-      "laborPricePerM2": 2000,
       "baseWastePercent": 10,
       "underlayPricePerM2": 0,
       "adhesivePricePerM2": 450,
@@ -18,7 +17,6 @@
       "code": "quartz_vinyl",
       "title": "Кварцвинил",
       "materialPricePerM2": 1700,
-      "laborPricePerM2": 800,
       "baseWastePercent": 5,
       "underlayPricePerM2": 220,
       "adhesivePricePerM2": 0,
@@ -31,7 +29,6 @@
       "code": "laminate",
       "title": "Ламинат",
       "materialPricePerM2": 930,
-      "laborPricePerM2": 1000,
       "baseWastePercent": 10,
       "underlayPricePerM2": 220,
       "adhesivePricePerM2": 0,
@@ -44,7 +41,6 @@
       "code": "carpet",
       "title": "Ковролин",
       "materialPricePerM2": 1500,
-      "laborPricePerM2": 900,
       "baseWastePercent": 7,
       "underlayPricePerM2": 0,
       "adhesivePricePerM2": 250,
@@ -57,7 +53,6 @@
       "code": "engineered_wood",
       "title": "Инженерная доска",
       "materialPricePerM2": 6000,
-      "laborPricePerM2": 2500,
       "baseWastePercent": 10,
       "underlayPricePerM2": 0,
       "adhesivePricePerM2": 900,
@@ -97,24 +92,28 @@
     {
       "code": "straight",
       "title": "Прямая",
+      "laborPricePerM2": 1000,
       "laborFactor": 1.1,
       "additionalWastePercent": 5
     },
     {
       "code": "large_format_straight",
       "title": "Крупный формат",
+      "laborPricePerM2": 2000,
       "laborFactor": 1.2,
       "additionalWastePercent": 10
     },
     {
       "code": "glue",
       "title": "Клеевая",
+      "laborPricePerM2": 800,
       "laborFactor": 1.25,
       "additionalWastePercent": 5
     },
     {
       "code": "floating",
       "title": "Плавающая",
+      "laborPricePerM2": 1000,
       "laborFactor": 1,
       "additionalWastePercent": 3
     }

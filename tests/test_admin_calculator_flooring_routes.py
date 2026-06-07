@@ -352,7 +352,9 @@ class AdminCalculatorFlooringRouteTests(AdminProjectsRouteCase):
                 )
 
                 self.assertFalse(
-                    any(item["id"] == covering["id"] for item in client.get("/api/calculator/flooring/coverings").json())
+                    any(
+                        item["id"] == covering["id"] for item in client.get("/api/calculator/flooring/coverings").json()
+                    )
                 )
                 self.assertFalse(
                     any(

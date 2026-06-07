@@ -14,8 +14,8 @@ from supply_bot.storage_estimates.repository import (
     _rows_to_dicts,
 )
 from supply_bot.storage_estimates.tables import (
-    estimate_flooring_configs,
     estimate_flooring_assembly_items,
+    estimate_flooring_configs,
     estimate_flooring_coverings,
     estimate_flooring_layouts,
     estimate_flooring_preparations,

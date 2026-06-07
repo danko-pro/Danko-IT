@@ -349,7 +349,13 @@ class PublicFlooringSnapshotWhitelistTests(AdminProjectsRouteCase):
 
     def test_known_layout_zero_labor_falls_back_to_default_v2_rate(self) -> None:
         coverings = [
-            {"title": title, "material_price_per_m2": 1000, "labor_price_per_m2": 0, "base_waste_percent": 8, "underlay_mode": "none"}
+            {
+                "title": title,
+                "material_price_per_m2": 1000,
+                "labor_price_per_m2": 0,
+                "base_waste_percent": 8,
+                "underlay_mode": "none",
+            }
             for title in ("Керамогранит", "Кварцвинил", "Ламинат", "Ковролин", "Инженерная доска")
         ]
         preparations = [

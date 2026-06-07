@@ -6,6 +6,23 @@ import type {
   FlooringPreparationType,
 } from "./public-estimate-flooring";
 
+export type FlooringPackageSpecLine = {
+  code: string;
+  title: string;
+  category: "materials" | "works" | "consumables" | "tools";
+  basis: "area";
+  unit: string;
+  quantityPerBasis: number;
+  unitPrice: number;
+  packageSize?: number;
+  packageUnit?: string;
+  packagePrice?: number;
+  purchaseMode?: "raw" | "package";
+  purchaseAggregation?: "room" | "project";
+  aggregationKey?: string;
+  calculationNote?: string;
+};
+
 export type FlooringCoveringSnapshotItem = {
   code: FlooringCoveringType;
   title: string;
@@ -19,6 +36,7 @@ export type FlooringCoveringSnapshotItem = {
   svpPricePerM2: number;
   groutPricePerM2: number;
   toolConsumablesPerM2: number;
+  specLines?: FlooringPackageSpecLine[];
 };
 
 export type FlooringPreparationSnapshotItem = {
@@ -26,6 +44,7 @@ export type FlooringPreparationSnapshotItem = {
   title: string;
   laborPricePerM2: number;
   materialPricePerM2: number;
+  specLines?: FlooringPackageSpecLine[];
 };
 
 export type FlooringLayoutSnapshotItem = {
@@ -34,6 +53,7 @@ export type FlooringLayoutSnapshotItem = {
   laborPricePerM2?: number;
   laborFactor: number;
   additionalWastePercent: number;
+  specLines?: FlooringPackageSpecLine[];
 };
 
 export type FlooringPlinthSnapshotItem = {
@@ -141,7 +161,25 @@ const FORBIDDEN_INTERNAL_KEYS = new Set([
   "equipment_price",
   "consumables_price",
   "coefficient",
+  "assembly_id",
+  "assembly_item_id",
 ]);
+
+const FLOORING_SPEC_LINE_CATEGORIES = new Set(["materials", "works", "consumables", "tools"]);
+
+const FLOORING_SPEC_LINE_PURCHASE_MODES = new Set(["raw", "package"]);
+
+const FLOORING_SPEC_LINE_PURCHASE_AGGREGATIONS = new Set(["room", "project"]);
+
+const FLOORING_SPEC_LINE_REQUIRED_KEYS = [
+  "code",
+  "title",
+  "category",
+  "basis",
+  "unit",
+  "quantityPerBasis",
+  "unitPrice",
+] as const;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
@@ -167,6 +205,85 @@ function findForbiddenKeys(node: unknown, found = new Set<string>()): Set<string
     }
   }
   return found;
+}
+
+function validateSpecLines(
+  specLines: unknown,
+  arrayName: string,
+): { ok: true } | { ok: false; reason: string } {
+  if (!Array.isArray(specLines)) {
+    return { ok: false, reason: `${arrayName}.specLines must be an array` };
+  }
+
+  for (const [index, line] of specLines.entries()) {
+    if (!isRecord(line)) {
+      return { ok: false, reason: `${arrayName}.specLines[${index}] must be an object` };
+    }
+    for (const key of FLOORING_SPEC_LINE_REQUIRED_KEYS) {
+      if (!(key in line)) {
+        return { ok: false, reason: `${arrayName}.specLines[${index}] missing ${key}` };
+      }
+    }
+    if (typeof line.code !== "string" || line.code.length === 0) {
+      return { ok: false, reason: `${arrayName}.specLines[${index}].code must be a non-empty string` };
+    }
+    if (typeof line.title !== "string" || line.title.length === 0) {
+      return { ok: false, reason: `${arrayName}.specLines[${index}].title must be a non-empty string` };
+    }
+    if (typeof line.category !== "string" || !FLOORING_SPEC_LINE_CATEGORIES.has(line.category)) {
+      return { ok: false, reason: `${arrayName}.specLines[${index}].category is invalid` };
+    }
+    if (line.basis !== "area") {
+      return { ok: false, reason: `${arrayName}.specLines[${index}].basis must be area` };
+    }
+    if (typeof line.unit !== "string" || line.unit.length === 0) {
+      return { ok: false, reason: `${arrayName}.specLines[${index}].unit must be a non-empty string` };
+    }
+    if (typeof line.quantityPerBasis !== "number" || !Number.isFinite(line.quantityPerBasis)) {
+      return { ok: false, reason: `${arrayName}.specLines[${index}].quantityPerBasis must be a finite number` };
+    }
+    if (typeof line.unitPrice !== "number" || !Number.isFinite(line.unitPrice)) {
+      return { ok: false, reason: `${arrayName}.specLines[${index}].unitPrice must be a finite number` };
+    }
+    if ("packageSize" in line) {
+      if (typeof line.packageSize !== "number" || !Number.isFinite(line.packageSize)) {
+        return { ok: false, reason: `${arrayName}.specLines[${index}].packageSize must be a finite number` };
+      }
+      if (typeof line.packageUnit !== "string" || line.packageUnit.length === 0) {
+        return { ok: false, reason: `${arrayName}.specLines[${index}].packageUnit must be a non-empty string` };
+      }
+    }
+    if ("packagePrice" in line) {
+      if (typeof line.packagePrice !== "number" || !Number.isFinite(line.packagePrice)) {
+        return { ok: false, reason: `${arrayName}.specLines[${index}].packagePrice must be a finite number` };
+      }
+    }
+    if ("purchaseMode" in line) {
+      if (typeof line.purchaseMode !== "string" || !FLOORING_SPEC_LINE_PURCHASE_MODES.has(line.purchaseMode)) {
+        return { ok: false, reason: `${arrayName}.specLines[${index}].purchaseMode is invalid` };
+      }
+    }
+    if ("purchaseAggregation" in line) {
+      if (
+        typeof line.purchaseAggregation !== "string" ||
+        !FLOORING_SPEC_LINE_PURCHASE_AGGREGATIONS.has(line.purchaseAggregation)
+      ) {
+        return { ok: false, reason: `${arrayName}.specLines[${index}].purchaseAggregation is invalid` };
+      }
+    }
+    if ("aggregationKey" in line) {
+      if (typeof line.aggregationKey !== "string" || line.aggregationKey.length === 0) {
+        return { ok: false, reason: `${arrayName}.specLines[${index}].aggregationKey must be a non-empty string` };
+      }
+    }
+    if ("calculationNote" in line) {
+      if (typeof line.calculationNote !== "string" || line.calculationNote.length === 0) {
+        return { ok: false, reason: `${arrayName}.specLines[${index}].calculationNote must be a non-empty string` };
+      }
+    }
+  }
+
+  return { ok: true };
 }
 
 function validateCatalogItems(
@@ -196,6 +313,12 @@ function validateCatalogItems(
     seenCodes.add(item.code);
     if (!hasNumericRates(item, rateKeys)) {
       return { ok: false, reason: `${arrayName} rates must be finite numbers` };
+    }
+    if ("specLines" in item) {
+      const specLinesValidation = validateSpecLines(item.specLines, `${arrayName}[${item.code}]`);
+      if (!specLinesValidation.ok) {
+        return specLinesValidation;
+      }
     }
   }
 
@@ -332,6 +455,32 @@ export function loadFlooringSnapshot(): FlooringSnapshot {
   }
 
   return flooringSnapshotData as FlooringSnapshot;
+}
+
+function catalogItemsByCode<T extends { code: string }>(items: T[]): Record<string, T> {
+  const result: Record<string, T> = {};
+
+  for (const item of items) {
+    result[item.code] = item;
+  }
+
+  return result;
+}
+
+export type FlooringSnapshotCatalog = {
+  coverings: Record<string, FlooringCoveringSnapshotItem>;
+  preparations: Record<string, FlooringPreparationSnapshotItem>;
+  layouts: Record<string, FlooringLayoutSnapshotItem>;
+};
+
+export function getFlooringSnapshotCatalog(): FlooringSnapshotCatalog {
+  const snapshot = loadFlooringSnapshot();
+
+  return {
+    coverings: catalogItemsByCode(snapshot.coverings),
+    preparations: catalogItemsByCode(snapshot.preparations),
+    layouts: catalogItemsByCode(snapshot.layouts),
+  };
 }
 
 export function getFlooringSnapshotRates(): FlooringSnapshotRates {

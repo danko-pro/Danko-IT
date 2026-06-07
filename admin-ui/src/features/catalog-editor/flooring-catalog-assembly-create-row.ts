@@ -18,12 +18,12 @@ import type {
   FlooringPreparationDto,
   PublicFlooringSnapshotResponse,
 } from "./api/flooring-types";
+import type { CoveringAssemblyAggregates, CoveringAssemblyRow, FlooringAssemblyTarget } from "./flooring-assembly";
 import {
-  applyAggregatesToCoveringDraft,
-  type CoveringAssemblyAggregates,
-  type CoveringAssemblyRow,
-  type FlooringAssemblyTarget,
-} from "./flooring-assembly";
+  prepareCoveringDraftForCatalogSave,
+  prepareLayoutDraftForCatalogSave,
+  preparePreparationDraftForCatalogSave,
+} from "./flooring-package-projection";
 import {
   emptyCoveringDraft,
   emptyLayoutDraft,
@@ -84,7 +84,7 @@ export async function createFlooringCatalogRowFromAssembly(
   deps: FlooringCatalogAssemblyCreateRowDeps,
   target: FlooringAssemblyTarget,
   rawTitle: string,
-  aggregates: CoveringAssemblyAggregates,
+  _aggregates: CoveringAssemblyAggregates,
   rows: CoveringAssemblyRow[],
 ): Promise<boolean> {
   const title = rawTitle.trim() || getAssemblyDefaultTitle(rows);
@@ -96,11 +96,6 @@ export async function createFlooringCatalogRowFromAssembly(
     deps.setError("Добавьте хотя бы одну строку сборки.");
     return false;
   }
-  if (target !== "covering" && rows.some((row) => row.enabled && row.kind !== "work")) {
-    deps.setError("Для подготовки и укладки можно использовать только рабочие строки.");
-    return false;
-  }
-
   deps.setError(null);
   deps.setStatusMessage(null);
   deps.setWarningMessage(null);
@@ -108,32 +103,29 @@ export async function createFlooringCatalogRowFromAssembly(
   try {
     let createdDto: { id?: number };
     if (target === "covering") {
-      const draft = applyAggregatesToCoveringDraft(aggregates, {
-        ...emptyCoveringDraft(),
-        title,
-      });
-      createdDto = await createFlooringCovering(coveringDraftToPayload(draft));
+      const prepared = prepareCoveringDraftForCatalogSave({ ...emptyCoveringDraft(), title }, rows);
+      if (prepared.status === "error") {
+        deps.setError(prepared.message);
+        return false;
+      }
+      createdDto = await createFlooringCovering(coveringDraftToPayload(prepared.draft));
     } else if (target === "preparation") {
-      createdDto = await createFlooringPreparation(
-        preparationDraftToPayload({
-          ...emptyPreparationDraft(),
-          title,
-          laborPricePerM2: aggregates.worksPerM2,
-          materialPricePerM2: 0,
-        }),
-      );
+      const prepared = preparePreparationDraftForCatalogSave({ ...emptyPreparationDraft(), title }, rows);
+      if (prepared.status === "error") {
+        deps.setError(prepared.message);
+        return false;
+      }
+      createdDto = await createFlooringPreparation(preparationDraftToPayload(prepared.draft));
     } else {
-      const enabledRows = rows.filter((row) => row.enabled && row.kind === "work");
-      const coefficient = enabledRows.find((row) => row.consumptionPerM2 > 0)?.consumptionPerM2 ?? 1;
-      createdDto = await createFlooringLayout(
-        layoutDraftToPayload({
-          ...emptyLayoutDraft(),
-          title,
-          laborPricePerM2: aggregates.worksPerM2,
-          laborFactor: coefficient,
-          additionalWastePercent: 0,
-        }),
+      const prepared = prepareLayoutDraftForCatalogSave(
+        { ...emptyLayoutDraft(), title, additionalWastePercent: 0 },
+        rows,
       );
+      if (prepared.status === "error") {
+        deps.setError(prepared.message);
+        return false;
+      }
+      createdDto = await createFlooringLayout(layoutDraftToPayload(prepared.draft));
     }
 
     return await finalizeAssemblyTargetRowCreate({

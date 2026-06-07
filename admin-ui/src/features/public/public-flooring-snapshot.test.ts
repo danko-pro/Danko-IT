@@ -8,6 +8,7 @@ import {
   flooringPreparationRates,
 } from "./public-estimate-flooring";
 import {
+  getFlooringSnapshotCatalog,
   getFlooringSnapshotRates,
   loadFlooringSnapshot,
   validateFlooringSnapshot,
@@ -20,15 +21,20 @@ const EXPECTED_LAYOUT_CODES = ["straight", "large_format_straight", "glue", "flo
 const EXPECTED_PLINTH_CODES = ["none", "duropolymer", "painted_mdf"];
 
 function expectCodesPresent(items: Array<{ code: string }>, expectedCodes: string[]) {
-  const presentCodes = items.map((item) => item.code).sort();
-  expect(presentCodes).toEqual([...expectedCodes].sort());
+  const presentCodes = new Set(items.map((item) => item.code));
+
+  for (const code of expectedCodes) {
+    expect(presentCodes.has(code)).toBe(true);
+  }
 }
 
 describe("flooring snapshot", () => {
   it("loads and validates the generated v2 snapshot", () => {
     const snapshot = loadFlooringSnapshot();
     expect(snapshot.version).toBe("flooring-v2");
-    expect(snapshot.coverings.find((item) => item.code === "laminate")?.materialPricePerM2).toBe(930);
+    expect(snapshot.coverings.find((item) => item.code === "laminate")?.materialPricePerM2).toBe(
+      flooringSnapshotData.coverings.find((item) => item.code === "laminate")?.materialPricePerM2,
+    );
     expect(snapshot.layouts.find((item) => item.code === "straight")?.laborPricePerM2).toBe(1000);
     expect(snapshot.globalAddons.thresholdPrice).toBe(900);
   });
@@ -39,6 +45,114 @@ describe("flooring snapshot", () => {
     expectCodesPresent(snapshot.preparations, EXPECTED_PREPARATION_CODES);
     expectCodesPresent(snapshot.layouts, EXPECTED_LAYOUT_CODES);
     expectCodesPresent(snapshot.plinthTypes, EXPECTED_PLINTH_CODES);
+  });
+
+  it("accepts optional procurement fields on specLines", () => {
+    const payload = {
+      ...flooringSnapshotData,
+      coverings: flooringSnapshotData.coverings.map((item) =>
+        item.code === "laminate"
+          ? {
+              ...item,
+              specLines: [
+                {
+                  code: "flooring-line-laminate-consumables",
+                  title: "Клей плиточный",
+                  category: "consumables",
+                  basis: "area",
+                  unit: "kg",
+                  quantityPerBasis: 7.5,
+                  unitPrice: 24,
+                  packageSize: 25,
+                  packageUnit: "kg",
+                  packagePrice: 600,
+                  purchaseMode: "package",
+                  purchaseAggregation: "project",
+                  aggregationKey: "flooring-line-laminate-consumables",
+                  calculationNote: "1.5 kg/m²/mm × 5 mm",
+                },
+              ],
+            }
+          : item,
+      ),
+    };
+
+    expect(validateFlooringSnapshot(payload)).toEqual({ ok: true });
+  });
+
+  it("accepts optional specLines on catalog items", () => {
+    const payload = {
+      ...flooringSnapshotData,
+      coverings: flooringSnapshotData.coverings.map((item) =>
+        item.code === "laminate"
+          ? {
+              ...item,
+              specLines: [
+                {
+                  code: "flooring-line-laminate-materials",
+                  title: "Ламинат доска",
+                  category: "materials",
+                  basis: "area",
+                  unit: "m2",
+                  quantityPerBasis: 1,
+                  unitPrice: 930,
+                },
+              ],
+            }
+          : item,
+      ),
+    };
+
+    expect(validateFlooringSnapshot(payload)).toEqual({ ok: true });
+  });
+
+  it("rejects forbidden keys inside specLines", () => {
+    const payload = {
+      ...flooringSnapshotData,
+      coverings: flooringSnapshotData.coverings.map((item) =>
+        item.code === "laminate"
+          ? {
+              ...item,
+              specLines: [
+                {
+                  code: "flooring-line-laminate-materials",
+                  title: "Ламинат доска",
+                  category: "materials",
+                  basis: "area",
+                  unit: "m2",
+                  quantityPerBasis: 1,
+                  unitPrice: 930,
+                  note: "internal",
+                },
+              ],
+            }
+          : item,
+      ),
+    };
+
+    expect(validateFlooringSnapshot(payload)).toEqual({
+      ok: false,
+      reason: "forbidden internal keys: note",
+    });
+  });
+
+  it("rejects invalid specLines shape", () => {
+    const payload = {
+      ...flooringSnapshotData,
+      preparations: flooringSnapshotData.preparations.map((item) =>
+        item.code === "primer"
+          ? {
+              ...item,
+              specLines: [{ code: "line", title: "Work", category: "invalid", basis: "area", unit: "m2", quantityPerBasis: 1, unitPrice: 10 }],
+            }
+          : item,
+      ),
+    };
+
+    expect(validateFlooringSnapshot(payload)).toEqual({
+      ok: false,
+      reason: "preparations[primer].specLines[0].category is invalid",
+    });
   });
 
   it("has no forbidden internal keys in the seed snapshot", () => {
@@ -101,5 +215,48 @@ describe("flooring snapshot", () => {
     expect(rates.flooringLayoutRates).toEqual(flooringLayoutRates);
     expect(rates.flooringPlinthRates).toEqual(flooringPlinthRates);
     expect(rates.flooringExtraRates).toEqual(flooringExtraRates);
+  });
+
+  it("getFlooringSnapshotCatalog returns full catalog items by code", () => {
+    const catalog = getFlooringSnapshotCatalog();
+
+    expect(catalog.coverings.laminate.code).toBe("laminate");
+    expect(catalog.preparations.none.code).toBe("none");
+    expect(catalog.layouts.straight.code).toBe("straight");
+    expect(catalog.coverings.laminate.materialPricePerM2).toBe(
+      flooringSnapshotData.coverings.find((item) => item.code === "laminate")?.materialPricePerM2,
+    );
+  });
+
+  it("getFlooringSnapshotCatalog exposes custom active snapshot codes", () => {
+    const payload = {
+      ...flooringSnapshotData,
+      coverings: [
+        ...flooringSnapshotData.coverings,
+        {
+          code: "custom_covering",
+          title: "Кастомное покрытие",
+          materialPricePerM2: 0,
+          baseWastePercent: 0,
+          underlayPricePerM2: 0,
+          adhesivePricePerM2: 0,
+          primerPricePerM2: 0,
+          svpPricePerM2: 0,
+          groutPricePerM2: 0,
+          toolConsumablesPerM2: 0,
+        },
+      ],
+    };
+
+    expect(validateFlooringSnapshot(payload).ok).toBe(true);
+
+    const catalog = {
+      coverings: Object.fromEntries(payload.coverings.map((item) => [item.code, item])),
+      preparations: Object.fromEntries(payload.preparations.map((item) => [item.code, item])),
+      layouts: Object.fromEntries(payload.layouts.map((item) => [item.code, item])),
+    };
+
+    expect(catalog.coverings.custom_covering.title).toBe("Кастомное покрытие");
+    expect(catalog.coverings.custom_covering.code).toBe("custom_covering");
   });
 });

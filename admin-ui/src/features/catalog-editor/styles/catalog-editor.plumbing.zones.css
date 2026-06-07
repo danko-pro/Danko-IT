@@ -1,0 +1,177 @@
+.ce-zones {
+  display: flex;
+  flex-direction: column;
+}
+
+.ce-zone {
+  overflow: hidden;
+  border: 1px solid var(--ce-border);
+  border-radius: var(--ce-radius);
+  background: #ffffff;
+}
+
+.ce-plumbing-zone-detail-card {
+  min-height: 100%;
+  box-shadow: var(--ce-shadow-sm);
+}
+
+.ce-zone-head {
+  display: grid;
+  grid-template-columns: 24px minmax(180px, 1fr) auto auto 24px;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--ce-border);
+  background: #fbfcfe;
+}
+
+.ce-zone-detail-toggle {
+  width: 22px;
+  height: 22px;
+}
+
+.ce-zone-title {
+  width: 100%;
+  min-width: 0;
+  height: 30px;
+  padding: 0 8px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ce-text);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 720;
+  outline: none;
+}
+
+.ce-zone-title:hover,
+.ce-zone-title:focus {
+  border-color: var(--ce-border);
+  background: #ffffff;
+}
+
+.ce-zone-count {
+  color: var(--ce-muted);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.ce-zone-total {
+  min-width: 92px;
+  color: var(--ce-ok);
+  font-size: 14px;
+  font-weight: 760;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.ce-zone-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+}
+
+.ce-zone-detail-controls {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) auto auto minmax(240px, 360px);
+  gap: 6px;
+  align-items: center;
+}
+
+.ce-zone-detail-controls .ce-price-classes {
+  display: inline-grid;
+  grid-template-columns: auto auto;
+  gap: 5px;
+  align-items: center;
+  height: 30px;
+  margin: 0;
+  padding: 3px 5px 3px 7px;
+  border-radius: 6px;
+  background: #ffffff;
+  white-space: nowrap;
+}
+
+.ce-zone-detail-controls .ce-price-classes-label {
+  color: var(--ce-muted);
+  font-size: 10px;
+  font-weight: 720;
+}
+
+.ce-zone-detail-controls .ce-price-class-tabs {
+  display: inline-flex;
+  gap: 2px;
+  flex-wrap: nowrap;
+}
+
+.ce-zone-detail-controls .ce-price-class-tab {
+  width: 28px;
+  height: 22px;
+  padding: 0;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 720;
+  line-height: 1;
+}
+
+.ce-zone-desc {
+  width: 100%;
+  min-width: 0;
+  height: 30px;
+  margin: 0;
+  padding: 0 8px;
+  border: 1px solid var(--ce-border);
+  border-radius: 6px;
+  background: #ffffff;
+  color: var(--ce-muted);
+  font: inherit;
+  font-size: 12px;
+  outline: none;
+}
+
+.ce-zone-risk-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  color: var(--ce-muted);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.ce-zone-risk-input {
+  width: 66px;
+  height: 30px;
+  min-height: 30px;
+  text-align: right;
+}
+
+.ce-zone-pick {
+  width: 100%;
+  height: 30px;
+  min-height: 30px;
+  cursor: pointer;
+}
+
+.ce-zone-table {
+  width: 100%;
+  min-width: 820px;
+  border: 0;
+}
+
+.ce-zone-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--ce-border);
+  border-radius: var(--ce-radius);
+  background: #ffffff;
+}
+
+.ce-zone-table thead th {
+  position: static;
+}
+
+.ce-row-missing td {
+  background: var(--ce-danger-soft);
+  color: var(--ce-danger);
+}

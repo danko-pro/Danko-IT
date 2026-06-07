@@ -140,4 +140,182 @@ describe("generate-snapshot validation", () => {
       reason: "forbidden internal keys: note",
     });
   });
+
+  it("accepts valid flooring-v2 procurement specLines on catalog items", () => {
+    const payload = {
+      ...FLOORING_V2_SEED,
+      coverings: FLOORING_V2_SEED.coverings.map((item) =>
+        item.code === "laminate"
+          ? {
+              ...item,
+              specLines: [
+                {
+                  code: "flooring-line-laminate-consumables",
+                  title: "Клей плиточный",
+                  category: "consumables",
+                  basis: "area",
+                  unit: "kg",
+                  quantityPerBasis: 7.5,
+                  unitPrice: 24,
+                  packageSize: 25,
+                  packageUnit: "kg",
+                  packagePrice: 600,
+                  purchaseMode: "package",
+                  purchaseAggregation: "project",
+                  aggregationKey: "flooring-line-laminate-consumables",
+                  calculationNote: "1.5 kg/m²/mm × 5 mm",
+                },
+              ],
+            }
+          : item,
+      ),
+    };
+
+    expect(validateFlooringSnapshotPayload(payload)).toEqual({ ok: true });
+  });
+
+  it("accepts valid flooring-v2 specLines on catalog items", () => {
+    const payload = {
+      ...FLOORING_V2_SEED,
+      coverings: FLOORING_V2_SEED.coverings.map((item) =>
+        item.code === "laminate"
+          ? {
+              ...item,
+              specLines: [
+                {
+                  code: "flooring-line-laminate-materials",
+                  title: "Ламинат доска",
+                  category: "materials",
+                  basis: "area",
+                  unit: "m2",
+                  quantityPerBasis: 1,
+                  unitPrice: 930,
+                  packageSize: 2.5,
+                  packageUnit: "m2",
+                },
+              ],
+            }
+          : item,
+      ),
+    };
+
+    expect(validateFlooringSnapshotPayload(payload)).toEqual({ ok: true });
+  });
+
+  it("accepts v2 catalog rows without specLines", () => {
+    expect(validateFlooringSnapshotPayload(FLOORING_V2_SEED)).toEqual({ ok: true });
+  });
+
+  it("rejects invalid specLines category, basis, and numeric fields", () => {
+    expect(
+      validateFlooringSnapshotPayload({
+        ...FLOORING_V2_SEED,
+        preparations: FLOORING_V2_SEED.preparations.map((item) =>
+          item.code === "primer"
+            ? {
+                ...item,
+                specLines: [
+                  {
+                    code: "line",
+                    title: "Work",
+                    category: "invalid",
+                    basis: "area",
+                    unit: "m2",
+                    quantityPerBasis: 1,
+                    unitPrice: 10,
+                  },
+                ],
+              }
+            : item,
+        ),
+      }),
+    ).toEqual({
+      ok: false,
+      reason: "preparations[primer].specLines[0].category is invalid",
+    });
+
+    expect(
+      validateFlooringSnapshotPayload({
+        ...FLOORING_V2_SEED,
+        layouts: FLOORING_V2_SEED.layouts.map((item) =>
+          item.code === "straight"
+            ? {
+                ...item,
+                specLines: [
+                  {
+                    code: "line",
+                    title: "Work",
+                    category: "works",
+                    basis: "length",
+                    unit: "m2",
+                    quantityPerBasis: 1,
+                    unitPrice: 10,
+                  },
+                ],
+              }
+            : item,
+        ),
+      }),
+    ).toEqual({
+      ok: false,
+      reason: "layouts[straight].specLines[0].basis must be area",
+    });
+
+    expect(
+      validateFlooringSnapshotPayload({
+        ...FLOORING_V2_SEED,
+        coverings: FLOORING_V2_SEED.coverings.map((item) =>
+          item.code === "carpet"
+            ? {
+                ...item,
+                specLines: [
+                  {
+                    code: "line",
+                    title: "Work",
+                    category: "works",
+                    basis: "area",
+                    unit: "m2",
+                    quantityPerBasis: Number.NaN,
+                    unitPrice: 10,
+                  },
+                ],
+              }
+            : item,
+        ),
+      }),
+    ).toEqual({
+      ok: false,
+      reason: "coverings[carpet].specLines[0].quantityPerBasis must be a finite number",
+    });
+  });
+
+  it("rejects forbidden keys inside specLines", () => {
+    expect(
+      validateFlooringSnapshotPayload({
+        ...FLOORING_V2_SEED,
+        coverings: FLOORING_V2_SEED.coverings.map((item) =>
+          item.code === "laminate"
+            ? {
+                ...item,
+                specLines: [
+                  {
+                    code: "flooring-line-laminate-materials",
+                    title: "Ламинат доска",
+                    category: "materials",
+                    basis: "area",
+                    unit: "m2",
+                    quantityPerBasis: 1,
+                    unitPrice: 930,
+                    note: "internal",
+                  },
+                ],
+              }
+            : item,
+        ),
+      }),
+    ).toEqual({
+      ok: false,
+      reason: "forbidden internal keys: note",
+    });
+  });
 });

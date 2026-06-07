@@ -1,0 +1,12 @@
+@media (max-width: 860px) {
+  .ce-zone-head {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .ce-zone-count,
+  .ce-zone-total,
+  .ce-zone-head > .ce-icon-action {
+    grid-column: 2;
+    justify-self: start;
+  }
+}

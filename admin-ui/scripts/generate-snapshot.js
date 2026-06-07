@@ -437,6 +437,106 @@ const EXPECTED_FLOORING_LAYOUT_CODES = ["straight", "large_format_straight", "gl
 
 const EXPECTED_FLOORING_PLINTH_CODES = ["none", "duropolymer", "painted_mdf"];
 
+const FLOORING_SPEC_LINE_CATEGORIES = new Set(["materials", "works", "consumables", "tools"]);
+
+const FLOORING_SPEC_LINE_PURCHASE_MODES = new Set(["raw", "package"]);
+
+const FLOORING_SPEC_LINE_PURCHASE_AGGREGATIONS = new Set(["room", "project"]);
+
+const FLOORING_SPEC_LINE_REQUIRED_KEYS = [
+  "code",
+  "title",
+  "category",
+  "basis",
+  "unit",
+  "quantityPerBasis",
+  "unitPrice",
+];
+
+/**
+ * @param {unknown} specLines
+ * @param {string} arrayName
+ * @returns {{ ok: true } | { ok: false; reason: string }}
+ */
+function validateSpecLines(specLines, arrayName) {
+  if (!Array.isArray(specLines)) {
+    return { ok: false, reason: `${arrayName}.specLines must be an array` };
+  }
+
+  for (const [index, line] of specLines.entries()) {
+    if (!line || typeof line !== "object" || Array.isArray(line)) {
+      return { ok: false, reason: `${arrayName}.specLines[${index}] must be an object` };
+    }
+    for (const key of FLOORING_SPEC_LINE_REQUIRED_KEYS) {
+      if (!(key in line)) {
+        return { ok: false, reason: `${arrayName}.specLines[${index}] missing ${key}` };
+      }
+    }
+    if (typeof line.code !== "string" || line.code.length === 0) {
+      return { ok: false, reason: `${arrayName}.specLines[${index}].code must be a non-empty string` };
+    }
+    if (typeof line.title !== "string" || line.title.length === 0) {
+      return { ok: false, reason: `${arrayName}.specLines[${index}].title must be a non-empty string` };
+    }
+    if (typeof line.category !== "string" || !FLOORING_SPEC_LINE_CATEGORIES.has(line.category)) {
+      return { ok: false, reason: `${arrayName}.specLines[${index}].category is invalid` };
+    }
+    if (line.basis !== "area") {
+      return { ok: false, reason: `${arrayName}.specLines[${index}].basis must be area` };
+    }
+    if (typeof line.unit !== "string" || line.unit.length === 0) {
+      return { ok: false, reason: `${arrayName}.specLines[${index}].unit must be a non-empty string` };
+    }
+    if (typeof line.quantityPerBasis !== "number" || !Number.isFinite(line.quantityPerBasis)) {
+      return {
+        ok: false,
+        reason: `${arrayName}.specLines[${index}].quantityPerBasis must be a finite number`,
+      };
+    }
+    if (typeof line.unitPrice !== "number" || !Number.isFinite(line.unitPrice)) {
+      return { ok: false, reason: `${arrayName}.specLines[${index}].unitPrice must be a finite number` };
+    }
+    if ("packageSize" in line) {
+      if (typeof line.packageSize !== "number" || !Number.isFinite(line.packageSize)) {
+        return { ok: false, reason: `${arrayName}.specLines[${index}].packageSize must be a finite number` };
+      }
+      if (typeof line.packageUnit !== "string" || line.packageUnit.length === 0) {
+        return { ok: false, reason: `${arrayName}.specLines[${index}].packageUnit must be a non-empty string` };
+      }
+    }
+    if ("packagePrice" in line) {
+      if (typeof line.packagePrice !== "number" || !Number.isFinite(line.packagePrice)) {
+        return { ok: false, reason: `${arrayName}.specLines[${index}].packagePrice must be a finite number` };
+      }
+    }
+    if ("purchaseMode" in line) {
+      if (typeof line.purchaseMode !== "string" || !FLOORING_SPEC_LINE_PURCHASE_MODES.has(line.purchaseMode)) {
+        return { ok: false, reason: `${arrayName}.specLines[${index}].purchaseMode is invalid` };
+      }
+    }
+    if ("purchaseAggregation" in line) {
+      if (
+        typeof line.purchaseAggregation !== "string" ||
+        !FLOORING_SPEC_LINE_PURCHASE_AGGREGATIONS.has(line.purchaseAggregation)
+      ) {
+        return { ok: false, reason: `${arrayName}.specLines[${index}].purchaseAggregation is invalid` };
+      }
+    }
+    if ("aggregationKey" in line) {
+      if (typeof line.aggregationKey !== "string" || line.aggregationKey.length === 0) {
+        return { ok: false, reason: `${arrayName}.specLines[${index}].aggregationKey must be a non-empty string` };
+      }
+    }
+    if ("calculationNote" in line) {
+      if (typeof line.calculationNote !== "string" || line.calculationNote.length === 0) {
+        return { ok: false, reason: `${arrayName}.specLines[${index}].calculationNote must be a non-empty string` };
+      }
+    }
+  }
+
+  return { ok: true };
+}
+
 /**
  * @param {unknown} items
  * @param {string} arrayName
@@ -466,6 +566,12 @@ function validateFlooringCatalogItems(items, arrayName, rateKeys) {
     seenCodes.add(item.code);
     if (!hasNumericRates(item, rateKeys)) {
       return { ok: false, reason: `${arrayName} rates must be finite numbers` };
+    }
+    if ("specLines" in item) {
+      const specLinesValidation = validateSpecLines(item.specLines, `${arrayName}[${item.code}]`);
+      if (!specLinesValidation.ok) {
+        return specLinesValidation;
+      }
     }
   }
 

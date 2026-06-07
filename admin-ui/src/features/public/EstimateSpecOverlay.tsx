@@ -1,12 +1,14 @@
-import { useEffect, useId, useRef } from "react";
+import { useCallback, useEffect, useId, useRef } from "react";
 import { createPortal } from "react-dom";
-import type { EstimateSection } from "./public-estimate-model";
+import { buildSpecExportFilename, downloadSpecExportCsv } from "./estimate/spec-export";
+import type { FlooringProcurementLine } from "./public-estimate-flooring-procurement";
 import type { EstimateSpecSection } from "./public-estimate-plumbing-zones";
 
 type EstimateSpecOverlayProps = {
   title: string;
   subtitle?: string;
   sections: EstimateSpecSection[];
+  procurementLines?: FlooringProcurementLine[];
   formatMoney: (value: number) => string;
   formatQuantity: (value: number) => string;
   onClose: () => void;
@@ -19,6 +21,7 @@ export function EstimateSpecOverlay({
   title,
   subtitle,
   sections,
+  procurementLines,
   formatMoney,
   formatQuantity,
   onClose,
@@ -87,6 +90,10 @@ export function EstimateSpecOverlay({
 
   const grouped = sections.length > 1;
   const grandTotal = sections.reduce((sum, section) => sum + section.totals.total, 0);
+
+  const handleExportCsv = useCallback(() => {
+    downloadSpecExportCsv(sections, buildSpecExportFilename(title), procurementLines);
+  }, [procurementLines, sections, title]);
 
   const overlay = (
     <div
@@ -174,8 +181,13 @@ export function EstimateSpecOverlay({
         </div>
 
         <div className="public-estimate-spec-modal-foot">
-          <span>{grouped ? "Итого по всем разделам" : "Итого по разделу"}</span>
-          <strong>{formatMoney(grandTotal)}</strong>
+          <button type="button" className="public-estimate-spec-modal-back" onClick={handleExportCsv}>
+            Скачать CSV
+          </button>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.7rem", marginLeft: "auto" }}>
+            <span>{grouped ? "Итого по всем разделам" : "Итого по разделу"}</span>
+            <strong>{formatMoney(grandTotal)}</strong>
+          </div>
         </div>
       </div>
     </div>

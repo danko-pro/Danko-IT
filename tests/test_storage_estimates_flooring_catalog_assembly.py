@@ -148,6 +148,52 @@ class SqlAlchemyEstimateFlooringCatalogAssemblyTest(unittest.IsolatedAsyncioTest
         self.assertTrue(deleted)
         self.assertIsNone(await self.repository.get_estimate_flooring_catalog_assembly("covering", covering_id))
 
+    async def test_delete_catalog_target_deletes_attached_assembly(self) -> None:
+        covering_id = await self.repository.create_estimate_flooring_covering(
+            **_sample_covering_kwargs(title="РџРѕРєСЂС‹С‚РёРµ СЃРѕ СЃР±РѕСЂРєРѕР№")
+        )
+        preparation_id = await self.repository.create_estimate_flooring_preparation(
+            title="РџРѕРґРіРѕС‚РѕРІРєР° СЃРѕ СЃР±РѕСЂРєРѕР№",
+            labor_price_per_m2=100,
+            material_price_per_m2=0,
+            primer_consumption_per_m2=0,
+            primer_unit="Р»",
+            primer_price_per_unit=0,
+        )
+        layout_id = await self.repository.create_estimate_flooring_layout(
+            title="РЈРєР»Р°РґРєР° СЃРѕ СЃР±РѕСЂРєРѕР№",
+            labor_price_per_m2=200,
+            labor_multiplier=1,
+            extra_waste_percent=0,
+        )
+
+        await self.repository.replace_estimate_flooring_catalog_assembly(
+            "covering",
+            covering_id,
+            "РЎР±РѕСЂРєР° РїРѕРєСЂС‹С‚РёСЏ",
+            [_sample_row()],
+        )
+        await self.repository.replace_estimate_flooring_catalog_assembly(
+            "preparation",
+            preparation_id,
+            "РЎР±РѕСЂРєР° РїРѕРґРіРѕС‚РѕРІРєРё",
+            [_sample_row(section="work", kind="work", public_category="works")],
+        )
+        await self.repository.replace_estimate_flooring_catalog_assembly(
+            "layout",
+            layout_id,
+            "РЎР±РѕСЂРєР° СѓРєР»Р°РґРєРё",
+            [_sample_row(section="work", kind="work", public_category="works")],
+        )
+
+        self.assertTrue(await self.repository.delete_estimate_flooring_covering(covering_id))
+        self.assertTrue(await self.repository.delete_estimate_flooring_preparation(preparation_id))
+        self.assertTrue(await self.repository.delete_estimate_flooring_layout(layout_id))
+
+        self.assertIsNone(await self.repository.get_estimate_flooring_catalog_assembly("covering", covering_id))
+        self.assertIsNone(await self.repository.get_estimate_flooring_catalog_assembly("preparation", preparation_id))
+        self.assertIsNone(await self.repository.get_estimate_flooring_catalog_assembly("layout", layout_id))
+
     async def test_owner_and_global_assembly_isolation(self) -> None:
         global_repo = self.repository
         owner_1 = self.repository.for_owner(1)

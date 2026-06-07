@@ -4,15 +4,18 @@ import {
   type EstimateLineItem,
   type EstimateSection,
 } from "./public-estimate-model";
-import { getFlooringSnapshotRates } from "./public-flooring-snapshot";
+import { buildFlooringProcurementSummary, type FlooringProcurementLine } from "./public-estimate-flooring-procurement";
+export type { FlooringProcurementLine } from "./public-estimate-flooring-procurement";
+import { buildFlooringSpecification, type FlooringSpecificationLine } from "./public-estimate-flooring-spec";
+import { getFlooringSnapshotCatalog, getFlooringSnapshotRates } from "./public-flooring-snapshot";
 
-export type FlooringCoveringType = "porcelain" | "quartz_vinyl" | "laminate" | "carpet" | "engineered_wood";
+export type FlooringCoveringType = string;
 
-export type FlooringPreparationType = "none" | "primer" | "self_leveling" | "waterproofing";
+export type FlooringPreparationType = string;
 
-export type FlooringLayoutType = "straight" | "large_format_straight" | "glue" | "floating";
+export type FlooringLayoutType = string;
 
-export type FlooringPlinthType = "none" | "duropolymer" | "painted_mdf";
+export type FlooringPlinthType = string;
 
 export type FlooringRoomInput = {
   roomId: string;
@@ -61,6 +64,9 @@ export type FlooringCalculationResult = {
   consumablesTotal: number;
   total: number;
   section: EstimateSection;
+  specificationLines: FlooringSpecificationLine[];
+  specificationSection: EstimateSection;
+  procurementLines: FlooringProcurementLine[];
 };
 
 /** Публичные тарифы v1 из `generated/flooring.snapshot.json`. */
@@ -72,8 +78,50 @@ export const flooringLayoutRates = flooringSnapshotRates.flooringLayoutRates;
 export const flooringPlinthRates = flooringSnapshotRates.flooringPlinthRates;
 export const flooringExtraRates = flooringSnapshotRates.flooringExtraRates;
 
+function activeFlooringRates() {
+  return getFlooringSnapshotRates();
+}
+
 function safeNumber(value: number) {
   return Number.isFinite(value) ? Math.max(0, value) : 0;
+}
+
+const EMPTY_COVERING_RATE = {
+  materialPricePerM2: 0,
+  laborPricePerM2: 0,
+  baseWastePercent: 0,
+  underlayPricePerM2: 0,
+  adhesivePricePerM2: 0,
+  primerPricePerM2: 0,
+  svpPricePerM2: 0,
+  groutPricePerM2: 0,
+  toolConsumablesPerM2: 0,
+};
+
+const EMPTY_PREPARATION_RATE = {
+  laborPricePerM2: 0,
+  materialPricePerM2: 0,
+};
+
+const EMPTY_LAYOUT_RATE = {
+  laborPricePerM2: 0,
+  laborFactor: 1,
+  additionalWastePercent: 0,
+};
+
+const EMPTY_PLINTH_RATE = {
+  materialPricePerMeter: 0,
+  laborPricePerMeter: 0,
+  factor: 1,
+};
+
+function pickSnapshotRate<T extends object>(
+  rates: Record<string, T | undefined>,
+  code: string,
+  preferredFallbackCode: string,
+  emptyFallback: T,
+): T {
+  return rates[code] ?? rates[preferredFallbackCode] ?? Object.values(rates)[0] ?? emptyFallback;
 }
 
 function createLineItem(
@@ -101,6 +149,7 @@ function createLineItem(
 }
 
 function createRoomResult(room: FlooringRoomInput): FlooringRoomResult {
+  const rates = activeFlooringRates();
   const area = room.isIncluded ? safeNumber(room.area) : 0;
   const perimeter = room.isIncluded ? safeNumber(room.perimeter) : 0;
   // Длину плинтуса берём из геометрии (периметр минус дверные проёмы); если она
@@ -108,9 +157,19 @@ function createRoomResult(room: FlooringRoomInput): FlooringRoomResult {
   const plinthLength = room.isIncluded
     ? Math.min(perimeter, safeNumber(room.plinthLength ?? perimeter))
     : 0;
-  const covering = flooringCoveringRates[room.coveringType];
-  const preparation = flooringPreparationRates[room.preparationType];
-  const layout = flooringLayoutRates[room.layoutType];
+  const covering = pickSnapshotRate(
+    rates.flooringCoveringRates,
+    room.coveringType,
+    "laminate",
+    EMPTY_COVERING_RATE,
+  );
+  const preparation = pickSnapshotRate(
+    rates.flooringPreparationRates,
+    room.preparationType,
+    "none",
+    EMPTY_PREPARATION_RATE,
+  );
+  const layout = pickSnapshotRate(rates.flooringLayoutRates, room.layoutType, "straight", EMPTY_LAYOUT_RATE);
   const totalWastePercent = covering.baseWastePercent + layout.additionalWastePercent;
   const purchaseArea = area * (1 + totalWastePercent / 100);
   const baseLaborPricePerM2 = layout.laborPricePerM2 ?? covering.laborPricePerM2 ?? 0;
@@ -161,6 +220,7 @@ function addConsumable(
 }
 
 export function calculateFlooring(rooms: FlooringRoomInput[], options: FlooringOptions): FlooringCalculationResult {
+  const rates = activeFlooringRates();
   const roomResults = rooms.map(createRoomResult);
   const includedRooms = roomResults.filter((room) => room.isIncluded && room.area > 0);
   const flooringArea = includedRooms.reduce((total, room) => total + room.area, 0);
@@ -169,8 +229,18 @@ export function calculateFlooring(rooms: FlooringRoomInput[], options: FlooringO
   const items: EstimateLineItem[] = [];
 
   includedRooms.forEach((room) => {
-    const covering = flooringCoveringRates[room.coveringType];
-    const preparation = flooringPreparationRates[room.preparationType];
+    const covering = pickSnapshotRate(
+      rates.flooringCoveringRates,
+      room.coveringType,
+      "laminate",
+      EMPTY_COVERING_RATE,
+    );
+    const preparation = pickSnapshotRate(
+      rates.flooringPreparationRates,
+      room.preparationType,
+      "none",
+      EMPTY_PREPARATION_RATE,
+    );
 
     items.push(
       createLineItem(
@@ -222,7 +292,7 @@ export function calculateFlooring(rooms: FlooringRoomInput[], options: FlooringO
     );
   });
 
-  const plinth = flooringPlinthRates[options.plinthType];
+  const plinth = pickSnapshotRate(rates.flooringPlinthRates, options.plinthType, "duropolymer", EMPTY_PLINTH_RATE);
 
   if (options.includePlinth && options.plinthType !== "none" && plinthLength > 0) {
     items.push(
@@ -255,7 +325,7 @@ export function calculateFlooring(rooms: FlooringRoomInput[], options: FlooringO
         "materials",
         thresholdCount,
         "шт",
-        flooringExtraRates.thresholdPrice,
+        rates.flooringExtraRates.thresholdPrice,
       ),
     );
   }
@@ -268,12 +338,26 @@ export function calculateFlooring(rooms: FlooringRoomInput[], options: FlooringO
         "works",
         flooringArea,
         "м²",
-        flooringExtraRates.demolitionPricePerM2,
+        rates.flooringExtraRates.demolitionPricePerM2,
       ),
     );
   }
 
   const section = createEstimateSection("flooring", "Полы", items, "Напольные покрытия, подготовка основания, плинтус и расходники.");
+  const flooringCatalog = getFlooringSnapshotCatalog();
+  const { specificationLines, specificationSection } = buildFlooringSpecification({
+    roomResults,
+    flatSection: section,
+    coveringByCode: flooringCatalog.coverings,
+    preparationByCode: flooringCatalog.preparations,
+    layoutByCode: flooringCatalog.layouts,
+  });
+  const procurementLines = buildFlooringProcurementSummary({
+    roomResults,
+    coveringByCode: flooringCatalog.coverings,
+    preparationByCode: flooringCatalog.preparations,
+    layoutByCode: flooringCatalog.layouts,
+  });
 
   return {
     roomResults,
@@ -285,5 +369,8 @@ export function calculateFlooring(rooms: FlooringRoomInput[], options: FlooringO
     consumablesTotal: section.totals.consumables,
     total: section.totals.total,
     section,
+    specificationLines,
+    specificationSection,
+    procurementLines,
   };
 }

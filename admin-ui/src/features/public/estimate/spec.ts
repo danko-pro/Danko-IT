@@ -1,4 +1,7 @@
 import type { EstimateSection, EstimateSectionId, PublicEstimateResult } from "../public-estimate-model";
+import { expandFlooringSectionForSpec } from "../public-estimate-flooring-spec";
+import type { FlooringCalculationResult } from "../public-estimate-flooring";
+import type { FlooringProcurementLine } from "../public-estimate-flooring-procurement";
 import {
   expandPlumbingSectionForSpec,
   type PlumbingCalculationResult,
@@ -15,6 +18,7 @@ export type EstimateSpecModalData = {
   title: string;
   subtitle?: string;
   sections: EstimateSpecSection[];
+  procurementLines?: FlooringProcurementLine[];
 };
 
 export function buildPlumbingSpecExpansionOptions(
@@ -50,15 +54,20 @@ export function mapSectionsForSpec(
   sections: EstimateSection[],
   plumbingOptions: PlumbingOptions,
   plumbingResult: PlumbingCalculationResult,
+  flooringResult: Pick<FlooringCalculationResult, "specificationSection">,
 ): EstimateSpecSection[] {
   const expansionOptions = buildPlumbingSpecExpansionOptions(plumbingOptions, plumbingResult);
 
   return sections.map((section) => {
-    if (section.id !== "plumbing") {
-      return section;
+    if (section.id === "plumbing") {
+      return expandPlumbingSectionForSpec(section, expansionOptions);
     }
 
-    return expandPlumbingSectionForSpec(section, expansionOptions);
+    if (section.id === "flooring") {
+      return expandFlooringSectionForSpec(section, flooringResult.specificationSection);
+    }
+
+    return section;
   });
 }
 
@@ -68,18 +77,24 @@ export function buildEstimateSpecModalData(params: {
   estimateResult: PublicEstimateResult;
   plumbingOptions: PlumbingOptions;
   plumbingResult: PlumbingCalculationResult;
+  flooringResult: Pick<FlooringCalculationResult, "specificationSection" | "procurementLines">;
 }): EstimateSpecModalData | null {
-  const { specModal, allEstimateSections, estimateResult, plumbingOptions, plumbingResult } = params;
+  const { specModal, allEstimateSections, estimateResult, plumbingOptions, plumbingResult, flooringResult } = params;
 
   if (!specModal) {
     return null;
   }
 
+  const includeProcurement =
+    specModal.kind === "full" || specModal.sectionId === "flooring";
+  const procurementLines = includeProcurement ? flooringResult.procurementLines : undefined;
+
   if (specModal.kind === "full") {
     return {
       title: "Полная спецификация",
       subtitle: "Все разделы текущей сметы по позициям",
-      sections: mapSectionsForSpec(estimateResult.sections, plumbingOptions, plumbingResult),
+      sections: mapSectionsForSpec(estimateResult.sections, plumbingOptions, plumbingResult, flooringResult),
+      procurementLines,
     };
   }
 
@@ -92,6 +107,7 @@ export function buildEstimateSpecModalData(params: {
   return {
     title: section.title,
     subtitle: section.description,
-    sections: mapSectionsForSpec([section], plumbingOptions, plumbingResult),
+    sections: mapSectionsForSpec([section], plumbingOptions, plumbingResult, flooringResult),
+    procurementLines,
   };
 }

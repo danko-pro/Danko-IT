@@ -1,0 +1,133 @@
+.ce-managed-table-header-cell {
+  position: relative;
+}
+
+.ce-managed-table-header-inner {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  min-width: 0;
+}
+
+.ce-managed-table-header-label {
+  min-width: 0;
+  overflow: hidden;
+  text-align: inherit;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ce-managed-table-header-tools {
+  display: inline-flex;
+  align-items: center;
+  opacity: 0.46;
+  pointer-events: auto;
+  transition: opacity 0.12s ease;
+}
+
+.ce-managed-table-header-cell:hover .ce-managed-table-header-tools,
+.ce-managed-table-header-cell:focus-within .ce-managed-table-header-tools {
+  opacity: 1;
+}
+
+.ce-managed-table-header-tool {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--ce-muted);
+  font: inherit;
+  font-size: 9px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.ce-managed-table-header-tool:hover {
+  border-color: var(--ce-accent);
+  background: #ffffff;
+  color: var(--ce-accent-strong);
+}
+
+.ce-managed-table-column-resizer {
+  position: relative;
+  align-self: stretch;
+  width: 6px;
+  min-height: 16px;
+  cursor: col-resize;
+  touch-action: none;
+}
+
+.ce-managed-table-column-resizer::before {
+  position: absolute;
+  top: 1px;
+  bottom: 1px;
+  left: 2px;
+  width: 2px;
+  border-radius: 999px;
+  background: #b9c7da;
+  content: "";
+  opacity: 0.45;
+}
+
+.ce-managed-table-column-resizer:hover::before {
+  background: var(--ce-accent);
+  opacity: 1;
+}
+
+.ce-managed-table-cell.is-align-left {
+  text-align: left;
+}
+
+.ce-managed-table-cell.is-align-center {
+  text-align: center;
+}
+
+.ce-managed-table-cell.is-align-right {
+  text-align: right;
+}
+
+th.ce-managed-table-cell.is-align-left .ce-managed-table-header-inner {
+  text-align: left;
+}
+
+th.ce-managed-table-cell.is-align-center .ce-managed-table-header-inner {
+  text-align: center;
+}
+
+th.ce-managed-table-cell.is-align-right .ce-managed-table-header-inner {
+  text-align: right;
+}
+
+td.ce-managed-table-cell.is-align-left .ce-cell-input {
+  text-align: left;
+}
+
+td.ce-managed-table-cell.is-align-center .ce-cell-input {
+  text-align: center;
+}
+
+td.ce-managed-table-cell.is-align-right .ce-cell-input {
+  text-align: right;
+}
+
+td.ce-managed-table-cell.is-align-left .ce-zone-number-input {
+  margin-right: auto;
+  margin-left: 0;
+}
+
+td.ce-managed-table-cell.is-align-center .ce-zone-number-input {
+  margin-right: auto;
+  margin-left: auto;
+}
+
+td.ce-managed-table-cell.is-align-right .ce-zone-number-input {
+  margin-right: 0;
+  margin-left: auto;
+}

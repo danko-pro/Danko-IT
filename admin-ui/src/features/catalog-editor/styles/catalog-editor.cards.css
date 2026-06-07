@@ -1,0 +1,66 @@
+.ce-chevron {
+  display: inline-block;
+  color: var(--ce-faint);
+  font-size: 10px;
+  transition: transform 120ms ease;
+}
+
+.ce-chevron.is-open {
+  transform: rotate(90deg);
+}
+
+.ce-disclosure {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ce-text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.ce-catalog-disclosure-card {
+  overflow: hidden;
+  border: 1px solid var(--ce-border);
+  border-radius: var(--ce-radius);
+  background: #ffffff;
+  box-shadow: var(--ce-shadow-sm);
+}
+
+.ce-catalog-disclosure-card-head {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--ce-border);
+  background: #fbfcfe;
+}
+
+.ce-catalog-disclosure-card.is-collapsed .ce-catalog-disclosure-card-head {
+  border-bottom: 0;
+}
+
+.ce-catalog-disclosure-card-toggle {
+  width: 22px;
+  height: 22px;
+}
+
+.ce-catalog-disclosure-card-title {
+  min-width: 0;
+  margin: 0;
+  color: var(--ce-text);
+  font-size: 14px;
+  font-weight: 760;
+  white-space: nowrap;
+}
+
+.ce-catalog-disclosure-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+}

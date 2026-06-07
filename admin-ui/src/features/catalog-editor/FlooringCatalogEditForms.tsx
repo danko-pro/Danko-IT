@@ -1,9 +1,12 @@
 import type { Dispatch, ReactNode, SetStateAction } from "react";
 
 import type { FlooringCoveringDraft, FlooringLayoutDraft, FlooringPreparationDraft } from "./api/flooring-types";
+import { consumablePricePerM2, normalizeNum } from "./api/flooring-mappers";
+import { CatalogDecimalInput } from "./CatalogDecimalInput";
 
 type CatalogFormProps = {
   title: string;
+  editingLabel?: string;
   mode: "create" | "edit";
   submitting: boolean;
   onSubmit: () => void;
@@ -11,7 +14,15 @@ type CatalogFormProps = {
   children: ReactNode;
 };
 
-function CatalogForm({ title, mode, submitting, onSubmit, onCancel, children }: CatalogFormProps) {
+function CatalogForm({
+  title,
+  editingLabel,
+  mode,
+  submitting,
+  onSubmit,
+  onCancel,
+  children,
+}: CatalogFormProps) {
   const submitLabel =
     mode === "edit"
       ? submitting
@@ -20,6 +31,9 @@ function CatalogForm({ title, mode, submitting, onSubmit, onCancel, children }: 
       : submitting
         ? "Запись в БД…"
         : "Создать в БД";
+
+  const headTitle =
+    editingLabel && editingLabel.trim().length > 0 ? `${title} — «${editingLabel.trim()}»` : title;
 
   return (
     <form
@@ -30,8 +44,10 @@ function CatalogForm({ title, mode, submitting, onSubmit, onCancel, children }: 
       }}
     >
       <div className="ce-flooring-form-head">
-        <strong>{title}</strong>
-        <div className="ce-toolbar-group">
+        <div className="ce-flooring-form-head-copy">
+          <strong>{headTitle}</strong>
+        </div>
+        <div className="ce-toolbar-group ce-flooring-form-toolbar">
           {mode === "edit" && onCancel ? (
             <button type="button" className="ce-btn ce-btn-sm" disabled={submitting} onClick={onCancel}>
               Отмена
@@ -55,15 +71,102 @@ type FormFieldProps = {
 
 function FormField({ label, children, className }: FormFieldProps) {
   return (
-    <label className={className ? `ce-flooring-field ${className}` : "ce-flooring-field"}>
-      <span className="ce-flooring-field-label">{label}</span>
+    <label className={`ce-flooring-form-field${className ? ` ${className}` : ""}`}>
+      <span className="ce-flooring-form-field-label">{label}</span>
       {children}
     </label>
   );
 }
 
-function numericInputValue(value: number | null | undefined): string | number {
-  return value ? value : "";
+function coveringDraftConsumablesPerM2(draft: FlooringCoveringDraft): number {
+  const standard =
+    consumablePricePerM2(draft.glueConsumptionPerM2, draft.gluePricePerUnit) +
+    consumablePricePerM2(draft.primerConsumptionPerM2, draft.primerPricePerUnit) +
+    consumablePricePerM2(draft.svpConsumptionPerM2, draft.svpPricePerUnit) +
+    consumablePricePerM2(draft.groutConsumptionPerM2, draft.groutPricePerUnit) +
+    normalizeNum(draft.instrumentPricePerM2);
+  const custom = draft.customConsumables.reduce(
+    (sum, item) => sum + consumablePricePerM2(item.consumptionPerM2, item.pricePerUnit),
+    0,
+  );
+  return standard + custom;
+}
+
+function CoveringFormSummaryStrip({
+  draft,
+  formatMoney,
+  formatPercent,
+}: {
+  draft: FlooringCoveringDraft;
+  formatMoney: (value: number) => string;
+  formatPercent: (value: number) => string;
+}) {
+  const material = normalizeNum(draft.materialPricePerM2);
+  const consumables = coveringDraftConsumablesPerM2(draft);
+  const total = material + consumables;
+
+  return (
+    <div className="ce-flooring-form-summary-strip">
+      <span className="ce-flooring-form-summary-chip">
+        Материал <strong>{formatMoney(material)} ₽/м²</strong>
+      </span>
+      <span className="ce-flooring-form-summary-chip">
+        Отход <strong>{formatPercent(draft.baseWastePercent)}</strong>
+      </span>
+      <span className="ce-flooring-form-summary-chip">
+        Расходники <strong>{formatMoney(consumables)} ₽/м²</strong>
+      </span>
+      <span className="ce-flooring-form-summary-chip ce-flooring-form-summary-total">
+        Итого <strong>{formatMoney(total)} ₽/м²</strong>
+      </span>
+    </div>
+  );
+}
+
+type StandardConsumableRowProps = {
+  label: string;
+  consumption: number;
+  unit: string;
+  pricePerUnit: number;
+  onConsumptionCommit: (value: number) => void;
+  onUnitChange: (value: string) => void;
+  onPriceCommit: (value: number) => void;
+};
+
+function StandardConsumableRow({
+  label,
+  consumption,
+  unit,
+  pricePerUnit,
+  onConsumptionCommit,
+  onUnitChange,
+  onPriceCommit,
+}: StandardConsumableRowProps) {
+  const pricePerM2 = consumablePricePerM2(consumption, pricePerUnit);
+
+  return (
+    <tr>
+      <td className="ce-readonly">{label}</td>
+      <td className="ce-num">
+        <CatalogDecimalInput
+          className="ce-cell-input ce-num"
+          value={consumption}
+          onCommit={(value) => onConsumptionCommit(value ?? 0)}
+        />
+      </td>
+      <td>
+        <input className="ce-cell-input" value={unit} onChange={(event) => onUnitChange(event.target.value)} />
+      </td>
+      <td className="ce-num">
+        <CatalogDecimalInput
+          className="ce-cell-input ce-num"
+          value={pricePerUnit}
+          onCommit={(value) => onPriceCommit(value ?? 0)}
+        />
+      </td>
+      <td className="ce-num ce-readonly ce-flooring-consumable-per-m2">{pricePerM2.toLocaleString("ru-RU")}</td>
+    </tr>
+  );
 }
 
 export type FlooringCoveringEditFormProps = {
@@ -72,7 +175,9 @@ export type FlooringCoveringEditFormProps = {
   onSubmit: () => void;
   onCancel: () => void;
   onDraftChange: Dispatch<SetStateAction<FlooringCoveringDraft>>;
-  onNumberChange: (field: keyof FlooringCoveringDraft, value: string) => void;
+  onNumberChange: (field: keyof FlooringCoveringDraft, value: number) => void;
+  formatMoney: (value: number) => string;
+  formatPercent: (value: number) => string;
 };
 
 export function FlooringCoveringEditForm({
@@ -82,39 +187,48 @@ export function FlooringCoveringEditForm({
   onCancel,
   onDraftChange,
   onNumberChange,
+  formatMoney,
+  formatPercent,
 }: FlooringCoveringEditFormProps) {
+  const hasCustomConsumables = draft.customConsumables.length > 0;
+
   return (
-    <CatalogForm title="Редактировать покрытие" mode="edit" submitting={submitting} onSubmit={onSubmit} onCancel={onCancel}>
-      <div className="ce-flooring-form-fields">
-        <FormField label="Название">
+    <CatalogForm
+      title="Редактировать покрытие"
+      editingLabel={draft.title}
+      mode="edit"
+      submitting={submitting}
+      onSubmit={onSubmit}
+      onCancel={onCancel}
+    >
+      <CoveringFormSummaryStrip draft={draft} formatMoney={formatMoney} formatPercent={formatPercent} />
+
+      <div className="ce-flooring-form-grid">
+        <FormField label="Название" className="ce-flooring-form-field-span-2">
           <input
-            className="ce-input"
+            className="ce-cell-input ce-flooring-form-control"
             value={draft.title}
             onChange={(event) => onDraftChange((prev) => ({ ...prev, title: event.target.value }))}
             placeholder="Керамогранит"
           />
         </FormField>
         <FormField label="Материал ₽/м²">
-          <input
-            className="ce-input ce-num"
-            type="number"
-            step="0.01"
-            value={numericInputValue(draft.materialPricePerM2)}
-            onChange={(event) => onNumberChange("materialPricePerM2", event.target.value)}
+          <CatalogDecimalInput
+            className="ce-cell-input ce-num ce-flooring-form-control"
+            value={draft.materialPricePerM2}
+            onCommit={(value) => onNumberChange("materialPricePerM2", value ?? 0)}
           />
         </FormField>
         <FormField label="Отход %">
-          <input
-            className="ce-input ce-num"
-            type="number"
-            step="0.01"
-            value={numericInputValue(draft.baseWastePercent)}
-            onChange={(event) => onNumberChange("baseWastePercent", event.target.value)}
+          <CatalogDecimalInput
+            className="ce-cell-input ce-num ce-flooring-form-control"
+            value={draft.baseWastePercent}
+            onCommit={(value) => onNumberChange("baseWastePercent", value ?? 0)}
           />
         </FormField>
         <FormField label="Подложка">
           <select
-            className="ce-input"
+            className="ce-cell-input ce-cell-select ce-flooring-form-control"
             value={draft.underlayMode}
             onChange={(event) => onDraftChange((prev) => ({ ...prev, underlayMode: event.target.value }))}
           >
@@ -124,126 +238,15 @@ export function FlooringCoveringEditForm({
           </select>
         </FormField>
         <FormField label="Подложка расход/м²">
-          <input
-            className="ce-input ce-num"
-            type="number"
-            step="0.01"
-            value={numericInputValue(draft.underlayConsumptionPerM2)}
-            onChange={(event) => onNumberChange("underlayConsumptionPerM2", event.target.value)}
-          />
-        </FormField>
-        <FormField label="Клей расход/м²">
-          <input
-            className="ce-input ce-num"
-            type="number"
-            step="0.01"
-            value={numericInputValue(draft.glueConsumptionPerM2)}
-            onChange={(event) => onNumberChange("glueConsumptionPerM2", event.target.value)}
-          />
-        </FormField>
-        <FormField label="Клей ед.">
-          <input
-            className="ce-input"
-            value={draft.glueUnit}
-            onChange={(event) => onDraftChange((prev) => ({ ...prev, glueUnit: event.target.value }))}
-          />
-        </FormField>
-        <FormField label="Клей ₽/ед.">
-          <input
-            className="ce-input ce-num"
-            type="number"
-            step="0.01"
-            value={numericInputValue(draft.gluePricePerUnit)}
-            onChange={(event) => onNumberChange("gluePricePerUnit", event.target.value)}
-          />
-        </FormField>
-        <FormField label="Грунт расход/м²">
-          <input
-            className="ce-input ce-num"
-            type="number"
-            step="0.01"
-            value={numericInputValue(draft.primerConsumptionPerM2)}
-            onChange={(event) => onNumberChange("primerConsumptionPerM2", event.target.value)}
-          />
-        </FormField>
-        <FormField label="Грунт ед.">
-          <input
-            className="ce-input"
-            value={draft.primerUnit}
-            onChange={(event) => onDraftChange((prev) => ({ ...prev, primerUnit: event.target.value }))}
-          />
-        </FormField>
-        <FormField label="Грунт ₽/ед.">
-          <input
-            className="ce-input ce-num"
-            type="number"
-            step="0.01"
-            value={numericInputValue(draft.primerPricePerUnit)}
-            onChange={(event) => onNumberChange("primerPricePerUnit", event.target.value)}
-          />
-        </FormField>
-        <FormField label="СВП расход/м²">
-          <input
-            className="ce-input ce-num"
-            type="number"
-            step="0.01"
-            value={numericInputValue(draft.svpConsumptionPerM2)}
-            onChange={(event) => onNumberChange("svpConsumptionPerM2", event.target.value)}
-          />
-        </FormField>
-        <FormField label="СВП ед.">
-          <input
-            className="ce-input"
-            value={draft.svpUnit}
-            onChange={(event) => onDraftChange((prev) => ({ ...prev, svpUnit: event.target.value }))}
-          />
-        </FormField>
-        <FormField label="СВП ₽/ед.">
-          <input
-            className="ce-input ce-num"
-            type="number"
-            step="0.01"
-            value={numericInputValue(draft.svpPricePerUnit)}
-            onChange={(event) => onNumberChange("svpPricePerUnit", event.target.value)}
-          />
-        </FormField>
-        <FormField label="Затирка расход/м²">
-          <input
-            className="ce-input ce-num"
-            type="number"
-            step="0.01"
-            value={numericInputValue(draft.groutConsumptionPerM2)}
-            onChange={(event) => onNumberChange("groutConsumptionPerM2", event.target.value)}
-          />
-        </FormField>
-        <FormField label="Затирка ед.">
-          <input
-            className="ce-input"
-            value={draft.groutUnit}
-            onChange={(event) => onDraftChange((prev) => ({ ...prev, groutUnit: event.target.value }))}
-          />
-        </FormField>
-        <FormField label="Затирка ₽/ед.">
-          <input
-            className="ce-input ce-num"
-            type="number"
-            step="0.01"
-            value={numericInputValue(draft.groutPricePerUnit)}
-            onChange={(event) => onNumberChange("groutPricePerUnit", event.target.value)}
-          />
-        </FormField>
-        <FormField label="Инструмент ₽/м²">
-          <input
-            className="ce-input ce-num"
-            type="number"
-            step="0.01"
-            value={numericInputValue(draft.instrumentPricePerM2)}
-            onChange={(event) => onNumberChange("instrumentPricePerM2", event.target.value)}
+          <CatalogDecimalInput
+            className="ce-cell-input ce-num ce-flooring-form-control"
+            value={draft.underlayConsumptionPerM2}
+            onCommit={(value) => onNumberChange("underlayConsumptionPerM2", value ?? 0)}
           />
         </FormField>
         <FormField label="Нужен плинтус">
           <select
-            className="ce-input"
+            className="ce-cell-input ce-cell-select ce-flooring-form-control"
             value={draft.needsPlinth ? "1" : "0"}
             onChange={(event) => onDraftChange((prev) => ({ ...prev, needsPlinth: event.target.value === "1" }))}
           >
@@ -251,119 +254,170 @@ export function FlooringCoveringEditForm({
             <option value="0">Нет</option>
           </select>
         </FormField>
-        <FormField label="Примечание" className="ce-flooring-field-note">
-          <textarea
-            className="ce-input"
-            value={draft.note}
-            onChange={(event) => onDraftChange((prev) => ({ ...prev, note: event.target.value }))}
+        <FormField label="Инструмент ₽/м²">
+          <CatalogDecimalInput
+            className="ce-cell-input ce-num ce-flooring-form-control"
+            value={draft.instrumentPricePerM2}
+            onCommit={(value) => onNumberChange("instrumentPricePerM2", value ?? 0)}
           />
         </FormField>
       </div>
-      <div className="ce-table-wrap ce-flooring-table-wrap">
-        <table className="ce-table ce-flooring-table">
+
+      <div className="ce-table-wrap ce-flooring-table-wrap ce-flooring-consumables-table-wrap">
+        <table className="ce-table ce-flooring-table ce-flooring-consumables-table">
           <thead>
             <tr>
-              <th>Доп. расходник</th>
-              <th>Расход/м²</th>
+              <th className="ce-col-title">Расходник</th>
+              <th className="ce-col-num">Расход/м²</th>
               <th>Ед.</th>
-              <th>Цена/ед.</th>
-              <th>Действие</th>
+              <th className="ce-col-num">₽/ед.</th>
+              <th className="ce-col-num">₽/м²</th>
             </tr>
           </thead>
           <tbody>
-            {draft.customConsumables.length === 0 ? (
-              <tr>
-                <td colSpan={5} className="ce-empty">
-                  Дополнительных расходников нет.
-                </td>
-              </tr>
-            ) : (
-              draft.customConsumables.map((item, index) => (
-                <tr key={`${item.title}-${index}`}>
-                  <td>
-                    <input
-                      className="ce-cell-input"
-                      value={item.title}
-                      onChange={(event) =>
-                        onDraftChange((prev) => ({
-                          ...prev,
-                          customConsumables: prev.customConsumables.map((current, currentIndex) =>
-                            currentIndex === index ? { ...current, title: event.target.value } : current,
-                          ),
-                        }))
-                      }
-                    />
-                  </td>
-                  <td>
-                    <input
-                      className="ce-cell-input ce-num"
-                      type="number"
-                      step="0.01"
-                      value={numericInputValue(item.consumptionPerM2)}
-                      onChange={(event) =>
-                        onDraftChange((prev) => ({
-                          ...prev,
-                          customConsumables: prev.customConsumables.map((current, currentIndex) =>
-                            currentIndex === index
-                              ? { ...current, consumptionPerM2: Number(event.target.value.replace(",", ".")) || 0 }
-                              : current,
-                          ),
-                        }))
-                      }
-                    />
-                  </td>
-                  <td>
-                    <input
-                      className="ce-cell-input"
-                      value={item.unit}
-                      onChange={(event) =>
-                        onDraftChange((prev) => ({
-                          ...prev,
-                          customConsumables: prev.customConsumables.map((current, currentIndex) =>
-                            currentIndex === index ? { ...current, unit: event.target.value } : current,
-                          ),
-                        }))
-                      }
-                    />
-                  </td>
-                  <td>
-                    <input
-                      className="ce-cell-input ce-num"
-                      type="number"
-                      step="0.01"
-                      value={numericInputValue(item.pricePerUnit)}
-                      onChange={(event) =>
-                        onDraftChange((prev) => ({
-                          ...prev,
-                          customConsumables: prev.customConsumables.map((current, currentIndex) =>
-                            currentIndex === index
-                              ? { ...current, pricePerUnit: Number(event.target.value.replace(",", ".")) || 0 }
-                              : current,
-                          ),
-                        }))
-                      }
-                    />
-                  </td>
-                  <td>
-                    <button
-                      type="button"
-                      className="ce-row-delete"
-                      onClick={() =>
-                        onDraftChange((prev) => ({
-                          ...prev,
-                          customConsumables: prev.customConsumables.filter((_, currentIndex) => currentIndex !== index),
-                        }))
-                      }
-                    >
-                      Удалить
-                    </button>
-                  </td>
-                </tr>
-              ))
-            )}
+            <StandardConsumableRow
+              label="Клей"
+              consumption={draft.glueConsumptionPerM2}
+              unit={draft.glueUnit}
+              pricePerUnit={draft.gluePricePerUnit}
+              onConsumptionCommit={(value) => onNumberChange("glueConsumptionPerM2", value)}
+              onUnitChange={(value) => onDraftChange((prev) => ({ ...prev, glueUnit: value }))}
+              onPriceCommit={(value) => onNumberChange("gluePricePerUnit", value)}
+            />
+            <StandardConsumableRow
+              label="Грунт"
+              consumption={draft.primerConsumptionPerM2}
+              unit={draft.primerUnit}
+              pricePerUnit={draft.primerPricePerUnit}
+              onConsumptionCommit={(value) => onNumberChange("primerConsumptionPerM2", value)}
+              onUnitChange={(value) => onDraftChange((prev) => ({ ...prev, primerUnit: value }))}
+              onPriceCommit={(value) => onNumberChange("primerPricePerUnit", value)}
+            />
+            <StandardConsumableRow
+              label="СВП"
+              consumption={draft.svpConsumptionPerM2}
+              unit={draft.svpUnit}
+              pricePerUnit={draft.svpPricePerUnit}
+              onConsumptionCommit={(value) => onNumberChange("svpConsumptionPerM2", value)}
+              onUnitChange={(value) => onDraftChange((prev) => ({ ...prev, svpUnit: value }))}
+              onPriceCommit={(value) => onNumberChange("svpPricePerUnit", value)}
+            />
+            <StandardConsumableRow
+              label="Затирка"
+              consumption={draft.groutConsumptionPerM2}
+              unit={draft.groutUnit}
+              pricePerUnit={draft.groutPricePerUnit}
+              onConsumptionCommit={(value) => onNumberChange("groutConsumptionPerM2", value)}
+              onUnitChange={(value) => onDraftChange((prev) => ({ ...prev, groutUnit: value }))}
+              onPriceCommit={(value) => onNumberChange("groutPricePerUnit", value)}
+            />
           </tbody>
         </table>
       </div>
+
+      <details className="ce-flooring-custom-consumables" open={hasCustomConsumables}>
+        <summary className="ce-flooring-custom-consumables-summary">
+          Доп. расходники
+          {!hasCustomConsumables ? <span className="ce-flooring-custom-consumables-empty-hint"> — нет</span> : null}
+        </summary>
+        {hasCustomConsumables ? (
+          <div className="ce-table-wrap ce-flooring-table-wrap ce-flooring-consumables-table-wrap">
+            <table className="ce-table ce-flooring-table ce-flooring-consumables-table">
+              <thead>
+                <tr>
+                  <th>Доп. расходник</th>
+                  <th className="ce-col-num">Расход/м²</th>
+                  <th>Ед.</th>
+                  <th className="ce-col-num">₽/ед.</th>
+                  <th className="ce-col-actions">Действие</th>
+                </tr>
+              </thead>
+              <tbody>
+                {draft.customConsumables.map((item, index) => (
+                  <tr key={`${item.title}-${index}`}>
+                    <td>
+                      <input
+                        className="ce-cell-input"
+                        value={item.title}
+                        onChange={(event) =>
+                          onDraftChange((prev) => ({
+                            ...prev,
+                            customConsumables: prev.customConsumables.map((current, currentIndex) =>
+                              currentIndex === index ? { ...current, title: event.target.value } : current,
+                            ),
+                          }))
+                        }
+                      />
+                    </td>
+                    <td className="ce-num">
+                      <CatalogDecimalInput
+                        className="ce-cell-input ce-num"
+                        value={item.consumptionPerM2}
+                        onCommit={(value) =>
+                          onDraftChange((prev) => ({
+                            ...prev,
+                            customConsumables: prev.customConsumables.map((current, currentIndex) =>
+                              currentIndex === index
+                                ? { ...current, consumptionPerM2: value ?? 0 }
+                                : current,
+                            ),
+                          }))
+                        }
+                      />
+                    </td>
+                    <td>
+                      <input
+                        className="ce-cell-input"
+                        value={item.unit}
+                        onChange={(event) =>
+                          onDraftChange((prev) => ({
+                            ...prev,
+                            customConsumables: prev.customConsumables.map((current, currentIndex) =>
+                              currentIndex === index ? { ...current, unit: event.target.value } : current,
+                            ),
+                          }))
+                        }
+                      />
+                    </td>
+                    <td className="ce-num">
+                      <CatalogDecimalInput
+                        className="ce-cell-input ce-num"
+                        value={item.pricePerUnit}
+                        onCommit={(value) =>
+                          onDraftChange((prev) => ({
+                            ...prev,
+                            customConsumables: prev.customConsumables.map((current, currentIndex) =>
+                              currentIndex === index
+                                ? { ...current, pricePerUnit: value ?? 0 }
+                                : current,
+                            ),
+                          }))
+                        }
+                      />
+                    </td>
+                    <td className="ce-col-actions">
+                      <button
+                        type="button"
+                        className="ce-row-delete"
+                        onClick={() =>
+                          onDraftChange((prev) => ({
+                            ...prev,
+                            customConsumables: prev.customConsumables.filter(
+                              (_, currentIndex) => currentIndex !== index,
+                            ),
+                          }))
+                        }
+                      >
+                        ×
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : null}
+      </details>
       <button
         type="button"
         className="ce-btn ce-btn-sm"
@@ -379,6 +433,15 @@ export function FlooringCoveringEditForm({
       >
         Добавить расходник
       </button>
+
+      <div className="ce-flooring-form-note-wrap ce-flooring-form-note-wide">
+        <label className="ce-flooring-form-note-label">Примечание</label>
+        <textarea
+          className="ce-cell-input ce-flooring-form-note-input"
+          value={draft.note}
+          onChange={(event) => onDraftChange((prev) => ({ ...prev, note: event.target.value }))}
+        />
+      </div>
     </CatalogForm>
   );
 }
@@ -389,7 +452,7 @@ export type FlooringPreparationEditFormProps = {
   onSubmit: () => void;
   onCancel: () => void;
   onDraftChange: Dispatch<SetStateAction<FlooringPreparationDraft>>;
-  onNumberChange: (field: keyof FlooringPreparationDraft, value: string) => void;
+  onNumberChange: (field: keyof FlooringPreparationDraft, value: number) => void;
 };
 
 export function FlooringPreparationEditForm({
@@ -401,66 +464,83 @@ export function FlooringPreparationEditForm({
   onNumberChange,
 }: FlooringPreparationEditFormProps) {
   return (
-    <CatalogForm title="Редактировать подготовку" mode="edit" submitting={submitting} onSubmit={onSubmit} onCancel={onCancel}>
-      <div className="ce-flooring-form-fields">
-        <FormField label="Название">
-          <input
-            className="ce-input"
-            value={draft.title}
-            onChange={(event) => onDraftChange((prev) => ({ ...prev, title: event.target.value }))}
-            placeholder="Грунтование"
-          />
-        </FormField>
-        <FormField label="Работа ₽/м²">
-          <input
-            className="ce-input ce-num"
-            type="number"
-            step="0.01"
-            value={numericInputValue(draft.laborPricePerM2)}
-            onChange={(event) => onNumberChange("laborPricePerM2", event.target.value)}
-          />
-        </FormField>
-        <FormField label="Материал ₽/м²">
-          <input
-            className="ce-input ce-num"
-            type="number"
-            step="0.01"
-            value={numericInputValue(draft.materialPricePerM2)}
-            onChange={(event) => onNumberChange("materialPricePerM2", event.target.value)}
-          />
-        </FormField>
-        <FormField label="Грунт расход/м²">
-          <input
-            className="ce-input ce-num"
-            type="number"
-            step="0.01"
-            value={numericInputValue(draft.primerConsumptionPerM2)}
-            onChange={(event) => onNumberChange("primerConsumptionPerM2", event.target.value)}
-          />
-        </FormField>
-        <FormField label="Грунт ед.">
-          <input
-            className="ce-input"
-            value={draft.primerUnit}
-            onChange={(event) => onDraftChange((prev) => ({ ...prev, primerUnit: event.target.value }))}
-          />
-        </FormField>
-        <FormField label="Грунт ₽/ед.">
-          <input
-            className="ce-input ce-num"
-            type="number"
-            step="0.01"
-            value={numericInputValue(draft.primerPricePerUnit)}
-            onChange={(event) => onNumberChange("primerPricePerUnit", event.target.value)}
-          />
-        </FormField>
-        <FormField label="Примечание" className="ce-flooring-field-note">
-          <textarea
-            className="ce-input"
-            value={draft.note}
-            onChange={(event) => onDraftChange((prev) => ({ ...prev, note: event.target.value }))}
-          />
-        </FormField>
+    <CatalogForm
+      title="Редактировать подготовку"
+      editingLabel={draft.title}
+      mode="edit"
+      submitting={submitting}
+      onSubmit={onSubmit}
+      onCancel={onCancel}
+    >
+      <div className="ce-table-wrap ce-flooring-table-wrap ce-flooring-form-table-wrap">
+        <table className="ce-table ce-flooring-table ce-flooring-form-table">
+          <thead>
+            <tr>
+              <th className="ce-col-title">Название</th>
+              <th className="ce-col-num">Работа ₽/м²</th>
+              <th className="ce-col-num">Материал ₽/м²</th>
+              <th className="ce-col-num">Грунт расход/м²</th>
+              <th>Грунт ед.</th>
+              <th className="ce-col-num">Грунт ₽/ед.</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+                <input
+                  className="ce-cell-input"
+                  value={draft.title}
+                  onChange={(event) => onDraftChange((prev) => ({ ...prev, title: event.target.value }))}
+                  placeholder="Грунтование"
+                />
+              </td>
+              <td className="ce-num">
+                <CatalogDecimalInput
+                  className="ce-cell-input ce-num"
+                  value={draft.laborPricePerM2}
+                  onCommit={(value) => onNumberChange("laborPricePerM2", value ?? 0)}
+                />
+              </td>
+              <td className="ce-num">
+                <CatalogDecimalInput
+                  className="ce-cell-input ce-num"
+                  value={draft.materialPricePerM2}
+                  onCommit={(value) => onNumberChange("materialPricePerM2", value ?? 0)}
+                />
+              </td>
+              <td className="ce-num">
+                <CatalogDecimalInput
+                  className="ce-cell-input ce-num"
+                  value={draft.primerConsumptionPerM2}
+                  onCommit={(value) => onNumberChange("primerConsumptionPerM2", value ?? 0)}
+                />
+              </td>
+              <td>
+                <input
+                  className="ce-cell-input"
+                  value={draft.primerUnit}
+                  onChange={(event) => onDraftChange((prev) => ({ ...prev, primerUnit: event.target.value }))}
+                />
+              </td>
+              <td className="ce-num">
+                <CatalogDecimalInput
+                  className="ce-cell-input ce-num"
+                  value={draft.primerPricePerUnit}
+                  onCommit={(value) => onNumberChange("primerPricePerUnit", value ?? 0)}
+                />
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div className="ce-flooring-form-note-wrap">
+        <label className="ce-flooring-form-note-label">Примечание</label>
+        <textarea
+          className="ce-cell-input ce-flooring-form-note-input"
+          value={draft.note}
+          onChange={(event) => onDraftChange((prev) => ({ ...prev, note: event.target.value }))}
+        />
       </div>
     </CatalogForm>
   );
@@ -472,7 +552,7 @@ export type FlooringLayoutEditFormProps = {
   onSubmit: () => void;
   onCancel: () => void;
   onDraftChange: Dispatch<SetStateAction<FlooringLayoutDraft>>;
-  onNumberChange: (field: keyof FlooringLayoutDraft, value: string) => void;
+  onNumberChange: (field: keyof FlooringLayoutDraft, value: number) => void;
 };
 
 export function FlooringLayoutEditForm({
@@ -484,52 +564,67 @@ export function FlooringLayoutEditForm({
   onNumberChange,
 }: FlooringLayoutEditFormProps) {
   return (
-    <CatalogForm title="Редактировать укладку" mode="edit" submitting={submitting} onSubmit={onSubmit} onCancel={onCancel}>
-      <div className="ce-flooring-form-fields">
-        <FormField label="Название">
-          <input
-            className="ce-input"
-            value={draft.title}
-            onChange={(event) => onDraftChange((prev) => ({ ...prev, title: event.target.value }))}
-            placeholder="Прямая"
-          />
-        </FormField>
-        <FormField label="Работа ₽/м²">
-          <input
-            className="ce-input ce-num"
-            type="number"
-            step="0.01"
-            min={0}
-            value={numericInputValue(draft.laborPricePerM2)}
-            onChange={(event) => onNumberChange("laborPricePerM2", event.target.value)}
-          />
-        </FormField>
-        <FormField label="Коэф. работы">
-          <input
-            className="ce-input ce-num"
-            type="number"
-            step="0.01"
-            min={0}
-            value={numericInputValue(draft.laborFactor)}
-            onChange={(event) => onNumberChange("laborFactor", event.target.value)}
-          />
-        </FormField>
-        <FormField label="Доп. отход %">
-          <input
-            className="ce-input ce-num"
-            type="number"
-            step="0.01"
-            value={numericInputValue(draft.additionalWastePercent)}
-            onChange={(event) => onNumberChange("additionalWastePercent", event.target.value)}
-          />
-        </FormField>
-        <FormField label="Примечание" className="ce-flooring-field-note">
-          <textarea
-            className="ce-input"
-            value={draft.note}
-            onChange={(event) => onDraftChange((prev) => ({ ...prev, note: event.target.value }))}
-          />
-        </FormField>
+    <CatalogForm
+      title="Редактировать укладку"
+      editingLabel={draft.title}
+      mode="edit"
+      submitting={submitting}
+      onSubmit={onSubmit}
+      onCancel={onCancel}
+    >
+      <div className="ce-table-wrap ce-flooring-table-wrap ce-flooring-form-table-wrap">
+        <table className="ce-table ce-flooring-table ce-flooring-form-table">
+          <thead>
+            <tr>
+              <th className="ce-col-title">Название</th>
+              <th className="ce-col-num">Работа ₽/м²</th>
+              <th className="ce-col-num">Коэф. работы</th>
+              <th className="ce-col-num">Доп. отход %</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+                <input
+                  className="ce-cell-input"
+                  value={draft.title}
+                  onChange={(event) => onDraftChange((prev) => ({ ...prev, title: event.target.value }))}
+                  placeholder="Прямая"
+                />
+              </td>
+              <td className="ce-num">
+                <CatalogDecimalInput
+                  className="ce-cell-input ce-num"
+                  value={draft.laborPricePerM2}
+                  onCommit={(value) => onNumberChange("laborPricePerM2", value ?? 0)}
+                />
+              </td>
+              <td className="ce-num">
+                <CatalogDecimalInput
+                  className="ce-cell-input ce-num"
+                  value={draft.laborFactor}
+                  onCommit={(value) => onNumberChange("laborFactor", value ?? 0)}
+                />
+              </td>
+              <td className="ce-num">
+                <CatalogDecimalInput
+                  className="ce-cell-input ce-num"
+                  value={draft.additionalWastePercent}
+                  onCommit={(value) => onNumberChange("additionalWastePercent", value ?? 0)}
+                />
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div className="ce-flooring-form-note-wrap">
+        <label className="ce-flooring-form-note-label">Примечание</label>
+        <textarea
+          className="ce-cell-input ce-flooring-form-note-input"
+          value={draft.note}
+          onChange={(event) => onDraftChange((prev) => ({ ...prev, note: event.target.value }))}
+        />
       </div>
     </CatalogForm>
   );

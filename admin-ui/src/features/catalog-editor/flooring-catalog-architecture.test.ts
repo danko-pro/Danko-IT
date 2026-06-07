@@ -6,6 +6,7 @@ import flooringCatalogEditFormsSource from "./FlooringCatalogEditForms.tsx?raw";
 import flooringCatalogModelSource from "./flooring-catalog-model.ts?raw";
 import flooringCatalogPanelSource from "./FlooringCatalogPanel.tsx?raw";
 import flooringCatalogSectionsSource from "./FlooringCatalogSections.tsx?raw";
+import flooringCatalogAssemblyCreateRowSource from "./flooring-catalog-assembly-create-row.ts?raw";
 import useFlooringCatalogPanelSource from "./useFlooringCatalogPanel.ts?raw";
 
 const REQUIRED_FLOORING_CATALOG_MODULES = [
@@ -66,8 +67,9 @@ describe("flooring catalog editor architecture", () => {
   it("keeps data/API orchestration in useFlooringCatalogPanel", () => {
     expect(useFlooringCatalogPanelSource).toContain("fetchFlooringSnapshot");
     expect(useFlooringCatalogPanelSource).toContain("listFlooringAssemblyItems");
-    expect(useFlooringCatalogPanelSource).toContain("createFlooringCovering");
+    expect(useFlooringCatalogPanelSource).toContain("createFlooringCatalogRowFromAssembly");
     expect(useFlooringCatalogPanelSource).toContain("updateFlooringLayout");
+    expect(flooringCatalogAssemblyCreateRowSource).toContain("createFlooringCovering");
   });
 
   it("keeps pure catalog helpers in flooring-catalog-model", () => {

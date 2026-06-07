@@ -2,9 +2,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 import {
   createFlooringAssemblyItem,
-  createFlooringCovering,
-  createFlooringLayout,
-  createFlooringPreparation,
   fetchFlooringSnapshot,
   listFlooringAssemblyItems,
   listFlooringCoverings,
@@ -18,16 +15,12 @@ import {
 import {
   assemblyItemDraftToPayload,
   attachCatalogIdsToDisplayRows,
-  coveringDraftToPayload,
   coveringDraftToUpdatePayload,
   dtoToFlooringAssemblyItemDraft,
   dtoToFlooringCoveringDraft,
   dtoToFlooringLayoutDraft,
   dtoToFlooringPreparationDraft,
-  layoutDraftToPayload,
   layoutDraftToUpdatePayload,
-  normalizeNum,
-  preparationDraftToPayload,
   preparationDraftToUpdatePayload,
   snapshotToDisplayRows,
 } from "./api/flooring-mappers";
@@ -43,13 +36,13 @@ import type {
   PublicFlooringSnapshotResponse,
 } from "./api/flooring-types";
 import {
-  applyAggregatesToCoveringDraft,
   createAssemblyLibraryItemFromCatalogItem,
-  formatCoveringSaveFeedback,
   type CoveringAssemblyAggregates,
   type CoveringAssemblyRow,
   type FlooringAssemblyTarget,
 } from "./flooring-assembly";
+import { createFlooringCatalogRowFromAssembly } from "./flooring-catalog-assembly-create-row";
+import { finalizeFlooringCatalogAssemblyAfterFlatSave } from "./flooring-catalog-assembly-edit-save";
 import {
   SNAPSHOT_MAPPING_DELAY_STATUS,
   SNAPSHOT_MISSING_WARNING,
@@ -61,11 +54,13 @@ import {
   filterRows,
   formatMoney,
   formatPercent,
-  getAssemblyDefaultTitle,
   snapshotHasTitle,
   snapshotRatesMatchRow,
 } from "./flooring-catalog-model";
 import { createFlooringCatalogDeleteActions } from "./flooring-delete-actions";
+import { createFlooringSnapshotPromoteActions } from "./flooring-snapshot-promote-actions";
+import { useFlooringAssemblyEditLoad } from "./useFlooringAssemblyEditLoad";
+import { resolveCatalogEditItem } from "./flooring-catalog-row-edit";
 
 export function useFlooringCatalogPanel() {
   const [snapshot, setSnapshot] = useState<PublicFlooringSnapshotResponse | null>(null);
@@ -94,8 +89,17 @@ export function useFlooringCatalogPanel() {
   const [savingPreparation, setSavingPreparation] = useState(false);
   const [savingLayout, setSavingLayout] = useState(false);
   const [savingAssembly, setSavingAssembly] = useState(false);
-  const [assemblyRowsCount, setAssemblyRowsCount] = useState(0);
+  const [assemblyRowsSnapshot, setAssemblyRowsSnapshot] = useState<CoveringAssemblyRow[]>([]);
   const [assemblyTarget, setAssemblyTarget] = useState<FlooringAssemblyTarget>("covering");
+  const {
+    assemblyResetKey,
+    assemblyInitialRows,
+    assemblyInitialTitle,
+    assemblyLoading,
+    assemblyHadOnLoad,
+    clearAssemblyEditLoad,
+    loadAssemblyForEdit,
+  } = useFlooringAssemblyEditLoad();
   const [flooringView, setFlooringView] = useState<"catalog" | "library">("catalog");
 
   const reloadSnapshot = useCallback(async () => {
@@ -123,6 +127,7 @@ export function useFlooringCatalogPanel() {
           `Библиотека кубиков не загрузилась: ${detail}. Перезапустите backend, если endpoint ещё не поднят.`,
         );
       }
+      return { snapshot: data, coverings, preparations, layouts };
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Не удалось загрузить snapshot полов.");
       setSnapshot(null);
@@ -130,6 +135,7 @@ export function useFlooringCatalogPanel() {
       setCoveringCatalog([]);
       setPreparationCatalog([]);
       setLayoutCatalog([]);
+      return null;
     } finally {
       setLoading(false);
     }
@@ -156,119 +162,46 @@ export function useFlooringCatalogPanel() {
     [assemblyCatalog],
   );
 
-  
-  async function createAssemblyTargetRow(
+  const assemblyCreateDeps = {
+    setSnapshot,
+    setCoveringCatalog,
+    setPreparationCatalog,
+    setLayoutCatalog,
+    setError,
+    setStatusMessage,
+    setWarningMessage,
+  };
+
+  function createAssemblyTargetRow(
     target: FlooringAssemblyTarget,
     rawTitle: string,
     aggregates: CoveringAssemblyAggregates,
     rows: CoveringAssemblyRow[],
-  ): Promise<boolean> {
-    const title = rawTitle.trim() || getAssemblyDefaultTitle(rows);
-    if (!title) {
-      setError("Укажите название строки каталога.");
-      return false;
-    }
-    if (rows.filter((row) => row.enabled).length === 0) {
-      setError("Добавьте хотя бы одну строку сборки.");
-      return false;
-    }
-    if (target !== "covering" && rows.some((row) => row.enabled && row.kind !== "work")) {
-      setError("Для подготовки и укладки можно использовать только рабочие строки.");
-      return false;
-    }
-
-    setError(null);
-    setStatusMessage(null);
-    setWarningMessage(null);
-
-    if (target === "covering") {
-      try {
-        const draft = applyAggregatesToCoveringDraft(aggregates, {
-          ...emptyCoveringDraft(),
-          title,
-        });
-        await createFlooringCovering(coveringDraftToPayload(draft));
-        const [fresh, freshCatalog] = await Promise.all([fetchFlooringSnapshot(), listFlooringCoverings()]);
-        setSnapshot(fresh);
-        setCoveringCatalog(freshCatalog);
-        if (!snapshotHasTitle(fresh, "coverings", title)) {
-          setWarningMessage(SNAPSHOT_MISSING_WARNING);
-        }
-        setStatusMessage(`Покрытие «${title}» создано из сборки.`);
-        return true;
-      } catch (cause) {
-        setError(cause instanceof Error ? cause.message : "Не удалось создать покрытие из сборки.");
-        return false;
-      }
-    }
-
-    if (target === "preparation") {
-      try {
-        await createFlooringPreparation(
-          preparationDraftToPayload({
-            ...emptyPreparationDraft(),
-            title,
-            laborPricePerM2: aggregates.worksPerM2,
-            materialPricePerM2: 0,
-          }),
-        );
-        const [fresh, freshCatalog] = await Promise.all([fetchFlooringSnapshot(), listFlooringPreparations()]);
-        setSnapshot(fresh);
-        setPreparationCatalog(freshCatalog);
-        if (!snapshotHasTitle(fresh, "preparations", title)) {
-          setWarningMessage(SNAPSHOT_MISSING_WARNING);
-        }
-        setStatusMessage(`Подготовка «${title}» создана из рабочей строки.`);
-        return true;
-      } catch (cause) {
-        setError(cause instanceof Error ? cause.message : "Не удалось создать подготовку из сборки.");
-        return false;
-      }
-    }
-
-    const enabledRows = rows.filter((row) => row.enabled && row.kind === "work");
-    const coefficient = enabledRows.find((row) => row.consumptionPerM2 > 0)?.consumptionPerM2 ?? 1;
-    try {
-      await createFlooringLayout(
-        layoutDraftToPayload({
-          ...emptyLayoutDraft(),
-          title,
-          laborPricePerM2: aggregates.worksPerM2,
-          laborFactor: coefficient,
-          additionalWastePercent: 0,
-        }),
-      );
-      const [fresh, freshCatalog] = await Promise.all([fetchFlooringSnapshot(), listFlooringLayouts()]);
-      setSnapshot(fresh);
-      setLayoutCatalog(freshCatalog);
-      if (!snapshotHasTitle(fresh, "layouts", title)) {
-        setWarningMessage(SNAPSHOT_MISSING_WARNING);
-      }
-      setStatusMessage(`Укладка «${title}» создана из рабочей строки. По текущему snapshot-контракту сохраняется коэффициент ${coefficient}.`);
-      return true;
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Не удалось создать укладку из сборки.");
-      return false;
-    }
+  ) {
+    return createFlooringCatalogRowFromAssembly(assemblyCreateDeps, target, rawTitle, aggregates, rows);
   }
 
-  function updateCoveringNumber(field: keyof FlooringCoveringDraft, value: string) {
-    setCoveringDraft((prev) => ({ ...prev, [field]: normalizeNum(value) }));
+  function updateCoveringNumber(field: keyof FlooringCoveringDraft, value: number) {
+    setCoveringDraft((prev) => ({ ...prev, [field]: value }));
   }
 
-  function updatePreparationNumber(field: keyof FlooringPreparationDraft, value: string) {
-    setPreparationDraft((prev) => ({ ...prev, [field]: normalizeNum(value) }));
+  function updatePreparationNumber(field: keyof FlooringPreparationDraft, value: number) {
+    setPreparationDraft((prev) => ({ ...prev, [field]: value }));
   }
 
-  function updateLayoutNumber(field: keyof FlooringLayoutDraft, value: string) {
-    setLayoutDraft((prev) => ({ ...prev, [field]: normalizeNum(value) }));
+  function updateLayoutNumber(field: keyof FlooringLayoutDraft, value: number) {
+    setLayoutDraft((prev) => ({ ...prev, [field]: value }));
   }
 
   function updateAssemblyNumber(
     field: "price" | "consumptionPerM2" | "packageSize" | "layerMm" | "sortOrder",
-    value: string,
+    value: number | null,
   ) {
-    setAssemblyDraft((prev) => ({ ...prev, [field]: value === "" ? null : normalizeNum(value) }));
+    if (field === "packageSize" || field === "layerMm") {
+      setAssemblyDraft((prev) => ({ ...prev, [field]: value }));
+      return;
+    }
+    setAssemblyDraft((prev) => ({ ...prev, [field]: value ?? 0 }));
   }
 
   function beginEditAssemblyItem(item: FlooringAssemblyItemDto) {
@@ -334,17 +267,11 @@ export function useFlooringCatalogPanel() {
     }
   }
 
-  function findCatalogItem<T extends { id: number; title: string }>(
-    catalog: T[],
+  function beginEditCovering(
     row: FlooringSnapshotDisplayRow,
-  ): T | undefined {
-    return catalog.find((item) => item.title.trim().toLowerCase() === row.title.trim().toLowerCase());
-  }
-
-  function beginEditCovering(row: FlooringSnapshotDisplayRow) {
-    const item = row.catalogId
-      ? coveringCatalog.find((entry) => entry.id === row.catalogId)
-      : findCatalogItem(coveringCatalog, row);
+    catalog: FlooringCoveringDto[] = coveringCatalog,
+  ) {
+    const item = resolveCatalogEditItem(catalog, row);
     if (!item) {
       setError("Не найдена глобальная запись покрытия для редактирования.");
       return;
@@ -356,12 +283,14 @@ export function useFlooringCatalogPanel() {
     setError(null);
     setStatusMessage(null);
     setWarningMessage(null);
+    void loadAssemblyForEdit("covering", item.id, setAssemblyTarget, setWarningMessage);
   }
 
-  function beginEditPreparation(row: FlooringSnapshotDisplayRow) {
-    const item = row.catalogId
-      ? preparationCatalog.find((entry) => entry.id === row.catalogId)
-      : findCatalogItem(preparationCatalog, row);
+  function beginEditPreparation(
+    row: FlooringSnapshotDisplayRow,
+    catalog: FlooringPreparationDto[] = preparationCatalog,
+  ) {
+    const item = resolveCatalogEditItem(catalog, row);
     if (!item) {
       setError("Не найдена глобальная запись подготовки для редактирования.");
       return;
@@ -373,12 +302,14 @@ export function useFlooringCatalogPanel() {
     setError(null);
     setStatusMessage(null);
     setWarningMessage(null);
+    void loadAssemblyForEdit("preparation", item.id, setAssemblyTarget, setWarningMessage);
   }
 
-  function beginEditLayout(row: FlooringSnapshotDisplayRow) {
-    const item = row.catalogId
-      ? layoutCatalog.find((entry) => entry.id === row.catalogId)
-      : findCatalogItem(layoutCatalog, row);
+  function beginEditLayout(
+    row: FlooringSnapshotDisplayRow,
+    catalog: FlooringLayoutDto[] = layoutCatalog,
+  ) {
+    const item = resolveCatalogEditItem(catalog, row);
     if (!item) {
       setError("Не найдена глобальная запись укладки для редактирования.");
       return;
@@ -390,24 +321,59 @@ export function useFlooringCatalogPanel() {
     setError(null);
     setStatusMessage(null);
     setWarningMessage(null);
+    void loadAssemblyForEdit("layout", item.id, setAssemblyTarget, setWarningMessage);
   }
+
+  const { promoteSnapshotRowToCatalog } = createFlooringSnapshotPromoteActions({
+    setError,
+    setStatusMessage,
+    setWarningMessage,
+    reloadSnapshot,
+    edits: { beginEditCovering, beginEditPreparation, beginEditLayout },
+  });
 
   function cancelCoveringEdit() {
     setEditingCoveringId(null);
     setCoveringDraft(emptyCoveringDraft());
+    setAssemblyRowsSnapshot([]);
+    clearAssemblyEditLoad();
   }
 
   function cancelPreparationEdit() {
     setEditingPreparationId(null);
     setPreparationDraft(emptyPreparationDraft());
+    setAssemblyRowsSnapshot([]);
+    clearAssemblyEditLoad();
   }
 
   function cancelLayoutEdit() {
     setEditingLayoutId(null);
     setLayoutDraft(emptyLayoutDraft());
+    setAssemblyRowsSnapshot([]);
+    clearAssemblyEditLoad();
   }
 
-  
+  async function applyFlatSaveAssemblyFeedback(
+    target: FlooringAssemblyTarget,
+    targetId: number,
+    title: string,
+    defaultStatusMessage: string,
+    defaultWarningMessage?: string | null,
+  ) {
+    const feedback = await finalizeFlooringCatalogAssemblyAfterFlatSave({
+      target,
+      assemblyTarget,
+      targetId,
+      title,
+      rows: assemblyRowsSnapshot,
+      hadAssemblyOnLoad: assemblyHadOnLoad,
+      defaultStatusMessage,
+      defaultWarningMessage,
+    });
+    setStatusMessage(feedback.statusMessage);
+    if (feedback.warningMessage) setWarningMessage(feedback.warningMessage);
+  }
+
   async function handleUpdateCovering() {
     if (editingCoveringId === null) return;
     const title = coveringDraft.title.trim();
@@ -430,13 +396,17 @@ export function useFlooringCatalogPanel() {
       setSnapshot(fresh);
       const freshCatalog = await listFlooringCoverings();
       setCoveringCatalog(freshCatalog);
-      const saveFeedback = formatCoveringSaveFeedback(title, draftToSave, "update", {
-        assemblyRowsRemain: assemblyTarget === "covering" && assemblyRowsCount > 0,
-      });
-      if (before && snapshotRatesMatchRow("coverings", title, before, fresh)) {
-        setWarningMessage(SNAPSHOT_MAPPING_DELAY_STATUS);
-      }
-      setStatusMessage(saveFeedback);
+      const snapshotDelayWarning =
+        before && snapshotRatesMatchRow("coverings", title, before, fresh)
+          ? SNAPSHOT_MAPPING_DELAY_STATUS
+          : null;
+      await applyFlatSaveAssemblyFeedback(
+        "covering",
+        editingCoveringId,
+        title,
+        `Покрытие «${title}» сохранено.`,
+        snapshotDelayWarning,
+      );
       cancelCoveringEdit();
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Не удалось сохранить покрытие.");
@@ -466,11 +436,11 @@ export function useFlooringCatalogPanel() {
       setSnapshot(fresh);
       const freshCatalog = await listFlooringPreparations();
       setPreparationCatalog(freshCatalog);
-      if (before && snapshotRatesMatchRow("preparations", title, before, fresh)) {
-        setStatusMessage(SNAPSHOT_MAPPING_DELAY_STATUS);
-      } else {
-        setStatusMessage(`Подготовка «${title}» сохранена.`);
-      }
+      const defaultStatus =
+        before && snapshotRatesMatchRow("preparations", title, before, fresh)
+          ? SNAPSHOT_MAPPING_DELAY_STATUS
+          : `Подготовка «${title}» сохранена.`;
+      await applyFlatSaveAssemblyFeedback("preparation", editingPreparationId, title, defaultStatus);
       cancelPreparationEdit();
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Не удалось сохранить подготовку.");
@@ -497,11 +467,11 @@ export function useFlooringCatalogPanel() {
       setSnapshot(fresh);
       const freshCatalog = await listFlooringLayouts();
       setLayoutCatalog(freshCatalog);
-      if (before && snapshotRatesMatchRow("layouts", title, before, fresh)) {
-        setStatusMessage(SNAPSHOT_MAPPING_DELAY_STATUS);
-      } else {
-        setStatusMessage(`Укладка «${title}» сохранена.`);
-      }
+      const defaultStatus =
+        before && snapshotRatesMatchRow("layouts", title, before, fresh)
+          ? SNAPSHOT_MAPPING_DELAY_STATUS
+          : `Укладка «${title}» сохранена.`;
+      await applyFlatSaveAssemblyFeedback("layout", editingLayoutId, title, defaultStatus);
       cancelLayoutEdit();
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Не удалось сохранить укладку.");
@@ -563,6 +533,10 @@ export function useFlooringCatalogPanel() {
     savingAssembly,
     assemblyTarget,
     setAssemblyTarget,
+    assemblyResetKey,
+    assemblyInitialRows,
+    assemblyInitialTitle,
+    assemblyLoading,
     flooringView,
     setFlooringView,
     coveringRows,
@@ -583,6 +557,7 @@ export function useFlooringCatalogPanel() {
     beginEditCovering,
     beginEditPreparation,
     beginEditLayout,
+    promoteSnapshotRowToCatalog,
     cancelCoveringEdit,
     cancelPreparationEdit,
     cancelLayoutEdit,
@@ -592,7 +567,7 @@ export function useFlooringCatalogPanel() {
     handleDeleteCovering,
     handleDeletePreparation,
     handleDeleteLayout,
-    setAssemblyRowsCount,
+    setAssemblyRowsSnapshot,
     formatMoney,
     formatPercent,
     consumablesSummaryPerM2,

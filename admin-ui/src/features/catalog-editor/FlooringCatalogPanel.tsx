@@ -39,6 +39,10 @@ export function FlooringCatalogPanel() {
     savingAssembly,
     assemblyTarget,
     setAssemblyTarget,
+    assemblyResetKey,
+    assemblyInitialRows,
+    assemblyInitialTitle,
+    assemblyLoading,
     flooringView,
     setFlooringView,
     coveringRows,
@@ -68,7 +72,8 @@ export function FlooringCatalogPanel() {
     handleDeleteCovering,
     handleDeletePreparation,
     handleDeleteLayout,
-    setAssemblyRowsCount,
+    promoteSnapshotRowToCatalog,
+    setAssemblyRowsSnapshot,
     formatMoney,
     formatPercent,
     consumablesSummaryPerM2,
@@ -124,16 +129,13 @@ export function FlooringCatalogPanel() {
         </div>
       ) : null}
 
-      <div className="ce-note">
-        <span className="ce-note-tag">Модель</span>
-        Каталог полов читается из public snapshot (<code>/api/public/catalog/flooring/snapshot</code>).
-        Создание и редактирование глобальных строк — через REST API (без удаления и reorder).
-      </div>
-
-      <div className="ce-meta">
-        Версия snapshot: <strong>{snapshot.version}</strong> · Покрытий:{" "}
-        <strong>{coveringRows.length}</strong> · Подготовок: <strong>{preparationRows.length}</strong> · Укладок:{" "}
-        <strong>{layoutRows.length}</strong>
+      <div className="ce-meta ce-flooring-meta">
+        Snapshot v<strong>{snapshot.version}</strong> · Покрытий <strong>{coveringRows.length}</strong> · Подготовок{" "}
+        <strong>{preparationRows.length}</strong> · Укладок <strong>{layoutRows.length}</strong>
+        <span className="ce-flooring-meta-sep">·</span>
+        <span className="ce-flooring-meta-note">
+          public snapshot + REST API (без reorder)
+        </span>
       </div>
 
       {flooringView === "library" ? (
@@ -161,35 +163,43 @@ export function FlooringCatalogPanel() {
         target={assemblyTarget}
         onTargetChange={setAssemblyTarget}
         formatMoney={formatMoney}
-        onRowsChange={(rows) => setAssemblyRowsCount(rows.length)}
+        onRowsChange={setAssemblyRowsSnapshot}
         onCreateFromAssembly={createAssemblyTargetRow}
+        initialRows={assemblyInitialRows}
+        initialTitle={assemblyInitialTitle}
+        resetKey={assemblyResetKey}
+        loadingAssembly={assemblyLoading}
       />
 
       <FlooringCoveringsSection
         rows={coveringRows}
+        selectedId={editingCoveringId}
         onEdit={beginEditCovering}
         onDelete={handleDeleteCovering}
+        onPromote={(row) => void promoteSnapshotRowToCatalog(row)}
         formatMoney={formatMoney}
-        formatPercent={formatPercent}
         consumablesSummaryPerM2={consumablesSummaryPerM2}
-      >
-
-        {editingCoveringId !== null ? (
-          <FlooringCoveringEditForm
-            draft={coveringDraft}
-            submitting={savingCovering}
-            onSubmit={() => void handleUpdateCovering()}
-            onCancel={cancelCoveringEdit}
-            onDraftChange={setCoveringDraft}
-            onNumberChange={updateCoveringNumber}
-          />
-        ) : null}
-      </FlooringCoveringsSection>
+        editor={
+          editingCoveringId !== null ? (
+            <FlooringCoveringEditForm
+              draft={coveringDraft}
+              submitting={savingCovering}
+              onSubmit={() => void handleUpdateCovering()}
+              onCancel={cancelCoveringEdit}
+              onDraftChange={setCoveringDraft}
+              onNumberChange={updateCoveringNumber}
+              formatMoney={formatMoney}
+              formatPercent={formatPercent}
+            />
+          ) : null
+        }
+      />
 
       <FlooringPreparationsSection
         rows={preparationRows}
         onEdit={beginEditPreparation}
         onDelete={handleDeletePreparation}
+        onPromote={(row) => void promoteSnapshotRowToCatalog(row)}
         formatMoney={formatMoney}
         formatPercent={formatPercent}
       >
@@ -210,6 +220,7 @@ export function FlooringCatalogPanel() {
         rows={layoutRows}
         onEdit={beginEditLayout}
         onDelete={handleDeleteLayout}
+        onPromote={(row) => void promoteSnapshotRowToCatalog(row)}
         formatMoney={formatMoney}
         formatPercent={formatPercent}
       >

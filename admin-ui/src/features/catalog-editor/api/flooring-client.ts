@@ -6,6 +6,9 @@ import type {
   FlooringAssemblyItemDto,
   FlooringAssemblyItemPayload,
   FlooringAssemblyItemUpdatePayload,
+  FlooringCatalogAssemblyDto,
+  FlooringCatalogAssemblyPayload,
+  FlooringCatalogAssemblyTarget,
   FlooringCoveringCreatePayload,
   FlooringCoveringDto,
   FlooringCoveringUpdatePayload,
@@ -137,4 +140,32 @@ export async function deleteFlooringAssemblyItem(id: number): Promise<{ id: numb
   return fetchJson<{ id: number; deleted: boolean }>(`${FLOORING_API}/assembly-items/${id}`, {
     method: "DELETE",
   });
+}
+
+export async function fetchFlooringCatalogAssembly(
+  targetKind: FlooringCatalogAssemblyTarget,
+  targetId: number,
+): Promise<FlooringCatalogAssemblyDto> {
+  return fetchJson<FlooringCatalogAssemblyDto>(`${FLOORING_API}/${targetKind}/${targetId}/assembly`);
+}
+
+export async function saveFlooringCatalogAssembly(
+  targetKind: FlooringCatalogAssemblyTarget,
+  targetId: number,
+  payload: FlooringCatalogAssemblyPayload,
+): Promise<FlooringCatalogAssemblyDto> {
+  return fetchJson<FlooringCatalogAssemblyDto>(`${FLOORING_API}/${targetKind}/${targetId}/assembly`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function deleteFlooringCatalogAssembly(
+  targetKind: FlooringCatalogAssemblyTarget,
+  targetId: number,
+): Promise<{ target_kind: string; target_id: number; deleted: boolean }> {
+  return fetchJson<{ target_kind: string; target_id: number; deleted: boolean }>(
+    `${FLOORING_API}/${targetKind}/${targetId}/assembly`,
+    { method: "DELETE" },
+  );
 }

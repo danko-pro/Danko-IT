@@ -1,11 +1,20 @@
 // Маппинг REST DTO каталога полов ↔ draft catalog-editor и строки preview из flooring-v2 snapshot.
 // Без сетевых вызовов и React — покрывается unit-тестами.
 
+import type { CoveringAssemblyRow } from "../flooring-assembly";
 import type { FlooringSnapshot } from "../../public/public-flooring-snapshot";
 import type {
   FlooringAssemblyItemDraft,
   FlooringAssemblyItemDto,
   FlooringAssemblyItemPayload,
+  FlooringAssemblyRowKind,
+  FlooringAssemblySection,
+  FlooringCatalogAssemblyDraft,
+  FlooringCatalogAssemblyDto,
+  FlooringCatalogAssemblyPayload,
+  FlooringCatalogAssemblyRowDraft,
+  FlooringCatalogAssemblyRowDto,
+  FlooringCatalogAssemblyRowPayload,
   FlooringConsumableDraft,
   FlooringCoveringConsumableRates,
   FlooringCoveringCreatePayload,
@@ -22,6 +31,22 @@ import type {
   FlooringPreparationUpdatePayload,
   FlooringSnapshotDisplayRow,
 } from "./flooring-types";
+
+const FLOORING_CATALOG_ASSEMBLY_VERSION = "flooring-assembly-v1";
+
+const PUBLIC_CATEGORY_BY_KIND: Record<FlooringAssemblyRowKind, string> = {
+  material: "materials",
+  work: "works",
+  consumable: "consumables",
+  tool: "tools",
+};
+
+const SECTION_BY_KIND: Record<FlooringAssemblyRowKind, FlooringAssemblySection> = {
+  material: "covering",
+  work: "work",
+  consumable: "consumable",
+  tool: "tool",
+};
 
 export function normalizeNum(value: unknown): number {
   if (typeof value === "number" && Number.isFinite(value)) {
@@ -262,6 +287,116 @@ export function layoutDraftToPayload(draft: FlooringLayoutDraft): FlooringLayout
   };
 }
 
+function optionalNum(value: unknown): number | null {
+  if (value === null || value === undefined) {
+    return null;
+  }
+  return normalizeNum(value);
+}
+
+function catalogAssemblyRowDtoToDraft(dto: FlooringCatalogAssemblyRowDto): FlooringCatalogAssemblyRowDraft {
+  return {
+    id: dto.id === undefined ? undefined : normalizeNum(dto.id),
+    assemblyItemId: optionalNum(dto.assembly_item_id),
+    section: dto.section,
+    kind: dto.kind,
+    formula: dto.formula,
+    title: normalizeText(dto.title),
+    unit: normalizeText(dto.unit) || "pcs",
+    price: normalizeNum(dto.price),
+    consumptionPerM2: normalizeNum(dto.consumption_per_m2),
+    packageSize: optionalNum(dto.package_size),
+    layerMm: optionalNum(dto.layer_mm),
+    sortOrder: normalizeNum(dto.sort_order) || 10,
+    isEnabled: normalizeBool(dto.is_enabled),
+    publicCategory: normalizeText(dto.public_category),
+    publicTitle:
+      dto.public_title === null || dto.public_title === undefined
+        ? null
+        : normalizeText(dto.public_title) || null,
+  };
+}
+
+export function catalogAssemblyDtoToDraft(dto: FlooringCatalogAssemblyDto): FlooringCatalogAssemblyDraft {
+  return {
+    id: dto.id === undefined ? undefined : normalizeNum(dto.id),
+    targetKind: dto.target_kind,
+    targetId: normalizeNum(dto.target_id),
+    title: normalizeText(dto.title),
+    version: normalizeText(dto.version) || FLOORING_CATALOG_ASSEMBLY_VERSION,
+    rows: (dto.rows ?? []).map(catalogAssemblyRowDtoToDraft),
+  };
+}
+
+export function catalogAssemblyRowDraftToPayload(
+  draft: FlooringCatalogAssemblyRowDraft,
+): FlooringCatalogAssemblyRowPayload {
+  return {
+    assembly_item_id: draft.assemblyItemId,
+    section: draft.section,
+    kind: draft.kind,
+    formula: draft.formula,
+    title: draft.title,
+    unit: draft.unit || "pcs",
+    price: normalizeNum(draft.price),
+    consumption_per_m2: normalizeNum(draft.consumptionPerM2),
+    package_size: draft.packageSize === null ? null : normalizeNum(draft.packageSize),
+    layer_mm: draft.layerMm === null ? null : normalizeNum(draft.layerMm),
+    sort_order: normalizeNum(draft.sortOrder) || 10,
+    is_enabled: draft.isEnabled,
+    public_category: draft.publicCategory,
+    public_title: draft.publicTitle === null ? null : draft.publicTitle.trim() || null,
+  };
+}
+
+export function catalogAssemblyDraftToPayload(draft: FlooringCatalogAssemblyDraft): FlooringCatalogAssemblyPayload {
+  return {
+    title: draft.title,
+    version: draft.version.trim() || null,
+    rows: draft.rows.map(catalogAssemblyRowDraftToPayload),
+  };
+}
+
+export function assemblyRowsToCatalogAssemblyDraftRows(
+  rows: CoveringAssemblyRow[],
+  options?: { sortOrderStart?: number },
+): FlooringCatalogAssemblyRowDraft[] {
+  const sortOrderStart = options?.sortOrderStart ?? 10;
+  return rows.map((row, index) => ({
+    assemblyItemId: null,
+    section: SECTION_BY_KIND[row.kind] ?? "consumable",
+    kind: row.kind,
+    formula: row.formula,
+    title: row.title,
+    unit: row.unit || "pcs",
+    price: normalizeNum(row.price),
+    consumptionPerM2: normalizeNum(row.consumptionPerM2),
+    packageSize: row.packageSize === undefined ? null : normalizeNum(row.packageSize),
+    layerMm: row.layerMm === undefined ? null : normalizeNum(row.layerMm),
+    sortOrder: sortOrderStart + index * 10,
+    isEnabled: row.enabled,
+    publicCategory: PUBLIC_CATEGORY_BY_KIND[row.kind],
+    publicTitle: null,
+  }));
+}
+
+export function catalogAssemblyDraftRowsToAssemblyRows(
+  rows: FlooringCatalogAssemblyRowDraft[],
+): CoveringAssemblyRow[] {
+  return rows.map((row, index) => ({
+    id: row.id !== undefined ? String(row.id) : `catalog-row-${row.sortOrder || index + 1}`,
+    title: row.title,
+    kind: row.kind,
+    formula: row.formula,
+    unit: row.unit || "pcs",
+    price: normalizeNum(row.price),
+    consumptionPerM2: normalizeNum(row.consumptionPerM2),
+    packageSize: row.packageSize === null ? undefined : normalizeNum(row.packageSize),
+    layerMm: row.layerMm === null ? undefined : normalizeNum(row.layerMm),
+    enabled: row.isEnabled,
+  }));
+}
+
 function snapshotItemToRow(
   section: FlooringSnapshotDisplayRow["section"],
   item: { code: string; title: string } & Record<string, unknown>,
@@ -310,6 +445,114 @@ export function attachCatalogIdsToDisplayRows(
       return catalogId ? { ...row, catalogId } : row;
     }
     return row;
+  });
+}
+
+/** Note for catalog rows created from a public flooring-v2 snapshot preview row. */
+export const SNAPSHOT_ROW_CREATE_NOTE = "Создано из public snapshot";
+
+/**
+ * Underlay in snapshot is aggregated ₽/m² (global underlay price × consumption in catalog).
+ * Reversible with {@link coveringDtoToConsumableRates} when `underlayPricePerM2` option is 1:
+ * store the snapshot rate as consumption at mode `required` (1 × rate = rate).
+ */
+export function snapshotUnderlayFieldsFromRate(underlayPricePerM2: number): {
+  underlayMode: string;
+  underlayConsumptionPerM2: number;
+} {
+  const rate = normalizeNum(underlayPricePerM2);
+  if (rate <= 0) {
+    return { underlayMode: "none", underlayConsumptionPerM2: 0 };
+  }
+  return { underlayMode: "required", underlayConsumptionPerM2: rate };
+}
+
+function flatConsumableFromPricePerM2(
+  pricePerM2: unknown,
+  zeroDefaults: { consumptionPerM2: number; pricePerUnit: number },
+): { consumptionPerM2: number; pricePerUnit: number } {
+  const rate = normalizeNum(pricePerM2);
+  if (rate <= 0) {
+    return zeroDefaults;
+  }
+  return { consumptionPerM2: 1, pricePerUnit: rate };
+}
+
+function assertSnapshotRowSection(
+  row: FlooringSnapshotDisplayRow,
+  expected: FlooringSnapshotDisplayRow["section"],
+): void {
+  if (row.section !== expected) {
+    throw new Error(`snapshot row section must be "${expected}", got "${row.section}"`);
+  }
+}
+
+export function snapshotCoveringRowToCreatePayload(
+  row: FlooringSnapshotDisplayRow,
+): FlooringCoveringCreatePayload {
+  assertSnapshotRowSection(row, "coverings");
+  const rates = row.rates;
+  const underlay = snapshotUnderlayFieldsFromRate(rates.underlayPricePerM2);
+  const glue = flatConsumableFromPricePerM2(rates.adhesivePricePerM2, { consumptionPerM2: 0, pricePerUnit: 0 });
+  const primer = flatConsumableFromPricePerM2(rates.primerPricePerM2, { consumptionPerM2: 0, pricePerUnit: 0 });
+  const svp = flatConsumableFromPricePerM2(rates.svpPricePerM2, { consumptionPerM2: 0, pricePerUnit: 0 });
+  const grout = flatConsumableFromPricePerM2(rates.groutPricePerM2, { consumptionPerM2: 0, pricePerUnit: 0 });
+
+  return coveringDraftToPayload({
+    id: 0,
+    title: row.title,
+    materialPricePerM2: normalizeNum(rates.materialPricePerM2),
+    laborPricePerM2: 0,
+    baseWastePercent: normalizeNum(rates.baseWastePercent),
+    underlayMode: underlay.underlayMode,
+    underlayConsumptionPerM2: underlay.underlayConsumptionPerM2,
+    glueConsumptionPerM2: glue.consumptionPerM2,
+    glueUnit: "kg",
+    gluePricePerUnit: glue.pricePerUnit,
+    primerConsumptionPerM2: primer.consumptionPerM2,
+    primerUnit: "l",
+    primerPricePerUnit: primer.pricePerUnit,
+    svpConsumptionPerM2: svp.consumptionPerM2,
+    svpUnit: "pcs",
+    svpPricePerUnit: svp.pricePerUnit,
+    groutConsumptionPerM2: grout.consumptionPerM2,
+    groutUnit: "kg",
+    groutPricePerUnit: grout.pricePerUnit,
+    customConsumables: [],
+    needsPlinth: true,
+    instrumentPricePerM2: normalizeNum(rates.toolConsumablesPerM2),
+    note: SNAPSHOT_ROW_CREATE_NOTE,
+  });
+}
+
+export function snapshotPreparationRowToCreatePayload(
+  row: FlooringSnapshotDisplayRow,
+): FlooringPreparationCreatePayload {
+  assertSnapshotRowSection(row, "preparations");
+  const rates = row.rates;
+  return preparationDraftToPayload({
+    id: 0,
+    title: row.title,
+    laborPricePerM2: normalizeNum(rates.laborPricePerM2),
+    materialPricePerM2: normalizeNum(rates.materialPricePerM2),
+    primerConsumptionPerM2: 0,
+    primerUnit: "l",
+    primerPricePerUnit: 0,
+    note: SNAPSHOT_ROW_CREATE_NOTE,
+  });
+}
+
+export function snapshotLayoutRowToCreatePayload(row: FlooringSnapshotDisplayRow): FlooringLayoutCreatePayload {
+  assertSnapshotRowSection(row, "layouts");
+  const rates = row.rates;
+  const laborFactor = normalizeNum(rates.laborFactor);
+  return layoutDraftToPayload({
+    id: 0,
+    title: row.title,
+    laborPricePerM2: normalizeNum(rates.laborPricePerM2),
+    laborFactor: laborFactor > 0 ? laborFactor : 1,
+    additionalWastePercent: normalizeNum(rates.additionalWastePercent),
+    note: SNAPSHOT_ROW_CREATE_NOTE,
   });
 }
 

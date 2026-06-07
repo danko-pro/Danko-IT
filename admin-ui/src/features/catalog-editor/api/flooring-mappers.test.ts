@@ -3,7 +3,11 @@ import { describe, expect, it } from "vitest";
 import type { FlooringSnapshot } from "../../public/public-flooring-snapshot";
 import {
   assemblyItemDraftToPayload,
+  assemblyRowsToCatalogAssemblyDraftRows,
   attachCatalogIdsToDisplayRows,
+  catalogAssemblyDraftRowsToAssemblyRows,
+  catalogAssemblyDraftToPayload,
+  catalogAssemblyDtoToDraft,
   consumablePricePerM2,
   coveringDtoToConsumableRates,
   coveringDraftToPayload,
@@ -17,13 +21,21 @@ import {
   normalizeNum,
   preparationDraftToPayload,
   preparationDraftToUpdatePayload,
+  snapshotCoveringRowToCreatePayload,
+  snapshotLayoutRowToCreatePayload,
+  snapshotPreparationRowToCreatePayload,
   snapshotToDisplayRows,
+  snapshotUnderlayFieldsFromRate,
+  SNAPSHOT_ROW_CREATE_NOTE,
 } from "./flooring-mappers";
 import type {
   FlooringAssemblyItemDto,
+  FlooringCatalogAssemblyDto,
+  FlooringCatalogAssemblyRowDto,
   FlooringCoveringDto,
   FlooringLayoutDto,
   FlooringPreparationDto,
+  FlooringSnapshotDisplayRow,
 } from "./flooring-types";
 
 function makeCoveringDto(overrides: Partial<FlooringCoveringDto> = {}): FlooringCoveringDto {
@@ -98,6 +110,41 @@ function makeAssemblyItemDto(overrides: Partial<FlooringAssemblyItemDto> = {}): 
     layer_mm: 5,
     note: null,
     sort_order: 70,
+    ...overrides,
+  };
+}
+
+function makeCatalogAssemblyRowDto(
+  overrides: Partial<FlooringCatalogAssemblyRowDto> = {},
+): FlooringCatalogAssemblyRowDto {
+  return {
+    id: 10,
+    assembly_item_id: 4,
+    section: "covering",
+    kind: "material",
+    formula: "flat_per_m2",
+    title: "Керамогранит",
+    unit: "m2",
+    price: 1200,
+    consumption_per_m2: 1.1,
+    package_size: null,
+    layer_mm: null,
+    sort_order: 10,
+    is_enabled: 1,
+    public_category: "materials",
+    public_title: "Материалы покрытия",
+    ...overrides,
+  };
+}
+
+function makeCatalogAssemblyDto(overrides: Partial<FlooringCatalogAssemblyDto> = {}): FlooringCatalogAssemblyDto {
+  return {
+    id: 5,
+    target_kind: "covering",
+    target_id: 11,
+    title: "Состав покрытия",
+    version: "flooring-assembly-v1",
+    rows: [makeCatalogAssemblyRowDto()],
     ...overrides,
   };
 }
@@ -267,6 +314,135 @@ describe("attachCatalogIdsToDisplayRows", () => {
   });
 });
 
+const CARPET_SNAPSHOT_ROW: FlooringSnapshotDisplayRow = {
+  section: "coverings",
+  code: "carpet",
+  title: "Ковролин",
+  rates: {
+    materialPricePerM2: 1500,
+    baseWastePercent: 7,
+    underlayPricePerM2: 0,
+    adhesivePricePerM2: 250,
+    primerPricePerM2: 25,
+    svpPricePerM2: 0,
+    groutPricePerM2: 0,
+    toolConsumablesPerM2: 40,
+  },
+};
+
+const LAMINATE_UNDERLAY_ROW: FlooringSnapshotDisplayRow = {
+  section: "coverings",
+  code: "laminate",
+  title: "Ламинат",
+  rates: {
+    materialPricePerM2: 930,
+    baseWastePercent: 10,
+    underlayPricePerM2: 220,
+    adhesivePricePerM2: 0,
+    primerPricePerM2: 25,
+    svpPricePerM2: 0,
+    groutPricePerM2: 0,
+    toolConsumablesPerM2: 40,
+  },
+};
+
+describe("snapshot row → create payload mappers", () => {
+  it("маппит ковролин (carpet) в covering create payload", () => {
+    const payload = snapshotCoveringRowToCreatePayload(CARPET_SNAPSHOT_ROW);
+    expect(payload.title).toBe("Ковролин");
+    expect(payload.material_price_per_m2).toBe(1500);
+    expect(payload.base_waste_percent).toBe(7);
+    expect(payload.labor_price_per_m2).toBe(0);
+    expect(payload.glue_consumption_per_m2).toBe(1);
+    expect(payload.glue_price_per_unit).toBe(250);
+    expect(payload.primer_consumption_per_m2).toBe(1);
+    expect(payload.primer_price_per_unit).toBe(25);
+    expect(payload.instrument_price_per_m2).toBe(40);
+    expect(payload.needs_plinth).toBe(true);
+    expect(payload.note).toBe(SNAPSHOT_ROW_CREATE_NOTE);
+    expect(payload.underlay_mode).toBe("none");
+    expect(payload.underlay_consumption_per_m2).toBe(0);
+  });
+
+  it("covering labor_price_per_m2 всегда 0", () => {
+    expect(snapshotCoveringRowToCreatePayload(CARPET_SNAPSHOT_ROW).labor_price_per_m2).toBe(0);
+  });
+
+  it("не теряет ₽/m² расходников (плоская модель consumption=1)", () => {
+    const payload = snapshotCoveringRowToCreatePayload(CARPET_SNAPSHOT_ROW);
+    expect(consumablePricePerM2(payload.glue_consumption_per_m2, payload.glue_price_per_unit)).toBe(250);
+    expect(consumablePricePerM2(payload.primer_consumption_per_m2, payload.primer_price_per_unit)).toBe(25);
+    expect(payload.instrument_price_per_m2).toBe(40);
+  });
+
+  it("сохраняет underlayPricePerM2 через mode required и consumption=rate", () => {
+    const payload = snapshotCoveringRowToCreatePayload(LAMINATE_UNDERLAY_ROW);
+    expect(payload.underlay_mode).toBe("required");
+    expect(payload.underlay_consumption_per_m2).toBe(220);
+    const rates = coveringDtoToConsumableRates(
+      {
+        ...makeCoveringDto(),
+        title: "Ламинат",
+        underlay_mode: payload.underlay_mode,
+        underlay_consumption_per_m2: payload.underlay_consumption_per_m2,
+      },
+      { underlayPricePerM2: 1 },
+    );
+    expect(rates.underlayPricePerM2).toBe(220);
+  });
+
+  it("маппит preparation snapshot row", () => {
+    const row: FlooringSnapshotDisplayRow = {
+      section: "preparations",
+      code: "primer",
+      title: "Грунтование",
+      rates: { laborPricePerM2: 250, materialPricePerM2: 120 },
+    };
+    const payload = snapshotPreparationRowToCreatePayload(row);
+    expect(payload).toEqual({
+      title: "Грунтование",
+      labor_price_per_m2: 250,
+      material_price_per_m2: 120,
+      primer_consumption_per_m2: 0,
+      primer_unit: "l",
+      primer_price_per_unit: 0,
+      note: SNAPSHOT_ROW_CREATE_NOTE,
+    });
+  });
+
+  it("маппит layout snapshot row (laborFactor → labor_multiplier)", () => {
+    const row: FlooringSnapshotDisplayRow = {
+      section: "layouts",
+      code: "straight",
+      title: "Прямая",
+      rates: { laborPricePerM2: 1000, laborFactor: 1.1, additionalWastePercent: 5 },
+    };
+    const payload = snapshotLayoutRowToCreatePayload(row);
+    expect(payload).toEqual({
+      title: "Прямая",
+      labor_price_per_m2: 1000,
+      labor_multiplier: 1.1,
+      extra_waste_percent: 5,
+      note: SNAPSHOT_ROW_CREATE_NOTE,
+    });
+  });
+
+  it("бросает при неверной section", () => {
+    expect(() => snapshotCoveringRowToCreatePayload({ ...CARPET_SNAPSHOT_ROW, section: "layouts" })).toThrow(
+      'snapshot row section must be "coverings"',
+    );
+    expect(() => snapshotPreparationRowToCreatePayload(CARPET_SNAPSHOT_ROW)).toThrow(
+      'snapshot row section must be "preparations"',
+    );
+  });
+});
+
+describe("snapshotUnderlayFieldsFromRate", () => {
+  it("0 → none", () => {
+    expect(snapshotUnderlayFieldsFromRate(0)).toEqual({ underlayMode: "none", underlayConsumptionPerM2: 0 });
+  });
+});
+
 describe("snapshotToDisplayRows", () => {
   it("строит строки preview по секциям snapshot", () => {
     const rows = snapshotToDisplayRows(MINI_SNAPSHOT);
@@ -285,5 +461,175 @@ describe("snapshotToDisplayRows", () => {
       thresholdPrice: 900,
       demolitionPricePerM2: 150,
     });
+  });
+});
+
+describe("catalogAssemblyDtoToDraft", () => {
+  it("маппит targetKind/targetId/rows и snake_case поля", () => {
+    const draft = catalogAssemblyDtoToDraft(
+      makeCatalogAssemblyDto({
+        target_kind: "preparation",
+        target_id: 22,
+        rows: [
+          makeCatalogAssemblyRowDto({
+            kind: "consumable",
+            section: "consumable",
+            formula: "kg_layer_consumption",
+            consumption_per_m2: 1.5,
+            package_size: 25,
+            layer_mm: 5,
+            public_category: "consumables",
+          }),
+        ],
+      }),
+    );
+    expect(draft.targetKind).toBe("preparation");
+    expect(draft.targetId).toBe(22);
+    expect(draft.rows).toHaveLength(1);
+    expect(draft.rows[0].assemblyItemId).toBe(4);
+    expect(draft.rows[0].consumptionPerM2).toBe(1.5);
+    expect(draft.rows[0].packageSize).toBe(25);
+    expect(draft.rows[0].layerMm).toBe(5);
+    expect(draft.rows[0].publicCategory).toBe("consumables");
+    expect(draft.rows[0].publicTitle).toBe("Материалы покрытия");
+  });
+
+  it("targetKind остаётся singular (не plural)", () => {
+    expect(catalogAssemblyDtoToDraft(makeCatalogAssemblyDto({ target_kind: "covering" })).targetKind).toBe(
+      "covering",
+    );
+    expect(catalogAssemblyDtoToDraft(makeCatalogAssemblyDto({ target_kind: "layout" })).targetKind).toBe("layout");
+  });
+
+  it("is_enabled 0/1 → isEnabled boolean", () => {
+    const enabled = catalogAssemblyDtoToDraft(
+      makeCatalogAssemblyDto({ rows: [makeCatalogAssemblyRowDto({ is_enabled: 1 })] }),
+    );
+    const disabled = catalogAssemblyDtoToDraft(
+      makeCatalogAssemblyDto({ rows: [makeCatalogAssemblyRowDto({ is_enabled: 0 })] }),
+    );
+    expect(enabled.rows[0].isEnabled).toBe(true);
+    expect(disabled.rows[0].isEnabled).toBe(false);
+  });
+
+  it("optional null поля остаются null", () => {
+    const draft = catalogAssemblyDtoToDraft(
+      makeCatalogAssemblyDto({
+        rows: [
+          makeCatalogAssemblyRowDto({
+            assembly_item_id: null,
+            package_size: null,
+            layer_mm: null,
+            public_title: null,
+          }),
+        ],
+      }),
+    );
+    expect(draft.rows[0].assemblyItemId).toBeNull();
+    expect(draft.rows[0].packageSize).toBeNull();
+    expect(draft.rows[0].layerMm).toBeNull();
+    expect(draft.rows[0].publicTitle).toBeNull();
+  });
+});
+
+describe("catalogAssemblyDraftToPayload", () => {
+  it("возвращает snake_case payload", () => {
+    const draft = catalogAssemblyDtoToDraft(makeCatalogAssemblyDto());
+    const payload = catalogAssemblyDraftToPayload(draft);
+    expect(payload.title).toBe("Состав покрытия");
+    expect(payload.version).toBe("flooring-assembly-v1");
+    expect(payload.rows[0]).toMatchObject({
+      assembly_item_id: 4,
+      consumption_per_m2: 1.1,
+      package_size: null,
+      layer_mm: null,
+      is_enabled: true,
+      public_category: "materials",
+      public_title: "Материалы покрытия",
+    });
+  });
+
+  it("optional null поля — null, не undefined", () => {
+    const draft = catalogAssemblyDtoToDraft(
+      makeCatalogAssemblyDto({
+        rows: [
+          makeCatalogAssemblyRowDto({
+            assembly_item_id: null,
+            package_size: null,
+            layer_mm: null,
+            public_title: null,
+          }),
+        ],
+      }),
+    );
+    const row = catalogAssemblyDraftToPayload(draft).rows[0];
+    expect(row.assembly_item_id).toBeNull();
+    expect(row.package_size).toBeNull();
+    expect(row.layer_mm).toBeNull();
+    expect(row.public_title).toBeNull();
+    expect(row.assembly_item_id).not.toBeUndefined();
+    expect(row.package_size).not.toBeUndefined();
+    expect(row.layer_mm).not.toBeUndefined();
+    expect(row.public_title).not.toBeUndefined();
+  });
+
+  it("isEnabled roundtrip через payload", () => {
+    const draft = catalogAssemblyDtoToDraft(
+      makeCatalogAssemblyDto({ rows: [makeCatalogAssemblyRowDto({ is_enabled: false })] }),
+    );
+    expect(catalogAssemblyDraftToPayload(draft).rows[0].is_enabled).toBe(false);
+  });
+
+  it("числовые поля строк roundtrip", () => {
+    const draft = catalogAssemblyDtoToDraft(
+      makeCatalogAssemblyDto({
+        rows: [
+          makeCatalogAssemblyRowDto({
+            price: "1200" as unknown as number,
+            consumption_per_m2: "1,5" as unknown as number,
+            package_size: "25" as unknown as number,
+            layer_mm: "5" as unknown as number,
+          }),
+        ],
+      }),
+    );
+    const payload = catalogAssemblyDraftToPayload(draft).rows[0];
+    expect(payload.price).toBe(1200);
+    expect(payload.consumption_per_m2).toBe(1.5);
+    expect(payload.package_size).toBe(25);
+    expect(payload.layer_mm).toBe(5);
+  });
+
+  it("publicCategory сохраняется", () => {
+    const draft = catalogAssemblyDtoToDraft(
+      makeCatalogAssemblyDto({
+        rows: [makeCatalogAssemblyRowDto({ public_category: "tools", kind: "tool", section: "tool" })],
+      }),
+    );
+    expect(catalogAssemblyDraftToPayload(draft).rows[0].public_category).toBe("tools");
+  });
+});
+
+describe("assembly row bridging mappers", () => {
+  it("assemblyRowsToCatalogAssemblyDraftRows и обратно", () => {
+    const coveringRows = catalogAssemblyDraftRowsToAssemblyRows(
+      assemblyRowsToCatalogAssemblyDraftRows([
+        {
+          id: "local-1",
+          title: "Клей",
+          kind: "consumable",
+          formula: "kg_layer_consumption",
+          unit: "kg",
+          price: 600,
+          consumptionPerM2: 1.5,
+          packageSize: 25,
+          layerMm: 5,
+          enabled: true,
+        },
+      ]),
+    );
+    expect(coveringRows[0].title).toBe("Клей");
+    expect(coveringRows[0].enabled).toBe(true);
+    expect(coveringRows[0].packageSize).toBe(25);
   });
 });

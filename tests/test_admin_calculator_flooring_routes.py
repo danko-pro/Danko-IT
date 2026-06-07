@@ -147,6 +147,21 @@ class AdminCalculatorFlooringRouteTests(AdminProjectsRouteCase):
                     ).status_code,
                     403,
                 )
+                self.assertEqual(
+                    client.get("/api/calculator/flooring/covering/1/assembly").status_code,
+                    403,
+                )
+                self.assertEqual(
+                    client.put(
+                        "/api/calculator/flooring/covering/1/assembly",
+                        json={"title": "Test", "rows": []},
+                    ).status_code,
+                    403,
+                )
+                self.assertEqual(
+                    client.delete("/api/calculator/flooring/covering/1/assembly").status_code,
+                    403,
+                )
 
     def test_flooring_assembly_items_are_db_backed(self) -> None:
         with TemporaryDirectory() as tmp_dir:
@@ -435,3 +450,221 @@ class AdminCalculatorFlooringRouteTests(AdminProjectsRouteCase):
 
                 material_price = asyncio.run(_laminate_material_from_snapshot(global_repo))
                 self.assertEqual(material_price, 4321)
+
+
+def _assembly_row(**overrides: object) -> dict[str, object]:
+    values: dict[str, object] = {
+        "section": "covering",
+        "kind": "material",
+        "formula": "flat_per_m2",
+        "title": "Керамогранит",
+        "unit": "m2",
+        "price": 1200,
+        "consumption_per_m2": 1,
+        "sort_order": 10,
+        "is_enabled": True,
+        "public_category": "materials",
+    }
+    values.update(overrides)
+    return values
+
+
+class AdminCalculatorFlooringCatalogAssemblyRouteTests(AdminProjectsRouteCase):
+    def _build_client(self) -> TestClient:
+        suffix = uuid4().hex
+        self._settings: Settings = replace(
+            load_settings(self._create_settings_file(self._root)),
+            admin_session_secret=f"flooring-assembly-route-secret-{suffix}",
+        )
+        return TestClient(create_admin_app(self._settings))
+
+    def _login_admin(self, client: TestClient, *, subject: str = "admin@example.test") -> None:
+        client.cookies.clear()
+        token, _ = create_admin_session_token(
+            self._settings.admin_session_secret or "",
+            ttl_seconds=3600,
+            subject=subject,
+            role="admin",
+        )
+        client.cookies.set(SESSION_COOKIE_NAME, token)
+
+    def test_get_missing_assembly_returns_empty_payload(self) -> None:
+        with TemporaryDirectory() as tmp_dir:
+            self._root = Path(tmp_dir)
+            with self._build_client() as client:
+                self._login_admin(client)
+                covering = client.post(
+                    "/api/calculator/flooring/coverings",
+                    json=_minimal_covering_kwargs(title=f"Assembly empty {uuid4().hex}"),
+                )
+                self.assertEqual(covering.status_code, 200)
+                covering_id = covering.json()["id"]
+
+                response = client.get(f"/api/calculator/flooring/covering/{covering_id}/assembly")
+                self.assertEqual(response.status_code, 200)
+                payload = response.json()
+                self.assertEqual(payload["target_kind"], "covering")
+                self.assertEqual(payload["target_id"], covering_id)
+                self.assertEqual(payload["title"], "")
+                self.assertEqual(payload["version"], "flooring-assembly-v1")
+                self.assertEqual(payload["rows"], [])
+
+    def test_put_and_get_covering_assembly_with_allowed_rows(self) -> None:
+        with TemporaryDirectory() as tmp_dir:
+            self._root = Path(tmp_dir)
+            with self._build_client() as client:
+                self._login_admin(client)
+                covering = client.post(
+                    "/api/calculator/flooring/coverings",
+                    json=_minimal_covering_kwargs(title=f"Assembly save {uuid4().hex}"),
+                ).json()
+
+                put = client.put(
+                    f"/api/calculator/flooring/covering/{covering['id']}/assembly",
+                    json={
+                        "title": "Состав покрытия",
+                        "rows": [
+                            _assembly_row(kind="material", public_category="materials"),
+                            _assembly_row(
+                                kind="consumable",
+                                title="Клей",
+                                public_category="consumables",
+                                section="consumable",
+                            ),
+                            _assembly_row(
+                                kind="tool",
+                                title="Инструмент",
+                                public_category="tools",
+                                section="tool",
+                                formula="fixed_area_allocation",
+                                unit="pcs",
+                                price=500,
+                                consumption_per_m2=0,
+                            ),
+                        ],
+                    },
+                )
+                self.assertEqual(put.status_code, 200)
+                saved = put.json()
+                self.assertEqual(saved["title"], "Состав покрытия")
+                self.assertEqual(len(saved["rows"]), 3)
+                kinds = {row["kind"] for row in saved["rows"]}
+                self.assertEqual(kinds, {"material", "consumable", "tool"})
+
+                readback = client.get(f"/api/calculator/flooring/covering/{covering['id']}/assembly")
+                self.assertEqual(readback.status_code, 200)
+                self.assertEqual(readback.json()["title"], "Состав покрытия")
+                self.assertEqual(len(readback.json()["rows"]), 3)
+
+    def test_put_covering_with_work_row_is_rejected(self) -> None:
+        with TemporaryDirectory() as tmp_dir:
+            self._root = Path(tmp_dir)
+            with self._build_client() as client:
+                self._login_admin(client)
+                covering = client.post(
+                    "/api/calculator/flooring/coverings",
+                    json=_minimal_covering_kwargs(title=f"Assembly work reject {uuid4().hex}"),
+                ).json()
+
+                response = client.put(
+                    f"/api/calculator/flooring/covering/{covering['id']}/assembly",
+                    json={
+                        "title": "Bad covering assembly",
+                        "rows": [
+                            _assembly_row(
+                                kind="work",
+                                section="work",
+                                public_category="works",
+                                formula="flat_per_m2",
+                            )
+                        ],
+                    },
+                )
+                self.assertEqual(response.status_code, 400)
+
+    def test_put_preparation_with_non_work_row_is_rejected(self) -> None:
+        with TemporaryDirectory() as tmp_dir:
+            self._root = Path(tmp_dir)
+            with self._build_client() as client:
+                self._login_admin(client)
+                preparation = client.post(
+                    "/api/calculator/flooring/preparations",
+                    json={"title": f"Assembly prep {uuid4().hex}", "labor_price_per_m2": 100},
+                ).json()
+
+                response = client.put(
+                    f"/api/calculator/flooring/preparation/{preparation['id']}/assembly",
+                    json={
+                        "title": "Bad preparation assembly",
+                        "rows": [_assembly_row(kind="material", public_category="materials")],
+                    },
+                )
+                self.assertEqual(response.status_code, 400)
+
+    def test_put_layout_with_non_work_row_is_rejected(self) -> None:
+        with TemporaryDirectory() as tmp_dir:
+            self._root = Path(tmp_dir)
+            with self._build_client() as client:
+                self._login_admin(client)
+                layout = client.post(
+                    "/api/calculator/flooring/layouts",
+                    json={"title": f"Assembly layout {uuid4().hex}", "labor_price_per_m2": 100},
+                ).json()
+
+                response = client.put(
+                    f"/api/calculator/flooring/layout/{layout['id']}/assembly",
+                    json={
+                        "title": "Bad layout assembly",
+                        "rows": [_assembly_row(kind="consumable", public_category="consumables", section="consumable")],
+                    },
+                )
+                self.assertEqual(response.status_code, 400)
+
+    def test_put_invalid_target_kind_is_rejected(self) -> None:
+        with TemporaryDirectory() as tmp_dir:
+            self._root = Path(tmp_dir)
+            with self._build_client() as client:
+                self._login_admin(client)
+                response = client.put(
+                    "/api/calculator/flooring/invalid/1/assembly",
+                    json={"title": "Bad kind", "rows": []},
+                )
+                self.assertEqual(response.status_code, 400)
+
+    def test_put_unknown_target_id_returns_not_found(self) -> None:
+        with TemporaryDirectory() as tmp_dir:
+            self._root = Path(tmp_dir)
+            with self._build_client() as client:
+                self._login_admin(client)
+                response = client.put(
+                    "/api/calculator/flooring/covering/999999/assembly",
+                    json={"title": "Missing target", "rows": []},
+                )
+                self.assertEqual(response.status_code, 404)
+
+    def test_delete_assembly_then_get_returns_empty(self) -> None:
+        with TemporaryDirectory() as tmp_dir:
+            self._root = Path(tmp_dir)
+            with self._build_client() as client:
+                self._login_admin(client)
+                covering = client.post(
+                    "/api/calculator/flooring/coverings",
+                    json=_minimal_covering_kwargs(title=f"Assembly delete {uuid4().hex}"),
+                ).json()
+                path = f"/api/calculator/flooring/covering/{covering['id']}/assembly"
+
+                put = client.put(
+                    path,
+                    json={"title": "To delete", "rows": [_assembly_row()]},
+                )
+                self.assertEqual(put.status_code, 200)
+
+                deleted = client.delete(path)
+                self.assertEqual(deleted.status_code, 200)
+                self.assertEqual(deleted.json()["deleted"], True)
+
+                readback = client.get(path)
+                self.assertEqual(readback.status_code, 200)
+                self.assertEqual(readback.json()["rows"], [])
+                self.assertEqual(readback.json()["title"], "")
+

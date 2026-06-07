@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 
-import { normalizeNum } from "./api/flooring-mappers";
+import { CatalogDecimalInput } from "./CatalogDecimalInput";
 import {
   aggregateCoveringAssembly,
   calculateAssemblyRowTotal,
@@ -38,8 +38,7 @@ const FLOORING_ASSEMBLY_TARGET_LIBRARY_SECTIONS: Record<FlooringAssemblyTarget, 
   layout: ["work"],
 };
 
-const ASSEMBLY_APPLY_STATUS =
-  "Строка создана в выбранном разделе. Проверьте её в таблице ниже.";
+const ASSEMBLY_APPLY_STATUS = "Строка добавлена — см. таблицу ниже.";
 
 type CoveringAssemblyBlockProps = {
   libraryItems: ReturnType<typeof createAssemblyLibraryItemFromCatalogItem>[];
@@ -53,6 +52,10 @@ type CoveringAssemblyBlockProps = {
   ) => Promise<boolean>;
   onRowsChange?: (rows: CoveringAssemblyRow[]) => void;
   formatMoney: (value: number) => string;
+  initialRows?: CoveringAssemblyRow[];
+  initialTitle?: string;
+  resetKey?: string;
+  loadingAssembly?: boolean;
 };
 
 export function FlooringAssemblyBlock({
@@ -62,12 +65,30 @@ export function FlooringAssemblyBlock({
   onCreateFromAssembly,
   onRowsChange,
   formatMoney,
+  initialRows = [],
+  initialTitle = "",
+  resetKey,
+  loadingAssembly = false,
 }: CoveringAssemblyBlockProps) {
   const [rows, setRows] = useState<CoveringAssemblyRow[]>([]);
   const [applyStatus, setApplyStatus] = useState<string | null>(null);
   const [libraryItemId, setLibraryItemId] = useState("");
   const [entryTitle, setEntryTitle] = useState("");
   const [creating, setCreating] = useState(false);
+
+  useEffect(() => {
+    if (resetKey === undefined) {
+      setRows([]);
+      setEntryTitle("");
+      setApplyStatus(null);
+      setLibraryItemId("");
+      return;
+    }
+    setRows(initialRows);
+    setEntryTitle(initialTitle);
+    setApplyStatus(null);
+    setLibraryItemId("");
+  }, [resetKey, initialRows, initialTitle]);
 
   useEffect(() => {
     onRowsChange?.(rows);
@@ -182,8 +203,16 @@ export function FlooringAssemblyBlock({
     setRows((prev) => prev.filter((row) => row.id !== id));
   }
 
-  function updateRowNumber(id: string, field: "price" | "consumptionPerM2" | "packageSize" | "layerMm", value: string) {
-    updateRow(id, { [field]: normalizeNum(value) });
+  function updateRowNumber(
+    id: string,
+    field: "price" | "consumptionPerM2" | "packageSize" | "layerMm",
+    value: number | null,
+  ) {
+    if (field === "packageSize" || field === "layerMm") {
+      updateRow(id, { [field]: value ?? undefined });
+      return;
+    }
+    updateRow(id, { [field]: value ?? 0 });
   }
 
   function loadPreset() {
@@ -260,59 +289,51 @@ export function FlooringAssemblyBlock({
             onChange={(event) => updateRow(row.id, { unit: event.target.value })}
           />
         </td>
-        <td>
-          <input
+        <td className="ce-num">
+          <CatalogDecimalInput
             className="ce-cell-input ce-num"
-            type="number"
-            step="0.01"
-            value={row.price || ""}
-            onChange={(event) => updateRowNumber(row.id, "price", event.target.value)}
+            value={row.price}
+            onCommit={(value) => updateRowNumber(row.id, "price", value)}
           />
         </td>
-        <td>
+        <td className="ce-num">
           {fieldVisibility.consumption ? (
-            <input
+            <CatalogDecimalInput
               className="ce-cell-input ce-num"
-              type="number"
-              step="0.01"
-              value={row.consumptionPerM2 || ""}
-              onChange={(event) => updateRowNumber(row.id, "consumptionPerM2", event.target.value)}
+              value={row.consumptionPerM2}
+              onCommit={(value) => updateRowNumber(row.id, "consumptionPerM2", value)}
             />
           ) : showsFlatCoefficient ? (
-            <input
+            <CatalogDecimalInput
               className="ce-cell-input ce-num"
-              type="number"
-              step="0.01"
-              value={row.consumptionPerM2 || ""}
+              value={row.consumptionPerM2}
               placeholder="1"
               title={row.kind === "material" ? "Коэффициент запаса материала" : "Коэффициент сложности работы"}
-              onChange={(event) => updateRowNumber(row.id, "consumptionPerM2", event.target.value)}
+              onCommit={(value) => updateRowNumber(row.id, "consumptionPerM2", value)}
             />
           ) : (
             <span className="ce-readonly ce-na">—</span>
           )}
         </td>
-        <td>
+        <td className="ce-num">
           {fieldVisibility.packageSize ? (
-            <input
+            <CatalogDecimalInput
               className="ce-cell-input ce-num"
-              type="number"
-              step="0.01"
-              value={row.packageSize ?? ""}
-              onChange={(event) => updateRowNumber(row.id, "packageSize", event.target.value)}
+              nullable
+              value={row.packageSize}
+              onCommit={(value) => updateRowNumber(row.id, "packageSize", value)}
             />
           ) : (
             <span className="ce-readonly ce-na">—</span>
           )}
         </td>
-        <td>
+        <td className="ce-num">
           {fieldVisibility.layerMm ? (
-            <input
+            <CatalogDecimalInput
               className="ce-cell-input ce-num"
-              type="number"
-              step="0.01"
-              value={row.layerMm ?? ""}
-              onChange={(event) => updateRowNumber(row.id, "layerMm", event.target.value)}
+              nullable
+              value={row.layerMm}
+              onCommit={(value) => updateRowNumber(row.id, "layerMm", value)}
             />
           ) : (
             <span className="ce-readonly ce-na">—</span>
@@ -321,7 +342,7 @@ export function FlooringAssemblyBlock({
         <td className="ce-num ce-readonly ce-total-cell">
           {formatMoney(calculateAssemblyRowTotal(row))}
         </td>
-        <td>
+        <td className="ce-col-actions">
           <button
             type="button"
             className="ce-row-delete"
@@ -340,9 +361,9 @@ export function FlooringAssemblyBlock({
       <div className="ce-flooring-assembly-head">
         <div>
           <h4 className="ce-flooring-assembly-title">Сборка строки каталога</h4>
-          <p className="ce-flooring-assembly-hint">
-            Выберите, что собираем: покрытие, подготовку или укладку. Кубики остаются в библиотеке, итог переносится в форму ниже.
-          </p>
+          {loadingAssembly ? (
+            <p className="ce-flooring-assembly-hint">Загрузка состава…</p>
+          ) : null}
         </div>
         {rows.length > 0 ? (
           <div className="ce-flooring-assembly-toolbar">
@@ -415,9 +436,8 @@ export function FlooringAssemblyBlock({
           ))}
         </select>
         <button type="button" className="ce-btn ce-btn-sm" onClick={addLibraryItem} disabled={!selectedLibraryItem}>
-          Добавить в состав
+          + В состав
         </button>
-        <span className="ce-flooring-assembly-library-hint">После добавления строку можно править в таблице.</span>
       </div>
       <datalist id={rowLibraryDatalistId}>
         {availableRowLibraryItems.map((item) => (
@@ -481,48 +501,29 @@ export function FlooringAssemblyBlock({
       {rows.length > 0 ? (
         <>
           <div className="ce-flooring-assembly-summary">
-            <div className="ce-flooring-assembly-summary-item">
-              <span className="ce-flooring-assembly-summary-label">Работы</span>
-              <span className="ce-flooring-assembly-summary-value">
-                {formatMoney(aggregates.worksPerM2)} ₽/м²
-              </span>
-            </div>
-            <div className="ce-flooring-assembly-summary-item">
-              <span className="ce-flooring-assembly-summary-label">Материалы</span>
-              <span className="ce-flooring-assembly-summary-value">
-                {formatMoney(aggregates.materialPerM2)} ₽/м²
-              </span>
-            </div>
-            <div className="ce-flooring-assembly-summary-item">
-              <span className="ce-flooring-assembly-summary-label">Расходники</span>
-              <span className="ce-flooring-assembly-summary-value">
-                {formatMoney(aggregates.consumablesPerM2)} ₽/м²
-              </span>
-            </div>
-            <div className="ce-flooring-assembly-summary-item">
-              <span className="ce-flooring-assembly-summary-label">Инструмент</span>
-              <span className="ce-flooring-assembly-summary-value">
-                {formatMoney(aggregates.toolPerM2)} ₽/м²
-              </span>
-            </div>
-            <div className="ce-flooring-assembly-summary-item ce-flooring-assembly-summary-total">
-              <span className="ce-flooring-assembly-summary-label">Итого сборки</span>
-              <span className="ce-flooring-assembly-summary-value">{formatMoney(totalPerM2)} ₽/м²</span>
-            </div>
+            <span className="ce-flooring-assembly-summary-chip">
+              Раб. <strong>{formatMoney(aggregates.worksPerM2)}</strong>
+            </span>
+            <span className="ce-flooring-assembly-summary-chip">
+              Мат. <strong>{formatMoney(aggregates.materialPerM2)}</strong>
+            </span>
+            <span className="ce-flooring-assembly-summary-chip">
+              Расх. <strong>{formatMoney(aggregates.consumablesPerM2)}</strong>
+            </span>
+            <span className="ce-flooring-assembly-summary-chip">
+              Инстр. <strong>{formatMoney(aggregates.toolPerM2)}</strong>
+            </span>
+            <span className="ce-flooring-assembly-summary-chip ce-flooring-assembly-summary-total">
+              Итого <strong>{formatMoney(totalPerM2)} ₽/м²</strong>
+            </span>
+            {target === "covering"
+              ? recommendedEntries.map((entry) => (
+                  <span key={entry.label} className="ce-flooring-assembly-summary-chip ce-flooring-assembly-recommended">
+                    {entry.label} <strong>{formatMoney(entry.valuePerM2)}</strong>
+                  </span>
+                ))
+              : null}
           </div>
-
-          {target === "covering" ? (
-          <div className="ce-flooring-assembly-summary ce-flooring-assembly-recommended">
-            {recommendedEntries.map((entry) => (
-              <div key={entry.label} className="ce-flooring-assembly-summary-item">
-                <span className="ce-flooring-assembly-summary-label">{entry.label}</span>
-                <span className="ce-flooring-assembly-summary-value">
-                  {formatMoney(entry.valuePerM2)} ₽/m²
-                </span>
-              </div>
-            ))}
-          </div>
-          ) : null}
 
           <div className="ce-flooring-assembly-actions">
             {applyStatus ? (

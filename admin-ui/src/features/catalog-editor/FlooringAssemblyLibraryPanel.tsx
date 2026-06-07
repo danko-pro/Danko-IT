@@ -2,6 +2,7 @@ import type { Dispatch, FormEvent, SetStateAction } from "react";
 
 import { normalizeNum } from "./api/flooring-mappers";
 import type { FlooringAssemblyItemDraft, FlooringAssemblyItemDto } from "./api/flooring-types";
+import { CatalogDecimalInput } from "./CatalogDecimalInput";
 import {
   FLOORING_ASSEMBLY_FORMULAS,
   FLOORING_ASSEMBLY_LIBRARY_SECTIONS,
@@ -30,7 +31,7 @@ export type FlooringAssemblyLibraryPanelProps = {
   onCancelAssemblyEdit: () => void;
   onSubmitAssemblyItem: () => void;
   onAssemblyDraftChange: Dispatch<SetStateAction<FlooringAssemblyItemDraft>>;
-  onAssemblyNumberChange: (field: AssemblyNumberField, value: string) => void;
+  onAssemblyNumberChange: (field: AssemblyNumberField, value: number | null) => void;
   formatMoney: (value: number) => string;
 };
 
@@ -85,21 +86,40 @@ export function FlooringAssemblyLibraryPanel({
                 <tr key={item.id}>
                   <td className="ce-col-id ce-mono ce-readonly">{item.source_code}</td>
                   <td className="ce-readonly">{item.title}</td>
-                  <td className="ce-readonly">{getFlooringAssemblyLibrarySectionLabel(item.section)}</td>
-                  <td className="ce-readonly">{getAssemblyKindLabel(item.kind)}</td>
-                  <td className="ce-readonly">{getAssemblyFormulaCompactLabel(item.formula)}</td>
+                  <td className="ce-readonly" title={getFlooringAssemblyLibrarySectionLabel(item.section)}>
+                    {getFlooringAssemblyLibrarySectionLabel(item.section)}
+                  </td>
+                  <td className="ce-readonly" title={getAssemblyKindLabel(item.kind)}>
+                    {getAssemblyKindLabel(item.kind)}
+                  </td>
+                  <td
+                    className="ce-readonly"
+                    title={getAssemblyFormulaLabel(item.formula)}
+                  >
+                    {getAssemblyFormulaCompactLabel(item.formula)}
+                  </td>
                   <td className="ce-readonly">{item.unit}</td>
                   <td className="ce-num ce-readonly">{formatMoney(normalizeNum(item.price))}</td>
                   <td className="ce-num ce-readonly">{normalizeNum(item.consumption_per_m2)}</td>
                   <td className="ce-num ce-readonly">{item.package_size ?? "—"}</td>
                   <td className="ce-num ce-readonly">{item.layer_mm ?? "—"}</td>
-                  <td>
-                    <div className="ce-toolbar-group">
-                      <button type="button" className="ce-btn ce-btn-sm" onClick={() => onBeginEditAssemblyItem(item)}>
-                        Редактировать
+                  <td className="ce-col-actions">
+                    <div className="ce-row-actions">
+                      <button
+                        type="button"
+                        className="ce-row-action"
+                        title="Редактировать"
+                        onClick={() => onBeginEditAssemblyItem(item)}
+                      >
+                        Изм.
                       </button>
-                      <button type="button" className="ce-row-delete" onClick={() => onDeleteAssemblyItem(item)}>
-                        Удалить
+                      <button
+                        type="button"
+                        className="ce-row-action ce-row-action-danger"
+                        title="Удалить"
+                        onClick={() => onDeleteAssemblyItem(item)}
+                      >
+                        Удал.
                       </button>
                     </div>
                   </td>
@@ -141,7 +161,7 @@ export function FlooringAssemblyLibraryPanel({
                 </td>
                 <td>
                   <select
-                    className="ce-cell-input"
+                    className="ce-cell-input ce-cell-select"
                     value={assemblyDraft.section}
                     onChange={(event) =>
                       onAssemblyDraftChange((prev) => ({
@@ -159,7 +179,7 @@ export function FlooringAssemblyLibraryPanel({
                 </td>
                 <td>
                   <select
-                    className="ce-cell-input"
+                    className="ce-cell-input ce-cell-select"
                     value={assemblyDraft.kind}
                     onChange={(event) => {
                       const kind = event.target.value as CoveringAssemblyRowKind;
@@ -179,8 +199,9 @@ export function FlooringAssemblyLibraryPanel({
                 </td>
                 <td>
                   <select
-                    className="ce-cell-input"
+                    className="ce-cell-input ce-cell-select ce-cell-formula"
                     value={assemblyDraft.formula}
+                    title={getAssemblyFormulaLabel(assemblyDraft.formula)}
                     onChange={(event) =>
                       onAssemblyDraftChange((prev) => ({
                         ...prev,
@@ -189,8 +210,8 @@ export function FlooringAssemblyLibraryPanel({
                     }
                   >
                     {FLOORING_ASSEMBLY_FORMULAS.map((formula) => (
-                      <option key={formula} value={formula}>
-                        {getAssemblyFormulaLabel(formula)}
+                      <option key={formula} value={formula} title={getAssemblyFormulaLabel(formula)}>
+                        {getAssemblyFormulaCompactLabel(formula)}
                       </option>
                     ))}
                   </select>
@@ -202,60 +223,62 @@ export function FlooringAssemblyLibraryPanel({
                     onChange={(event) => onAssemblyDraftChange((prev) => ({ ...prev, unit: event.target.value }))}
                   />
                 </td>
-                <td>
-                  <input
+                <td className="ce-num">
+                  <CatalogDecimalInput
                     className="ce-cell-input ce-num"
-                    type="number"
-                    step="0.01"
-                    value={assemblyDraft.price || ""}
-                    onChange={(event) => onAssemblyNumberChange("price", event.target.value)}
+                    value={assemblyDraft.price}
+                    onCommit={(value) => onAssemblyNumberChange("price", value)}
                   />
                 </td>
-                <td>
-                  <input
+                <td className="ce-num">
+                  <CatalogDecimalInput
                     className="ce-cell-input ce-num"
-                    type="number"
-                    step="0.01"
-                    value={assemblyDraft.consumptionPerM2 || ""}
-                    onChange={(event) => onAssemblyNumberChange("consumptionPerM2", event.target.value)}
+                    value={assemblyDraft.consumptionPerM2}
+                    onCommit={(value) => onAssemblyNumberChange("consumptionPerM2", value)}
                   />
                 </td>
-                <td>
-                  <input
+                <td className="ce-num">
+                  <CatalogDecimalInput
                     className="ce-cell-input ce-num"
-                    type="number"
-                    step="0.01"
-                    value={assemblyDraft.packageSize ?? ""}
-                    onChange={(event) => onAssemblyNumberChange("packageSize", event.target.value)}
+                    nullable
+                    value={assemblyDraft.packageSize}
+                    onCommit={(value) => onAssemblyNumberChange("packageSize", value)}
                   />
                 </td>
-                <td>
-                  <input
+                <td className="ce-num">
+                  <CatalogDecimalInput
                     className="ce-cell-input ce-num"
-                    type="number"
-                    step="0.01"
-                    value={assemblyDraft.layerMm ?? ""}
-                    onChange={(event) => onAssemblyNumberChange("layerMm", event.target.value)}
+                    nullable
+                    value={assemblyDraft.layerMm}
+                    onCommit={(value) => onAssemblyNumberChange("layerMm", value)}
                   />
                 </td>
-                <td>
-                  <div className="ce-toolbar-group ce-flooring-library-actions">
+                <td className="ce-col-actions">
+                  <div className="ce-row-actions">
                     {editingAssemblyId ? (
                       <button
                         type="button"
-                        className="ce-btn ce-btn-sm"
+                        className="ce-row-action"
                         disabled={savingAssembly}
+                        title="Отменить"
                         onClick={onCancelAssemblyEdit}
                       >
-                        Отмена
+                        Отм.
                       </button>
                     ) : null}
                     <button
                       type="submit"
-                      className="ce-btn ce-btn-primary ce-btn-sm"
+                      className="ce-row-action ce-row-action-primary"
                       disabled={editingAssemblyId ? savingAssembly : creatingAssembly}
+                      title={editingAssemblyId ? "Сохранить" : "Создать"}
                     >
-                      {editingAssemblyId ? (savingAssembly ? "Запись…" : "Сохранить") : creatingAssembly ? "Запись…" : "Создать"}
+                      {editingAssemblyId
+                        ? savingAssembly
+                          ? "…"
+                          : "Сохр."
+                        : creatingAssembly
+                          ? "…"
+                          : "Созд."}
                     </button>
                   </div>
                 </td>

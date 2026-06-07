@@ -22,6 +22,7 @@ from supply_bot.admin_api.schemas.calculator import (
 )
 from supply_bot.admin_api.schemas.calculator_flooring import (
     CalculatorFlooringAssemblyItemPayload,
+    CalculatorFlooringCatalogAssemblyReplacePayload,
     CalculatorFlooringCoveringPayload,
     CalculatorFlooringLayoutPayload,
     CalculatorFlooringPreparationPayload,
@@ -73,6 +74,7 @@ __all__ = [
     "CalculatorDoorComponentCatalogPayload",
     "CalculatorFloorSectionPayload",
     "CalculatorFlooringAssemblyItemPayload",
+    "CalculatorFlooringCatalogAssemblyReplacePayload",
     "CalculatorFlooringCoveringPayload",
     "CalculatorFlooringLayoutPayload",
     "CalculatorFlooringPreparationPayload",

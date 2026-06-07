@@ -38,6 +38,8 @@ SQLITE_ESTIMATE_TABLES = {
     "estimate_ceiling_configs",
     "estimate_ceiling_rooms",
     "estimate_flooring_configs",
+    "estimate_flooring_catalog_assemblies",
+    "estimate_flooring_catalog_assembly_rows",
     "estimate_flooring_coverings",
     "estimate_flooring_layouts",
     "estimate_flooring_preparations",

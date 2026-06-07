@@ -221,8 +221,11 @@ class AdminProjectsCalculatorRouteTests(AdminProjectsRouteCase):
                 self.assertEqual(warm_floor_response.json()["warm_floor"]["summary"]["rooms_count"], 1)
 
                 flooring_covering_response = client.post(
-                    "/api/calculator/flooring/coverings",
-                    json={"title": "Керамогранит Тест 01"},
+                    "/api/calculator/flooring/coverings/from-flat-bootstrap",
+                    json={
+                        "title": "Керамогранит Тест 01",
+                        "material_price_per_m2": 1200,
+                    },
                 )
                 self.assertEqual(flooring_covering_response.status_code, 200)
                 flooring_covering_id = int(flooring_covering_response.json()["id"])
@@ -427,7 +430,7 @@ class AdminProjectsCalculatorRouteTests(AdminProjectsRouteCase):
                 self.assertEqual(update_room_response.status_code, 200)
 
                 covering_response = client.post(
-                    "/api/calculator/flooring/coverings",
+                    "/api/calculator/flooring/coverings/from-flat-bootstrap",
                     json={
                         "title": "Smoke covering",
                         "material_price_per_m2": 1200,
@@ -463,7 +466,7 @@ class AdminProjectsCalculatorRouteTests(AdminProjectsRouteCase):
                 covering_id = int(covering_response.json()["id"])
 
                 preparation_response = client.post(
-                    "/api/calculator/flooring/preparations",
+                    "/api/calculator/flooring/preparations/from-flat-bootstrap",
                     json={
                         "title": "Smoke preparation",
                         "labor_price_per_m2": 180,
@@ -477,9 +480,10 @@ class AdminProjectsCalculatorRouteTests(AdminProjectsRouteCase):
                 preparation_id = int(preparation_response.json()["id"])
 
                 layout_response = client.post(
-                    "/api/calculator/flooring/layouts",
+                    "/api/calculator/flooring/layouts/from-flat-bootstrap",
                     json={
                         "title": "Smoke layout",
+                        "labor_price_per_m2": 420,
                         "labor_multiplier": 1.15,
                         "extra_waste_percent": 3,
                     },

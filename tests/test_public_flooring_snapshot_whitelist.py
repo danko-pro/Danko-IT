@@ -310,7 +310,11 @@ class FlooringSnapshotSpecLinesTests(unittest.IsolatedAsyncioTestCase):
             "layout",
             layout_id,
             "Straight layout package",
-            [_work_assembly_row(title="Lay straight", public_title="Укладка прямая", price=1000, consumption_per_m2=1.1)],
+            [
+                _work_assembly_row(
+                    title="Lay straight", public_title="Укладка прямая", price=1000, consumption_per_m2=1.1
+                )
+            ],
         )
         payload = await BuildFlooringSnapshotUseCase(self.repository).build_public()
         primer = next(item for item in payload["preparations"] if item["code"] == "primer")
@@ -319,7 +323,9 @@ class FlooringSnapshotSpecLinesTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(straight["specLines"][0]["title"], "Укладка прямая")
 
     async def test_spec_lines_contain_no_forbidden_keys(self) -> None:
-        covering_id = await self.repository.create_estimate_flooring_covering(**_minimal_covering_kwargs(title="Ламинат"))
+        covering_id = await self.repository.create_estimate_flooring_covering(
+            **_minimal_covering_kwargs(title="Ламинат")
+        )
         await self.repository.replace_estimate_flooring_catalog_assembly(
             "covering",
             covering_id,

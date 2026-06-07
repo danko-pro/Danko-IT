@@ -732,7 +732,7 @@ class AdminCalculatorFlooringCatalogAssemblyRouteTests(AdminProjectsRouteCase):
                 )
                 self.assertEqual(put.status_code, 200)
 
-                saved = client.get(f"/api/calculator/flooring/preparations").json()
+                saved = client.get("/api/calculator/flooring/preparations").json()
                 row = next(item for item in saved if item["id"] == preparation["id"])
                 self.assertEqual(row["labor_price_per_m2"], 1080)
                 self.assertEqual(row["material_price_per_m2"], 0)

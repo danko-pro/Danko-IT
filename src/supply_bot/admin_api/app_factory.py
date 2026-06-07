@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import asyncio
 import hashlib
@@ -29,6 +29,7 @@ from supply_bot.storage_auth.tables import app_users
 from supply_bot.storage_catalog import SqlAlchemyCatalogRepository
 from supply_bot.storage_dashboard import SqlAlchemyDashboardReadModel
 from supply_bot.storage_estimates.flooring_assembly_seed import ensure_global_flooring_assembly_defaults
+from supply_bot.storage_estimates.flooring_catalog_seed import ensure_global_flooring_catalog_defaults
 from supply_bot.storage_estimates.flooring_package_metadata_backfill_seed import (
     ensure_flooring_package_metadata_backfill,
 )
@@ -265,6 +266,7 @@ def _build_admin_lifespan(
         # Глобальные дефолты каталога сантехники (owner_user_id = NULL) — идемпотентный seed (A5).
         await ensure_global_plumbing_defaults(database_runtime.session_factory)
         await ensure_global_warm_floor_defaults(database_runtime.session_factory)
+        await ensure_global_flooring_catalog_defaults(database_runtime.session_factory)
         await ensure_global_flooring_assembly_defaults(database_runtime.session_factory)
         await ensure_global_flooring_synthetic_catalog_assemblies(database_runtime.session_factory)
         await ensure_flooring_package_metadata_backfill(database_runtime.session_factory)
@@ -325,6 +327,7 @@ async def _claim_legacy_estimate_runtime_owner(
             )
         await session.commit()
 
+
 def _resolve_system_project_owner_id(settings: Settings) -> int:
     raw_key = str(settings.database_path.resolve())
     digest = hashlib.sha256(raw_key.encode("utf-8")).hexdigest()
@@ -333,9 +336,7 @@ def _resolve_system_project_owner_id(settings: Settings) -> int:
 
 async def _ensure_system_project_owner(database_runtime: DatabaseRuntime, *, owner_id: int) -> None:
     async with database_runtime.session_factory() as session:
-        existing = await session.execute(
-            select(app_users.c.id).where(app_users.c.id == owner_id)
-        )
+        existing = await session.execute(select(app_users.c.id).where(app_users.c.id == owner_id))
         if existing.scalar_one_or_none() is not None:
             return
         await session.execute(
@@ -368,5 +369,3 @@ __all__ = [
     "main",
     "resolve_admin_cors_origins",
 ]
-
-

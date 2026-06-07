@@ -201,8 +201,7 @@ EXPECTED_PLINTH_CODES = frozenset({"none", "duropolymer", "painted_mdf"})
 DEFAULT_PUBLIC_UNDERLAY_PRICE_PER_M2 = 220.0
 
 _DEFAULT_LAYOUT_LABOR_BY_CODE = {
-    str(item["code"]): float(item["laborPricePerM2"])
-    for item in DEFAULT_PUBLIC_FLOORING_SNAPSHOT["layouts"]
+    str(item["code"]): float(item["laborPricePerM2"]) for item in DEFAULT_PUBLIC_FLOORING_SNAPSHOT["layouts"]
 }
 
 _COVERING_TITLE_TO_CODE: dict[str, str] = {

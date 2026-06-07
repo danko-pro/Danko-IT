@@ -9,6 +9,9 @@ from supply_bot.estimates.application.flooring_catalog_assembly import (
     validate_flooring_catalog_assembly_target_kind,
     validate_flooring_package_for_publication,
 )
+from supply_bot.estimates.application.flooring_consumable_package_defaults import (
+    consumable_package_defaults_for_title,
+)
 from supply_bot.estimates.application.flooring_package_projection import (
     build_flooring_package_projection,
     catalog_update_values_from_projection,
@@ -260,6 +263,23 @@ def _consumable_row_from_flat_fields(
         return None
 
     if consumption > 0 and price > 0:
+        package_defaults = consumable_package_defaults_for_title(title)
+        if package_defaults is not None:
+            formula, package_size = package_defaults
+            return _base_row(
+                section="consumable",
+                kind="consumable",
+                formula=formula,
+                title=title,
+                unit=unit,
+                price=round(price * package_size, 6),
+                consumption_per_m2=consumption,
+                package_size=package_size,
+                public_category="consumables",
+                public_title=title,
+                sort_order=sort_order,
+            )
+
         return _base_row(
             section="consumable",
             kind="consumable",
@@ -299,6 +319,7 @@ def _base_row(
     public_category: str,
     public_title: str,
     sort_order: int,
+    package_size: float | None = None,
 ) -> dict[str, Any]:
     return {
         "assembly_item_id": None,
@@ -309,7 +330,7 @@ def _base_row(
         "unit": unit,
         "price": price,
         "consumption_per_m2": consumption_per_m2,
-        "package_size": None,
+        "package_size": package_size,
         "layer_mm": None,
         "sort_order": sort_order,
         "is_enabled": True,

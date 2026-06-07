@@ -10,6 +10,8 @@
 
 Если `npm run build` запускается без remote base URL, prebuild перезаписывает `flooring.snapshot.json` **локальным seed** (`scripts/flooring-v2-package-seed.json`). Backend при этом может уже отдавать актуальный package-first snapshot — сайт будет показывать устаревший bundled seed.
 
+Следующий запланированный этап — **PF7b Runtime snapshot refresh on page load**: сайт стартует с bundled JSON как fallback, но при загрузке страницы один раз пробует получить свежий public snapshot из backend. Если remote snapshot валиден, он заменяет bundled данные в памяти; если backend недоступен или payload invalid, сайт остаётся на bundled snapshot. Периодический polling на первом этапе не нужен.
+
 ## Режимы `generate-snapshot.js`
 
 | Режим | Как включить | Поведение |

@@ -118,7 +118,7 @@ function buildProcurementLineFromEntries(
 
   if (canUsePackage) {
     const purchaseQuantity = aggregatePurchaseQuantity(entries, line, packageSize, purchaseAggregation);
-    const purchaseUnit = line.packageUnit?.trim() || "уп.";
+    const purchaseUnit = "уп.";
 
     return {
       aggregationKey,

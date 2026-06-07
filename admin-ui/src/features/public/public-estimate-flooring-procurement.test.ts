@@ -103,7 +103,7 @@ describe("buildFlooringProcurementSummary", () => {
     const rawQuantity = area * quantityPerBasis * (purchaseArea / area);
     expect(line.rawQuantity).toBeCloseTo(rawQuantity, 6);
     expect(line.purchaseQuantity).toBe(Math.ceil(rawQuantity / packageSize));
-    expect(line.purchaseUnit).toBe("kg");
+    expect(line.purchaseUnit).toBe("уп.");
     expect(line.total).toBe(line.purchaseQuantity * packagePrice);
     expect(line.purchaseMode).toBe("package");
   });

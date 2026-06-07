@@ -114,6 +114,24 @@ class BuildSyntheticFlooringCatalogAssemblyTests(unittest.TestCase):
         self.assertEqual(updates["labor_price_per_m2"], expected["laborPricePerM2"])
         self.assertEqual(updates["labor_multiplier"], expected["laborMultiplier"])
 
+    def test_covering_consumables_emit_package_procurement_metadata(self) -> None:
+        row = _covering_kwargs()
+        payload = build_synthetic_flooring_catalog_assembly("covering", row)
+        projection = build_flooring_package_projection("covering", payload.rows)
+
+        glue = next(line for line in projection["specLines"] if line["title"] == "Клей")
+        svp = next(line for line in projection["specLines"] if line["title"] == "СВП")
+
+        self.assertEqual(glue["purchaseMode"], "package")
+        self.assertEqual(glue["packageSize"], 25)
+        self.assertEqual(glue["packagePrice"], 40 * 25)
+        self.assertEqual(glue["unitPrice"], 40)
+
+        self.assertEqual(svp["purchaseMode"], "package")
+        self.assertEqual(svp["packageSize"], 500)
+        self.assertEqual(svp["packagePrice"], 6 * 500)
+        self.assertEqual(svp["unitPrice"], 6)
+
     def test_seed_defaults_project_to_equivalent_flat_buckets(self) -> None:
         for seed in FLOORING_COVERING_DEFAULTS:
             row = {

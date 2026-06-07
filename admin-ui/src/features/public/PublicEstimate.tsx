@@ -10,6 +10,7 @@ import {
   wallsPreparationOptions,
 } from "./estimate/defaults";
 import { useEstimateSpecModal } from "./estimate/useEstimateSpecModal";
+import { buildPublicEstimateDocument } from "./estimate/public-estimate-document";
 import { useEstimatePrintActions } from "./estimate/useEstimatePrintActions";
 import {
   buildCompactVolumeItems,
@@ -46,6 +47,7 @@ import { EstimatePassportSidebar } from "./components/estimate/EstimatePassportS
 import { EstimateRail } from "./components/estimate/EstimateRail";
 import { EstimateSpecModal } from "./components/estimate/EstimateSpecModal";
 import { EstimateVolumesPrint } from "./components/estimate/EstimateVolumesPrint";
+import { PublicEstimatePdfDocument } from "./components/estimate/PublicEstimatePdfDocument";
 import { CostsSection } from "./sections/costs/CostsSection";
 import { DoorsSection } from "./sections/doors/DoorsSection";
 import { ElectricSection } from "./sections/electric/ElectricSection";
@@ -298,11 +300,39 @@ export function PublicEstimate() {
     plumbingResult,
     flooringResult,
   });
-  const { handlePrintEstimate, handlePrintVolumes } = useEstimatePrintActions();
+  const estimatePdfDocument = useMemo(
+    () =>
+      buildPublicEstimateDocument({
+        result: estimateResult,
+        context: {
+          floorArea: totals.floorArea,
+          objectMeta,
+          flooringResult: {
+            specificationSection: flooringResult.specificationSection,
+            procurementLines: flooringResult.procurementLines,
+          },
+          plumbingOptions,
+          plumbingResult,
+          title: "Смета",
+        },
+      }),
+    [
+      estimateResult,
+      flooringResult.procurementLines,
+      flooringResult.specificationSection,
+      objectMeta,
+      plumbingOptions,
+      plumbingResult,
+      totals.floorArea,
+    ],
+  );
+  const { handlePrintEstimate, handlePrintVolumes, isEstimatePdfPrintVisible } = useEstimatePrintActions();
 
   return (
-    <main className="public-landing public-estimate-page">
-      <header className="public-estimate-header">
+    <>
+      <div className="public-estimate-screen-root">
+        <main className="public-landing public-estimate-page">
+          <header className="public-estimate-header">
         <a className="public-brand public-privacy-brand" href="/" aria-label="Danko, на главную">
           <img className="public-brand-mark" src="/brand/danko-logo-mark.png" alt="" aria-hidden="true" />
           <span className="public-brand-copy">
@@ -589,9 +619,15 @@ export function PublicEstimate() {
         onNavigateToCosts={() => scrollToEstimateSection("estimate-costs")}
       />
 
-      <EstimateVolumesPrint summaryItems={summaryItems} />
+          <EstimateVolumesPrint summaryItems={summaryItems} />
 
-      <EstimateSpecModal data={specModalData} onClose={closeSpecModal} />
-    </main>
+          <EstimateSpecModal data={specModalData} onClose={closeSpecModal} />
+        </main>
+      </div>
+
+      {isEstimatePdfPrintVisible ? (
+        <PublicEstimatePdfDocument document={estimatePdfDocument} />
+      ) : null}
+    </>
   );
 }

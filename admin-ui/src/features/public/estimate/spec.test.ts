@@ -1,4 +1,15 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { buildPublicEstimateResult } from "./engine";
+import {
+  buildPublicEstimateDocument,
+  documentToEstimateSpecSections,
+} from "./public-estimate-document";
+import { calculateFlooring, type FlooringOptions, type FlooringRoomInput } from "../public-estimate-flooring";
+import {
+  getFlooringGoldenSnapshotCatalog,
+  getFlooringGoldenSnapshotRates,
+} from "../flooring-golden.fixture";
+import * as flooringSnapshotModule from "../public-flooring-snapshot";
 import { createEmptyEstimateResult, createEstimateSection } from "../public-estimate-model";
 import type { FlooringCalculationResult } from "../public-estimate-flooring";
 import type { PlumbingCalculationResult, PlumbingOptions } from "../public-estimate-plumbing";
@@ -8,6 +19,71 @@ import {
   buildPlumbingSpecExpansionOptions,
   mapSectionsForSpec,
 } from "./spec";
+
+const flooringRoom: FlooringRoomInput = {
+  roomId: "room",
+  roomName: "Комната",
+  area: 16,
+  perimeter: 16.8,
+  plinthLength: 15.9,
+  coveringType: "laminate",
+  preparationType: "none",
+  layoutType: "straight",
+  isIncluded: true,
+};
+
+const flooringOptions: FlooringOptions = {
+  includePlinth: true,
+  plinthType: "duropolymer",
+  includeThresholds: false,
+  thresholdCount: 0,
+  includeDemolition: false,
+};
+
+function installFlooringGoldenSnapshotMocks() {
+  vi.spyOn(flooringSnapshotModule, "getFlooringSnapshotRates").mockReturnValue(
+    getFlooringGoldenSnapshotRates(),
+  );
+  vi.spyOn(flooringSnapshotModule, "getFlooringSnapshotCatalog").mockReturnValue(
+    getFlooringGoldenSnapshotCatalog(),
+  );
+}
+
+function buildGoldenFlooringModalSections() {
+  const flooringResult = calculateFlooring([flooringRoom], flooringOptions);
+  const estimateResult = buildPublicEstimateResult({
+    warmFloorResult: { selectedArea: 0, section: createEstimateSection("warm_floor", "Тёплый пол", []) },
+    flooringResult: { flooringArea: flooringResult.flooringArea, section: flooringResult.section },
+    wallsResult: { wallFinishArea: 0, section: createEstimateSection("walls", "Стены", []) },
+    ceilingResult: { ceilingArea: 0, section: createEstimateSection("ceiling", "Потолки", []) },
+    electricResult: { section: createEstimateSection("electric", "Электрика", []) },
+    plumbingResult: { section: createEstimateSection("plumbing", "Сантехника", []) },
+    doorsResult: { section: createEstimateSection("doors", "Двери", []) },
+    completionResult: { section: createEstimateSection("completion", "Отделка", []) },
+    appliancesResult: { section: createEstimateSection("appliances", "Техника", []) },
+    looseFurnitureResult: { section: createEstimateSection("loose_furniture", "Мебель", []) },
+    homeGoodsResult: { section: createEstimateSection("home_goods", "Товары", []) },
+    floorArea: 16,
+  });
+
+  const document = buildPublicEstimateDocument({
+    result: estimateResult,
+    context: {
+      floorArea: 16,
+      flooringResult: {
+        specificationSection: flooringResult.specificationSection,
+        procurementLines: flooringResult.procurementLines,
+      },
+      modalState: { kind: "section", sectionId: "flooring" },
+    },
+  });
+
+  return {
+    flooringResult,
+    legacySections: estimateResult.sections,
+    sections: documentToEstimateSpecSections(document, estimateResult.sections),
+  };
+}
 
 function emptyFlooringResult(
   overrides: Partial<FlooringCalculationResult> = {},
@@ -291,5 +367,102 @@ describe("mapSectionsForSpec", () => {
     expect(result[0]).toBe(wallsSection);
     expect(result[1]?.items[0]?.id).toBe("flooring-spec-line");
     expect(result[1]?.totals.total).toBe(flatSection.totals.total);
+  });
+});
+
+describe("documentToEstimateSpecSections presentationGroups (PF5c3)", () => {
+  beforeEach(() => {
+    installFlooringGoldenSnapshotMocks();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("копирует presentationGroups для flooring в modal data", () => {
+    const { sections } = buildGoldenFlooringModalSections();
+    const flooring = sections.find((section) => section.id === "flooring");
+
+    expect(flooring?.presentationGroups).toHaveLength(2);
+    expect(flooring?.presentationGroups?.map((group) => group.title)).toEqual([
+      "Работы",
+      "Материалы и расходники",
+    ]);
+  });
+
+  it("ставит работы перед материалами и агрегирует без room-suffix в группах", () => {
+    const { sections } = buildGoldenFlooringModalSections();
+    const flooring = sections.find((section) => section.id === "flooring");
+    const groups = flooring?.presentationGroups ?? [];
+
+    expect(groups[0]?.kind).toBe("works");
+    expect(groups[1]?.kind).toBe("materials");
+
+    const aggregatedLineCount = groups.reduce((sum, group) => sum + group.lines.length, 0);
+    const roomSuffixedFlatItems = flooring?.items.filter((item) => item.title.includes(" — ")) ?? [];
+
+    expect(aggregatedLineCount).toBeGreaterThan(0);
+    expect(roomSuffixedFlatItems.length).toBeGreaterThan(0);
+    expect(groups.every((group) => group.lines.every((line) => !line.title.includes(" — ")))).toBe(
+      true,
+    );
+    expect(flooring?.items.some((item) => item.title.includes(" — "))).toBe(true);
+  });
+
+  it("не добавляет presentationGroups для не-flooring разделов", () => {
+    const wallsSection = createEstimateSection("walls", "Стены", []);
+    const document = buildPublicEstimateDocument({
+      result: { sections: [wallsSection], totals: wallsSection.totals },
+      context: { floorArea: 0, modalState: { kind: "section", sectionId: "walls" } },
+    });
+
+    const [adapted] = documentToEstimateSpecSections(document, [wallsSection]);
+
+    expect(adapted?.presentationGroups).toBeUndefined();
+  });
+
+  it("без presentationGroups оставляет плоские items для fallback overlay", () => {
+    const flatSection = createEstimateSection("flooring", "Полы", [
+      {
+        id: "flooring-line",
+        sectionId: "flooring",
+        title: "Позиция",
+        category: "works",
+        quantity: 1,
+        unit: "m2",
+        unitPrice: 100,
+        total: 100,
+        isIncluded: true,
+      },
+    ]);
+    const document = buildPublicEstimateDocument({
+      result: { sections: [flatSection], totals: flatSection.totals },
+      context: {
+        floorArea: 16,
+        flooringResult: { specificationSection: flatSection, procurementLines: [] },
+        modalState: { kind: "section", sectionId: "flooring" },
+      },
+    });
+
+    const emptyGroupsDocument = {
+      ...document,
+      sections: document.sections.map((section) =>
+        section.sectionId === "flooring" ? { ...section, presentationGroups: [] } : section,
+      ),
+    };
+    const [adapted] = documentToEstimateSpecSections(emptyGroupsDocument, [flatSection]);
+
+    expect(adapted?.presentationGroups).toBeUndefined();
+    expect(adapted?.items).toHaveLength(1);
+    expect(adapted?.items[0]?.id).toBe("flooring-line");
+  });
+
+  it("сохраняет legacy totals для flooring modal footer", () => {
+    const { flooringResult, legacySections, sections } = buildGoldenFlooringModalSections();
+    const flooring = sections.find((section) => section.id === "flooring");
+    const legacy = legacySections.find((section) => section.id === "flooring");
+
+    expect(flooring?.totals.total).toBe(legacy?.totals.total);
+    expect(flooring?.totals.total).toBe(flooringResult.section.totals.total);
   });
 });

@@ -1,7 +1,9 @@
-import { useCallback, useEffect, useId, useRef } from "react";
+import { useEffect, useId, useRef } from "react";
 import { createPortal } from "react-dom";
-import { buildSpecExportFilename, downloadSpecExportCsv } from "./estimate/spec-export";
+import type { AggregatedClientLine } from "./estimate/aggregate-client-lines";
+import { formatDisplayUnit, formatPresentationNote } from "./estimate/format";
 import type { FlooringProcurementLine } from "./public-estimate-flooring-procurement";
+import type { EstimateLineItem } from "./public-estimate-model";
 import type { EstimateSpecSection } from "./public-estimate-plumbing-zones";
 
 type EstimateSpecOverlayProps = {
@@ -16,6 +18,57 @@ type EstimateSpecOverlayProps = {
 
 const FOCUSABLE_SELECTOR =
   'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+type SpecModalLine = Pick<
+  EstimateLineItem,
+  "id" | "title" | "quantity" | "unit" | "unitPrice" | "total" | "note"
+>;
+
+function toSpecModalLine(line: EstimateLineItem | AggregatedClientLine): SpecModalLine {
+  const aggregated = line as AggregatedClientLine;
+  const note = aggregated.presentationNote ?? line.note;
+
+  return {
+    id: line.id,
+    title: line.title,
+    quantity: aggregated.displayQuantity ?? line.quantity,
+    unit: formatDisplayUnit(aggregated.displayUnit ?? line.unit),
+    unitPrice: aggregated.displayUnitPrice ?? line.unitPrice,
+    total: line.total,
+    note: note ? formatPresentationNote(note) : note,
+  };
+}
+
+function resolvePresentationGroups(section: EstimateSpecSection) {
+  return section.presentationGroups?.filter((group) => group.lines.length > 0) ?? [];
+}
+
+function SpecModalLineRow({
+  item,
+  formatMoney,
+  formatQuantity,
+}: {
+  item: SpecModalLine;
+  formatMoney: (value: number) => string;
+  formatQuantity: (value: number) => string;
+}) {
+  const pricePending = item.note === "уточняется";
+
+  return (
+    <li key={item.id}>
+      <span className="public-estimate-spec-modal-line-title">{item.title}</span>
+      <span className="public-estimate-spec-modal-line-meta">
+        {formatQuantity(item.quantity)} {item.unit}
+        {pricePending ? (
+          <> · уточняется</>
+        ) : (
+          <> × {formatMoney(item.unitPrice)}</>
+        )}
+      </span>
+      <strong>{pricePending ? "—" : formatMoney(item.total)}</strong>
+    </li>
+  );
+}
 
 export function EstimateSpecOverlay({
   title,
@@ -91,10 +144,6 @@ export function EstimateSpecOverlay({
   const grouped = sections.length > 1;
   const grandTotal = sections.reduce((sum, section) => sum + section.totals.total, 0);
 
-  const handleExportCsv = useCallback(() => {
-    downloadSpecExportCsv(sections, buildSpecExportFilename(title), procurementLines);
-  }, [procurementLines, sections, title]);
-
   const overlay = (
     <div
       className="public-estimate-spec-overlay"
@@ -145,45 +194,57 @@ export function EstimateSpecOverlay({
           {sections.length === 0 ? (
             <p className="public-estimate-spec-modal-empty">В этом разделе пока нет позиций.</p>
           ) : (
-            sections.map((section) => (
-              <div className="public-estimate-spec-modal-section" key={section.id}>
-                {grouped ? (
-                  <div className="public-estimate-spec-modal-section-head">
-                    <h3>{section.title}</h3>
-                    <strong>{formatMoney(section.totals.total)}</strong>
-                  </div>
-                ) : null}
-                {section.specIntro ? (
-                  <p className="public-estimate-spec-modal-intro">{section.specIntro}</p>
-                ) : null}
-                <ul className="public-estimate-spec-modal-list">
-                  {section.items.map((item) => {
-                    const pricePending = item.note === "уточняется";
-                    return (
-                      <li key={item.id}>
-                        <span className="public-estimate-spec-modal-line-title">{item.title}</span>
-                        <span className="public-estimate-spec-modal-line-meta">
-                          {formatQuantity(item.quantity)} {item.unit}
-                          {pricePending ? (
-                            <> · уточняется</>
-                          ) : (
-                            <> × {formatMoney(item.unitPrice)}</>
-                          )}
-                        </span>
-                        <strong>{pricePending ? "—" : formatMoney(item.total)}</strong>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </div>
-            ))
+            sections.map((section) => {
+              const presentationGroups = resolvePresentationGroups(section);
+
+              return (
+                <div className="public-estimate-spec-modal-section" key={section.id}>
+                  {grouped ? (
+                    <div className="public-estimate-spec-modal-section-head">
+                      <h3>{section.title}</h3>
+                      <strong>{formatMoney(section.totals.total)}</strong>
+                    </div>
+                  ) : null}
+                  {section.specIntro ? (
+                    <p className="public-estimate-spec-modal-intro">{section.specIntro}</p>
+                  ) : null}
+                  {presentationGroups.length > 0 ? (
+                    presentationGroups.map((group) => (
+                      <div key={group.kind}>
+                        <div className="public-estimate-spec-modal-section-head">
+                          <h3>{group.title}</h3>
+                        </div>
+                        <ul className="public-estimate-spec-modal-list">
+                          {group.lines.map((line) => (
+                            <SpecModalLineRow
+                              key={line.id}
+                              item={toSpecModalLine(line)}
+                              formatMoney={formatMoney}
+                              formatQuantity={formatQuantity}
+                            />
+                          ))}
+                        </ul>
+                      </div>
+                    ))
+                  ) : (
+                    <ul className="public-estimate-spec-modal-list">
+                      {section.items.map((item) => (
+                        <SpecModalLineRow
+                          key={item.id}
+                          item={toSpecModalLine(item)}
+                          formatMoney={formatMoney}
+                          formatQuantity={formatQuantity}
+                        />
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              );
+            })
           )}
         </div>
 
         <div className="public-estimate-spec-modal-foot">
-          <button type="button" className="public-estimate-spec-modal-back" onClick={handleExportCsv}>
-            Скачать CSV
-          </button>
           <div style={{ display: "flex", alignItems: "center", gap: "0.7rem", marginLeft: "auto" }}>
             <span>{grouped ? "Итого по всем разделам" : "Итого по разделу"}</span>
             <strong>{formatMoney(grandTotal)}</strong>

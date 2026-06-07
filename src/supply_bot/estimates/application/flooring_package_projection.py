@@ -271,8 +271,30 @@ def _validate_rows_for_target(target_kind: str, rows: Sequence[Mapping[str, Any]
             raise ValidationError(f"Invalid flooring package row kind for {target_kind}")
         _normalize_formula(row.get("formula"))
         _public_category(row, kind)
+        _validate_public_unit(row)
+        if target_kind == "layout" and kind == "work" and _number(row.get("price")) <= 0:
+            raise ValidationError("Floor layout assembly work rows require price > 0")
         if not _public_title(row):
             raise ValidationError("Flooring package row title is required")
+
+
+def _validate_public_unit(row: Mapping[str, Any]) -> None:
+    unit = _text(row.get("unit"))
+    if not unit:
+        raise ValidationError("Flooring package row unit is required")
+    if _is_numeric_unit(unit):
+        raise ValidationError("Flooring package row unit must be a measurement unit")
+
+
+def _is_numeric_unit(unit: str) -> bool:
+    normalized = unit.strip().replace(",", ".")
+    if not normalized:
+        return False
+    try:
+        float(normalized)
+    except ValueError:
+        return False
+    return True
 
 
 def _flat_per_m2_coefficient(kind: str, consumption: float) -> float:

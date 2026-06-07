@@ -527,7 +527,7 @@ describe("catalog editor architecture", () => {
     expect(useFlooringCatalogPanelSource).toContain("listFlooringAssemblyItems");
     expect(useFlooringCatalogPanelSource).toContain("createFlooringCatalogRowFromAssembly");
     expect(useFlooringCatalogPanelSource).toContain("updateFlooringLayout");
-    expect(flooringCatalogAssemblyCreateRowSource).toContain("createFlooringCovering");
+    expect(flooringCatalogAssemblyCreateRowSource).toContain("createFlooringCoveringFromAssembly");
   });
 
   it("keeps pure catalog helpers in flooring-catalog-model", () => {

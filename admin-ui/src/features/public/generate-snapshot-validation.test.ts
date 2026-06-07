@@ -6,7 +6,10 @@ import {
   buildWarmFloorSnapshotUrl,
   findForbiddenKeys,
   FLOORING_V2_SEED,
+  parseSnapshotBaseUrlArg,
+  parseSnapshotMode,
   resolveRemoteBaseUrl,
+  resolveSnapshotRunPlan,
   validateFlooringSnapshotPayload,
   validateSnapshotPayload,
   validateWarmFloorSnapshotPayload,
@@ -103,22 +106,55 @@ describe("generate-snapshot validation", () => {
     expect(validateFlooringSnapshotPayload(FLOORING_V2_SEED)).toEqual({ ok: true });
   });
 
-  it("accepts legacy flooring v1 payloads", () => {
+  it("accepts legacy flooring v1 payloads without specLines", () => {
     const legacyPayload = {
       ...FLOORING_V2_SEED,
       version: "flooring-v1",
-      coverings: FLOORING_V2_SEED.coverings.map((item) => ({ ...item, laborPricePerM2: 1000 })),
-      layouts: FLOORING_V2_SEED.layouts.map(({ laborPricePerM2: _legacy, ...item }) => item),
+      coverings: FLOORING_V2_SEED.coverings.map(({ specLines: _specLines, ...item }) => ({
+        ...item,
+        laborPricePerM2: 1000,
+      })),
+      layouts: FLOORING_V2_SEED.layouts.map(({ specLines: _specLines, laborPricePerM2: _legacy, ...item }) => item),
+      preparations: FLOORING_V2_SEED.preparations.map(({ specLines: _specLines, ...item }) => item),
     };
 
     expect(validateFlooringSnapshotPayload(legacyPayload)).toEqual({ ok: true });
   });
 
-  it("rejects flooring payloads missing required catalog codes", () => {
+  it("accepts flooring-v2 payloads without legacy seed codes", () => {
     expect(
       validateFlooringSnapshotPayload({
         ...FLOORING_V2_SEED,
         coverings: FLOORING_V2_SEED.coverings.filter((item) => item.code !== "porcelain"),
+      }),
+    ).toEqual({ ok: true });
+  });
+
+  it("rejects flooring-v2 payloads with empty package sections", () => {
+    expect(
+      validateFlooringSnapshotPayload({
+        ...FLOORING_V2_SEED,
+        coverings: [],
+      }),
+    ).toEqual({
+      ok: false,
+      reason: "coverings must contain at least one item",
+    });
+  });
+
+  it("keeps required seed codes for legacy flooring-v1 payloads", () => {
+    expect(
+      validateFlooringSnapshotPayload({
+        ...FLOORING_V2_SEED,
+        version: "flooring-v1",
+        coverings: FLOORING_V2_SEED.coverings
+          .filter((item) => item.code !== "porcelain")
+          .map(({ specLines: _specLines, ...item }) => ({
+            ...item,
+            laborPricePerM2: 1000,
+          })),
+        layouts: FLOORING_V2_SEED.layouts.map(({ specLines: _specLines, laborPricePerM2: _legacy, ...item }) => item),
+        preparations: FLOORING_V2_SEED.preparations.map(({ specLines: _specLines, ...item }) => item),
       }),
     ).toEqual({
       ok: false,
@@ -202,8 +238,16 @@ describe("generate-snapshot validation", () => {
     expect(validateFlooringSnapshotPayload(payload)).toEqual({ ok: true });
   });
 
-  it("accepts v2 catalog rows without specLines", () => {
-    expect(validateFlooringSnapshotPayload(FLOORING_V2_SEED)).toEqual({ ok: true });
+  it("rejects flooring-v2 catalog rows without specLines", () => {
+    const payload = {
+      ...FLOORING_V2_SEED,
+      coverings: FLOORING_V2_SEED.coverings.map(({ specLines: _specLines, ...item }) => item),
+    };
+
+    expect(validateFlooringSnapshotPayload(payload)).toEqual({
+      ok: false,
+      reason: "coverings[porcelain] missing required specLines",
+    });
   });
 
   it("rejects invalid specLines category, basis, and numeric fields", () => {
@@ -289,6 +333,27 @@ describe("generate-snapshot validation", () => {
     });
   });
 
+  it("rejects numeric-looking flooring specLine units", () => {
+    expect(
+      validateFlooringSnapshotPayload({
+        ...FLOORING_V2_SEED,
+        coverings: FLOORING_V2_SEED.coverings.map((item) =>
+          item.code === "laminate"
+            ? {
+                ...item,
+                specLines: item.specLines.map((line, index) =>
+                  index === 0 ? { ...line, unit: "0,08" } : line,
+                ),
+              }
+            : item,
+        ),
+      }),
+    ).toEqual({
+      ok: false,
+      reason: "coverings[laminate].specLines[0].unit must be a measurement unit",
+    });
+  });
+
   it("rejects forbidden keys inside specLines", () => {
     expect(
       validateFlooringSnapshotPayload({
@@ -317,5 +382,72 @@ describe("generate-snapshot validation", () => {
       ok: false,
       reason: "forbidden internal keys: note",
     });
+  });
+
+  it("parses explicit snapshot modes from CLI and env", () => {
+    expect(parseSnapshotMode(["--mode=local"])).toBe("local");
+    expect(parseSnapshotMode(["--mode", "remote"])).toBe("remote");
+    expect(parseSnapshotMode(["--mode=strict-remote"])).toBe("strict-remote");
+    expect(parseSnapshotMode([], { SNAPSHOT_MODE: "local" })).toBe("local");
+    expect(parseSnapshotMode([])).toBeNull();
+    expect(() => parseSnapshotMode(["--mode=invalid"])).toThrow(/invalid snapshot mode/);
+  });
+
+  it("parses optional --base-url for remote generation", () => {
+    expect(parseSnapshotBaseUrlArg(["--base-url=http://127.0.0.1:8000"])).toBe(
+      "http://127.0.0.1:8000",
+    );
+    expect(parseSnapshotBaseUrlArg(["--base-url", "https://api.example.com/"])).toBe(
+      "https://api.example.com/",
+    );
+    expect(parseSnapshotBaseUrlArg([])).toBeNull();
+  });
+
+  it("uses local seed mode explicitly without remote base URL", () => {
+    const plan = resolveSnapshotRunPlan("local", {}, null);
+    expect(plan).toEqual({ mode: "local", baseUrl: null, strictRemote: false });
+    expect(validateFlooringSnapshotPayload(FLOORING_V2_SEED)).toEqual({ ok: true });
+    expect(FLOORING_V2_SEED.version).toBe("flooring-v2");
+    expect(
+      FLOORING_V2_SEED.coverings.every(
+        (item) => Array.isArray(item.specLines) && item.specLines.length > 0,
+      ),
+    ).toBe(true);
+  });
+
+  it("auto mode prefers remote when base URL env is set", () => {
+    const plan = resolveSnapshotRunPlan(null, { PUBLIC_SNAPSHOT_BASE_URL: "https://api.example.com" }, null);
+    expect(plan.mode).toBe("remote");
+    expect(plan.baseUrl).toBe("https://api.example.com");
+    expect(plan.strictRemote).toBe(false);
+  });
+
+  it("auto mode falls back to local when no base URL is configured", () => {
+    const plan = resolveSnapshotRunPlan(null, {}, null);
+    expect(plan).toEqual({ mode: "local", baseUrl: null, strictRemote: false });
+  });
+
+  it("strict-remote requires a base URL and does not plan local fallback", () => {
+    const plan = resolveSnapshotRunPlan("strict-remote", {}, null);
+    expect(plan).toEqual({ mode: "remote", baseUrl: null, strictRemote: true });
+  });
+
+  it("remote mode without base URL does not silently fall back to local seed", () => {
+    const plan = resolveSnapshotRunPlan("remote", {}, null);
+    expect(plan.mode).toBe("remote");
+    expect(plan.baseUrl).toBeNull();
+    expect(plan.strictRemote).toBe(false);
+  });
+
+  it("remote mode accepts CLI base URL override", () => {
+    const plan = resolveSnapshotRunPlan("remote", {}, "http://127.0.0.1:8000");
+    expect(plan).toEqual({
+      mode: "remote",
+      baseUrl: "http://127.0.0.1:8000",
+      strictRemote: false,
+    });
+    expect(buildFlooringSnapshotUrl(plan.baseUrl)).toBe(
+      "http://127.0.0.1:8000/api/public/catalog/flooring/snapshot",
+    );
   });
 });

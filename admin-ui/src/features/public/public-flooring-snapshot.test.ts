@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   flooringCoveringRates,
@@ -7,17 +7,22 @@ import {
   flooringPlinthRates,
   flooringPreparationRates,
 } from "./public-estimate-flooring";
+import { calculateFlooring } from "./public-estimate-flooring";
 import {
+  getCurrentFlooringSnapshot,
   getFlooringSnapshotCatalog,
   getFlooringSnapshotRates,
+  getFlooringSnapshotSource,
+  getPackageBackedFlooringRows,
+  isPackageBackedFlooringCatalogRow,
   loadFlooringSnapshot,
+  refreshFlooringSnapshotOnce,
+  resetFlooringSnapshotRuntimeForTests,
   validateFlooringSnapshot,
 } from "./public-flooring-snapshot";
-import flooringSnapshotData from "./generated/flooring.snapshot.json";
+import { getFlooringCoveringOptions } from "./estimate/flooring-snapshot-options";
+import packageSeed from "../../../scripts/flooring-v2-package-seed.json";
 
-const EXPECTED_COVERING_CODES = ["porcelain", "quartz_vinyl", "laminate", "carpet", "engineered_wood"];
-const EXPECTED_PREPARATION_CODES = ["none", "primer", "self_leveling", "waterproofing"];
-const EXPECTED_LAYOUT_CODES = ["straight", "large_format_straight", "glue", "floating"];
 const EXPECTED_PLINTH_CODES = ["none", "duropolymer", "painted_mdf"];
 
 function expectCodesPresent(items: Array<{ code: string }>, expectedCodes: string[]) {
@@ -29,28 +34,50 @@ function expectCodesPresent(items: Array<{ code: string }>, expectedCodes: strin
 }
 
 describe("flooring snapshot", () => {
-  it("loads and validates the generated v2 snapshot", () => {
-    const snapshot = loadFlooringSnapshot();
-    expect(snapshot.version).toBe("flooring-v2");
-    expect(snapshot.coverings.find((item) => item.code === "laminate")?.materialPricePerM2).toBe(
-      flooringSnapshotData.coverings.find((item) => item.code === "laminate")?.materialPricePerM2,
+  it("loads and validates the package-first v2 seed", () => {
+    expect(validateFlooringSnapshot(packageSeed)).toEqual({ ok: true });
+    expect(packageSeed.version).toBe("flooring-v2");
+    expect(packageSeed.coverings.find((item) => item.code === "laminate")?.materialPricePerM2).toBe(930);
+    expect(packageSeed.layouts.find((item) => item.code === "straight")?.laborPricePerM2).toBe(1000);
+    expect(packageSeed.globalAddons.thresholdPrice).toBe(900);
+    expect(packageSeed.coverings.every((item) => Array.isArray(item.specLines) && item.specLines.length > 0)).toBe(
+      true,
     );
-    expect(snapshot.layouts.find((item) => item.code === "straight")?.laborPricePerM2).toBe(1000);
-    expect(snapshot.globalAddons.thresholdPrice).toBe(900);
   });
 
-  it("contains all expected catalog codes", () => {
+  it("loads generated snapshot after package-first prebuild", () => {
     const snapshot = loadFlooringSnapshot();
-    expectCodesPresent(snapshot.coverings, EXPECTED_COVERING_CODES);
-    expectCodesPresent(snapshot.preparations, EXPECTED_PREPARATION_CODES);
-    expectCodesPresent(snapshot.layouts, EXPECTED_LAYOUT_CODES);
+    expect(snapshot.version).toBe("flooring-v2");
+    expect(snapshot.coverings.every((item) => Array.isArray(item.specLines) && item.specLines.length > 0)).toBe(true);
+  });
+
+  it("contains non-empty package-backed catalog sections", () => {
+    const snapshot = loadFlooringSnapshot();
+    expect(snapshot.coverings.length).toBeGreaterThan(0);
+    expect(snapshot.preparations.length).toBeGreaterThan(0);
+    expect(snapshot.layouts.length).toBeGreaterThan(0);
+    expect(snapshot.coverings.every((item) => item.specLines.length > 0)).toBe(true);
+    expect(snapshot.preparations.every((item) => item.specLines.length > 0)).toBe(true);
+    expect(snapshot.layouts.every((item) => item.specLines.length > 0)).toBe(true);
     expectCodesPresent(snapshot.plinthTypes, EXPECTED_PLINTH_CODES);
+  });
+
+  it("rejects flooring-v2 catalog rows without specLines", () => {
+    const payload = {
+      ...packageSeed,
+      coverings: packageSeed.coverings.map(({ specLines: _specLines, ...item }) => item),
+    };
+
+    expect(validateFlooringSnapshot(payload)).toEqual({
+      ok: false,
+      reason: "coverings[porcelain] missing required specLines",
+    });
   });
 
   it("accepts optional procurement fields on specLines", () => {
     const payload = {
-      ...flooringSnapshotData,
-      coverings: flooringSnapshotData.coverings.map((item) =>
+      ...packageSeed,
+      coverings: packageSeed.coverings.map((item) =>
         item.code === "laminate"
           ? {
               ...item,
@@ -80,36 +107,10 @@ describe("flooring snapshot", () => {
     expect(validateFlooringSnapshot(payload)).toEqual({ ok: true });
   });
 
-  it("accepts optional specLines on catalog items", () => {
-    const payload = {
-      ...flooringSnapshotData,
-      coverings: flooringSnapshotData.coverings.map((item) =>
-        item.code === "laminate"
-          ? {
-              ...item,
-              specLines: [
-                {
-                  code: "flooring-line-laminate-materials",
-                  title: "Ламинат доска",
-                  category: "materials",
-                  basis: "area",
-                  unit: "m2",
-                  quantityPerBasis: 1,
-                  unitPrice: 930,
-                },
-              ],
-            }
-          : item,
-      ),
-    };
-
-    expect(validateFlooringSnapshot(payload)).toEqual({ ok: true });
-  });
-
   it("rejects forbidden keys inside specLines", () => {
     const payload = {
-      ...flooringSnapshotData,
-      coverings: flooringSnapshotData.coverings.map((item) =>
+      ...packageSeed,
+      coverings: packageSeed.coverings.map((item) =>
         item.code === "laminate"
           ? {
               ...item,
@@ -138,12 +139,22 @@ describe("flooring snapshot", () => {
 
   it("rejects invalid specLines shape", () => {
     const payload = {
-      ...flooringSnapshotData,
-      preparations: flooringSnapshotData.preparations.map((item) =>
+      ...packageSeed,
+      preparations: packageSeed.preparations.map((item) =>
         item.code === "primer"
           ? {
               ...item,
-              specLines: [{ code: "line", title: "Work", category: "invalid", basis: "area", unit: "m2", quantityPerBasis: 1, unitPrice: 10 }],
+              specLines: [
+                {
+                  code: "line",
+                  title: "Work",
+                  category: "invalid",
+                  basis: "area",
+                  unit: "m2",
+                  quantityPerBasis: 1,
+                  unitPrice: 10,
+                },
+              ],
             }
           : item,
       ),
@@ -155,8 +166,27 @@ describe("flooring snapshot", () => {
     });
   });
 
-  it("has no forbidden internal keys in the seed snapshot", () => {
-    expect(validateFlooringSnapshot(flooringSnapshotData)).toEqual({ ok: true });
+  it("rejects numeric-looking specLine units", () => {
+    const payload = {
+      ...packageSeed,
+      coverings: packageSeed.coverings.map((item) =>
+        item.code === "laminate"
+          ? {
+              ...item,
+              specLines: item.specLines.map((line, index) => (index === 0 ? { ...line, unit: "0,08" } : line)),
+            }
+          : item,
+      ),
+    };
+
+    expect(validateFlooringSnapshot(payload)).toEqual({
+      ok: false,
+      reason: "coverings[laminate].specLines[0].unit must be a measurement unit",
+    });
+  });
+
+  it("has no forbidden internal keys in the package seed", () => {
+    expect(validateFlooringSnapshot(packageSeed)).toEqual({ ok: true });
   });
 
   it("rejects invalid snapshot payloads", () => {
@@ -176,14 +206,14 @@ describe("flooring snapshot", () => {
       }),
     ).toEqual({
       ok: false,
-      reason: "coverings missing required code: porcelain",
+      reason: "coverings must contain at least one item",
     });
 
     expect(
       validateFlooringSnapshot({
-        ...flooringSnapshotData,
+        ...packageSeed,
         globalAddons: {
-          ...flooringSnapshotData.globalAddons,
+          ...packageSeed.globalAddons,
           note: "internal",
         },
       }),
@@ -193,15 +223,47 @@ describe("flooring snapshot", () => {
     });
   });
 
+  it("accepts flooring-v2 payloads without legacy seed codes when rows are package-backed", () => {
+    expect(
+      validateFlooringSnapshot({
+        ...packageSeed,
+        layouts: packageSeed.layouts.filter((item) => item.code !== "large_format_straight"),
+      }),
+    ).toEqual({ ok: true });
+  });
+
+  it("keeps required seed codes for legacy flooring-v1 payloads", () => {
+    expect(
+      validateFlooringSnapshot({
+        version: "flooring-v1",
+        coverings: packageSeed.coverings
+          .filter((item) => item.code !== "porcelain")
+          .map(({ specLines: _specLines, ...item }) => ({
+            ...item,
+            laborPricePerM2: 1000,
+          })),
+        preparations: packageSeed.preparations.map(({ specLines: _specLines, ...item }) => item),
+        layouts: packageSeed.layouts.map(({ specLines: _specLines, laborPricePerM2: _legacy, ...item }) => item),
+        plinthTypes: packageSeed.plinthTypes,
+        globalAddons: packageSeed.globalAddons,
+      }),
+    ).toEqual({
+      ok: false,
+      reason: "coverings missing required code: porcelain",
+    });
+  });
+
   it("keeps flooring-v1 payloads valid for legacy fallback", () => {
     const legacyPayload = {
-      ...flooringSnapshotData,
       version: "flooring-v1",
-      coverings: flooringSnapshotData.coverings.map((item) => ({
+      coverings: packageSeed.coverings.map(({ specLines: _specLines, ...item }) => ({
         ...item,
         laborPricePerM2: item.code === "laminate" ? 1000 : 0,
       })),
-      layouts: flooringSnapshotData.layouts.map(({ laborPricePerM2: _legacy, ...item }) => item),
+      preparations: packageSeed.preparations.map(({ specLines: _specLines, ...item }) => item),
+      layouts: packageSeed.layouts.map(({ specLines: _specLines, laborPricePerM2: _legacy, ...item }) => item),
+      plinthTypes: packageSeed.plinthTypes,
+      globalAddons: packageSeed.globalAddons,
     };
 
     expect(validateFlooringSnapshot(legacyPayload)).toEqual({ ok: true });
@@ -217,22 +279,46 @@ describe("flooring snapshot", () => {
     expect(rates.flooringExtraRates).toEqual(flooringExtraRates);
   });
 
-  it("getFlooringSnapshotCatalog returns full catalog items by code", () => {
-    const catalog = getFlooringSnapshotCatalog();
+  it("getPackageBackedFlooringRows excludes v2 rows without specLines", () => {
+    const payload = {
+      ...packageSeed,
+      coverings: [
+        packageSeed.coverings[0]!,
+        {
+          ...packageSeed.coverings[0]!,
+          code: "flat_only",
+          title: "Flat only",
+          specLines: [],
+        },
+      ],
+    };
 
-    expect(catalog.coverings.laminate.code).toBe("laminate");
-    expect(catalog.preparations.none.code).toBe("none");
-    expect(catalog.layouts.straight.code).toBe("straight");
-    expect(catalog.coverings.laminate.materialPricePerM2).toBe(
-      flooringSnapshotData.coverings.find((item) => item.code === "laminate")?.materialPricePerM2,
-    );
+    expect(isPackageBackedFlooringCatalogRow(packageSeed.coverings[0]!)).toBe(true);
+    expect(isPackageBackedFlooringCatalogRow({ ...packageSeed.coverings[0]!, specLines: [] })).toBe(false);
+
+    const backed = getPackageBackedFlooringRows(payload);
+    expect(backed.coverings.map((item) => item.code)).not.toContain("flat_only");
+    expect(backed.coverings.length).toBe(1);
   });
 
-  it("getFlooringSnapshotCatalog exposes custom active snapshot codes", () => {
+  it("getFlooringSnapshotCatalog returns full catalog items by code", () => {
+    const snapshot = loadFlooringSnapshot();
+    const catalog = getFlooringSnapshotCatalog();
+    const covering = snapshot.coverings[0];
+    const preparation = snapshot.preparations[0];
+    const layout = snapshot.layouts[0];
+
+    expect(catalog.coverings[covering.code]).toEqual(covering);
+    expect(catalog.preparations[preparation.code]).toEqual(preparation);
+    expect(catalog.layouts[layout.code]).toEqual(layout);
+    expect(catalog.coverings[covering.code].specLines.length).toBeGreaterThan(0);
+  });
+
+  it("getFlooringSnapshotCatalog exposes custom active snapshot codes with specLines", () => {
     const payload = {
-      ...flooringSnapshotData,
+      ...packageSeed,
       coverings: [
-        ...flooringSnapshotData.coverings,
+        ...packageSeed.coverings,
         {
           code: "custom_covering",
           title: "Кастомное покрытие",
@@ -244,6 +330,17 @@ describe("flooring snapshot", () => {
           svpPricePerM2: 0,
           groutPricePerM2: 0,
           toolConsumablesPerM2: 0,
+          specLines: [
+            {
+              code: "custom-covering-material",
+              title: "Кастомное покрытие",
+              category: "materials",
+              basis: "area",
+              unit: "m2",
+              quantityPerBasis: 1,
+              unitPrice: 0,
+            },
+          ],
         },
       ],
     };
@@ -258,5 +355,192 @@ describe("flooring snapshot", () => {
 
     expect(catalog.coverings.custom_covering.title).toBe("Кастомное покрытие");
     expect(catalog.coverings.custom_covering.code).toBe("custom_covering");
+  });
+});
+
+describe("flooring snapshot runtime refresh (PF7b)", () => {
+  let bundledSnapshot: ReturnType<typeof loadFlooringSnapshot>;
+
+  beforeEach(() => {
+    resetFlooringSnapshotRuntimeForTests();
+    bundledSnapshot = loadFlooringSnapshot();
+    vi.restoreAllMocks();
+  });
+
+  afterEach(() => {
+    resetFlooringSnapshotRuntimeForTests();
+    vi.unstubAllGlobals();
+  });
+
+  function mockSnapshotFetch(payload: unknown, ok = true) {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok,
+      json: async () => payload,
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    return fetchMock;
+  }
+
+  it("starts with bundled snapshot before refresh", () => {
+    expect(getFlooringSnapshotSource()).toBe("bundled");
+    expect(getCurrentFlooringSnapshot()).toEqual(bundledSnapshot);
+  });
+
+  it("replaces bundled snapshot when remote payload is valid", async () => {
+    const remoteSnapshot = {
+      ...packageSeed,
+      coverings: packageSeed.coverings.map((item) =>
+        item.code === "laminate"
+          ? { ...item, materialPricePerM2: 4242, title: "Ламинат remote" }
+          : item,
+      ),
+    };
+    const fetchMock = mockSnapshotFetch(remoteSnapshot);
+
+    await refreshFlooringSnapshotOnce();
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(getFlooringSnapshotSource()).toBe("remote");
+    expect(loadFlooringSnapshot().coverings.find((item) => item.code === "laminate")?.materialPricePerM2).toBe(
+      4242,
+    );
+  });
+
+  it("keeps bundled snapshot when remote payload is invalid", async () => {
+    const invalidRemote = {
+      ...packageSeed,
+      coverings: packageSeed.coverings.map(({ specLines: _specLines, ...item }) => item),
+    };
+    mockSnapshotFetch(invalidRemote);
+
+    await refreshFlooringSnapshotOnce();
+
+    expect(getFlooringSnapshotSource()).toBe("bundled");
+    expect(loadFlooringSnapshot()).toEqual(bundledSnapshot);
+  });
+
+  it("keeps bundled snapshot when remote fetch fails", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockRejectedValue(new Error("network down")),
+    );
+
+    await refreshFlooringSnapshotOnce();
+
+    expect(getFlooringSnapshotSource()).toBe("bundled");
+    expect(loadFlooringSnapshot()).toEqual(bundledSnapshot);
+  });
+
+  it("excludes v2 rows without specLines after remote refresh", async () => {
+    const remoteSnapshot = {
+      ...packageSeed,
+      coverings: [
+        packageSeed.coverings[0]!,
+        {
+          ...packageSeed.coverings[0]!,
+          code: "flat_only_remote",
+          title: "Flat only remote",
+          specLines: [],
+        },
+      ],
+    };
+    mockSnapshotFetch(remoteSnapshot);
+
+    await refreshFlooringSnapshotOnce();
+
+    const backed = getPackageBackedFlooringRows(loadFlooringSnapshot());
+    expect(backed.coverings.map((item) => item.code)).not.toContain("flat_only_remote");
+  });
+
+  it("updates dropdown options from remote snapshot", async () => {
+    const remoteSnapshot = {
+      ...packageSeed,
+      coverings: [
+        ...packageSeed.coverings,
+        {
+          code: "remote_only_covering",
+          title: "Покрытие только remote",
+          materialPricePerM2: 1,
+          baseWastePercent: 0,
+          underlayPricePerM2: 0,
+          adhesivePricePerM2: 0,
+          primerPricePerM2: 0,
+          svpPricePerM2: 0,
+          groutPricePerM2: 0,
+          toolConsumablesPerM2: 0,
+          specLines: [
+            {
+              code: "remote-covering-material",
+              title: "Покрытие только remote",
+              category: "materials",
+              basis: "area",
+              unit: "m2",
+              quantityPerBasis: 1,
+              unitPrice: 1,
+            },
+          ],
+        },
+      ],
+    };
+    mockSnapshotFetch(remoteSnapshot);
+
+    await refreshFlooringSnapshotOnce();
+
+    expect(getFlooringCoveringOptions().map((option) => option.value)).toContain("remote_only_covering");
+  });
+
+  it("calculateFlooring uses remote rates after refresh", async () => {
+    const remoteSnapshot = {
+      ...packageSeed,
+      coverings: packageSeed.coverings.map((item) =>
+        item.code === "laminate"
+          ? { ...item, materialPricePerM2: 99999 }
+          : item,
+      ),
+    };
+    mockSnapshotFetch(remoteSnapshot);
+
+    const roomInput = {
+      roomId: "room-1",
+      roomName: "Гостиная",
+      area: 10,
+      perimeter: 20,
+      coveringType: "laminate",
+      preparationType: "none",
+      layoutType: "floating",
+      isIncluded: true,
+    };
+    const options = {
+      includePlinth: false,
+      plinthType: "none" as const,
+      includeThresholds: false,
+      thresholdCount: 0,
+      includeDemolition: false,
+    };
+
+    const beforeRefresh = calculateFlooring([roomInput], options);
+    await refreshFlooringSnapshotOnce();
+    const afterRefresh = calculateFlooring([roomInput], options);
+
+    expect(afterRefresh.materialsTotal).toBeGreaterThan(beforeRefresh.materialsTotal);
+  });
+
+  it("calls fetch only once for concurrent refresh invocations", async () => {
+    let resolveJson: (value: unknown) => void = () => undefined;
+    const fetchMock = vi.fn().mockReturnValue(
+      new Promise((resolve) => {
+        resolveJson = (payload) => resolve({ ok: true, json: async () => payload });
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const firstRefresh = refreshFlooringSnapshotOnce();
+    const secondRefresh = refreshFlooringSnapshotOnce();
+
+    resolveJson(packageSeed);
+    await Promise.all([firstRefresh, secondRefresh]);
+    await refreshFlooringSnapshotOnce();
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });

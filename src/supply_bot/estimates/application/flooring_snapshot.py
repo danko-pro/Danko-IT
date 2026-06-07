@@ -5,14 +5,17 @@ from collections.abc import Mapping, Sequence
 from typing import Any, Protocol
 
 from supply_bot.admin_api.calculator_payloads.flooring_custom_consumables import parse_flooring_custom_consumables
+from supply_bot.application.errors import ValidationError
+from supply_bot.estimates.application.flooring_catalog_assembly import validate_flooring_package_for_publication
 from supply_bot.estimates.application.flooring_package_projection import (
     build_flooring_package_projection,
     has_enabled_flooring_assembly_rows,
 )
 from supply_bot.utils import normalize_text, slugify
 
-# Детерминированный публичный seed v2 — работа укладки находится в layouts.
-# generated/flooring.snapshot.json). CRM seed в estimate_flooring_* может отличаться.
+# PF3: flat-only rows ниже — справочник для local package seed и defaults plinthTypes/globalAddons.
+# В public snapshot coverings/preparations/layouts публикуются только при валидном package (specLines обязательны).
+# Явный package-wrapper не добавляем: specLines + derived flat rates — достаточный contract.
 DEFAULT_PUBLIC_FLOORING_SNAPSHOT: dict[str, Any] = {
     "version": "flooring-v2",
     "coverings": [
@@ -399,20 +402,39 @@ def _public_spec_lines_for_assembly(
     return list(projection["specLines"])
 
 
+def _publish_package_backed_snapshot_row(
+    snapshot_row: dict[str, Any],
+    *,
+    target_kind: str,
+    assembly: Mapping[str, Any] | None,
+) -> dict[str, Any] | None:
+    if assembly is None:
+        return None
+
+    assembly_rows = list(assembly.get("rows") or [])
+    try:
+        validate_flooring_package_for_publication(target_kind, assembly_rows)
+    except ValidationError:
+        return None
+
+    spec_lines = _public_spec_lines_for_assembly(target_kind, assembly_rows)
+    if not spec_lines:
+        return None
+
+    if target_kind == "covering" and not covering_spec_lines_are_complete(snapshot_row, spec_lines):
+        return None
+
+    return {**snapshot_row, "specLines": spec_lines}
+
+
 def _attach_spec_lines_to_snapshot_row(
     snapshot_row: dict[str, Any],
     *,
     target_kind: str,
     assembly: Mapping[str, Any] | None,
 ) -> dict[str, Any]:
-    if assembly is None:
-        return snapshot_row
-    spec_lines = _public_spec_lines_for_assembly(target_kind, assembly.get("rows") or [])
-    if spec_lines is None:
-        return snapshot_row
-    if target_kind == "covering" and not covering_spec_lines_are_complete(snapshot_row, spec_lines):
-        return snapshot_row
-    return {**snapshot_row, "specLines": spec_lines}
+    published = _publish_package_backed_snapshot_row(snapshot_row, target_kind=target_kind, assembly=assembly)
+    return published if published is not None else snapshot_row
 
 
 def _map_covering_row(
@@ -420,12 +442,12 @@ def _map_covering_row(
     *,
     used_codes: set[str],
     assembly: Mapping[str, Any] | None = None,
-) -> dict[str, Any]:
+) -> dict[str, Any] | None:
     title = _public_title(row.get("title"))
     code = _resolve_public_code(title, section="coverings", known_titles=_COVERING_TITLE_TO_CODE, used_codes=used_codes)
     used_codes.add(code)
     consumables = _aggregate_covering_consumables(row)
-    return _attach_spec_lines_to_snapshot_row(
+    return _publish_package_backed_snapshot_row(
         {
             "code": code,
             "title": title,
@@ -443,7 +465,7 @@ def _map_preparation_row(
     *,
     used_codes: set[str],
     assembly: Mapping[str, Any] | None = None,
-) -> dict[str, Any]:
+) -> dict[str, Any] | None:
     title = _public_title(row.get("title"))
     code = _resolve_public_code(
         title,
@@ -452,7 +474,7 @@ def _map_preparation_row(
         used_codes=used_codes,
     )
     used_codes.add(code)
-    return _attach_spec_lines_to_snapshot_row(
+    return _publish_package_backed_snapshot_row(
         {
             "code": code,
             "title": title,
@@ -469,7 +491,7 @@ def _map_layout_row(
     *,
     used_codes: set[str],
     assembly: Mapping[str, Any] | None = None,
-) -> dict[str, Any]:
+) -> dict[str, Any] | None:
     title = _public_title(row.get("title"))
     code = _resolve_public_code(title, section="layouts", known_titles=_LAYOUT_TITLE_TO_CODE, used_codes=used_codes)
     used_codes.add(code)
@@ -477,7 +499,7 @@ def _map_layout_row(
     labor_price_per_m2 = _public_number(row.get("labor_price_per_m2"))
     if float(labor_price_per_m2) == 0 and code in _DEFAULT_LAYOUT_LABOR_BY_CODE:
         labor_price_per_m2 = _public_number(_DEFAULT_LAYOUT_LABOR_BY_CODE[code])
-    return _attach_spec_lines_to_snapshot_row(
+    return _publish_package_backed_snapshot_row(
         {
             "code": code,
             "title": title,
@@ -490,30 +512,97 @@ def _map_layout_row(
     )
 
 
-def _merge_section_with_defaults(
-    db_items: Sequence[Mapping[str, Any]],
-    default_items: Sequence[Mapping[str, Any]],
-    *,
-    required_codes: frozenset[str],
-) -> list[dict[str, Any]]:
-    db_by_code = {str(item["code"]): dict(item) for item in db_items}
-    merged: dict[str, dict[str, Any]] = {
-        str(item["code"]): dict(item) for item in default_items if str(item["code"]) in required_codes
+def _default_plinth_and_addons() -> dict[str, Any]:
+    return {
+        "plinthTypes": [dict(item) for item in DEFAULT_PUBLIC_FLOORING_SNAPSHOT["plinthTypes"]],
+        "globalAddons": dict(DEFAULT_PUBLIC_FLOORING_SNAPSHOT["globalAddons"]),
     }
-    merged.update(db_by_code)
 
-    ordered: list[dict[str, Any]] = []
-    seen: set[str] = set()
-    for item in default_items:
-        code = str(item["code"])
-        if code in merged:
-            ordered.append(merged[code])
-            seen.add(code)
-    for code, item in db_by_code.items():
-        if code not in seen:
-            ordered.append(item)
-            seen.add(code)
-    return ordered
+
+def _crm_covering_row_from_public_defaults(item: Mapping[str, Any]) -> dict[str, Any]:
+    adhesive = float(_public_number(item.get("adhesivePricePerM2")))
+    primer = float(_public_number(item.get("primerPricePerM2")))
+    svp = float(_public_number(item.get("svpPricePerM2")))
+    grout = float(_public_number(item.get("groutPricePerM2")))
+    underlay_price = float(_public_number(item.get("underlayPricePerM2")))
+
+    return {
+        "title": item["title"],
+        "material_price_per_m2": item["materialPricePerM2"],
+        "labor_price_per_m2": 0,
+        "base_waste_percent": item["baseWastePercent"],
+        "underlay_mode": "required" if underlay_price > 0 else "none",
+        "underlay_consumption_per_m2": 1 if underlay_price > 0 else 0,
+        "glue_consumption_per_m2": adhesive / 300 if adhesive else 0,
+        "glue_unit": "kg",
+        "glue_price_per_unit": 300 if adhesive else 0,
+        "primer_consumption_per_m2": primer / 250 if primer else 0,
+        "primer_unit": "l",
+        "primer_price_per_unit": 250 if primer else 0,
+        "svp_consumption_per_m2": svp / 30 if svp else 0,
+        "svp_unit": "pcs",
+        "svp_price_per_unit": 30 if svp else 0,
+        "grout_consumption_per_m2": grout / 180 if grout else 0,
+        "grout_unit": "kg",
+        "grout_price_per_unit": 180 if grout else 0,
+        "instrument_price_per_m2": item["toolConsumablesPerM2"],
+        "custom_consumables_json": "[]",
+    }
+
+
+def _package_first_catalog_item_from_defaults(target_kind: str, item: Mapping[str, Any]) -> dict[str, Any]:
+    from supply_bot.estimates.application.flooring_synthetic_assembly import build_synthetic_flooring_catalog_assembly
+
+    if target_kind == "covering":
+        payload = build_synthetic_flooring_catalog_assembly("covering", _crm_covering_row_from_public_defaults(item))
+    elif target_kind == "preparation":
+        payload = build_synthetic_flooring_catalog_assembly(
+            "preparation",
+            {
+                "title": item["title"],
+                "labor_price_per_m2": item["laborPricePerM2"],
+                "material_price_per_m2": item["materialPricePerM2"],
+            },
+        )
+    else:
+        payload = build_synthetic_flooring_catalog_assembly(
+            "layout",
+            {
+                "title": item["title"],
+                "labor_price_per_m2": item["laborPricePerM2"],
+                "labor_multiplier": item["laborFactor"],
+                "extra_waste_percent": item["additionalWastePercent"],
+            },
+        )
+
+    published = dict(item)
+    published["specLines"] = build_flooring_package_projection(target_kind, payload.rows)["specLines"]
+    return published
+
+
+def build_flooring_v2_local_package_seed() -> dict[str, Any]:
+    return {
+        "version": DEFAULT_PUBLIC_FLOORING_SNAPSHOT["version"],
+        "coverings": [
+            _package_first_catalog_item_from_defaults("covering", item)
+            for item in DEFAULT_PUBLIC_FLOORING_SNAPSHOT["coverings"]
+        ],
+        "preparations": [
+            _package_first_catalog_item_from_defaults("preparation", item)
+            for item in DEFAULT_PUBLIC_FLOORING_SNAPSHOT["preparations"]
+        ],
+        "layouts": [
+            _package_first_catalog_item_from_defaults("layout", item)
+            for item in DEFAULT_PUBLIC_FLOORING_SNAPSHOT["layouts"]
+        ],
+        **_default_plinth_and_addons(),
+    }
+
+
+def _package_backed_catalog_rows(rows: Sequence[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Bridge-1: runtime snapshot must never leak flat-only catalog rows."""
+
+    return [row for row in rows if row.get("specLines")]
 
 
 def _assembly_for_row(
@@ -537,68 +626,63 @@ def build_public_flooring_snapshot_from_catalog(
     preparation_assemblies: Mapping[int, Mapping[str, Any]] | None = None,
     layout_assemblies: Mapping[int, Mapping[str, Any]] | None = None,
 ) -> dict[str, Any]:
-    if not coverings and not preparations and not layouts:
-        return build_public_flooring_snapshot()
-
     used_covering_codes: set[str] = set()
     used_preparation_codes: set[str] = set()
     used_layout_codes: set[str] = set()
 
     mapped_coverings = [
-        _map_covering_row(
-            row,
-            used_codes=used_covering_codes,
-            assembly=_assembly_for_row(row, covering_assemblies),
-        )
+        mapped
         for row in coverings
+        if (
+            mapped := _map_covering_row(
+                row,
+                used_codes=used_covering_codes,
+                assembly=_assembly_for_row(row, covering_assemblies),
+            )
+        )
+        is not None
     ]
     mapped_preparations = [
-        _map_preparation_row(
-            row,
-            used_codes=used_preparation_codes,
-            assembly=_assembly_for_row(row, preparation_assemblies),
-        )
+        mapped
         for row in preparations
+        if (
+            mapped := _map_preparation_row(
+                row,
+                used_codes=used_preparation_codes,
+                assembly=_assembly_for_row(row, preparation_assemblies),
+            )
+        )
+        is not None
     ]
     mapped_layouts = [
-        _map_layout_row(
-            row,
-            used_codes=used_layout_codes,
-            assembly=_assembly_for_row(row, layout_assemblies),
-        )
+        mapped
         for row in layouts
+        if (
+            mapped := _map_layout_row(
+                row,
+                used_codes=used_layout_codes,
+                assembly=_assembly_for_row(row, layout_assemblies),
+            )
+        )
+        is not None
     ]
 
     return {
         "version": DEFAULT_PUBLIC_FLOORING_SNAPSHOT["version"],
-        "coverings": _merge_section_with_defaults(
-            mapped_coverings,
-            DEFAULT_PUBLIC_FLOORING_SNAPSHOT["coverings"],
-            required_codes=EXPECTED_COVERING_CODES,
-        ),
-        "preparations": _merge_section_with_defaults(
-            mapped_preparations,
-            DEFAULT_PUBLIC_FLOORING_SNAPSHOT["preparations"],
-            required_codes=EXPECTED_PREPARATION_CODES,
-        ),
-        "layouts": _merge_section_with_defaults(
-            mapped_layouts,
-            DEFAULT_PUBLIC_FLOORING_SNAPSHOT["layouts"],
-            required_codes=EXPECTED_LAYOUT_CODES,
-        ),
-        "plinthTypes": [dict(item) for item in DEFAULT_PUBLIC_FLOORING_SNAPSHOT["plinthTypes"]],
-        "globalAddons": dict(DEFAULT_PUBLIC_FLOORING_SNAPSHOT["globalAddons"]),
+        "coverings": _package_backed_catalog_rows(mapped_coverings),
+        "preparations": _package_backed_catalog_rows(mapped_preparations),
+        "layouts": _package_backed_catalog_rows(mapped_layouts),
+        **_default_plinth_and_addons(),
     }
 
 
 def build_public_flooring_snapshot() -> dict[str, Any]:
     return {
         "version": DEFAULT_PUBLIC_FLOORING_SNAPSHOT["version"],
-        "coverings": [dict(item) for item in DEFAULT_PUBLIC_FLOORING_SNAPSHOT["coverings"]],
-        "preparations": [dict(item) for item in DEFAULT_PUBLIC_FLOORING_SNAPSHOT["preparations"]],
-        "layouts": [dict(item) for item in DEFAULT_PUBLIC_FLOORING_SNAPSHOT["layouts"]],
-        "plinthTypes": [dict(item) for item in DEFAULT_PUBLIC_FLOORING_SNAPSHOT["plinthTypes"]],
-        "globalAddons": dict(DEFAULT_PUBLIC_FLOORING_SNAPSHOT["globalAddons"]),
+        "coverings": [],
+        "preparations": [],
+        "layouts": [],
+        **_default_plinth_and_addons(),
     }
 
 
@@ -682,8 +766,10 @@ __all__ = [
     "PUBLIC_FLOORING_FORBIDDEN_KEYS",
     "_aggregate_covering_consumables",
     "_attach_spec_lines_to_snapshot_row",
+    "_publish_package_backed_snapshot_row",
     "_public_spec_lines_for_assembly",
     "_resolve_public_code",
+    "build_flooring_v2_local_package_seed",
     "covering_spec_lines_are_complete",
     "build_public_flooring_snapshot",
     "build_public_flooring_snapshot_from_catalog",

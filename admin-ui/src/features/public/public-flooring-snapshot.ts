@@ -36,7 +36,7 @@ export type FlooringCoveringSnapshotItem = {
   svpPricePerM2: number;
   groutPricePerM2: number;
   toolConsumablesPerM2: number;
-  specLines?: FlooringPackageSpecLine[];
+  specLines: FlooringPackageSpecLine[];
 };
 
 export type FlooringPreparationSnapshotItem = {
@@ -44,7 +44,7 @@ export type FlooringPreparationSnapshotItem = {
   title: string;
   laborPricePerM2: number;
   materialPricePerM2: number;
-  specLines?: FlooringPackageSpecLine[];
+  specLines: FlooringPackageSpecLine[];
 };
 
 export type FlooringLayoutSnapshotItem = {
@@ -53,7 +53,7 @@ export type FlooringLayoutSnapshotItem = {
   laborPricePerM2?: number;
   laborFactor: number;
   additionalWastePercent: number;
-  specLines?: FlooringPackageSpecLine[];
+  specLines: FlooringPackageSpecLine[];
 };
 
 export type FlooringPlinthSnapshotItem = {
@@ -78,9 +78,9 @@ export type FlooringSnapshot = {
   globalAddons: FlooringGlobalAddons;
 };
 
-export type FlooringCoveringRates = Omit<FlooringCoveringSnapshotItem, "code" | "title">;
-export type FlooringPreparationRates = Omit<FlooringPreparationSnapshotItem, "code" | "title">;
-export type FlooringLayoutRates = Omit<FlooringLayoutSnapshotItem, "code" | "title">;
+export type FlooringCoveringRates = Omit<FlooringCoveringSnapshotItem, "code" | "title" | "specLines">;
+export type FlooringPreparationRates = Omit<FlooringPreparationSnapshotItem, "code" | "title" | "specLines">;
+export type FlooringLayoutRates = Omit<FlooringLayoutSnapshotItem, "code" | "title" | "specLines">;
 export type FlooringPlinthRates = Omit<FlooringPlinthSnapshotItem, "code" | "title">;
 
 export type FlooringSnapshotRates = {
@@ -181,6 +181,8 @@ const FLOORING_SPEC_LINE_REQUIRED_KEYS = [
   "unitPrice",
 ] as const;
 
+const NUMERIC_UNIT_PATTERN = /^\d+(?:[,.]\d+)?$/;
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
@@ -239,6 +241,9 @@ function validateSpecLines(
     if (typeof line.unit !== "string" || line.unit.length === 0) {
       return { ok: false, reason: `${arrayName}.specLines[${index}].unit must be a non-empty string` };
     }
+    if (NUMERIC_UNIT_PATTERN.test(line.unit.trim())) {
+      return { ok: false, reason: `${arrayName}.specLines[${index}].unit must be a measurement unit` };
+    }
     if (typeof line.quantityPerBasis !== "number" || !Number.isFinite(line.quantityPerBasis)) {
       return { ok: false, reason: `${arrayName}.specLines[${index}].quantityPerBasis must be a finite number` };
     }
@@ -290,9 +295,14 @@ function validateCatalogItems(
   items: unknown,
   arrayName: string,
   rateKeys: readonly string[],
+  options: { requireSpecLines?: boolean } = {},
 ): { ok: true } | { ok: false; reason: string } {
+  const { requireSpecLines = false } = options;
   if (!Array.isArray(items)) {
     return { ok: false, reason: `${arrayName} must be an array` };
+  }
+  if (items.length === 0) {
+    return { ok: false, reason: `${arrayName} must contain at least one item` };
   }
 
   const seenCodes = new Set<string>();
@@ -313,6 +323,9 @@ function validateCatalogItems(
     seenCodes.add(item.code);
     if (!hasNumericRates(item, rateKeys)) {
       return { ok: false, reason: `${arrayName} rates must be finite numbers` };
+    }
+    if (requireSpecLines && !("specLines" in item)) {
+      return { ok: false, reason: `${arrayName}[${item.code}] missing required specLines` };
     }
     if ("specLines" in item) {
       const specLinesValidation = validateSpecLines(item.specLines, `${arrayName}[${item.code}]`);
@@ -381,8 +394,11 @@ export function validateFlooringSnapshot(payload: unknown) {
   const isLegacyV1 = payload.version === "flooring-v1";
   const coveringRateKeys = isLegacyV1 ? LEGACY_COVERING_RATE_KEYS : COVERING_RATE_KEYS;
   const layoutRateKeys = isLegacyV1 ? LEGACY_LAYOUT_RATE_KEYS : LAYOUT_RATE_KEYS;
+  const requirePackageSpecLines = !isLegacyV1;
 
-  const coveringsValidation = validateCatalogItems(payload.coverings, "coverings", coveringRateKeys);
+  const coveringsValidation = validateCatalogItems(payload.coverings, "coverings", coveringRateKeys, {
+    requireSpecLines: requirePackageSpecLines,
+  });
   if (!coveringsValidation.ok) {
     return coveringsValidation;
   }
@@ -391,12 +407,15 @@ export function validateFlooringSnapshot(payload: unknown) {
     payload.preparations,
     "preparations",
     PREPARATION_RATE_KEYS,
+    { requireSpecLines: requirePackageSpecLines },
   );
   if (!preparationsValidation.ok) {
     return preparationsValidation;
   }
 
-  const layoutsValidation = validateCatalogItems(payload.layouts, "layouts", layoutRateKeys);
+  const layoutsValidation = validateCatalogItems(payload.layouts, "layouts", layoutRateKeys, {
+    requireSpecLines: requirePackageSpecLines,
+  });
   if (!layoutsValidation.ok) {
     return layoutsValidation;
   }
@@ -413,23 +432,25 @@ export function validateFlooringSnapshot(payload: unknown) {
     return { ok: false as const, reason: "globalAddons rates must be finite numbers" };
   }
 
-  const requiredCoverings = validateRequiredCodes(payload.coverings, "coverings", EXPECTED_COVERING_CODES);
-  if (!requiredCoverings.ok) {
-    return requiredCoverings;
-  }
+  if (isLegacyV1) {
+    const requiredCoverings = validateRequiredCodes(payload.coverings, "coverings", EXPECTED_COVERING_CODES);
+    if (!requiredCoverings.ok) {
+      return requiredCoverings;
+    }
 
-  const requiredPreparations = validateRequiredCodes(
-    payload.preparations,
-    "preparations",
-    EXPECTED_PREPARATION_CODES,
-  );
-  if (!requiredPreparations.ok) {
-    return requiredPreparations;
-  }
+    const requiredPreparations = validateRequiredCodes(
+      payload.preparations,
+      "preparations",
+      EXPECTED_PREPARATION_CODES,
+    );
+    if (!requiredPreparations.ok) {
+      return requiredPreparations;
+    }
 
-  const requiredLayouts = validateRequiredCodes(payload.layouts, "layouts", EXPECTED_LAYOUT_CODES);
-  if (!requiredLayouts.ok) {
-    return requiredLayouts;
+    const requiredLayouts = validateRequiredCodes(payload.layouts, "layouts", EXPECTED_LAYOUT_CODES);
+    if (!requiredLayouts.ok) {
+      return requiredLayouts;
+    }
   }
 
   const requiredPlinthTypes = validateRequiredCodes(payload.plinthTypes, "plinthTypes", EXPECTED_PLINTH_CODES);
@@ -448,13 +469,164 @@ export function validateFlooringSnapshot(payload: unknown) {
   return { ok: true as const };
 }
 
-export function loadFlooringSnapshot(): FlooringSnapshot {
+const DEV_API_BASE = "http://127.0.0.1:8000";
+const PUBLIC_FLOORING_SNAPSHOT_PATH = "/api/public/catalog/flooring/snapshot";
+
+export type FlooringSnapshotSource = "bundled" | "remote";
+
+function resolvePublicFlooringSnapshotUrl(): string {
+  const rawApiBase = import.meta.env.VITE_API_BASE_URL?.trim();
+  const base = rawApiBase ? rawApiBase.replace(/\/+$/, "") : DEV_API_BASE;
+  return `${base}${PUBLIC_FLOORING_SNAPSHOT_PATH}`;
+}
+
+function loadBundledFlooringSnapshot(): FlooringSnapshot {
   const validation = validateFlooringSnapshot(flooringSnapshotData);
   if (!validation.ok) {
     throw new Error(`flooring.snapshot: ${validation.reason}`);
   }
 
   return flooringSnapshotData as FlooringSnapshot;
+}
+
+const bundledFlooringSnapshot = loadBundledFlooringSnapshot();
+
+let currentFlooringSnapshot: FlooringSnapshot = bundledFlooringSnapshot;
+let flooringSnapshotSource: FlooringSnapshotSource = "bundled";
+let flooringSnapshotRevision = 0;
+const flooringSnapshotListeners = new Set<() => void>();
+
+/**
+ * One fetch per page load (module lifetime). Concurrent callers share the same promise
+ * (covers React StrictMode double mount invoking refresh twice before completion).
+ */
+let flooringSnapshotRefreshPromise: Promise<void> | null = null;
+let flooringSnapshotRefreshDone = false;
+
+function notifyFlooringSnapshotListeners(): void {
+  flooringSnapshotRevision += 1;
+  for (const listener of flooringSnapshotListeners) {
+    listener();
+  }
+}
+
+function applyRemoteFlooringSnapshot(payload: unknown): boolean {
+  const validation = validateFlooringSnapshot(payload);
+  if (!validation.ok) {
+    if (import.meta.env.DEV) {
+      console.warn(`flooring snapshot remote ignored: ${validation.reason}`);
+    }
+    return false;
+  }
+
+  currentFlooringSnapshot = payload as FlooringSnapshot;
+  flooringSnapshotSource = "remote";
+  notifyFlooringSnapshotListeners();
+  return true;
+}
+
+export function getCurrentFlooringSnapshot(): FlooringSnapshot {
+  return currentFlooringSnapshot;
+}
+
+export function getFlooringSnapshotSource(): FlooringSnapshotSource {
+  return flooringSnapshotSource;
+}
+
+export function getFlooringSnapshotRevision(): number {
+  return flooringSnapshotRevision;
+}
+
+export function subscribeFlooringSnapshot(listener: () => void): () => void {
+  flooringSnapshotListeners.add(listener);
+  return () => {
+    flooringSnapshotListeners.delete(listener);
+  };
+}
+
+export function loadFlooringSnapshot(): FlooringSnapshot {
+  return currentFlooringSnapshot;
+}
+
+/**
+ * Fetches public flooring snapshot once per page load. Invalid or failed responses keep bundled data.
+ */
+export async function refreshFlooringSnapshotOnce(): Promise<void> {
+  if (flooringSnapshotRefreshDone) {
+    return;
+  }
+
+  if (flooringSnapshotRefreshPromise) {
+    return flooringSnapshotRefreshPromise;
+  }
+
+  flooringSnapshotRefreshPromise = (async () => {
+    try {
+      const response = await fetch(resolvePublicFlooringSnapshotUrl());
+      if (!response.ok) {
+        return;
+      }
+
+      const payload = await response.json();
+      applyRemoteFlooringSnapshot(payload);
+    } catch (error) {
+      if (import.meta.env.DEV) {
+        console.warn("flooring snapshot remote fetch failed", error);
+      }
+    } finally {
+      flooringSnapshotRefreshDone = true;
+      flooringSnapshotRefreshPromise = null;
+    }
+  })();
+
+  return flooringSnapshotRefreshPromise;
+}
+
+/** @internal test helper */
+export function resetFlooringSnapshotRuntimeForTests(
+  snapshot: FlooringSnapshot = bundledFlooringSnapshot,
+  source: FlooringSnapshotSource = "bundled",
+): void {
+  currentFlooringSnapshot = snapshot;
+  flooringSnapshotSource = source;
+  flooringSnapshotRevision = 0;
+  flooringSnapshotRefreshDone = false;
+  flooringSnapshotRefreshPromise = null;
+  flooringSnapshotListeners.clear();
+}
+
+export function isFlooringLegacyV1(version: string): boolean {
+  return version === "flooring-v1";
+}
+
+export function isFlooringPackageFirst(version: string): boolean {
+  return !isFlooringLegacyV1(version);
+}
+
+export function isPackageBackedFlooringCatalogRow<T extends { specLines?: FlooringPackageSpecLine[] }>(
+  item: T,
+): boolean {
+  return Array.isArray(item.specLines) && item.specLines.length > 0;
+}
+
+export function getPackageBackedFlooringRows(snapshot: FlooringSnapshot): {
+  coverings: FlooringCoveringSnapshotItem[];
+  preparations: FlooringPreparationSnapshotItem[];
+  layouts: FlooringLayoutSnapshotItem[];
+} {
+  if (isFlooringLegacyV1(snapshot.version)) {
+    return {
+      coverings: snapshot.coverings,
+      preparations: snapshot.preparations,
+      layouts: snapshot.layouts,
+    };
+  }
+
+  return {
+    coverings: snapshot.coverings.filter(isPackageBackedFlooringCatalogRow),
+    preparations: snapshot.preparations.filter(isPackageBackedFlooringCatalogRow),
+    layouts: snapshot.layouts.filter(isPackageBackedFlooringCatalogRow),
+  };
 }
 
 function catalogItemsByCode<T extends { code: string }>(items: T[]): Record<string, T> {
@@ -475,29 +647,31 @@ export type FlooringSnapshotCatalog = {
 
 export function getFlooringSnapshotCatalog(): FlooringSnapshotCatalog {
   const snapshot = loadFlooringSnapshot();
+  const packageBacked = getPackageBackedFlooringRows(snapshot);
 
   return {
-    coverings: catalogItemsByCode(snapshot.coverings),
-    preparations: catalogItemsByCode(snapshot.preparations),
-    layouts: catalogItemsByCode(snapshot.layouts),
+    coverings: catalogItemsByCode(packageBacked.coverings),
+    preparations: catalogItemsByCode(packageBacked.preparations),
+    layouts: catalogItemsByCode(packageBacked.layouts),
   };
 }
 
 export function getFlooringSnapshotRates(): FlooringSnapshotRates {
   const snapshot = loadFlooringSnapshot();
-  const isLegacyV1 = snapshot.version === "flooring-v1";
+  const isLegacyV1 = isFlooringLegacyV1(snapshot.version);
+  const packageBacked = getPackageBackedFlooringRows(snapshot);
 
   return {
     flooringCoveringRates: catalogItemsToRecord(
-      snapshot.coverings,
+      packageBacked.coverings,
       isLegacyV1 ? LEGACY_COVERING_RATE_KEYS : COVERING_RATE_KEYS,
     ) as Record<FlooringCoveringType, FlooringCoveringRates>,
     flooringPreparationRates: catalogItemsToRecord(
-      snapshot.preparations,
+      packageBacked.preparations,
       PREPARATION_RATE_KEYS,
     ) as Record<FlooringPreparationType, FlooringPreparationRates>,
     flooringLayoutRates: catalogItemsToRecord(
-      snapshot.layouts,
+      packageBacked.layouts,
       isLegacyV1 ? LEGACY_LAYOUT_RATE_KEYS : LAYOUT_RATE_KEYS,
     ) as Record<FlooringLayoutType, FlooringLayoutRates>,
     flooringPlinthRates: catalogItemsToRecord(

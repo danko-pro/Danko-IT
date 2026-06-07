@@ -320,6 +320,11 @@ export type FlooringCatalogAssemblyPayload = {
   rows: FlooringCatalogAssemblyRowPayload[];
 };
 
+export type FlooringCatalogFromAssemblyPayload = {
+  catalog: FlooringCoveringCreatePayload | FlooringPreparationCreatePayload | FlooringLayoutCreatePayload;
+  assembly: FlooringCatalogAssemblyPayload;
+};
+
 export type FlooringCatalogAssemblyRowDraft = {
   id?: number;
   assemblyItemId: number | null;

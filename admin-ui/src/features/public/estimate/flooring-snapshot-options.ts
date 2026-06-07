@@ -5,10 +5,15 @@ import type {
   FlooringPlinthType,
   FlooringPreparationType,
 } from "../public-estimate-flooring";
-import { loadFlooringSnapshot } from "../public-flooring-snapshot";
+import {
+  getPackageBackedFlooringRows,
+  isFlooringLegacyV1,
+  loadFlooringSnapshot,
+} from "../public-flooring-snapshot";
 
 export type FlooringSelectOption<T extends string = string> = { value: T; label: string };
 
+/** Legacy flooring-v1 hardcoded dropdown options when snapshot is unavailable. */
 export const FALLBACK_FLOORING_COVERING_OPTIONS: FlooringSelectOption<FlooringCoveringType>[] = [
   { value: "porcelain", label: "Керамогранит" },
   { value: "quartz_vinyl", label: "Кварцвинил" },
@@ -39,25 +44,35 @@ export const FALLBACK_FLOORING_PLINTH_OPTIONS: FlooringSelectOption<FlooringPlin
 
 function buildOptionsFromSnapshotItems<T extends { code: string; title: string }>(
   items: T[] | undefined,
-  fallback: FlooringSelectOption[],
+  legacyFallback: FlooringSelectOption[],
+  useLegacyFallback: boolean,
 ): FlooringSelectOption[] {
   if (!items?.length) {
-    return fallback;
+    return useLegacyFallback ? legacyFallback : [];
   }
 
   const options = items.map((item) => ({ value: item.code, label: item.title }));
 
-  return options.length > 0 ? options : fallback;
+  return options.length > 0 ? options : useLegacyFallback ? legacyFallback : [];
 }
 
-function tryLoadSnapshotItems() {
+type LoadedSnapshotOptions = {
+  coverings: ReturnType<typeof getPackageBackedFlooringRows>["coverings"];
+  preparations: ReturnType<typeof getPackageBackedFlooringRows>["preparations"];
+  layouts: ReturnType<typeof getPackageBackedFlooringRows>["layouts"];
+  plinthTypes: ReturnType<typeof loadFlooringSnapshot>["plinthTypes"];
+  useLegacyFallback: boolean;
+};
+
+function tryLoadSnapshotOptions(): LoadedSnapshotOptions | null {
   try {
     const snapshot = loadFlooringSnapshot();
+    const packageBacked = getPackageBackedFlooringRows(snapshot);
+
     return {
-      coverings: snapshot.coverings,
-      preparations: snapshot.preparations,
-      layouts: snapshot.layouts,
+      ...packageBacked,
       plinthTypes: snapshot.plinthTypes,
+      useLegacyFallback: isFlooringLegacyV1(snapshot.version),
     };
   } catch {
     return null;
@@ -65,23 +80,39 @@ function tryLoadSnapshotItems() {
 }
 
 export function getFlooringCoveringOptions(): FlooringSelectOption[] {
-  const snapshotItems = tryLoadSnapshotItems();
-  return buildOptionsFromSnapshotItems(snapshotItems?.coverings, FALLBACK_FLOORING_COVERING_OPTIONS);
+  const snapshotItems = tryLoadSnapshotOptions();
+  return buildOptionsFromSnapshotItems(
+    snapshotItems?.coverings,
+    FALLBACK_FLOORING_COVERING_OPTIONS,
+    snapshotItems?.useLegacyFallback ?? false,
+  );
 }
 
 export function getFlooringPreparationOptions(): FlooringSelectOption[] {
-  const snapshotItems = tryLoadSnapshotItems();
-  return buildOptionsFromSnapshotItems(snapshotItems?.preparations, FALLBACK_FLOORING_PREPARATION_OPTIONS);
+  const snapshotItems = tryLoadSnapshotOptions();
+  return buildOptionsFromSnapshotItems(
+    snapshotItems?.preparations,
+    FALLBACK_FLOORING_PREPARATION_OPTIONS,
+    snapshotItems?.useLegacyFallback ?? false,
+  );
 }
 
 export function getFlooringLayoutOptions(): FlooringSelectOption[] {
-  const snapshotItems = tryLoadSnapshotItems();
-  return buildOptionsFromSnapshotItems(snapshotItems?.layouts, FALLBACK_FLOORING_LAYOUT_OPTIONS);
+  const snapshotItems = tryLoadSnapshotOptions();
+  return buildOptionsFromSnapshotItems(
+    snapshotItems?.layouts,
+    FALLBACK_FLOORING_LAYOUT_OPTIONS,
+    snapshotItems?.useLegacyFallback ?? false,
+  );
 }
 
 export function getFlooringPlinthOptions(): FlooringSelectOption[] {
-  const snapshotItems = tryLoadSnapshotItems();
-  return buildOptionsFromSnapshotItems(snapshotItems?.plinthTypes, FALLBACK_FLOORING_PLINTH_OPTIONS);
+  const snapshotItems = tryLoadSnapshotOptions();
+  return buildOptionsFromSnapshotItems(
+    snapshotItems?.plinthTypes,
+    FALLBACK_FLOORING_PLINTH_OPTIONS,
+    snapshotItems?.useLegacyFallback ?? true,
+  );
 }
 
 function pickPreferredOrFirst(preferred: string, options: FlooringSelectOption[]): string {

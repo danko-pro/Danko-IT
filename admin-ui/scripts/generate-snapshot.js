@@ -1,28 +1,27 @@
 /**
- * Генератор публичного снапшота сантехники (A7.2) — шаг prebuild.
+ * Генератор публичных snapshot (prebuild + dev commands).
  *
- * Remote mode (Render/production): если задан PUBLIC_SNAPSHOT_BASE_URL или
- * VITE_API_BASE_URL — GET /api/public/catalog/plumbing/snapshot, валидация,
- * запись в src/features/public/generated/plumbing.snapshot.json.
- * При ошибке fetch или невалидном payload — exit != 0 (без fallback на Python).
+ * Режимы (--mode=… или SNAPSHOT_MODE):
+ * - auto (default): PUBLIC_SNAPSHOT_BASE_URL / VITE_API_BASE_URL → remote, иначе local seed
+ * - local: детерминированный seed (plumbing Python, warm-floor v1, flooring-v2 package seed)
+ * - remote: GET /api/public/catalog/{section}/snapshot; base URL из env или --base-url=
+ * - strict-remote: как remote, но exit != 0 без base URL или при invalid payload (без seed fallback)
  *
- * Local/dev mode (env не задан): Python-генератор (tools/generate_plumbing_snapshot.py)
- * с детерминированным seed-fallback.
+ * ENV:
+ * - PUBLIC_SNAPSHOT_BASE_URL — приоритетный base URL для remote
+ * - VITE_API_BASE_URL — fallback base URL
+ * - SNAPSHOT_MODE — явный режим (local | remote | strict-remote)
  *
- * Также пишет `generated/warm-floor.snapshot.json`:
- * - remote mode: GET /api/public/catalog/warm-floor/snapshot;
- * - local/dev mode: детерминированный v1 seed fallback.
+ * npm scripts: snapshot:local, snapshot:remote, snapshot:remote:local, snapshot:strict-remote
  *
- * Также пишет `generated/flooring.snapshot.json`:
- * - remote mode: GET /api/public/catalog/flooring/snapshot;
- * - local/dev mode: детерминированный FLOORING_V2_SEED fallback.
- *
- * Запуск: `node scripts/generate-snapshot.js`.
+ * Запуск: `node scripts/generate-snapshot.js` (auto) или `node scripts/generate-snapshot.js --mode=local`.
  */
 import { spawnSync } from "node:child_process";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+
+import flooringV2PackageSeed from "./flooring-v2-package-seed.json" with { type: "json" };
 
 const FORBIDDEN_KEYS = new Set([
   "riskPercent",
@@ -101,167 +100,147 @@ export const WARM_FLOOR_V1_SEED = {
   },
 };
 
-/** Детерминированный seed публичных тарифов полов v2 (работы укладки живут в layouts). */
-export const FLOORING_V2_SEED = {
-  version: "flooring-v2",
-  coverings: [
-    {
-      code: "porcelain",
-      title: "Керамогранит",
-      materialPricePerM2: 2900,
-      baseWastePercent: 10,
-      underlayPricePerM2: 0,
-      adhesivePricePerM2: 450,
-      primerPricePerM2: 25,
-      svpPricePerM2: 120,
-      groutPricePerM2: 90,
-      toolConsumablesPerM2: 40,
-    },
-    {
-      code: "quartz_vinyl",
-      title: "Кварцвинил",
-      materialPricePerM2: 1700,
-      baseWastePercent: 5,
-      underlayPricePerM2: 220,
-      adhesivePricePerM2: 0,
-      primerPricePerM2: 25,
-      svpPricePerM2: 0,
-      groutPricePerM2: 0,
-      toolConsumablesPerM2: 80,
-    },
-    {
-      code: "laminate",
-      title: "Ламинат",
-      materialPricePerM2: 930,
-      baseWastePercent: 10,
-      underlayPricePerM2: 220,
-      adhesivePricePerM2: 0,
-      primerPricePerM2: 25,
-      svpPricePerM2: 0,
-      groutPricePerM2: 0,
-      toolConsumablesPerM2: 40,
-    },
-    {
-      code: "carpet",
-      title: "Ковролин",
-      materialPricePerM2: 1500,
-      baseWastePercent: 7,
-      underlayPricePerM2: 0,
-      adhesivePricePerM2: 250,
-      primerPricePerM2: 25,
-      svpPricePerM2: 0,
-      groutPricePerM2: 0,
-      toolConsumablesPerM2: 40,
-    },
-    {
-      code: "engineered_wood",
-      title: "Инженерная доска",
-      materialPricePerM2: 6000,
-      baseWastePercent: 10,
-      underlayPricePerM2: 0,
-      adhesivePricePerM2: 900,
-      primerPricePerM2: 120,
-      svpPricePerM2: 0,
-      groutPricePerM2: 0,
-      toolConsumablesPerM2: 120,
-    },
-  ],
-  preparations: [
-    {
-      code: "none",
-      title: "Без подготовки",
-      laborPricePerM2: 300,
-      materialPricePerM2: 100,
-    },
-    {
-      code: "primer",
-      title: "Грунтование",
-      laborPricePerM2: 250,
-      materialPricePerM2: 120,
-    },
-    {
-      code: "self_leveling",
-      title: "Наливной пол",
-      laborPricePerM2: 650,
-      materialPricePerM2: 120,
-    },
-    {
-      code: "waterproofing",
-      title: "Гидроизоляция",
-      laborPricePerM2: 300,
-      materialPricePerM2: 80,
-    },
-  ],
-  layouts: [
-    {
-      code: "straight",
-      title: "Прямая",
-      laborPricePerM2: 1000,
-      laborFactor: 1.1,
-      additionalWastePercent: 5,
-    },
-    {
-      code: "large_format_straight",
-      title: "Крупный формат",
-      laborPricePerM2: 2000,
-      laborFactor: 1.2,
-      additionalWastePercent: 10,
-    },
-    {
-      code: "glue",
-      title: "Клеевая",
-      laborPricePerM2: 800,
-      laborFactor: 1.25,
-      additionalWastePercent: 5,
-    },
-    {
-      code: "floating",
-      title: "Плавающая",
-      laborPricePerM2: 1000,
-      laborFactor: 1,
-      additionalWastePercent: 3,
-    },
-  ],
-  plinthTypes: [
-    {
-      code: "none",
-      title: "Без плинтуса",
-      materialPricePerMeter: 0,
-      laborPricePerMeter: 0,
-      factor: 1,
-    },
-    {
-      code: "duropolymer",
-      title: "Дюрополимерный",
-      materialPricePerMeter: 450,
-      laborPricePerMeter: 450,
-      factor: 1,
-    },
-    {
-      code: "painted_mdf",
-      title: "МДФ окрашенный",
-      materialPricePerMeter: 650,
-      laborPricePerMeter: 500,
-      factor: 1,
-    },
-  ],
-  globalAddons: {
-    thresholdPrice: 900,
-    demolitionPricePerM2: 150,
-  },
-};
+/** Package-first local dev seed for flooring-v2 (catalog items include required specLines). */
+export const FLOORING_V2_SEED = flooringV2PackageSeed;
 
-/** @returns {string | null} */
-export function resolveRemoteBaseUrl() {
-  const publicSnapshot = process.env.PUBLIC_SNAPSHOT_BASE_URL?.trim();
+/** @returns {unknown} */
+export function loadFlooringV2PackageSeedFromPython() {
+  const pythonExecutable = process.env.PYTHON ?? "python";
+  const generatorScript = resolve(repoRoot, "tools", "generate_flooring_package_seed.py");
+  const result = spawnSync(pythonExecutable, [generatorScript], {
+    cwd: repoRoot,
+    env: { ...process.env, PYTHONPATH: resolve(repoRoot, "src") },
+    encoding: "utf-8",
+  });
+
+  if (result.error) {
+    throw result.error;
+  }
+  if (typeof result.status === "number" && result.status !== 0) {
+    throw new Error(result.stderr || `flooring package seed generator exited with ${result.status}`);
+  }
+
+  return JSON.parse(result.stdout);
+}
+
+const SNAPSHOT_MODES = new Set(["local", "remote", "strict-remote"]);
+
+/**
+ * @param {string[]} [argv]
+ * @param {NodeJS.ProcessEnv} [env]
+ * @returns {"local" | "remote" | "strict-remote" | null}
+ */
+export function parseSnapshotMode(argv = process.argv.slice(2), env = process.env) {
+  for (let index = 0; index < argv.length; index += 1) {
+    const arg = argv[index];
+    if (arg.startsWith("--mode=")) {
+      const mode = arg.slice("--mode=".length).trim();
+      if (!SNAPSHOT_MODES.has(mode)) {
+        throw new Error(`invalid snapshot mode: ${mode}`);
+      }
+      return /** @type {"local" | "remote" | "strict-remote"} */ (mode);
+    }
+    if (arg === "--mode") {
+      const mode = argv[index + 1]?.trim();
+      if (!mode || !SNAPSHOT_MODES.has(mode)) {
+        throw new Error(`invalid snapshot mode: ${mode ?? "(missing)"}`);
+      }
+      return /** @type {"local" | "remote" | "strict-remote"} */ (mode);
+    }
+  }
+
+  const envMode = env.SNAPSHOT_MODE?.trim();
+  if (envMode) {
+    if (!SNAPSHOT_MODES.has(envMode)) {
+      throw new Error(`invalid SNAPSHOT_MODE: ${envMode}`);
+    }
+    return /** @type {"local" | "remote" | "strict-remote"} */ (envMode);
+  }
+
+  return null;
+}
+
+/**
+ * @param {string[]} [argv]
+ * @returns {string | null}
+ */
+export function parseSnapshotBaseUrlArg(argv = process.argv.slice(2)) {
+  for (let index = 0; index < argv.length; index += 1) {
+    const arg = argv[index];
+    if (arg.startsWith("--base-url=")) {
+      const baseUrl = arg.slice("--base-url=".length).trim();
+      return baseUrl.length > 0 ? baseUrl : null;
+    }
+    if (arg === "--base-url") {
+      const baseUrl = argv[index + 1]?.trim();
+      return baseUrl && baseUrl.length > 0 ? baseUrl : null;
+    }
+  }
+  return null;
+}
+
+/** @param {string | null | undefined} baseUrl */
+export function normalizeBaseUrl(baseUrl) {
+  if (!baseUrl) {
+    return null;
+  }
+  const trimmed = baseUrl.trim();
+  if (trimmed.length === 0) {
+    return null;
+  }
+  return trimmed.replace(/\/+$/, "");
+}
+
+/** @param {NodeJS.ProcessEnv} [env] */
+export function resolveRemoteBaseUrl(env = process.env) {
+  const publicSnapshot = env.PUBLIC_SNAPSHOT_BASE_URL?.trim();
   if (publicSnapshot) {
     return publicSnapshot;
   }
-  const viteApi = process.env.VITE_API_BASE_URL?.trim();
+  const viteApi = env.VITE_API_BASE_URL?.trim();
   if (viteApi) {
     return viteApi;
   }
   return null;
+}
+
+/**
+ * @param {"local" | "remote" | "strict-remote" | null} explicitMode
+ * @param {NodeJS.ProcessEnv} [env]
+ * @param {string | null} [cliBaseUrl]
+ * @returns {{
+ *   mode: "local" | "remote";
+ *   baseUrl: string | null;
+ *   strictRemote: boolean;
+ * }}
+ */
+export function resolveSnapshotRunPlan(
+  explicitMode,
+  env = process.env,
+  cliBaseUrl = null,
+) {
+  const strictRemote = explicitMode === "strict-remote";
+  const cliNormalized = normalizeBaseUrl(cliBaseUrl);
+  const envNormalized = normalizeBaseUrl(resolveRemoteBaseUrl(env));
+  const baseUrl = cliNormalized ?? envNormalized;
+
+  if (explicitMode === "local") {
+    return { mode: "local", baseUrl: null, strictRemote: false };
+  }
+
+  if (explicitMode === "remote" || explicitMode === "strict-remote") {
+    return {
+      mode: "remote",
+      baseUrl,
+      strictRemote: explicitMode === "strict-remote",
+    };
+  }
+
+  if (baseUrl) {
+    return { mode: "remote", baseUrl, strictRemote: false };
+  }
+
+  return { mode: "local", baseUrl: null, strictRemote: false };
 }
 
 /** @param {string} baseUrl */
@@ -453,6 +432,8 @@ const FLOORING_SPEC_LINE_REQUIRED_KEYS = [
   "unitPrice",
 ];
 
+const FLOORING_NUMERIC_UNIT_PATTERN = /^\d+(?:[,.]\d+)?$/;
+
 /**
  * @param {unknown} specLines
  * @param {string} arrayName
@@ -486,6 +467,9 @@ function validateSpecLines(specLines, arrayName) {
     }
     if (typeof line.unit !== "string" || line.unit.length === 0) {
       return { ok: false, reason: `${arrayName}.specLines[${index}].unit must be a non-empty string` };
+    }
+    if (FLOORING_NUMERIC_UNIT_PATTERN.test(line.unit.trim())) {
+      return { ok: false, reason: `${arrayName}.specLines[${index}].unit must be a measurement unit` };
     }
     if (typeof line.quantityPerBasis !== "number" || !Number.isFinite(line.quantityPerBasis)) {
       return {
@@ -543,9 +527,12 @@ function validateSpecLines(specLines, arrayName) {
  * @param {string[]} rateKeys
  * @returns {{ ok: true } | { ok: false; reason: string }}
  */
-function validateFlooringCatalogItems(items, arrayName, rateKeys) {
+function validateFlooringCatalogItems(items, arrayName, rateKeys, { requireSpecLines = false } = {}) {
   if (!Array.isArray(items)) {
     return { ok: false, reason: `${arrayName} must be an array` };
+  }
+  if (items.length === 0) {
+    return { ok: false, reason: `${arrayName} must contain at least one item` };
   }
 
   const seenCodes = new Set();
@@ -566,6 +553,9 @@ function validateFlooringCatalogItems(items, arrayName, rateKeys) {
     seenCodes.add(item.code);
     if (!hasNumericRates(item, rateKeys)) {
       return { ok: false, reason: `${arrayName} rates must be finite numbers` };
+    }
+    if (requireSpecLines && !("specLines" in item)) {
+      return { ok: false, reason: `${arrayName}[${item.code}] missing required specLines` };
     }
     if ("specLines" in item) {
       const specLinesValidation = validateSpecLines(item.specLines, `${arrayName}[${item.code}]`);
@@ -620,11 +610,13 @@ export function validateFlooringSnapshotPayload(payload) {
   const isLegacyV1 = payload.version === "flooring-v1";
   const coveringRateKeys = isLegacyV1 ? FLOORING_LEGACY_COVERING_RATE_KEYS : FLOORING_COVERING_RATE_KEYS;
   const layoutRateKeys = isLegacyV1 ? FLOORING_LEGACY_LAYOUT_RATE_KEYS : FLOORING_LAYOUT_RATE_KEYS;
+  const requirePackageSpecLines = !isLegacyV1;
 
   const coveringsValidation = validateFlooringCatalogItems(
     payload.coverings,
     "coverings",
     coveringRateKeys,
+    { requireSpecLines: requirePackageSpecLines },
   );
   if (!coveringsValidation.ok) {
     return coveringsValidation;
@@ -634,6 +626,7 @@ export function validateFlooringSnapshotPayload(payload) {
     payload.preparations,
     "preparations",
     FLOORING_PREPARATION_RATE_KEYS,
+    { requireSpecLines: requirePackageSpecLines },
   );
   if (!preparationsValidation.ok) {
     return preparationsValidation;
@@ -643,6 +636,7 @@ export function validateFlooringSnapshotPayload(payload) {
     payload.layouts,
     "layouts",
     layoutRateKeys,
+    { requireSpecLines: requirePackageSpecLines },
   );
   if (!layoutsValidation.ok) {
     return layoutsValidation;
@@ -664,31 +658,33 @@ export function validateFlooringSnapshotPayload(payload) {
     return { ok: false, reason: "globalAddons rates must be finite numbers" };
   }
 
-  const requiredCoverings = validateFlooringRequiredCodes(
-    payload.coverings,
-    "coverings",
-    EXPECTED_FLOORING_COVERING_CODES,
-  );
-  if (!requiredCoverings.ok) {
-    return requiredCoverings;
-  }
+  if (isLegacyV1) {
+    const requiredCoverings = validateFlooringRequiredCodes(
+      payload.coverings,
+      "coverings",
+      EXPECTED_FLOORING_COVERING_CODES,
+    );
+    if (!requiredCoverings.ok) {
+      return requiredCoverings;
+    }
 
-  const requiredPreparations = validateFlooringRequiredCodes(
-    payload.preparations,
-    "preparations",
-    EXPECTED_FLOORING_PREPARATION_CODES,
-  );
-  if (!requiredPreparations.ok) {
-    return requiredPreparations;
-  }
+    const requiredPreparations = validateFlooringRequiredCodes(
+      payload.preparations,
+      "preparations",
+      EXPECTED_FLOORING_PREPARATION_CODES,
+    );
+    if (!requiredPreparations.ok) {
+      return requiredPreparations;
+    }
 
-  const requiredLayouts = validateFlooringRequiredCodes(
-    payload.layouts,
-    "layouts",
-    EXPECTED_FLOORING_LAYOUT_CODES,
-  );
-  if (!requiredLayouts.ok) {
-    return requiredLayouts;
+    const requiredLayouts = validateFlooringRequiredCodes(
+      payload.layouts,
+      "layouts",
+      EXPECTED_FLOORING_LAYOUT_CODES,
+    );
+    if (!requiredLayouts.ok) {
+      return requiredLayouts;
+    }
   }
 
   const requiredPlinthTypes = validateFlooringRequiredCodes(
@@ -795,6 +791,15 @@ function runLocalPythonGenerator() {
   writeFlooringSnapshot(FLOORING_V2_SEED);
 }
 
+function runLocalSeedMode({ explicit = false } = {}) {
+  console.log(
+    explicit
+      ? "[generate-snapshot] mode: local (explicit seed fallback)"
+      : "[generate-snapshot] mode: local (auto — no remote base URL)",
+  );
+  runLocalPythonGenerator();
+}
+
 async function runRemoteMode(baseUrl) {
   const url = buildSnapshotUrl(baseUrl);
   const warmFloorUrl = buildWarmFloorSnapshotUrl(baseUrl);
@@ -826,14 +831,43 @@ async function runRemoteMode(baseUrl) {
 }
 
 async function main() {
-  const baseUrl = resolveRemoteBaseUrl();
-  if (baseUrl) {
-    await runRemoteMode(baseUrl);
+  let explicitMode = null;
+  try {
+    explicitMode = parseSnapshotMode();
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error(`[generate-snapshot] failure: ${message}`);
+    process.exit(1);
+  }
+
+  const cliBaseUrl = parseSnapshotBaseUrlArg();
+  const plan = resolveSnapshotRunPlan(explicitMode, process.env, cliBaseUrl);
+
+  if (plan.strictRemote && !plan.baseUrl) {
+    console.error(
+      "[generate-snapshot] failure: strict-remote requires PUBLIC_SNAPSHOT_BASE_URL, VITE_API_BASE_URL, or --base-url=",
+    );
+    process.exit(1);
+  }
+
+  if (explicitMode === "remote" && !plan.baseUrl) {
+    console.error(
+      "[generate-snapshot] failure: remote mode requires PUBLIC_SNAPSHOT_BASE_URL, VITE_API_BASE_URL, or --base-url=",
+    );
+    process.exit(1);
+  }
+
+  if (plan.mode === "remote" && plan.baseUrl) {
+    await runRemoteMode(plan.baseUrl);
     return;
   }
 
-  console.log("[generate-snapshot] mode: local (Python seed fallback)");
-  runLocalPythonGenerator();
+  if (explicitMode === "local") {
+    runLocalSeedMode({ explicit: true });
+    return;
+  }
+
+  runLocalSeedMode({ explicit: false });
 }
 
 const isDirectRun = process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1]);

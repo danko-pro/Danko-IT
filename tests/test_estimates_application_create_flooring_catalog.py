@@ -1,6 +1,5 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
-import json
 import unittest
 
 from supply_bot.application.errors import ValidationError
@@ -13,6 +12,7 @@ from supply_bot.estimates.application.create_flooring_catalog import (
     CreateFlooringPreparationCommand,
     CreateFlooringPreparationUseCase,
 )
+from supply_bot.estimates.application.flooring_catalog_assembly import FLOORING_FLAT_CATALOG_CREATE_BLOCKED
 
 
 class FakeFlooringCatalogStorage:
@@ -82,96 +82,18 @@ def _covering_command(**overrides: object) -> CreateFlooringCoveringCommand:
 
 
 class CreateFlooringCatalogUseCaseTests(unittest.IsolatedAsyncioTestCase):
-    async def test_covering_create_normalizes_values_and_returns_id(self) -> None:
+    async def test_covering_flat_create_is_blocked(self) -> None:
         storage = FakeFlooringCatalogStorage()
 
-        covering_id = await CreateFlooringCoveringUseCase(storage).execute(_covering_command())
-
-        self.assertEqual(covering_id, 101)
-        self.assertEqual(len(storage.covering_calls), 1)
-        call = storage.covering_calls[0]
-        self.assertEqual(call["title"], "Covering")
-        self.assertEqual(call["material_price_per_m2"], 0.0)
-        self.assertEqual(call["labor_price_per_m2"], 0.0)
-        self.assertEqual(call["base_waste_percent"], 0.0)
-        self.assertEqual(call["underlay_mode"], "none")
-        self.assertEqual(call["underlay_consumption_per_m2"], 0.0)
-        self.assertEqual(call["glue_consumption_per_m2"], 0.0)
-        self.assertEqual(call["glue_unit"], "кг")
-        self.assertEqual(call["glue_price_per_unit"], 0.0)
-        self.assertEqual(call["primer_consumption_per_m2"], 0.0)
-        self.assertEqual(call["primer_unit"], "л")
-        self.assertEqual(call["primer_price_per_unit"], 0.0)
-        self.assertEqual(call["svp_consumption_per_m2"], 0.0)
-        self.assertEqual(call["svp_unit"], "шт")
-        self.assertEqual(call["svp_price_per_unit"], 0.0)
-        self.assertEqual(call["grout_consumption_per_m2"], 0.0)
-        self.assertEqual(call["grout_unit"], "кг")
-        self.assertEqual(call["grout_price_per_unit"], 0.0)
-        self.assertEqual(call["needs_plinth"], True)
-        self.assertEqual(call["instrument_price_per_m2"], 0.0)
-        self.assertEqual(call["note"], "Note")
-        self.assertEqual(
-            json.loads(str(call["custom_consumables_json"])),
-            [
-                {
-                    "title": "Custom item",
-                    "consumption_per_m2": 0.0,
-                    "unit": "шт",
-                    "price_per_unit": 0.0,
-                }
-            ],
-        )
-
-    async def test_covering_create_rejects_empty_title(self) -> None:
-        storage = FakeFlooringCatalogStorage()
-
-        with self.assertRaisesRegex(ValidationError, "Floor covering title is required"):
-            await CreateFlooringCoveringUseCase(storage).execute(_covering_command(title="   "))
+        with self.assertRaisesRegex(ValidationError, FLOORING_FLAT_CATALOG_CREATE_BLOCKED):
+            await CreateFlooringCoveringUseCase(storage).execute(_covering_command())
 
         storage.assert_no_writes(self)
 
-    async def test_covering_create_converts_empty_note_to_none(self) -> None:
-        storage = FakeFlooringCatalogStorage()
-
-        await CreateFlooringCoveringUseCase(storage).execute(_covering_command(note="   "))
-
-        self.assertEqual(storage.covering_calls[0]["note"], None)
-
-    async def test_preparation_create_normalizes_values_and_returns_id(self) -> None:
+    async def test_preparation_flat_create_is_blocked(self) -> None:
         storage = FakeFlooringCatalogStorage()
         command = CreateFlooringPreparationCommand(
-            title=" Preparation ",
-            labor_price_per_m2=-100,
-            material_price_per_m2=-200,
-            primer_consumption_per_m2=-1,
-            primer_unit=" ",
-            primer_price_per_unit=-50,
-            note=" Note ",
-        )
-
-        preparation_id = await CreateFlooringPreparationUseCase(storage).execute(command)
-
-        self.assertEqual(preparation_id, 201)
-        self.assertEqual(
-            storage.preparation_calls,
-            [
-                {
-                    "title": "Preparation",
-                    "labor_price_per_m2": 0.0,
-                    "material_price_per_m2": 0.0,
-                    "primer_consumption_per_m2": 0.0,
-                    "primer_unit": "л",
-                    "primer_price_per_unit": 0.0,
-                    "note": "Note",
-                }
-            ],
-        )
-
-    async def test_preparation_create_rejects_empty_title(self) -> None:
-        storage = FakeFlooringCatalogStorage()
-        command = CreateFlooringPreparationCommand(
-            title="   ",
+            title="Preparation",
             labor_price_per_m2=0,
             material_price_per_m2=0,
             primer_consumption_per_m2=0,
@@ -180,48 +102,22 @@ class CreateFlooringCatalogUseCaseTests(unittest.IsolatedAsyncioTestCase):
             note=None,
         )
 
-        with self.assertRaisesRegex(ValidationError, "Floor preparation title is required"):
+        with self.assertRaisesRegex(ValidationError, FLOORING_FLAT_CATALOG_CREATE_BLOCKED):
             await CreateFlooringPreparationUseCase(storage).execute(command)
 
         storage.assert_no_writes(self)
 
-    async def test_layout_create_normalizes_values_and_returns_id(self) -> None:
+    async def test_layout_flat_create_is_blocked(self) -> None:
         storage = FakeFlooringCatalogStorage()
         command = CreateFlooringLayoutCommand(
-            title=" Layout ",
-            labor_price_per_m2=-700,
-            labor_multiplier=0,
-            extra_waste_percent=-5,
-            note=" Note ",
-        )
-
-        layout_id = await CreateFlooringLayoutUseCase(storage).execute(command)
-
-        self.assertEqual(layout_id, 301)
-        self.assertEqual(
-            storage.layout_calls,
-            [
-                {
-                    "title": "Layout",
-                    "labor_price_per_m2": 0.0,
-                    "labor_multiplier": 0.1,
-                    "extra_waste_percent": 0.0,
-                    "note": "Note",
-                }
-            ],
-        )
-
-    async def test_layout_create_rejects_empty_title(self) -> None:
-        storage = FakeFlooringCatalogStorage()
-        command = CreateFlooringLayoutCommand(
-            title="   ",
+            title="Layout",
             labor_price_per_m2=0,
             labor_multiplier=1,
             extra_waste_percent=0,
             note=None,
         )
 
-        with self.assertRaisesRegex(ValidationError, "Floor layout title is required"):
+        with self.assertRaisesRegex(ValidationError, FLOORING_FLAT_CATALOG_CREATE_BLOCKED):
             await CreateFlooringLayoutUseCase(storage).execute(command)
 
         storage.assert_no_writes(self)

@@ -19,8 +19,8 @@
           "category": "materials",
           "basis": "area",
           "unit": "m2",
-          "quantityPerBasis": 1,
-          "unitPrice": 2900,
+          "quantityPerBasis": 1.0,
+          "unitPrice": 2900.0,
           "aggregationKey": "covering_materials_keramogranit_1"
         },
         {
@@ -30,7 +30,7 @@
           "basis": "area",
           "unit": "kg",
           "quantityPerBasis": 1.5,
-          "unitPrice": 300,
+          "unitPrice": 300.0,
           "aggregationKey": "covering_consumables_kley_2",
           "calculationNote": "1.5 kg/m²"
         },
@@ -41,7 +41,7 @@
           "basis": "area",
           "unit": "l",
           "quantityPerBasis": 0.1,
-          "unitPrice": 250,
+          "unitPrice": 250.0,
           "aggregationKey": "covering_consumables_grunt_3",
           "calculationNote": "0.1 l/m²"
         },
@@ -51,8 +51,8 @@
           "category": "consumables",
           "basis": "area",
           "unit": "pcs",
-          "quantityPerBasis": 4,
-          "unitPrice": 30,
+          "quantityPerBasis": 4.0,
+          "unitPrice": 30.0,
           "aggregationKey": "covering_consumables_svp_4",
           "calculationNote": "4 pcs/m²"
         },
@@ -63,7 +63,7 @@
           "basis": "area",
           "unit": "kg",
           "quantityPerBasis": 0.5,
-          "unitPrice": 180,
+          "unitPrice": 180.0,
           "aggregationKey": "covering_consumables_zatirka_5",
           "calculationNote": "0.5 kg/m²"
         },
@@ -73,8 +73,8 @@
           "category": "tools",
           "basis": "area",
           "unit": "m2",
-          "quantityPerBasis": 1,
-          "unitPrice": 40,
+          "quantityPerBasis": 1.0,
+          "unitPrice": 40.0,
           "aggregationKey": "covering_tools_instrument_i_melkiy_rashodnik_6"
         }
       ]
@@ -97,8 +97,8 @@
           "category": "materials",
           "basis": "area",
           "unit": "m2",
-          "quantityPerBasis": 1,
-          "unitPrice": 1700,
+          "quantityPerBasis": 1.0,
+          "unitPrice": 1700.0,
           "aggregationKey": "covering_materials_kvarcvinil_1"
         },
         {
@@ -107,8 +107,8 @@
           "category": "consumables",
           "basis": "area",
           "unit": "m2",
-          "quantityPerBasis": 1,
-          "unitPrice": 220,
+          "quantityPerBasis": 1.0,
+          "unitPrice": 220.0,
           "aggregationKey": "covering_consumables_podlozhka_2",
           "calculationNote": "1 m2/m²"
         },
@@ -119,7 +119,7 @@
           "basis": "area",
           "unit": "l",
           "quantityPerBasis": 0.1,
-          "unitPrice": 250,
+          "unitPrice": 250.0,
           "aggregationKey": "covering_consumables_grunt_3",
           "calculationNote": "0.1 l/m²"
         },
@@ -129,8 +129,8 @@
           "category": "tools",
           "basis": "area",
           "unit": "m2",
-          "quantityPerBasis": 1,
-          "unitPrice": 80,
+          "quantityPerBasis": 1.0,
+          "unitPrice": 80.0,
           "aggregationKey": "covering_tools_instrument_i_melkiy_rashodnik_4"
         }
       ]
@@ -153,8 +153,8 @@
           "category": "materials",
           "basis": "area",
           "unit": "m2",
-          "quantityPerBasis": 1,
-          "unitPrice": 930,
+          "quantityPerBasis": 1.0,
+          "unitPrice": 930.0,
           "aggregationKey": "covering_materials_laminat_1"
         },
         {
@@ -163,8 +163,8 @@
           "category": "consumables",
           "basis": "area",
           "unit": "m2",
-          "quantityPerBasis": 1,
-          "unitPrice": 220,
+          "quantityPerBasis": 1.0,
+          "unitPrice": 220.0,
           "aggregationKey": "covering_consumables_podlozhka_2",
           "calculationNote": "1 m2/m²"
         },
@@ -175,7 +175,7 @@
           "basis": "area",
           "unit": "l",
           "quantityPerBasis": 0.1,
-          "unitPrice": 250,
+          "unitPrice": 250.0,
           "aggregationKey": "covering_consumables_grunt_3",
           "calculationNote": "0.1 l/m²"
         },
@@ -185,8 +185,8 @@
           "category": "tools",
           "basis": "area",
           "unit": "m2",
-          "quantityPerBasis": 1,
-          "unitPrice": 40,
+          "quantityPerBasis": 1.0,
+          "unitPrice": 40.0,
           "aggregationKey": "covering_tools_instrument_i_melkiy_rashodnik_4"
         }
       ]
@@ -209,8 +209,8 @@
           "category": "materials",
           "basis": "area",
           "unit": "m2",
-          "quantityPerBasis": 1,
-          "unitPrice": 1500,
+          "quantityPerBasis": 1.0,
+          "unitPrice": 1500.0,
           "aggregationKey": "covering_materials_kovrolin_1"
         },
         {
@@ -220,7 +220,7 @@
           "basis": "area",
           "unit": "kg",
           "quantityPerBasis": 0.833333,
-          "unitPrice": 300,
+          "unitPrice": 300.0,
           "aggregationKey": "covering_consumables_kley_2",
           "calculationNote": "0.833333 kg/m²"
         },
@@ -231,7 +231,7 @@
           "basis": "area",
           "unit": "l",
           "quantityPerBasis": 0.1,
-          "unitPrice": 250,
+          "unitPrice": 250.0,
           "aggregationKey": "covering_consumables_grunt_3",
           "calculationNote": "0.1 l/m²"
         },
@@ -241,8 +241,8 @@
           "category": "tools",
           "basis": "area",
           "unit": "m2",
-          "quantityPerBasis": 1,
-          "unitPrice": 40,
+          "quantityPerBasis": 1.0,
+          "unitPrice": 40.0,
           "aggregationKey": "covering_tools_instrument_i_melkiy_rashodnik_4"
         }
       ]
@@ -265,8 +265,8 @@
           "category": "materials",
           "basis": "area",
           "unit": "m2",
-          "quantityPerBasis": 1,
-          "unitPrice": 6000,
+          "quantityPerBasis": 1.0,
+          "unitPrice": 6000.0,
           "aggregationKey": "covering_materials_inzhenernaya_doska_1"
         },
         {
@@ -275,8 +275,8 @@
           "category": "consumables",
           "basis": "area",
           "unit": "kg",
-          "quantityPerBasis": 3,
-          "unitPrice": 300,
+          "quantityPerBasis": 3.0,
+          "unitPrice": 300.0,
           "aggregationKey": "covering_consumables_kley_2",
           "calculationNote": "3 kg/m²"
         },
@@ -287,7 +287,7 @@
           "basis": "area",
           "unit": "l",
           "quantityPerBasis": 0.48,
-          "unitPrice": 250,
+          "unitPrice": 250.0,
           "aggregationKey": "covering_consumables_grunt_3",
           "calculationNote": "0.48 l/m²"
         },
@@ -297,8 +297,8 @@
           "category": "tools",
           "basis": "area",
           "unit": "m2",
-          "quantityPerBasis": 1,
-          "unitPrice": 120,
+          "quantityPerBasis": 1.0,
+          "unitPrice": 120.0,
           "aggregationKey": "covering_tools_instrument_i_melkiy_rashodnik_4"
         }
       ]
@@ -317,8 +317,8 @@
           "category": "works",
           "basis": "area",
           "unit": "m2",
-          "quantityPerBasis": 1,
-          "unitPrice": 300,
+          "quantityPerBasis": 1.0,
+          "unitPrice": 300.0,
           "aggregationKey": "preparation_works_bez_podgotovki_1"
         }
       ]
@@ -335,8 +335,8 @@
           "category": "works",
           "basis": "area",
           "unit": "m2",
-          "quantityPerBasis": 1,
-          "unitPrice": 250,
+          "quantityPerBasis": 1.0,
+          "unitPrice": 250.0,
           "aggregationKey": "preparation_works_gruntovanie_1"
         }
       ]
@@ -353,8 +353,8 @@
           "category": "works",
           "basis": "area",
           "unit": "m2",
-          "quantityPerBasis": 1,
-          "unitPrice": 650,
+          "quantityPerBasis": 1.0,
+          "unitPrice": 650.0,
           "aggregationKey": "preparation_works_nalivnoy_pol_1"
         }
       ]
@@ -371,8 +371,8 @@
           "category": "works",
           "basis": "area",
           "unit": "m2",
-          "quantityPerBasis": 1,
-          "unitPrice": 300,
+          "quantityPerBasis": 1.0,
+          "unitPrice": 300.0,
           "aggregationKey": "preparation_works_gidroizolyaciya_1"
         }
       ]
@@ -393,7 +393,7 @@
           "basis": "area",
           "unit": "m2",
           "quantityPerBasis": 1.1,
-          "unitPrice": 1000,
+          "unitPrice": 1000.0,
           "aggregationKey": "layout_works_pryamaya_1",
           "calculationNote": "1.1 m²/m²"
         }
@@ -413,7 +413,7 @@
           "basis": "area",
           "unit": "m2",
           "quantityPerBasis": 1.2,
-          "unitPrice": 2000,
+          "unitPrice": 2000.0,
           "aggregationKey": "layout_works_krupnyy_format_1",
           "calculationNote": "1.2 m²/m²"
         }
@@ -433,7 +433,7 @@
           "basis": "area",
           "unit": "m2",
           "quantityPerBasis": 1.25,
-          "unitPrice": 800,
+          "unitPrice": 800.0,
           "aggregationKey": "layout_works_kleevaya_1",
           "calculationNote": "1.25 m²/m²"
         }
@@ -452,8 +452,8 @@
           "category": "works",
           "basis": "area",
           "unit": "m2",
-          "quantityPerBasis": 1,
-          "unitPrice": 1000,
+          "quantityPerBasis": 1.0,
+          "unitPrice": 1000.0,
           "aggregationKey": "layout_works_plavayuschaya_1"
         }
       ]

@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from typing import Protocol
 
 from supply_bot.application.errors import ValidationError
+from supply_bot.estimates.application.flooring_catalog_assembly import reject_flooring_flat_catalog_create
 from supply_bot.estimates.application.shared import (
     clamp_minimum,
     clamp_non_negative,
@@ -125,6 +126,7 @@ class CreateFlooringCoveringUseCase:
         self._storage = storage
 
     async def execute(self, command: CreateFlooringCoveringCommand) -> int:
+        reject_flooring_flat_catalog_create()
         title = _normalize_required_text(command.title, error_message="Floor covering title is required")
         return await self._storage.create_estimate_flooring_covering(
             title=title,
@@ -159,6 +161,7 @@ class CreateFlooringPreparationUseCase:
         self._storage = storage
 
     async def execute(self, command: CreateFlooringPreparationCommand) -> int:
+        reject_flooring_flat_catalog_create()
         title = _normalize_required_text(command.title, error_message="Floor preparation title is required")
         return await self._storage.create_estimate_flooring_preparation(
             title=title,
@@ -178,6 +181,7 @@ class CreateFlooringLayoutUseCase:
         self._storage = storage
 
     async def execute(self, command: CreateFlooringLayoutCommand) -> int:
+        reject_flooring_flat_catalog_create()
         title = _normalize_required_text(command.title, error_message="Floor layout title is required")
         return await self._storage.create_estimate_flooring_layout(
             title=title,

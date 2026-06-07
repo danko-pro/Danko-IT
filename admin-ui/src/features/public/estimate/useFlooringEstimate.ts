@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState, type ChangeEvent } from "react";
+import { useFlooringSnapshotRefresh } from "./useFlooringSnapshotRefresh";
 import { parseEstimateDecimal, type EstimateRoomGeometry, type EstimateRoomInput } from "../public-estimate-geometry";
 import {
   normalizeEstimateCountOnBlur,
@@ -30,6 +31,7 @@ type UseFlooringEstimateParams = {
 };
 
 export function useFlooringEstimate({ rooms, roomInputs, roomGeometries }: UseFlooringEstimateParams) {
+  const snapshotRevision = useFlooringSnapshotRefresh();
   const [flooringRooms, setFlooringRooms] = useState<Record<string, FlooringRoomDraft>>({});
   const [flooringOptions, setFlooringOptions] = useState<FlooringOptionsDraft>({
     includePlinth: true,
@@ -57,7 +59,7 @@ export function useFlooringEstimate({ rooms, roomInputs, roomGeometries }: UseFl
           isIncluded: flooringDraft.isIncluded ?? true,
         };
       }),
-    [flooringRooms, roomGeometries, roomInputs, rooms],
+    [flooringRooms, roomGeometries, roomInputs, rooms, snapshotRevision],
   );
 
   const flooringResult = useMemo(
@@ -69,10 +71,18 @@ export function useFlooringEstimate({ rooms, roomInputs, roomGeometries }: UseFl
         thresholdCount: parseEstimateDecimal(flooringOptions.thresholdCount),
         includeDemolition: flooringOptions.includeDemolition,
       }),
-    [flooringOptions, flooringRoomInputs],
+    [flooringOptions, flooringRoomInputs, snapshotRevision],
   );
 
-  const flooringSummaryItems = buildFlooringSummaryItems(flooringResult);
+  const flooringSummaryItems = useMemo(
+    () => buildFlooringSummaryItems(flooringResult),
+    [flooringResult],
+  );
+
+  const flooringCoveringOptions = useMemo(() => getFlooringCoveringOptions(), [snapshotRevision]);
+  const flooringPreparationOptions = useMemo(() => getFlooringPreparationOptions(), [snapshotRevision]);
+  const flooringLayoutOptions = useMemo(() => getFlooringLayoutOptions(), [snapshotRevision]);
+  const flooringPlinthOptions = useMemo(() => getFlooringPlinthOptions(), [snapshotRevision]);
 
   const updateFlooringRoom = useCallback((roomId: string, patch: FlooringRoomDraft) => {
     setFlooringRooms((currentRooms) => ({
@@ -149,10 +159,10 @@ export function useFlooringEstimate({ rooms, roomInputs, roomGeometries }: UseFl
   return {
     flooringRooms,
     flooringOptions,
-    flooringCoveringOptions: getFlooringCoveringOptions(),
-    flooringPreparationOptions: getFlooringPreparationOptions(),
-    flooringLayoutOptions: getFlooringLayoutOptions(),
-    flooringPlinthOptions: getFlooringPlinthOptions(),
+    flooringCoveringOptions,
+    flooringPreparationOptions,
+    flooringLayoutOptions,
+    flooringPlinthOptions,
     flooringResult,
     flooringSummaryItems,
     removeFlooringRoom,

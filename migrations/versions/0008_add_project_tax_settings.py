@@ -7,8 +7,8 @@ Create Date: 2026-05-21
 
 from __future__ import annotations
 
-from alembic import op
 import sqlalchemy as sa
+from alembic import op
 
 revision = "0008_add_project_tax_settings"
 down_revision = "0007_create_estimate_ceilings"

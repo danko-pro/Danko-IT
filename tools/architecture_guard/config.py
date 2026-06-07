@@ -8,7 +8,6 @@ from .hygiene import HygieneRule, load_hygiene_rules
 from .patterns import matches_any
 from .topology import TopologyRule, load_topology_rules
 
-
 DEFAULT_CONFIG_FILE_NAME = "architecture_guard.json"
 
 

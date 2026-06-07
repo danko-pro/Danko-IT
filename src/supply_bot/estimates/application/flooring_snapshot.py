@@ -184,9 +184,7 @@ PUBLIC_FLOORING_FORBIDDEN_KEYS = frozenset(
     }
 )
 
-EXPECTED_COVERING_CODES = frozenset(
-    {"porcelain", "quartz_vinyl", "laminate", "carpet", "engineered_wood"}
-)
+EXPECTED_COVERING_CODES = frozenset({"porcelain", "quartz_vinyl", "laminate", "carpet", "engineered_wood"})
 EXPECTED_PREPARATION_CODES = frozenset({"none", "primer", "self_leveling", "waterproofing"})
 EXPECTED_LAYOUT_CODES = frozenset({"straight", "large_format_straight", "glue", "floating"})
 EXPECTED_PLINTH_CODES = frozenset({"none", "duropolymer", "painted_mdf"})
@@ -282,7 +280,9 @@ def _aggregate_covering_consumables(
         "groutPricePerM2": _public_number(
             _consumable_price_per_m2(row.get("grout_consumption_per_m2"), row.get("grout_price_per_unit"))
         ),
-        "toolConsumablesPerM2": _public_number(float(_public_number(row.get("instrument_price_per_m2"))) + custom_total),
+        "toolConsumablesPerM2": _public_number(
+            float(_public_number(row.get("instrument_price_per_m2"))) + custom_total
+        ),
     }
 
 
@@ -429,18 +429,9 @@ def build_public_flooring_snapshot_from_catalog(
     used_preparation_codes: set[str] = set()
     used_layout_codes: set[str] = set()
 
-    mapped_coverings = [
-        _map_covering_row(row, used_codes=used_covering_codes)
-        for row in coverings
-    ]
-    mapped_preparations = [
-        _map_preparation_row(row, used_codes=used_preparation_codes)
-        for row in preparations
-    ]
-    mapped_layouts = [
-        _map_layout_row(row, used_codes=used_layout_codes)
-        for row in layouts
-    ]
+    mapped_coverings = [_map_covering_row(row, used_codes=used_covering_codes) for row in coverings]
+    mapped_preparations = [_map_preparation_row(row, used_codes=used_preparation_codes) for row in preparations]
+    mapped_layouts = [_map_layout_row(row, used_codes=used_layout_codes) for row in layouts]
 
     if not _is_f1_complete_catalog(mapped_coverings, mapped_preparations, mapped_layouts):
         result = build_public_flooring_snapshot()

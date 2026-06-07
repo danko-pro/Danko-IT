@@ -150,7 +150,9 @@ def _flooring_techmap_raw_text_input(relative_path: str, absolute_path: Path, te
     )
 
 
-def _flooring_techmap_missing_compact_size(relative_path: str, absolute_path: Path, text: str) -> UiMotionViolation | None:
+def _flooring_techmap_missing_compact_size(
+    relative_path: str, absolute_path: Path, text: str
+) -> UiMotionViolation | None:
     if not _is_flooring_techmap_catalog(relative_path):
         return None
 
@@ -169,7 +171,7 @@ def _flooring_techmap_missing_compact_size(relative_path: str, absolute_path: Pa
             line_number=line_number,
             rule_name="flooring-techmap-compact-fields",
             severity="warn",
-            message="Flooring techmap TextField/SelectField must use size=\"compact\" to keep dense calculator layout.",
+            message='Flooring techmap TextField/SelectField must use size="compact" to keep dense calculator layout.',
         )
     return None
 

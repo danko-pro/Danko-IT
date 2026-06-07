@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import asyncio
-import unittest
 from dataclasses import replace
 from pathlib import Path
 from tempfile import TemporaryDirectory

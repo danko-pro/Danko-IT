@@ -213,7 +213,9 @@ class FlooringSnapshotRepositoryTests(unittest.IsolatedAsyncioTestCase):
         )
         payload = await BuildFlooringSnapshotUseCase(self.repository).build_public()
         laminate = next(item for item in payload["coverings"] if item["code"] == "laminate")
-        self.assertEqual(laminate["materialPricePerM2"], DEFAULT_PUBLIC_FLOORING_SNAPSHOT["coverings"][2]["materialPricePerM2"])
+        self.assertEqual(
+            laminate["materialPricePerM2"], DEFAULT_PUBLIC_FLOORING_SNAPSHOT["coverings"][2]["materialPricePerM2"]
+        )
 
 
 class PublicFlooringSnapshotWhitelistTests(AdminProjectsRouteCase):
@@ -272,17 +274,33 @@ class PublicFlooringSnapshotWhitelistTests(AdminProjectsRouteCase):
 
     def test_build_from_catalog_keeps_defaults_when_db_incomplete(self) -> None:
         payload = build_public_flooring_snapshot_from_catalog(
-            [{"title": "Ламинат", "material_price_per_m2": 555, "labor_price_per_m2": 666, "base_waste_percent": 8, "underlay_mode": "none"}],
+            [
+                {
+                    "title": "Ламинат",
+                    "material_price_per_m2": 555,
+                    "labor_price_per_m2": 666,
+                    "base_waste_percent": 8,
+                    "underlay_mode": "none",
+                }
+            ],
             [],
             [],
         )
         self.assertTrue(EXPECTED_COVERING_CODES.issubset({item["code"] for item in payload["coverings"]}))
         laminate = next(item for item in payload["coverings"] if item["code"] == "laminate")
-        self.assertEqual(laminate["materialPricePerM2"], DEFAULT_PUBLIC_FLOORING_SNAPSHOT["coverings"][2]["materialPricePerM2"])
+        self.assertEqual(
+            laminate["materialPricePerM2"], DEFAULT_PUBLIC_FLOORING_SNAPSHOT["coverings"][2]["materialPricePerM2"]
+        )
 
     def test_build_from_catalog_overrides_defaults_when_f1_complete(self) -> None:
         coverings = [
-            {"title": title, "material_price_per_m2": 1000 + index, "labor_price_per_m2": 2000 + index, "base_waste_percent": 8, "underlay_mode": "none"}
+            {
+                "title": title,
+                "material_price_per_m2": 1000 + index,
+                "labor_price_per_m2": 2000 + index,
+                "base_waste_percent": 8,
+                "underlay_mode": "none",
+            }
             for index, title in enumerate(("Керамогранит", "Кварцвинил", "Ламинат", "Ковролин", "Инженерная доска"))
         ]
         preparations = [

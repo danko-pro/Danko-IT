@@ -15,6 +15,8 @@ from .scanner import ScanSnapshot, build_initial_events, build_watch_events, col
 from .snapshot import total_violation_count
 
 MODULE_ROOT = Path(__file__).resolve().parents[2]
+
+
 def run_check(root: Path, config_path: Path | None = None) -> int:
     config = load_guard_config(root, config_path)
     paths = build_runtime_paths(config.root)
@@ -33,6 +35,8 @@ def run_check(root: Path, config_path: Path | None = None) -> int:
         return 1
     print("[architecture-guard] No active architecture violations.", flush=True)
     return 0
+
+
 def run_watch(root: Path, config_path: Path | None = None, interval_override: float | None = None) -> int:
     config = load_guard_config(root, config_path)
     poll_interval = interval_override or config.poll_interval_seconds
@@ -93,6 +97,8 @@ def run_watch(root: Path, config_path: Path | None = None, interval_override: fl
         cleanup_runtime_files(paths)
 
     return 0
+
+
 def start_guard(root: Path, config_path: Path | None = None, interval_override: float | None = None) -> int:
     resolved_root = root.resolve()
     paths = build_runtime_paths(resolved_root)
@@ -120,7 +126,9 @@ def start_guard(root: Path, config_path: Path | None = None, interval_override: 
     if interval_override is not None:
         command.extend(["--interval", str(interval_override)])
 
-    process = spawn_detached_process(command=command, cwd=MODULE_ROOT, stdout_handle=stdout_handle, stderr_handle=stderr_handle)
+    process = spawn_detached_process(
+        command=command, cwd=MODULE_ROOT, stdout_handle=stdout_handle, stderr_handle=stderr_handle
+    )
     stdout_handle.close()
     stderr_handle.close()
 
@@ -135,6 +143,8 @@ def start_guard(root: Path, config_path: Path | None = None, interval_override: 
     print(f"[architecture-guard] Snapshot: {paths.snapshot_text_path}", flush=True)
     print(f"[architecture-guard] Event log: {paths.events_log_path}", flush=True)
     return 0
+
+
 def stop_guard(root: Path) -> int:
     resolved_root = root.resolve()
     paths = build_runtime_paths(resolved_root)
@@ -178,7 +188,9 @@ def status_guard(root: Path, *, emit_json: bool = False) -> int:
         "size_violation_count": snapshot.get("size_violation_count", state.get("size_violation_count", 0)),
         "layer_violation_count": snapshot.get("layer_violation_count", state.get("layer_violation_count", 0)),
         "topology_violation_count": snapshot.get("topology_violation_count", state.get("topology_violation_count", 0)),
-        "ui_motion_violation_count": snapshot.get("ui_motion_violation_count", state.get("ui_motion_violation_count", 0)),
+        "ui_motion_violation_count": snapshot.get(
+            "ui_motion_violation_count", state.get("ui_motion_violation_count", 0)
+        ),
         "hygiene_violation_count": snapshot.get("hygiene_violation_count", state.get("hygiene_violation_count", 0)),
         "violation_count": snapshot.get("violation_count", state.get("violation_count", 0)),
         "snapshot_json_path": str(paths.snapshot_json_path),

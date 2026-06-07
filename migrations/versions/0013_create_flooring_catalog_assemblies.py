@@ -1,14 +1,14 @@
 """Create flooring catalog assembly tables.
 
-Revision ID: 0013_create_flooring_catalog_assemblies
-Revises: 0012_create_flooring_assembly_items
+Revision ID: 0013_flooring_catalog_assemblies
+Revises: 0012_flooring_assembly_items
 Create Date: 2026-06-02
 """
 
 from alembic import op
 
-revision = "0013_create_flooring_catalog_assemblies"
-down_revision = "0012_create_flooring_assembly_items"
+revision = "0013_flooring_catalog_assemblies"
+down_revision = "0012_flooring_assembly_items"
 branch_labels = None
 depends_on = None
 

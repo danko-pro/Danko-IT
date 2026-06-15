@@ -12,6 +12,7 @@ type CatalogFormProps = {
   submitting: boolean;
   onSubmit: () => void;
   onCancel?: () => void;
+  extraActions?: ReactNode;
   children: ReactNode;
 };
 
@@ -22,6 +23,7 @@ function CatalogForm({
   submitting,
   onSubmit,
   onCancel,
+  extraActions,
   children,
 }: CatalogFormProps) {
   const submitLabel =
@@ -49,6 +51,7 @@ function CatalogForm({
           <strong>{headTitle}</strong>
         </div>
         <div className="ce-toolbar-group ce-flooring-form-toolbar">
+          {extraActions}
           {mode === "edit" && onCancel ? (
             <button type="button" className="ce-btn ce-btn-sm" disabled={submitting} onClick={onCancel}>
               Отмена
@@ -133,6 +136,7 @@ export type FlooringCoveringEditFormProps = {
   onNumberChange: (field: keyof FlooringCoveringDraft, value: number) => void;
   formatMoney: (value: number) => string;
   formatPercent: (value: number) => string;
+  extraActions?: ReactNode;
 };
 
 export function FlooringCoveringEditForm({
@@ -144,6 +148,7 @@ export function FlooringCoveringEditForm({
   onNumberChange,
   formatMoney,
   formatPercent,
+  extraActions,
 }: FlooringCoveringEditFormProps) {
   const hasCustomConsumables = draft.customConsumables.length > 0;
 
@@ -155,6 +160,7 @@ export function FlooringCoveringEditForm({
       submitting={submitting}
       onSubmit={onSubmit}
       onCancel={onCancel}
+      extraActions={extraActions}
     >
       <CoveringFormSummaryStrip draft={draft} formatMoney={formatMoney} formatPercent={formatPercent} />
 
@@ -397,6 +403,7 @@ export type FlooringPreparationEditFormProps = {
   onCancel: () => void;
   onDraftChange: Dispatch<SetStateAction<FlooringPreparationDraft>>;
   onNumberChange: (field: keyof FlooringPreparationDraft, value: number) => void;
+  extraActions?: ReactNode;
 };
 
 export function FlooringPreparationEditForm({
@@ -406,6 +413,7 @@ export function FlooringPreparationEditForm({
   onCancel,
   onDraftChange,
   onNumberChange,
+  extraActions,
 }: FlooringPreparationEditFormProps) {
   return (
     <CatalogForm
@@ -415,6 +423,7 @@ export function FlooringPreparationEditForm({
       submitting={submitting}
       onSubmit={onSubmit}
       onCancel={onCancel}
+      extraActions={extraActions}
     >
       <div className="ce-table-wrap ce-flooring-table-wrap ce-flooring-form-table-wrap">
         <table className="ce-table ce-flooring-table ce-flooring-form-table">
@@ -497,6 +506,7 @@ export type FlooringLayoutEditFormProps = {
   onCancel: () => void;
   onDraftChange: Dispatch<SetStateAction<FlooringLayoutDraft>>;
   onNumberChange: (field: keyof FlooringLayoutDraft, value: number) => void;
+  extraActions?: ReactNode;
 };
 
 export function FlooringLayoutEditForm({
@@ -506,6 +516,7 @@ export function FlooringLayoutEditForm({
   onCancel,
   onDraftChange,
   onNumberChange,
+  extraActions,
 }: FlooringLayoutEditFormProps) {
   return (
     <CatalogForm
@@ -515,6 +526,7 @@ export function FlooringLayoutEditForm({
       submitting={submitting}
       onSubmit={onSubmit}
       onCancel={onCancel}
+      extraActions={extraActions}
     >
       <div className="ce-table-wrap ce-flooring-table-wrap ce-flooring-form-table-wrap">
         <table className="ce-table ce-flooring-table ce-flooring-form-table">

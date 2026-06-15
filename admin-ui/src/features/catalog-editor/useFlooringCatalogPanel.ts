@@ -96,6 +96,7 @@ export function useFlooringCatalogPanel() {
   const [savingLayout, setSavingLayout] = useState(false);
   const [savingAssembly, setSavingAssembly] = useState(false);
   const [assemblyRowsSnapshot, setAssemblyRowsSnapshot] = useState<CoveringAssemblyRow[]>([]);
+  const [assemblyBuilderOpen, setAssemblyBuilderOpen] = useState(false);
   const [assemblyTarget, setAssemblyTarget] = useCatalogPersistedState<FlooringAssemblyTarget>(
     "flooring:assembly-target",
     "covering",
@@ -173,6 +174,12 @@ export function useFlooringCatalogPanel() {
     () => assemblyCatalog.map(createAssemblyLibraryItemFromCatalogItem),
     [assemblyCatalog],
   );
+
+  function closeAssemblyBuilder() {
+    setAssemblyBuilderOpen(false);
+    setAssemblyRowsSnapshot([]);
+    clearAssemblyEditLoad();
+  }
 
   const assemblyCreateDeps = {
     setSnapshot,
@@ -295,7 +302,7 @@ export function useFlooringCatalogPanel() {
     setError(null);
     setStatusMessage(null);
     setWarningMessage(null);
-    void loadAssemblyForEdit("covering", item.id, setAssemblyTarget, setWarningMessage);
+    closeAssemblyBuilder();
   }
 
   function beginEditPreparation(
@@ -314,7 +321,7 @@ export function useFlooringCatalogPanel() {
     setError(null);
     setStatusMessage(null);
     setWarningMessage(null);
-    void loadAssemblyForEdit("preparation", item.id, setAssemblyTarget, setWarningMessage);
+    closeAssemblyBuilder();
   }
 
   function beginEditLayout(
@@ -333,36 +340,60 @@ export function useFlooringCatalogPanel() {
     setError(null);
     setStatusMessage(null);
     setWarningMessage(null);
-    void loadAssemblyForEdit("layout", item.id, setAssemblyTarget, setWarningMessage);
+    closeAssemblyBuilder();
   }
 
-  const { promoteSnapshotRowToCatalog } = createFlooringSnapshotPromoteActions({
-    setError,
-    setStatusMessage,
-    setWarningMessage,
-    reloadSnapshot,
-    edits: { beginEditCovering, beginEditPreparation, beginEditLayout },
-  });
+  function openAssemblyBuilder() {
+    setAssemblyBuilderOpen(true);
+    setAssemblyRowsSnapshot([]);
+    clearAssemblyEditLoad();
+    setStatusMessage(null);
+    setWarningMessage(null);
+
+    const edit =
+      editingCoveringId !== null
+        ? { target: "covering" as const, id: editingCoveringId }
+        : editingPreparationId !== null
+          ? { target: "preparation" as const, id: editingPreparationId }
+          : editingLayoutId !== null
+            ? { target: "layout" as const, id: editingLayoutId }
+            : null;
+
+    if (edit) {
+      void loadAssemblyForEdit(edit.target, edit.id, setAssemblyTarget, setWarningMessage);
+    }
+  }
+
+  const { promoteSnapshotRowToCatalog: promoteSnapshotRowToCatalogFromSnapshot } =
+    createFlooringSnapshotPromoteActions({
+      setError,
+      setStatusMessage,
+      setWarningMessage,
+      reloadSnapshot,
+      edits: { beginEditCovering, beginEditPreparation, beginEditLayout },
+    });
+
+  async function promoteSnapshotRowToCatalog(row: FlooringSnapshotDisplayRow) {
+    closeAssemblyBuilder();
+    await promoteSnapshotRowToCatalogFromSnapshot(row);
+  }
 
   function cancelCoveringEdit() {
     setEditingCoveringId(null);
     setCoveringDraft(emptyCoveringDraft());
-    setAssemblyRowsSnapshot([]);
-    clearAssemblyEditLoad();
+    closeAssemblyBuilder();
   }
 
   function cancelPreparationEdit() {
     setEditingPreparationId(null);
     setPreparationDraft(emptyPreparationDraft());
-    setAssemblyRowsSnapshot([]);
-    clearAssemblyEditLoad();
+    closeAssemblyBuilder();
   }
 
   function cancelLayoutEdit() {
     setEditingLayoutId(null);
     setLayoutDraft(emptyLayoutDraft());
-    setAssemblyRowsSnapshot([]);
-    clearAssemblyEditLoad();
+    closeAssemblyBuilder();
   }
 
   async function applyFlatSaveAssemblyFeedback(
@@ -372,6 +403,12 @@ export function useFlooringCatalogPanel() {
     defaultStatusMessage: string,
     defaultWarningMessage?: string | null,
   ) {
+    if (!assemblyBuilderOpen || assemblyTarget !== target) {
+      setStatusMessage(defaultStatusMessage);
+      if (defaultWarningMessage) setWarningMessage(defaultWarningMessage);
+      return;
+    }
+
     const feedback = await finalizeFlooringCatalogAssemblyAfterFlatSave({
       target,
       assemblyTarget,
@@ -394,7 +431,7 @@ export function useFlooringCatalogPanel() {
       return;
     }
     let draftToSave = { ...coveringDraft, title };
-    if (assemblyTarget === "covering") {
+    if (assemblyBuilderOpen && assemblyTarget === "covering") {
       const prepared = prepareCoveringDraftForCatalogSave(draftToSave, assemblyRowsSnapshot);
       if (prepared.status === "error") {
         setError(prepared.message);
@@ -443,7 +480,7 @@ export function useFlooringCatalogPanel() {
       return;
     }
     let draftToSave = { ...preparationDraft, title };
-    if (assemblyTarget === "preparation") {
+    if (assemblyBuilderOpen && assemblyTarget === "preparation") {
       const prepared = preparePreparationDraftForCatalogSave(draftToSave, assemblyRowsSnapshot);
       if (prepared.status === "error") {
         setError(prepared.message);
@@ -486,7 +523,7 @@ export function useFlooringCatalogPanel() {
       return;
     }
     let draftToSave = { ...layoutDraft, title };
-    if (assemblyTarget === "layout") {
+    if (assemblyBuilderOpen && assemblyTarget === "layout") {
       const prepared = prepareLayoutDraftForCatalogSave(draftToSave, assemblyRowsSnapshot);
       if (prepared.status === "error") {
         setError(prepared.message);
@@ -569,6 +606,7 @@ export function useFlooringCatalogPanel() {
     savingPreparation,
     savingLayout,
     savingAssembly,
+    assemblyBuilderOpen,
     assemblyTarget,
     setAssemblyTarget,
     assemblyResetKey,
@@ -606,6 +644,8 @@ export function useFlooringCatalogPanel() {
     handleDeletePreparation,
     handleDeleteLayout,
     setAssemblyRowsSnapshot,
+    openAssemblyBuilder,
+    closeAssemblyBuilder,
     formatMoney,
     formatPercent,
     consumablesSummaryPerM2,

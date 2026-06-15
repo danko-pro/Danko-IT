@@ -41,6 +41,7 @@ export function FlooringCatalogPanel() {
     savingPreparation,
     savingLayout,
     savingAssembly,
+    assemblyBuilderOpen,
     assemblyTarget,
     setAssemblyTarget,
     assemblyResetKey,
@@ -78,6 +79,8 @@ export function FlooringCatalogPanel() {
     handleDeleteLayout,
     promoteSnapshotRowToCatalog,
     setAssemblyRowsSnapshot,
+    openAssemblyBuilder,
+    closeAssemblyBuilder,
     formatMoney,
     formatPercent,
     consumablesSummaryPerM2,
@@ -98,6 +101,78 @@ export function FlooringCatalogPanel() {
       </div>
     );
   }
+
+  const assemblyAction = (
+    <button
+      type="button"
+      className={`ce-btn ce-btn-sm${assemblyBuilderOpen ? " ce-btn-primary" : ""}`}
+      onClick={assemblyBuilderOpen ? closeAssemblyBuilder : openAssemblyBuilder}
+      disabled={assemblyLoading}
+    >
+      {assemblyLoading ? "Загрузка сборки…" : assemblyBuilderOpen ? "Скрыть сборку" : "Редактировать сборку"}
+    </button>
+  );
+
+  const assemblyBlock = assemblyBuilderOpen ? (
+    <FlooringAssemblyBlock
+      libraryItems={assemblyLibraryItems}
+      target={assemblyTarget}
+      onTargetChange={setAssemblyTarget}
+      formatMoney={formatMoney}
+      onRowsChange={setAssemblyRowsSnapshot}
+      onCreateFromAssembly={createAssemblyTargetRow}
+      initialRows={assemblyInitialRows}
+      initialTitle={assemblyInitialTitle}
+      resetKey={assemblyResetKey}
+      loadingAssembly={assemblyLoading}
+    />
+  ) : null;
+
+  const catalogEditor =
+    editingCoveringId !== null ? (
+      <>
+        <FlooringCoveringEditForm
+          draft={coveringDraft}
+          submitting={savingCovering}
+          onSubmit={() => void handleUpdateCovering()}
+          onCancel={cancelCoveringEdit}
+          onDraftChange={setCoveringDraft}
+          onNumberChange={updateCoveringNumber}
+          formatMoney={formatMoney}
+          formatPercent={formatPercent}
+          extraActions={assemblyAction}
+        />
+        {assemblyBlock}
+      </>
+    ) : editingPreparationId !== null ? (
+      <>
+        <FlooringPreparationEditForm
+          draft={preparationDraft}
+          submitting={savingPreparation}
+          onSubmit={() => void handleUpdatePreparation()}
+          onCancel={cancelPreparationEdit}
+          onDraftChange={setPreparationDraft}
+          onNumberChange={updatePreparationNumber}
+          extraActions={assemblyAction}
+        />
+        {assemblyBlock}
+      </>
+    ) : editingLayoutId !== null ? (
+      <>
+        <FlooringLayoutEditForm
+          draft={layoutDraft}
+          submitting={savingLayout}
+          onSubmit={() => void handleUpdateLayout()}
+          onCancel={cancelLayoutEdit}
+          onDraftChange={setLayoutDraft}
+          onNumberChange={updateLayoutNumber}
+          extraActions={assemblyAction}
+        />
+        {assemblyBlock}
+      </>
+    ) : (
+      <div className="ce-flooring-catalog-detail-empty">Выберите строку</div>
+    );
 
   return (
     <section className="ce-flooring-shell flooring-catalog-panel">
@@ -158,79 +233,33 @@ export function FlooringCatalogPanel() {
         />
       ) : null}
       {flooringView === "catalog" ? (
-        <>
-      <FlooringAssemblyBlock
-        libraryItems={assemblyLibraryItems}
-        target={assemblyTarget}
-        onTargetChange={setAssemblyTarget}
-        formatMoney={formatMoney}
-        onRowsChange={setAssemblyRowsSnapshot}
-        onCreateFromAssembly={createAssemblyTargetRow}
-        initialRows={assemblyInitialRows}
-        initialTitle={assemblyInitialTitle}
-        resetKey={assemblyResetKey}
-        loadingAssembly={assemblyLoading}
-      />
-
-      <FlooringCatalogWorkspace
-        coverings={{
-          rows: coveringRows,
-          selectedId: editingCoveringId,
-          onEdit: beginEditCovering,
-          onDelete: handleDeleteCovering,
-          onPromote: (row) => void promoteSnapshotRowToCatalog(row),
-        }}
-        preparations={{
-          rows: preparationRows,
-          selectedId: editingPreparationId,
-          onEdit: beginEditPreparation,
-          onDelete: handleDeletePreparation,
-          onPromote: (row) => void promoteSnapshotRowToCatalog(row),
-        }}
-        layouts={{
-          rows: layoutRows,
-          selectedId: editingLayoutId,
-          onEdit: beginEditLayout,
-          onDelete: handleDeleteLayout,
-          onPromote: (row) => void promoteSnapshotRowToCatalog(row),
-        }}
-        formatMoney={formatMoney}
-        formatPercent={formatPercent}
-        consumablesSummaryPerM2={consumablesSummaryPerM2}
-        editor={
-          editingCoveringId !== null ? (
-            <FlooringCoveringEditForm
-              draft={coveringDraft}
-              submitting={savingCovering}
-              onSubmit={() => void handleUpdateCovering()}
-              onCancel={cancelCoveringEdit}
-              onDraftChange={setCoveringDraft}
-              onNumberChange={updateCoveringNumber}
-              formatMoney={formatMoney}
-              formatPercent={formatPercent}
-            />
-          ) : editingPreparationId !== null ? (
-            <FlooringPreparationEditForm
-              draft={preparationDraft}
-              submitting={savingPreparation}
-              onSubmit={() => void handleUpdatePreparation()}
-              onCancel={cancelPreparationEdit}
-              onDraftChange={setPreparationDraft}
-              onNumberChange={updatePreparationNumber}
-            />
-          ) : editingLayoutId !== null ? (
-            <FlooringLayoutEditForm
-              draft={layoutDraft}
-              submitting={savingLayout}
-              onSubmit={() => void handleUpdateLayout()}
-              onCancel={cancelLayoutEdit}
-              onDraftChange={setLayoutDraft}
-              onNumberChange={updateLayoutNumber}
-            />
-          ) : null
-        }
-      />
-        </>
+        <FlooringCatalogWorkspace
+          coverings={{
+            rows: coveringRows,
+            selectedId: editingCoveringId,
+            onEdit: beginEditCovering,
+            onDelete: handleDeleteCovering,
+            onPromote: (row) => void promoteSnapshotRowToCatalog(row),
+          }}
+          preparations={{
+            rows: preparationRows,
+            selectedId: editingPreparationId,
+            onEdit: beginEditPreparation,
+            onDelete: handleDeletePreparation,
+            onPromote: (row) => void promoteSnapshotRowToCatalog(row),
+          }}
+          layouts={{
+            rows: layoutRows,
+            selectedId: editingLayoutId,
+            onEdit: beginEditLayout,
+            onDelete: handleDeleteLayout,
+            onPromote: (row) => void promoteSnapshotRowToCatalog(row),
+          }}
+          formatMoney={formatMoney}
+          formatPercent={formatPercent}
+          consumablesSummaryPerM2={consumablesSummaryPerM2}
+          editor={catalogEditor}
+        />
       ) : null}
 
       <div className="ce-service-toolbar">

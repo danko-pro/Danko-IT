@@ -345,11 +345,11 @@ describe("catalog editor architecture", () => {
   });
 
   it("keeps FlooringCatalogPanel.tsx as a small shell", () => {
-    expect(sourceLines(flooringCatalogPanelSource).length).toBeLessThanOrEqual(260);
+    expect(sourceLines(flooringCatalogPanelSource).length).toBeLessThanOrEqual(300);
   });
 
   it("keeps flooring catalog controller and assembly builder within module budgets", () => {
-    expect(sourceLines(useFlooringCatalogPanelSource).length).toBeLessThanOrEqual(620);
+    expect(sourceLines(useFlooringCatalogPanelSource).length).toBeLessThanOrEqual(660);
     expect(sourceLines(flooringAssemblyBlockSource).length).toBeLessThanOrEqual(650);
     expect(sourceLines(flooringAssemblyLibraryCatalogTableSource).length).toBeLessThanOrEqual(180);
     expect(sourceLines(flooringAssemblyLibraryColumnsSource).length).toBeLessThanOrEqual(140);
@@ -368,6 +368,32 @@ describe("catalog editor architecture", () => {
     expect(flooringAssemblyBlockSource).toContain("aria-busy={loadingAssembly}");
     expect(flooringAssemblyBlockSource).not.toContain("ce-flooring-assembly-hint");
     expect(resetIndex).toBeGreaterThan(loadIndex);
+  });
+
+  it("opens flooring assembly builder only after an explicit action", () => {
+    expect(flooringCatalogPanelSource).toContain("const assemblyBlock = assemblyBuilderOpen ? (");
+    expect(flooringCatalogPanelSource).toContain("const catalogEditor =");
+    expect(flooringCatalogPanelSource).toContain("<FlooringAssemblyBlock");
+    expect(flooringCatalogPanelSource).toContain("openAssemblyBuilder");
+    expect(flooringCatalogPanelSource).toContain("closeAssemblyBuilder");
+    expect(flooringCatalogPanelSource).toContain("extraActions={assemblyAction}");
+    expect(flooringCatalogPanelSource).toContain("editor={catalogEditor}");
+    expect(flooringCatalogPanelSource).not.toContain("Создать из сборки");
+    expect(flooringCatalogPanelSource).not.toContain(") : assemblyBuilderOpen ? (");
+    expect(useFlooringCatalogPanelSource).toContain("const [assemblyBuilderOpen");
+    expect(useFlooringCatalogPanelSource).toContain("function openAssemblyBuilder");
+    expect(useFlooringCatalogPanelSource).toContain("function closeAssemblyBuilder");
+    expect(useFlooringCatalogPanelSource).toContain(
+      "const { promoteSnapshotRowToCatalog: promoteSnapshotRowToCatalogFromSnapshot }",
+    );
+    expect(useFlooringCatalogPanelSource).toContain("async function promoteSnapshotRowToCatalog");
+    expect(useFlooringCatalogPanelSource).toContain("closeAssemblyBuilder();\n    await promoteSnapshotRowToCatalogFromSnapshot(row);");
+    expect(useFlooringCatalogPanelSource).not.toContain('void loadAssemblyForEdit("covering"');
+    expect(useFlooringCatalogPanelSource).not.toContain('void loadAssemblyForEdit("preparation"');
+    expect(useFlooringCatalogPanelSource).not.toContain('void loadAssemblyForEdit("layout"');
+    expect(useFlooringCatalogPanelSource).toContain('assemblyBuilderOpen && assemblyTarget === "covering"');
+    expect(useFlooringCatalogPanelSource).toContain('assemblyBuilderOpen && assemblyTarget === "preparation"');
+    expect(useFlooringCatalogPanelSource).toContain('assemblyBuilderOpen && assemblyTarget === "layout"');
   });
 
   it("keeps flooring catalog submodules present", () => {

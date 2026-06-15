@@ -134,6 +134,8 @@ describe("public landing redesign architecture", () => {
     expect(publicRedesignCssSource).toContain("overflow-x: auto;");
     expect(publicRedesignCssSource).toContain("grid-auto-columns: minmax(64px, 74px);");
     expect(publicRedesignCssSource).toContain("height: clamp(220px, 72vw, 320px);");
+    expect(publicRedesignCssSource).toContain("scrollbar-width: none;");
+    expect(publicRedesignCssSource).toContain("::-webkit-scrollbar");
   });
 
   for (const [sectionName, { source, maxLines }] of Object.entries(SECTION_LINE_BUDGETS)) {

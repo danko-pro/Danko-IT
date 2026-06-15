@@ -1,6 +1,11 @@
 // DTO/payload-контракты REST API каталога сантехники (/api/calculator/plumbing/*).
 // Имена полей — как у backend (snake_case), маппинг на доменную модель редактора — в mappers.ts.
 
+export type PlumbingEditorSnapshotDto = {
+  items: PlumbingCatalogItemDto[];
+  zones: PlumbingZoneDto[];
+};
+
 export type PlumbingCatalogItemDto = {
   id: number;
   source_code: string;

@@ -120,6 +120,10 @@ class AdminCalculatorPlumbingRouteTests(AdminProjectsRouteCase):
                     client.get("/api/calculator/plumbing/snapshot/preview").status_code,
                     401,
                 )
+                self.assertEqual(
+                    client.get("/api/calculator/plumbing/editor-snapshot").status_code,
+                    401,
+                )
 
     def test_non_admin_session_is_forbidden(self) -> None:
         # Каталог сантехники — глобальный прайс-лист под управлением только админ-роли (Вариант A).
@@ -143,6 +147,7 @@ class AdminCalculatorPlumbingRouteTests(AdminProjectsRouteCase):
                 self.assertEqual(client.get("/api/calculator/plumbing/catalog-items").status_code, 403)
                 self.assertEqual(client.get("/api/calculator/plumbing/zones").status_code, 403)
                 self.assertEqual(client.get("/api/calculator/plumbing/snapshot/preview").status_code, 403)
+                self.assertEqual(client.get("/api/calculator/plumbing/editor-snapshot").status_code, 403)
                 self.assertEqual(
                     client.post(
                         "/api/calculator/plumbing/catalog-items",
@@ -357,6 +362,19 @@ class AdminCalculatorPlumbingRouteTests(AdminProjectsRouteCase):
                 self.assertEqual(get_zone.status_code, 200)
                 self.assertEqual(len(get_zone.json()["base"]), 1)
                 self.assertEqual(len(get_zone.json()["packages"]), 1)
+
+                # Editor snapshot: items + zone details (base/packages) одним ответом.
+                editor_snapshot = client.get("/api/calculator/plumbing/editor-snapshot")
+                self.assertEqual(editor_snapshot.status_code, 200)
+                snapshot_payload = editor_snapshot.json()
+                self.assertIn("items", snapshot_payload)
+                self.assertIn("zones", snapshot_payload)
+                self.assertIn(item_id, {int(row["id"]) for row in snapshot_payload["items"]})
+                snapshot_zone = next(row for row in snapshot_payload["zones"] if int(row["id"]) == zone_id)
+                self.assertEqual(len(snapshot_zone["base"]), 1)
+                self.assertEqual(len(snapshot_zone["packages"]), 1)
+                self.assertEqual(snapshot_zone["base"][0]["atomic_source_code"], atom_code)
+                self.assertEqual(snapshot_zone["packages"][0]["items"][0]["atomic_item_id"], faucet_id)
 
                 # SNAPSHOT preview (internal payload: видны итоги + резерв)
                 preview = client.get("/api/calculator/plumbing/snapshot/preview")

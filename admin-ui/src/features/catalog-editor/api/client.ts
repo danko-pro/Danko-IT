@@ -19,6 +19,7 @@ import {
   type CatalogSnapshot,
 } from "./mappers";
 import type {
+  PlumbingEditorSnapshotDto,
   PlumbingCatalogItemDto,
   PlumbingSnapshotPreview,
   PlumbingZoneDto,
@@ -35,24 +36,16 @@ type LoadResult = {
 };
 
 async function loadCatalogFromApi(): Promise<LoadResult> {
-  const [itemDtos, zoneSummaries] = await Promise.all([
-    fetchJson<PlumbingCatalogItemDto[]>(`${PLUMBING_API}/catalog-items`),
-    fetchJson<PlumbingZoneDto[]>(`${PLUMBING_API}/zones`),
-  ]);
+  const snapshot = await fetchJson<PlumbingEditorSnapshotDto>(`${PLUMBING_API}/editor-snapshot`);
 
   const idBySourceCode = new Map<string, number>();
-  const items = itemDtos.map((dto) => {
+  const items = snapshot.items.map((dto) => {
     idBySourceCode.set(dto.source_code, dto.id);
     return dtoToCatalogItem(dto);
   });
 
-  // Состав/пакеты приходят только в detail-ответе, поэтому подгружаем каждую зону отдельно.
-  const zoneDetails = await Promise.all(
-    zoneSummaries.map((summary) => fetchJson<PlumbingZoneDto>(`${PLUMBING_API}/zones/${summary.id}`)),
-  );
-
   const zoneIdByCode = new Map<string, number>();
-  const zones = zoneDetails.map((dto) => {
+  const zones = snapshot.zones.map((dto) => {
     zoneIdByCode.set(dto.zone_code, dto.id);
     return dtoZoneToCatalogZone(dto);
   });

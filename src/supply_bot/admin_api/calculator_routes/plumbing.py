@@ -54,6 +54,19 @@ def register_calculator_plumbing_routes(app: FastAPI) -> None:
         storage_obj = get_plumbing_catalog_storage(request)
         return await ListPlumbingCatalogItemsUseCase(storage_obj).execute(include_inactive=include_inactive)
 
+    @app.get("/api/calculator/plumbing/editor-snapshot")
+    async def get_calculator_plumbing_editor_snapshot(
+        request: Request,
+        _session: AdminSession = Depends(require_admin_role_session),
+    ) -> dict[str, Any]:
+        storage_obj = get_plumbing_catalog_storage(request)
+        items = await ListPlumbingCatalogItemsUseCase(storage_obj).execute(include_inactive=False)
+        zone_summaries = await ListPlumbingZonesUseCase(storage_obj).execute(include_inactive=False)
+        zones = [
+            await _load_plumbing_zone_detail(storage_obj, int(summary["id"])) for summary in zone_summaries
+        ]
+        return {"items": items, "zones": zones}
+
     @app.get("/api/calculator/plumbing/catalog-items/{item_id}")
     async def get_calculator_plumbing_catalog_item(
         request: Request,

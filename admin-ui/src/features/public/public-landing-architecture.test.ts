@@ -127,6 +127,15 @@ describe("public landing redesign architecture", () => {
     expect(publicRevealObserverSource).toContain("IntersectionObserver");
   });
 
+  it("keeps project gallery shrink-safe on narrow mobile screens", () => {
+    expect(publicRedesignCssSource).toContain(".dk-media {\n  display: grid;\n  gap: 0.7rem;\n  min-width: 0;");
+    expect(publicRedesignCssSource).toContain(".dk-proj-info {\n  display: flex;\n  flex-direction: column;");
+    expect(publicRedesignCssSource).toContain("  min-width: 0;\n}");
+    expect(publicRedesignCssSource).toContain("overflow-x: auto;");
+    expect(publicRedesignCssSource).toContain("grid-auto-columns: minmax(64px, 74px);");
+    expect(publicRedesignCssSource).toContain("height: clamp(220px, 72vw, 320px);");
+  });
+
   for (const [sectionName, { source, maxLines }] of Object.entries(SECTION_LINE_BUDGETS)) {
     it(`keeps ${sectionName} within line budget`, () => {
       expect(sourceLines(source()).length).toBeLessThanOrEqual(maxLines);

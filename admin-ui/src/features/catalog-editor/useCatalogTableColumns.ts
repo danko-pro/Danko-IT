@@ -1,4 +1,4 @@
-import { useEffect, useState, type CSSProperties, type MouseEvent as ReactMouseEvent } from "react";
+import { useRef, useState, type CSSProperties, type MouseEvent as ReactMouseEvent } from "react";
 
 import { readCatalogStoredValue, writeCatalogStoredValue } from "./useCatalogPersistedState";
 
@@ -63,16 +63,26 @@ export function useCatalogTableColumns<TColumnKey extends string>({
   storageKey,
 }: UseCatalogTableColumnsOptions<TColumnKey>) {
   const [columns, setColumns] = useState(() => readStoredColumns(storageKey, defaultColumns, minColumnWidths));
+  const columnsRef = useRef(columns);
+  columnsRef.current = columns;
 
-  useEffect(() => {
-    if (storageKey) writeCatalogStoredValue(storageKey, columns);
-  }, [storageKey, columns]);
+  function persistColumns(nextColumns: CatalogTableColumns<TColumnKey>) {
+    if (storageKey) {
+      writeCatalogStoredValue(storageKey, nextColumns);
+    }
+  }
 
   function cycleColumnAlign(columnKey: TColumnKey) {
-    setColumns((current) => ({
-      ...current,
-      [columnKey]: { ...current[columnKey], align: nextAlign(current[columnKey].align) },
-    }));
+    const next = {
+      ...columnsRef.current,
+      [columnKey]: {
+        ...columnsRef.current[columnKey],
+        align: nextAlign(columnsRef.current[columnKey].align),
+      },
+    };
+    columnsRef.current = next;
+    setColumns(next);
+    persistColumns(next);
   }
 
   function beginColumnResize(
@@ -83,8 +93,8 @@ export function useCatalogTableColumns<TColumnKey extends string>({
     event.preventDefault();
 
     const startX = event.clientX;
-    const startColumnWidth = columns[columnKey].width;
-    const startNextColumnWidth = columns[nextColumnKey].width;
+    const startColumnWidth = columnsRef.current[columnKey].width;
+    const startNextColumnWidth = columnsRef.current[nextColumnKey].width;
     const totalWidth = startColumnWidth + startNextColumnWidth;
     const tableWidth = event.currentTarget.closest("table")?.getBoundingClientRect().width ?? 1;
 
@@ -95,16 +105,19 @@ export function useCatalogTableColumns<TColumnKey extends string>({
         Math.min(totalWidth - minColumnWidths[nextColumnKey], startColumnWidth + deltaPercent),
       );
 
-      setColumns((current) => ({
-        ...current,
-        [columnKey]: { ...current[columnKey], width: nextWidth },
-        [nextColumnKey]: { ...current[nextColumnKey], width: totalWidth - nextWidth },
-      }));
+      const next = {
+        ...columnsRef.current,
+        [columnKey]: { ...columnsRef.current[columnKey], width: nextWidth },
+        [nextColumnKey]: { ...columnsRef.current[nextColumnKey], width: totalWidth - nextWidth },
+      };
+      columnsRef.current = next;
+      setColumns(next);
     };
 
     const onMouseUp = () => {
       window.removeEventListener("mousemove", onMouseMove);
       window.removeEventListener("mouseup", onMouseUp);
+      persistColumns(columnsRef.current);
     };
 
     window.addEventListener("mousemove", onMouseMove);

@@ -390,7 +390,7 @@ describe("catalog editor architecture", () => {
       expect(sharedCatalogModulePaths).toContain(`./${moduleFile}`);
     }
 
-    expect(sourceLines(useCatalogTableColumnsSource).length).toBeLessThanOrEqual(140);
+    expect(sourceLines(useCatalogTableColumnsSource).length).toBeLessThanOrEqual(150);
     expect(sourceLines(useCatalogPersistedStateSource).length).toBeLessThanOrEqual(80);
     expect(sourceLines(catalogDisclosureCardSource).length).toBeLessThanOrEqual(70);
     expect(sourceLines(catalogIconActionSource).length).toBeLessThanOrEqual(60);
@@ -431,6 +431,22 @@ describe("catalog editor architecture", () => {
     expect(plumbingLibraryViewSource).toContain("useCatalogTableColumns");
     expect(plumbingLibraryViewSource).toContain('"plumbing:library-columns"');
     expect(plumbingLibraryViewSource).toContain("CatalogManagedTableHeaderCell");
+  });
+
+  it("persists table column settings without localStorage writes on every resize frame", () => {
+    expect(useCatalogTableColumnsSource).not.toContain("useEffect(() => {");
+    expect(useCatalogTableColumnsSource).not.toMatch(
+      /writeCatalogStoredValue\(storageKey, columns\)[\s\S]*\[storageKey, columns\]/,
+    );
+    expect(useCatalogTableColumnsSource).toContain("function persistColumns");
+    expect(useCatalogTableColumnsSource).toContain("persistColumns(columnsRef.current)");
+    expect(useCatalogTableColumnsSource).toContain("persistColumns(next)");
+
+    const mouseMoveBlock =
+      useCatalogTableColumnsSource.match(/const onMouseMove = \(moveEvent: MouseEvent\) => \{[\s\S]*?\n    \};/)?.[0] ??
+      "";
+    expect(mouseMoveBlock).not.toContain("writeCatalogStoredValue");
+    expect(mouseMoveBlock).not.toContain("persistColumns");
   });
 
   it("keeps warm floor tables compact, managed, and UI-only", () => {

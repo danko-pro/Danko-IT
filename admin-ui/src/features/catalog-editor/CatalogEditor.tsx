@@ -1,9 +1,15 @@
-import { usePlumbingCatalog } from "./api/client";
-import { useWarmFloorCatalog } from "./api/warm-floor-client";
-import { FlooringCatalogPanel } from "./FlooringCatalogPanel";
-import { PlumbingCatalogPanel } from "./PlumbingCatalogPanel";
+import { useCallback, useEffect, useRef, useState } from "react";
+
+import {
+  DEFAULT_CATALOG_TAB_META,
+  isReadyCatalogTabId,
+  type CatalogTabMeta,
+  type ReadyCatalogTabId,
+} from "./catalog-tab-meta";
+import { FlooringCatalogTab } from "./FlooringCatalogTab";
+import { PlumbingCatalogTab } from "./PlumbingCatalogTab";
 import { useCatalogPersistedState } from "./useCatalogPersistedState";
-import { WarmFloorCatalogPanel } from "./WarmFloorCatalogPanel";
+import { WarmFloorCatalogTab } from "./WarmFloorCatalogTab";
 import "./styles/catalog-editor.css";
 
 type SectionTab = {
@@ -26,22 +32,60 @@ const SECTION_TABS: SectionTab[] = [
   { id: "cleaning", label: "Уборка", ready: false },
 ];
 
+function initialMountedTabs(activeTabId: string): Set<ReadyCatalogTabId> {
+  const section = SECTION_TABS.find((tab) => tab.id === activeTabId) ?? SECTION_TABS[0];
+  if (section.ready && isReadyCatalogTabId(section.id)) {
+    return new Set([section.id]);
+  }
+
+  return new Set();
+}
 
 export function CatalogEditor() {
-  const plumbingCatalog = usePlumbingCatalog();
-  const warmFloorCatalog = useWarmFloorCatalog();
   const [activeTab, setActiveTab] = useCatalogPersistedState<string>("section-tab", "plumbing");
+  const [mountedTabs, setMountedTabs] = useState<Set<ReadyCatalogTabId>>(() => initialMountedTabs(activeTab));
+  const [tabMeta, setTabMeta] = useState<CatalogTabMeta>(DEFAULT_CATALOG_TAB_META);
+  const tabMetaRef = useRef<Partial<Record<ReadyCatalogTabId, CatalogTabMeta>>>({});
 
   const activeSection = SECTION_TABS.find((tab) => tab.id === activeTab) ?? SECTION_TABS[0];
   const activeSectionId = activeSection.id;
-  const activeLoading =
-    activeSectionId === "warm-floor" ? warmFloorCatalog.loading : activeSectionId === "plumbing" ? plumbingCatalog.loading : false;
-  const activeSaving =
-    activeSectionId === "warm-floor" ? warmFloorCatalog.saving : activeSectionId === "plumbing" ? plumbingCatalog.saving : false;
-  const activeSavedAt =
-    activeSectionId === "warm-floor" ? warmFloorCatalog.savedAt : activeSectionId === "plumbing" ? plumbingCatalog.savedAt : null;
-  const activeError =
-    activeSectionId === "warm-floor" ? warmFloorCatalog.error : activeSectionId === "plumbing" ? plumbingCatalog.error : null;
+
+  useEffect(() => {
+    if (!activeSection.ready || !isReadyCatalogTabId(activeSectionId)) {
+      return;
+    }
+
+    setMountedTabs((current) => {
+      if (current.has(activeSectionId)) {
+        return current;
+      }
+
+      return new Set([...current, activeSectionId]);
+    });
+  }, [activeSection.ready, activeSectionId]);
+
+  useEffect(() => {
+    if (!isReadyCatalogTabId(activeSectionId)) {
+      setTabMeta(DEFAULT_CATALOG_TAB_META);
+      return;
+    }
+
+    setTabMeta(tabMetaRef.current[activeSectionId] ?? DEFAULT_CATALOG_TAB_META);
+  }, [activeSectionId]);
+
+  const reportPlumbingMeta = useCallback((meta: CatalogTabMeta) => {
+    tabMetaRef.current.plumbing = meta;
+    if (activeSectionId === "plumbing") {
+      setTabMeta(meta);
+    }
+  }, [activeSectionId]);
+
+  const reportWarmFloorMeta = useCallback((meta: CatalogTabMeta) => {
+    tabMetaRef.current["warm-floor"] = meta;
+    if (activeSectionId === "warm-floor") {
+      setTabMeta(meta);
+    }
+  }, [activeSectionId]);
 
   return (
     <div className="catalog-editor">
@@ -57,18 +101,18 @@ export function CatalogEditor() {
         </div>
         <div className="ce-save-status">
           <span className="ce-dot" aria-hidden="true" />
-          {activeLoading
+          {tabMeta.loading
             ? "Загрузка из БД…"
-            : activeSaving
+            : tabMeta.saving
               ? "Сохранение…"
-              : `Сохранено в БД${activeSavedAt ? ` · ${activeSavedAt}` : ""}`}
+              : `Сохранено в БД${tabMeta.savedAt ? ` · ${tabMeta.savedAt}` : ""}`}
         </div>
       </header>
 
-      {activeError ? (
+      {tabMeta.error ? (
         <div className="ce-note ce-note-warn" role="alert">
           <span className="ce-note-tag">Ошибка</span>
-          {activeError}
+          {tabMeta.error}
         </div>
       ) : null}
 
@@ -87,16 +131,22 @@ export function CatalogEditor() {
       </nav>
 
       <main className="ce-workspace">
-        <section hidden={activeSectionId !== "plumbing"}>
-          <PlumbingCatalogPanel catalog={plumbingCatalog} />
-        </section>
-        <section hidden={activeSectionId !== "floors"}>
-          <FlooringCatalogPanel />
-        </section>
-        <section hidden={activeSectionId !== "warm-floor"}>
-          <WarmFloorCatalogPanel controller={warmFloorCatalog} />
-        </section>
-        {activeSection && !activeSection.ready ? (
+        {mountedTabs.has("plumbing") ? (
+          <div className={`ce-tab-pane${activeSectionId === "plumbing" ? " is-active" : ""}`}>
+            <PlumbingCatalogTab isActive={activeSectionId === "plumbing"} onMetaChange={reportPlumbingMeta} />
+          </div>
+        ) : null}
+        {mountedTabs.has("floors") ? (
+          <div className={`ce-tab-pane${activeSectionId === "floors" ? " is-active" : ""}`}>
+            <FlooringCatalogTab />
+          </div>
+        ) : null}
+        {mountedTabs.has("warm-floor") ? (
+          <div className={`ce-tab-pane${activeSectionId === "warm-floor" ? " is-active" : ""}`}>
+            <WarmFloorCatalogTab isActive={activeSectionId === "warm-floor"} onMetaChange={reportWarmFloorMeta} />
+          </div>
+        ) : null}
+        {!activeSection.ready ? (
           <div className="ce-stub-panel">
             <h2>{activeSection.label}</h2>
             <p>Раздел в разработке. Сейчас наполняется только вкладка «Сантехника».</p>

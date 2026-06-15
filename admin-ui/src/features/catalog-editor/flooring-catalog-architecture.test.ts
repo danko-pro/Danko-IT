@@ -4,6 +4,9 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import catalogEditorSource from "./CatalogEditor.tsx?raw";
+import flooringCatalogTabSource from "./FlooringCatalogTab.tsx?raw";
+import plumbingCatalogTabSource from "./PlumbingCatalogTab.tsx?raw";
+import warmFloorCatalogTabSource from "./WarmFloorCatalogTab.tsx?raw";
 import catalogDisclosureCardSource from "./CatalogDisclosureCard.tsx?raw";
 import catalogIconActionSource from "./CatalogIconAction.tsx?raw";
 import catalogLibraryPanelSource from "./CatalogLibraryPanel.tsx?raw";
@@ -300,15 +303,42 @@ function importLines(source: string): string[] {
 
 describe("catalog editor architecture", () => {
   it("keeps CatalogEditor.tsx as a section shell", () => {
-    expect(sourceLines(catalogEditorSource).length).toBeLessThanOrEqual(140);
-    expect(catalogEditorSource).toContain("<PlumbingCatalogPanel catalog={plumbingCatalog} />");
-    expect(catalogEditorSource).toContain("<FlooringCatalogPanel />");
-    expect(catalogEditorSource).toContain('hidden={activeSectionId !== "floors"}');
+    expect(sourceLines(catalogEditorSource).length).toBeLessThanOrEqual(170);
+    expect(catalogEditorSource).toContain("<PlumbingCatalogTab");
+    expect(catalogEditorSource).toContain("<FlooringCatalogTab");
+    expect(catalogEditorSource).toContain("<WarmFloorCatalogTab");
+    expect(catalogEditorSource).toContain("mountedTabs");
+    expect(catalogEditorSource).toContain("ce-tab-pane");
+    expect(catalogEditorSource).not.toContain("<section hidden=");
+    expect(catalogEditorSource).not.toContain("usePlumbingCatalog(");
+    expect(catalogEditorSource).not.toContain("useWarmFloorCatalog(");
+    expect(catalogEditorSource).not.toContain("<PlumbingCatalogPanel");
+    expect(catalogEditorSource).not.toContain("<FlooringCatalogPanel");
+    expect(catalogEditorSource).not.toContain("<WarmFloorCatalogPanel");
     expect(catalogEditorSource).not.toContain("function ZoneCard");
     expect(catalogEditorSource).not.toContain("function LibraryView");
     expect(catalogEditorSource).not.toContain("CatalogViewTabs");
     expect(catalogEditorSource).not.toContain("setItems");
     expect(catalogEditorSource).not.toContain("setZones");
+  });
+
+  it("lazy-mounts catalog tabs on first visit and keeps them alive", () => {
+    expect(catalogEditorSource).toContain("initialMountedTabs");
+    expect(catalogEditorSource).toContain("mountedTabs.has(\"plumbing\")");
+    expect(catalogEditorSource).toContain("mountedTabs.has(\"floors\")");
+    expect(catalogEditorSource).toContain("mountedTabs.has(\"warm-floor\")");
+    expect(catalogEditorSource).toContain('className={`ce-tab-pane${activeSectionId === "plumbing" ? " is-active" : ""}`}');
+    expect(catalogEditorSource).toContain("isActive={activeSectionId === \"plumbing\"}");
+    expect(catalogEditorSource).toContain("isActive={activeSectionId === \"warm-floor\"}");
+    expect(plumbingCatalogTabSource).toContain("usePlumbingCatalog(");
+    expect(plumbingCatalogTabSource).toContain("<PlumbingCatalogPanel catalog={catalog} />");
+    expect(plumbingCatalogTabSource).toContain("if (!isActive)");
+    expect(flooringCatalogTabSource).toContain("<FlooringCatalogPanel />");
+    expect(flooringCatalogTabSource).not.toContain("usePlumbingCatalog(");
+    expect(flooringCatalogTabSource).not.toContain("useWarmFloorCatalog(");
+    expect(warmFloorCatalogTabSource).toContain("useWarmFloorCatalog(");
+    expect(warmFloorCatalogTabSource).toContain("<WarmFloorCatalogPanel controller={controller} />");
+    expect(warmFloorCatalogTabSource).toContain("if (!isActive)");
   });
 
   it("keeps FlooringCatalogPanel.tsx as a small shell", () => {

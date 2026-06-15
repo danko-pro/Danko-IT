@@ -146,6 +146,14 @@
   box-shadow: var(--ce-shadow-sm);
 }
 
+.ce-tab-pane {
+  display: none;
+}
+
+.ce-tab-pane.is-active {
+  display: block;
+}
+
 .ce-toolbar {
   display: flex;
   align-items: center;

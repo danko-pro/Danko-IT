@@ -237,22 +237,57 @@ function zoneMetaEqual(a: CatalogZone, b: CatalogZone): boolean {
   );
 }
 
-function rowsSignature(rows: ZoneCompositionRow[]): string {
-  return JSON.stringify(rows.map((row) => [row.atomicItemId, row.quantity, row.coefficient ?? 1]));
+function rowCoefficient(value: number | undefined): number {
+  return value ?? 1;
+}
+
+function rowsEqual(a: ZoneCompositionRow[], b: ZoneCompositionRow[]): boolean {
+  if (a.length !== b.length) {
+    return false;
+  }
+  for (let index = 0; index < a.length; index += 1) {
+    const left = a[index];
+    const right = b[index];
+    if (
+      left.atomicItemId !== right.atomicItemId ||
+      left.quantity !== right.quantity ||
+      rowCoefficient(left.coefficient) !== rowCoefficient(right.coefficient)
+    ) {
+      return false;
+    }
+  }
+  return true;
 }
 
 function zoneItemsEqual(a: CatalogZone, b: CatalogZone): boolean {
-  return rowsSignature(a.items) === rowsSignature(b.items);
+  return rowsEqual(a.items, b.items);
 }
 
-function packagesSignature(variants: ZonePriceClassVariant[] | undefined): string {
-  return JSON.stringify(
-    (variants ?? []).map((variant) => [variant.id, variant.label, rowsSignature(variant.items)]),
-  );
+function packagesEqual(
+  a: ZonePriceClassVariant[] | undefined,
+  b: ZonePriceClassVariant[] | undefined,
+): boolean {
+  const left = a ?? [];
+  const right = b ?? [];
+  if (left.length !== right.length) {
+    return false;
+  }
+  for (let index = 0; index < left.length; index += 1) {
+    const leftVariant = left[index];
+    const rightVariant = right[index];
+    if (
+      leftVariant.id !== rightVariant.id ||
+      leftVariant.label !== rightVariant.label ||
+      !rowsEqual(leftVariant.items, rightVariant.items)
+    ) {
+      return false;
+    }
+  }
+  return true;
 }
 
 function zonePackagesEqual(a: CatalogZone, b: CatalogZone): boolean {
-  return packagesSignature(a.priceClassVariants) === packagesSignature(b.priceClassVariants);
+  return packagesEqual(a.priceClassVariants, b.priceClassVariants);
 }
 
 export function planCatalogSync(prev: CatalogSnapshot, next: CatalogSnapshot): CatalogSyncPlan {
@@ -330,4 +365,12 @@ export function isEmptyPlan(plan: CatalogSyncPlan): boolean {
     plan.zonesToReplacePackages.length === 0 &&
     plan.zoneCodesToDelete.length === 0
   );
+}
+
+export function catalogSnapshotsEqual(a: CatalogSnapshot, b: CatalogSnapshot): boolean {
+  return isEmptyPlan(planCatalogSync(a, b));
+}
+
+export function hasCatalogChanges(prev: CatalogSnapshot, next: CatalogSnapshot): boolean {
+  return !catalogSnapshotsEqual(prev, next);
 }

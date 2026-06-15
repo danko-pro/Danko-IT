@@ -9,6 +9,7 @@ import { fetchJson } from "../../../shared/utils";
 import type { CatalogItem, CatalogZone } from "../plumbing-seed";
 import {
   catalogItemToPayload,
+  catalogSnapshotsEqual,
   dtoToCatalogItem,
   dtoZoneToCatalogZone,
   isEmptyPlan,
@@ -51,10 +52,6 @@ async function loadCatalogFromApi(): Promise<LoadResult> {
   });
 
   return { items, zones, idBySourceCode, zoneIdByCode };
-}
-
-function snapshotEquals(a: CatalogSnapshot, b: CatalogSnapshot): boolean {
-  return isEmptyPlan(planCatalogSync(a, b)) && isEmptyPlan(planCatalogSync(b, a));
 }
 
 export type PlumbingCatalogController = {
@@ -251,7 +248,7 @@ export function usePlumbingCatalog(): PlumbingCatalogController {
     if (loading || syncedRef.current === null) {
       return;
     }
-    if (snapshotEquals(syncedRef.current, { items, zones })) {
+    if (catalogSnapshotsEqual(syncedRef.current, { items, zones })) {
       return;
     }
     if (timerRef.current) {

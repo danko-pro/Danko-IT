@@ -3,8 +3,10 @@ import { describe, expect, it } from "vitest";
 import type { CatalogItem, CatalogZone } from "../plumbing-seed";
 import {
   catalogItemToPayload,
+  catalogSnapshotsEqual,
   dtoToCatalogItem,
   dtoZoneToCatalogZone,
+  hasCatalogChanges,
   isEmptyPlan,
   planCatalogSync,
   zoneItemsToPayload,
@@ -234,5 +236,79 @@ describe("planCatalogSync", () => {
     const plan = planCatalogSync(prev, next);
     expect(plan.zonesToCreate.map((z) => z.id)).toEqual(["zone-new"]);
     expect(plan.zoneCodesToDelete).toEqual(["zone-old"]);
+  });
+
+  it("обнаруживает изменение quantity в base через zonesToReplaceItems", () => {
+    const prev = { items: [], zones: [makeZone()] };
+    const next = {
+      items: [],
+      zones: [makeZone({ items: [{ atomicItemId: "work-water-point", quantity: 3 }] })],
+    };
+    const plan = planCatalogSync(prev, next);
+    expect(plan.zonesToReplaceItems.map((zone) => zone.id)).toEqual(["zone-kitchen-sink"]);
+    expect(plan.zonesToReplacePackages).toHaveLength(0);
+    expect(plan.zonesToUpdateMeta).toHaveLength(0);
+  });
+
+  it("сохраняет прежнюю семантику сравнения coefficient через ?? 1", () => {
+    const prev = { items: [], zones: [makeZone()] };
+    const next = {
+      items: [],
+      zones: [makeZone({ items: [{ atomicItemId: "work-water-point", quantity: 1, coefficient: 0 }] })],
+    };
+    const plan = planCatalogSync(prev, next);
+    expect(plan.zonesToReplaceItems.map((zone) => zone.id)).toEqual(["zone-kitchen-sink"]);
+  });
+
+  it("обнаруживает изменение quantity в package item через zonesToReplacePackages", () => {
+    const prev = { items: [], zones: [makeZone()] };
+    const next = {
+      items: [],
+      zones: [
+        makeZone({
+          priceClassVariants: [
+            {
+              id: "b",
+              label: "Пакет B",
+              items: [{ atomicItemId: "kitchen-faucet-b", quantity: 2 }],
+            },
+          ],
+        }),
+      ],
+    };
+    const plan = planCatalogSync(prev, next);
+    expect(plan.zonesToReplacePackages.map((zone) => zone.id)).toEqual(["zone-kitchen-sink"]);
+    expect(plan.zonesToReplaceItems).toHaveLength(0);
+    expect(plan.zonesToUpdateMeta).toHaveLength(0);
+  });
+
+  it("ловит удаление item и zone одним planCatalogSync(prev, next)", () => {
+    const prev = {
+      items: [makeItem(), makeItem({ id: "removed-item", publicTitle: "Удаляемый" })],
+      zones: [makeZone(), makeZone({ id: "removed-zone", title: "Удаляемая" })],
+    };
+    const next = { items: [makeItem()], zones: [makeZone()] };
+    const plan = planCatalogSync(prev, next);
+    expect(plan.itemSourceCodesToDelete).toEqual(["removed-item"]);
+    expect(plan.zoneCodesToDelete).toEqual(["removed-zone"]);
+    expect(isEmptyPlan(planCatalogSync(next, prev))).toBe(false);
+  });
+});
+
+describe("catalogSnapshotsEqual / hasCatalogChanges", () => {
+  it("считает одинаковые snapshot равными без reverse diff", () => {
+    const snapshot = { items: [makeItem()], zones: [makeZone()] };
+    const clone = { items: [makeItem()], zones: [makeZone()] };
+    expect(catalogSnapshotsEqual(snapshot, clone)).toBe(true);
+    expect(hasCatalogChanges(snapshot, clone)).toBe(false);
+    expect(isEmptyPlan(planCatalogSync(snapshot, clone))).toBe(true);
+  });
+
+  it("обнаруживает изменения одним planCatalogSync(prev, next)", () => {
+    const prev = { items: [makeItem()], zones: [makeZone()] };
+    const next = { items: [makeItem({ works: 4000 })], zones: [makeZone()] };
+    expect(catalogSnapshotsEqual(prev, next)).toBe(false);
+    expect(hasCatalogChanges(prev, next)).toBe(true);
+    expect(isEmptyPlan(planCatalogSync(prev, next))).toBe(false);
   });
 });

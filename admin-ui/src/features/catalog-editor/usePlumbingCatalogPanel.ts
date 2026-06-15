@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, type ChangeEvent } from "react";
+import { useCallback, useMemo, useRef, useState, type ChangeEvent } from "react";
 
 import type { PlumbingCatalogController } from "./api/client";
 import {
@@ -88,15 +88,15 @@ export function usePlumbingCatalogPanel(catalog: PlumbingCatalogController) {
   );
 
   // --- Мутации библиотеки ---
-  function updateItem(id: string, patch: Partial<CatalogItem>) {
+  const updateItem = useCallback((id: string, patch: Partial<CatalogItem>) => {
     setItems((prev) => prev.map((item) => (item.id === id ? { ...item, ...patch } : item)));
-  }
+  }, [setItems]);
 
-  function updateItemNumber(id: string, field: keyof CatalogItem, value: string) {
+  const updateItemNumber = useCallback((id: string, field: keyof CatalogItem, value: string) => {
     const parsed = value === "" ? 0 : Number(value.replace(",", "."));
     if (!Number.isFinite(parsed)) return;
-    updateItem(id, { [field]: parsed } as Partial<CatalogItem>);
-  }
+    setItems((prev) => prev.map((item) => (item.id === id ? { ...item, [field]: parsed } : item)));
+  }, [setItems]);
 
   function addLibraryItem() {
     setItems((prev) => {
@@ -118,7 +118,7 @@ export function usePlumbingCatalogPanel(catalog: PlumbingCatalogController) {
     });
   }
 
-  function removeLibraryItem(id: string) {
+  const removeLibraryItem = useCallback((id: string) => {
     const usedIn = zones.filter((zone) => zone.items.some((row) => row.atomicItemId === id));
     if (usedIn.length > 0) {
       const ok = window.confirm(
@@ -130,7 +130,7 @@ export function usePlumbingCatalogPanel(catalog: PlumbingCatalogController) {
       );
     }
     setItems((prev) => prev.filter((item) => item.id !== id));
-  }
+  }, [setItems, setZones, zones]);
 
   // --- Мутации зон ---
   function addZone(subgroup: ZoneSubgroup) {

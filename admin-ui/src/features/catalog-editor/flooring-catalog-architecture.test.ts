@@ -30,6 +30,7 @@ import catalogViewTabsSource from "./CatalogViewTabs.tsx?raw";
 import plumbingCatalogModelSource from "./plumbing-catalog-model.ts?raw";
 import plumbingCatalogPanelSource from "./PlumbingCatalogPanel.tsx?raw";
 import plumbingLibraryColumnsSource from "./PlumbingLibraryColumns.ts?raw";
+import plumbingLibraryRowSource from "./PlumbingLibraryRow.tsx?raw";
 import plumbingLibraryRowsSource from "./PlumbingLibraryRows.tsx?raw";
 import plumbingLibraryViewSource from "./PlumbingLibraryView.tsx?raw";
 import plumbingPreviewPanelSource from "./PlumbingPreviewPanel.tsx?raw";
@@ -121,6 +122,7 @@ const REQUIRED_PLUMBING_CATALOG_MODULES = [
   "PlumbingCatalogPanel.tsx",
   "PlumbingLibraryColumns.ts",
   "PlumbingLibraryRows.tsx",
+  "PlumbingLibraryRow.tsx",
   "PlumbingLibraryView.tsx",
   "PlumbingPreviewPanel.tsx",
   "PlumbingZoneCard.tsx",
@@ -181,6 +183,7 @@ const plumbingCatalogModulePaths = Object.keys(
     "./PlumbingCatalogPanel.tsx",
     "./PlumbingLibraryColumns.ts",
     "./PlumbingLibraryRows.tsx",
+    "./PlumbingLibraryRow.tsx",
     "./PlumbingLibraryView.tsx",
     "./PlumbingPreviewPanel.tsx",
     "./PlumbingZoneCard.tsx",
@@ -433,12 +436,24 @@ describe("catalog editor architecture", () => {
     expect(plumbingLibraryViewSource).toContain("CatalogManagedTableHeaderCell");
   });
 
+  it("memoizes plumbing library rows to avoid rerendering unchanged items", () => {
+    expect(plumbingLibraryRowsSource).toContain("<PlumbingLibraryRow");
+    expect(plumbingLibraryRowSource).toContain("memo(");
+    expect(plumbingLibraryRowSource).toContain("function PlumbingLibraryRow");
+    expect(usePlumbingCatalogPanelSource).toContain("const updateItem = useCallback");
+    expect(usePlumbingCatalogPanelSource).toContain("const updateItemNumber = useCallback");
+    expect(usePlumbingCatalogPanelSource).toContain("const removeLibraryItem = useCallback");
+  });
+
   it("persists table column settings without localStorage writes on every resize frame", () => {
     expect(useCatalogTableColumnsSource).not.toContain("useEffect(() => {");
     expect(useCatalogTableColumnsSource).not.toMatch(
       /writeCatalogStoredValue\(storageKey, columns\)[\s\S]*\[storageKey, columns\]/,
     );
-    expect(useCatalogTableColumnsSource).toContain("function persistColumns");
+    expect(useCatalogTableColumnsSource).toContain("const persistColumns = useCallback");
+    expect(useCatalogTableColumnsSource).toContain("const cycleColumnAlign = useCallback");
+    expect(useCatalogTableColumnsSource).toContain("const beginColumnResize = useCallback");
+    expect(useCatalogTableColumnsSource).toContain("const columnClass = useCallback");
     expect(useCatalogTableColumnsSource).toContain("persistColumns(columnsRef.current)");
     expect(useCatalogTableColumnsSource).toContain("persistColumns(next)");
 
@@ -480,7 +495,8 @@ describe("catalog editor architecture", () => {
     expect(sourceLines(plumbingZoneCompositionColumnsSource).length).toBeLessThanOrEqual(120);
     expect(sourceLines(plumbingZoneCompositionRowsSource).length).toBeLessThanOrEqual(150);
     expect(sourceLines(plumbingLibraryColumnsSource).length).toBeLessThanOrEqual(150);
-    expect(sourceLines(plumbingLibraryRowsSource).length).toBeLessThanOrEqual(190);
+    expect(sourceLines(plumbingLibraryRowsSource).length).toBeLessThanOrEqual(40);
+    expect(sourceLines(plumbingLibraryRowSource).length).toBeLessThanOrEqual(190);
     expect(sourceLines(plumbingLibraryViewSource).length).toBeLessThanOrEqual(170);
     expect(sourceLines(plumbingPreviewPanelSource).length).toBeLessThanOrEqual(100);
     expect(sourceLines(plumbingCatalogModelSource).length).toBeLessThanOrEqual(260);

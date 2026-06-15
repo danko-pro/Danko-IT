@@ -1,4 +1,4 @@
-import { useRef, useState, type CSSProperties, type MouseEvent as ReactMouseEvent } from "react";
+import { useCallback, useRef, useState, type CSSProperties, type MouseEvent as ReactMouseEvent } from "react";
 
 import { readCatalogStoredValue, writeCatalogStoredValue } from "./useCatalogPersistedState";
 
@@ -66,13 +66,13 @@ export function useCatalogTableColumns<TColumnKey extends string>({
   const columnsRef = useRef(columns);
   columnsRef.current = columns;
 
-  function persistColumns(nextColumns: CatalogTableColumns<TColumnKey>) {
+  const persistColumns = useCallback((nextColumns: CatalogTableColumns<TColumnKey>) => {
     if (storageKey) {
       writeCatalogStoredValue(storageKey, nextColumns);
     }
-  }
+  }, [storageKey]);
 
-  function cycleColumnAlign(columnKey: TColumnKey) {
+  const cycleColumnAlign = useCallback((columnKey: TColumnKey) => {
     const next = {
       ...columnsRef.current,
       [columnKey]: {
@@ -83,13 +83,13 @@ export function useCatalogTableColumns<TColumnKey extends string>({
     columnsRef.current = next;
     setColumns(next);
     persistColumns(next);
-  }
+  }, [persistColumns]);
 
-  function beginColumnResize(
+  const beginColumnResize = useCallback((
     columnKey: TColumnKey,
     nextColumnKey: TColumnKey,
     event: ReactMouseEvent<HTMLSpanElement>,
-  ) {
+  ) => {
     event.preventDefault();
 
     const startX = event.clientX;
@@ -122,15 +122,15 @@ export function useCatalogTableColumns<TColumnKey extends string>({
 
     window.addEventListener("mousemove", onMouseMove);
     window.addEventListener("mouseup", onMouseUp, { once: true });
-  }
+  }, [minColumnWidths, persistColumns]);
 
-  function columnStyle(columnKey: TColumnKey): CSSProperties {
+  const columnStyle = useCallback((columnKey: TColumnKey): CSSProperties => {
     return { width: `${columns[columnKey].width}%` };
-  }
+  }, [columns]);
 
-  function columnClass(columnKey: TColumnKey, className = ""): string {
+  const columnClass = useCallback((columnKey: TColumnKey, className = ""): string => {
     return `ce-managed-table-cell is-align-${columns[columnKey].align}${className ? ` ${className}` : ""}`;
-  }
+  }, [columns]);
 
   return {
     columns,

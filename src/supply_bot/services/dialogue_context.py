@@ -134,7 +134,7 @@ class DialogueContextMixin:
         normalized = normalize_text(text)
         if not normalized:
             return False
-        first_word = normalized.split(maxsplit=1)[0]
+        first_word = normalized.split(maxsplit=1)[0].strip("@,:;.!?")
         return first_word in BOT_ADDRESS_WORDS
 
     def _is_abort_request_message(self, text: str) -> bool:

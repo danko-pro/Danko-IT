@@ -3,10 +3,17 @@
 
 from typing import Any
 
-from fastapi import FastAPI, Request
+from fastapi import Depends, FastAPI, Request
 
 from supply_bot.admin_api.app_helpers import _parse_hhmm
-from supply_bot.admin_api.deps import get_dashboard_read_model, get_settings, get_storage
+from supply_bot.admin_api.auth import AdminSession
+from supply_bot.admin_api.deps import (
+    get_dashboard_read_model,
+    get_settings,
+    get_storage,
+    require_admin_session,
+)
+from supply_bot.projects.application.dashboard_root_read_model import build_dashboard_root_summary_payload
 from supply_bot.services.notifications import TelegramNotificationOutboxService
 
 
@@ -26,6 +33,20 @@ def register_support_routes(
     @app.get("/api/dashboard/summary")
     async def dashboard_summary(request: Request) -> dict[str, Any]:
         return await get_dashboard_read_model(request).get_summary()
+
+    @app.get("/api/dashboard/root-summary")
+    async def dashboard_root_summary(
+        request: Request,
+        _session: AdminSession = Depends(require_admin_session),
+    ) -> dict[str, Any]:
+        storage_obj = get_storage(request)
+        projects = await storage_obj.list_projects()
+        project_ids = [int(project["id"]) for project in projects]
+        ledger_entries_by_project = await storage_obj.list_project_ledger_entries_for_projects(project_ids)
+        return build_dashboard_root_summary_payload(
+            projects=projects,
+            ledger_entries_by_project=ledger_entries_by_project,
+        )
 
     @app.get("/api/groups")
     async def groups(request: Request, limit: int = 20) -> list[dict[str, Any]]:

@@ -75,6 +75,7 @@ def test_admin_api_middleware_requires_session_for_private_routes() -> None:
 
             for path in (
                 "/api/dashboard/summary",
+                "/api/dashboard/root-summary",
                 "/api/requests/recent",
                 "/api/materials/families",
                 "/api/calculator/projects",

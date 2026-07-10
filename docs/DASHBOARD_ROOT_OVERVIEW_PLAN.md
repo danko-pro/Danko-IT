@@ -166,7 +166,7 @@ UI должен только отображать backend read-model. Он не 
 
 `DASH-DASHBOARD-ROOT-1`: создать backend application read-model для общей сводки. Реализован `src/supply_bot/projects/application/dashboard_root_read_model.py`: он строит project-level `finance_summary`, агрегирует totals по всем объектам и добавляет `risk_flags` / `risk_status` без endpoint/UI. Checkpoint: `docs/DASHBOARD_ROOT_CHECKPOINT_1.md`.
 
-`DASH-DASHBOARD-ROOT-2`: добавить backend endpoint/read path для общей сводки без UI.
+`DASH-DASHBOARD-ROOT-2`: добавить backend endpoint/read path для общей сводки без UI. Реализован `GET /api/dashboard/root-summary`: endpoint получает projects и batch ledger entries, вызывает `build_dashboard_root_summary_payload(...)` и не меняет frontend, `listProjects()` или project detail shape. Checkpoint: `docs/DASHBOARD_ROOT_CHECKPOINT_2.md`.
 
 `DASH-DASHBOARD-ROOT-3`: подключить frontend state/API client.
 

@@ -49,6 +49,31 @@ class ProjectLedgerEntriesStorageMixin:
             rows = await cursor.fetchall()
         return [dict(row) for row in rows]
 
+    async def list_project_ledger_entries_for_projects(
+        self,
+        project_ids: list[int],
+    ) -> dict[int, list[dict[str, Any]]]:
+        if not project_ids:
+            return {}
+
+        entries_by_project: dict[int, list[dict[str, Any]]] = {project_id: [] for project_id in project_ids}
+        placeholders = ", ".join("?" for _ in project_ids)
+        async with self.connection() as db:
+            cursor = await db.execute(
+                f"""
+                {PROJECT_LEDGER_ENTRY_SELECT_SQL}
+                WHERE project_id IN ({placeholders})
+                ORDER BY project_id, sort_order, id
+                """,
+                tuple(project_ids),
+            )
+            rows = await cursor.fetchall()
+
+        for row in rows:
+            payload = dict(row)
+            entries_by_project.setdefault(int(payload["project_id"]), []).append(payload)
+        return entries_by_project
+
     async def get_project_ledger_entry(self, entry_id: int) -> dict[str, Any] | None:
         async with self.connection() as db:
             cursor = await db.execute(

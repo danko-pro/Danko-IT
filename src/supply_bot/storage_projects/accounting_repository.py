@@ -202,6 +202,39 @@ class SqlAlchemyProjectAccountingRepository(RequiredOwnerScopedSqlAlchemyReposit
             )
             return [_row_to_dict(row) for row in result.fetchall()]
 
+    async def list_project_ledger_entries_for_projects(
+        self,
+        project_ids: list[int],
+    ) -> dict[int, list[dict[str, Any]]]:
+        self._required_owner_user_id()
+        if not project_ids:
+            return {}
+
+        entries_by_project: dict[int, list[dict[str, Any]]] = {project_id: [] for project_id in project_ids}
+        async with self._session_factory() as session:
+            order_column = (
+                project_ledger_entries.c.sort_order
+                if "sort_order" in project_ledger_entries.c
+                else project_ledger_entries.c.id
+            )
+            result = await session.execute(
+                select(project_ledger_entries)
+                .where(
+                    self._required_owner_clause(project_ledger_entries),
+                    project_ledger_entries.c.project_id.in_(project_ids),
+                )
+                .order_by(
+                    project_ledger_entries.c.project_id.asc(),
+                    order_column.asc(),
+                    project_ledger_entries.c.id.asc(),
+                )
+            )
+            for row in result.fetchall():
+                payload = _row_to_dict(row)
+                if payload is not None:
+                    entries_by_project.setdefault(int(payload["project_id"]), []).append(payload)
+        return entries_by_project
+
     async def get_project_ledger_entry(self, ledger_entry_id: int) -> dict[str, Any] | None:
         self._required_owner_user_id()
         async with self._session_factory() as session:

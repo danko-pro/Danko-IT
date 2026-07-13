@@ -5,6 +5,7 @@ import { usePublicHeaderVisibility } from "../../hooks/usePublicHeaderVisibility
 const NAV_ITEMS = [
   { href: "#projects", label: "Объекты" },
   { href: "#approach", label: "Подход" },
+  { href: "#platform", label: "Платформа" },
   { href: "#pricing", label: "Цены" },
   { href: "#contacts", label: "Контакты" },
 ];

@@ -1342,6 +1342,226 @@
   }
 }
 
+/* ---------- expanded project case ---------- */
+.dk-case-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  width: 100%;
+  margin-top: 20px;
+  padding: 13px 0;
+  border: 0;
+  border-top: 1px solid var(--dk-border);
+  border-bottom: 1px solid var(--dk-border);
+  background: transparent;
+  color: var(--dk-green-deep);
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  text-align: left;
+}
+
+.dk-case-toggle span {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--dk-soft);
+  transition: transform 0.28s var(--dk-ease);
+}
+
+.dk-case-toggle:hover span {
+  transform: translateY(2px);
+}
+
+.dk-case {
+  margin-top: 20px;
+  overflow: hidden;
+  border: 1px solid rgba(30, 81, 74, 0.13);
+  border-radius: 28px;
+  background: #fff;
+  box-shadow: 0 34px 78px -48px rgba(16, 35, 31, 0.42);
+  animation: dk-case-expand 0.58s var(--dk-ease) both;
+}
+
+@keyframes dk-case-expand {
+  from {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dk-case__head {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.8fr) minmax(360px, 1.2fr);
+  gap: clamp(30px, 8vw, 100px);
+  align-items: end;
+  padding: clamp(28px, 5vw, 52px);
+  background:
+    radial-gradient(circle at 90% 0%, rgba(214, 177, 95, 0.12), transparent 30%),
+    linear-gradient(135deg, #f9fbfa, #edf5f2);
+}
+
+.dk-case__head .dk-section-kicker {
+  margin-bottom: 10px;
+}
+
+.dk-case__head h3 {
+  margin: 0;
+  color: var(--dk-ink);
+  font-size: clamp(2rem, 4vw, 3.2rem);
+  font-weight: 850;
+  letter-spacing: -0.035em;
+  line-height: 1.02;
+}
+
+.dk-case__head > p {
+  margin: 0;
+  color: var(--dk-muted);
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.dk-case__stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  margin: 0;
+  border-top: 1px solid var(--dk-border);
+  border-bottom: 1px solid var(--dk-border);
+}
+
+.dk-case__stats > div {
+  display: grid;
+  gap: 7px;
+  padding: 24px 26px;
+  border-right: 1px solid var(--dk-border);
+}
+
+.dk-case__stats > div:last-child {
+  border-right: 0;
+}
+
+.dk-case__stats dt {
+  color: var(--dk-green-deep);
+  font-size: clamp(1.2rem, 2vw, 1.6rem);
+  font-weight: 850;
+  letter-spacing: -0.025em;
+}
+
+.dk-case__stats dd {
+  margin: 0;
+  color: var(--dk-muted-soft);
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.dk-case__scope {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.dk-case__scope section {
+  position: relative;
+  padding: 34px;
+  border-right: 1px solid var(--dk-border);
+  border-bottom: 1px solid var(--dk-border);
+}
+
+.dk-case__scope section:nth-child(2n) {
+  border-right: 0;
+}
+
+.dk-case__scope section:nth-last-child(-n + 2) {
+  border-bottom: 0;
+}
+
+.dk-case__scope section > span {
+  color: var(--dk-gold-deep);
+  font-size: 11px;
+  font-weight: 850;
+}
+
+.dk-case__scope h4 {
+  margin: 12px 0 18px;
+  color: var(--dk-ink);
+  font-size: 1.08rem;
+  font-weight: 830;
+}
+
+.dk-case__scope ul {
+  display: grid;
+  gap: 9px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dk-case__scope li {
+  position: relative;
+  padding-left: 17px;
+  color: var(--dk-muted);
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+.dk-case__scope li::before {
+  position: absolute;
+  top: 0.68em;
+  left: 0;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--dk-green);
+  content: "";
+}
+
+@media (max-width: 760px) {
+  .dk-case__head,
+  .dk-case__scope {
+    grid-template-columns: 1fr;
+  }
+
+  .dk-case__head {
+    gap: 20px;
+  }
+
+  .dk-case__stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .dk-case__stats > div:nth-child(2) {
+    border-right: 0;
+  }
+
+  .dk-case__stats > div:nth-child(-n + 2) {
+    border-bottom: 1px solid var(--dk-border);
+  }
+
+  .dk-case__scope section,
+  .dk-case__scope section:nth-child(2n),
+  .dk-case__scope section:nth-last-child(-n + 2) {
+    border-right: 0;
+    border-bottom: 1px solid var(--dk-border);
+  }
+
+  .dk-case__scope section:last-child {
+    border-bottom: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dk-case {
+    animation: none;
+  }
+}
+
 /* ---------- responsive ---------- */
 @media (max-width: 980px) {
   .dk-projects__grid,

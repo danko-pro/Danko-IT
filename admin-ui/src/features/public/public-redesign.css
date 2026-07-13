@@ -512,6 +512,107 @@
   transition: transform 1.1s var(--dk-ease);
 }
 
+.dk-project-passport {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  min-height: clamp(360px, 44vw, 560px);
+  padding: clamp(1.5rem, 4vw, 3.4rem);
+  flex-direction: column;
+  justify-content: flex-end;
+  overflow: hidden;
+  color: #f8fffc;
+  background:
+    radial-gradient(circle at 78% 18%, rgba(214, 177, 95, 0.3), transparent 25%),
+    linear-gradient(145deg, #0d2c27 0%, #1d5d52 58%, #287768 100%);
+  animation: dk-media-in 0.65s var(--dk-ease) both;
+}
+
+.dk-project-passport::before,
+.dk-project-passport::after {
+  position: absolute;
+  z-index: -1;
+  content: "";
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 50%;
+}
+
+.dk-project-passport::before {
+  width: 360px;
+  height: 360px;
+  top: -160px;
+  right: -80px;
+}
+
+.dk-project-passport::after {
+  width: 520px;
+  height: 520px;
+  top: -240px;
+  right: -160px;
+}
+
+.dk-project-passport__grid {
+  position: absolute;
+  z-index: -2;
+  inset: 0;
+  opacity: 0.17;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.35) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.35) 1px, transparent 1px);
+  background-size: 32px 32px;
+  -webkit-mask-image: linear-gradient(to bottom, #000, transparent 84%);
+  mask-image: linear-gradient(to bottom, #000, transparent 84%);
+}
+
+.dk-project-passport > p {
+  margin: 0 0 0.5rem;
+  color: var(--dk-gold);
+  font-size: 0.76rem;
+  font-weight: 850;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.dk-project-passport > strong {
+  font-size: clamp(2.5rem, 7vw, 5.6rem);
+  font-weight: 850;
+  line-height: 0.95;
+  letter-spacing: -0.055em;
+}
+
+.dk-project-passport dl {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin: clamp(1.6rem, 4vw, 3rem) 0 1.15rem;
+}
+
+.dk-project-passport dl div {
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+.dk-project-passport dt {
+  margin-bottom: 0.25rem;
+  color: rgba(255, 255, 255, 0.58);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.dk-project-passport dd {
+  margin: 0;
+  font-size: clamp(0.88rem, 1.5vw, 1.08rem);
+  font-weight: 800;
+}
+
+.dk-project-passport > span {
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.78rem;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+}
+
 .dk-media__frame:hover .dk-media__img {
   transform: scale(1.05);
 }
@@ -2091,6 +2192,14 @@
 }
 
 @media (max-width: 600px) {
+  .dk-project-passport dl {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .dk-project-passport dl div:last-child {
+    grid-column: 1 / -1;
+  }
+
   .dk-hero__control {
     width: 100%;
     max-width: 390px;

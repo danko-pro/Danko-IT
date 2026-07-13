@@ -1,13 +1,10 @@
 import { useEffect, useState } from "react";
-
 import { publicProjectItems } from "../../public-content";
 import { usePublicProjectsShowcase } from "../../hooks/usePublicProjectsShowcase";
 import { getProjectImages, getProjectScope, getProjectShortName } from "../projects/publicProjectModel";
 import { PublicProjectCasePanel, PublicProjectInfo } from "./PublicProjectCase";
-
 // Готовые кейсы без фотосъёмки показываем через технический паспорт объекта.
 const SHOWCASE_PROJECTS = publicProjectItems.filter((project) => getProjectImages(project).length > 0 || getProjectScope(project).length > 0);
-
 export function PublicProjectsSection() {
   const [isCaseOpen, setIsCaseOpen] = useState(false);
   const {
@@ -16,30 +13,25 @@ export function PublicProjectsSection() {
     activeProjectImage,
     activeProjectImageIndex,
     activeProjectCounter,
+    handleProjectKeyDown,
     handleProjectSelect,
+    projectSwitcherButtonRefs,
     setActiveProjectImageIndex,
   } = usePublicProjectsShowcase({ projects: SHOWCASE_PROJECTS });
-
   const activeIndex = SHOWCASE_PROJECTS.indexOf(activeProject);
-
   useEffect(() => {
     setIsCaseOpen(false);
   }, [activeProject.name]);
-
   useEffect(() => {
     if (!isCaseOpen) return undefined;
-
     const frame = window.requestAnimationFrame(() => {
       const caseElement = document.getElementById("dk-active-case");
       const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
       caseElement?.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
       caseElement?.focus({ preventScroll: true });
     });
-
     return () => window.cancelAnimationFrame(frame);
   }, [isCaseOpen, activeProject.name]);
-
   return (
     <section className="dk-section dk-section--paper dk-projects dk-reveal" id="projects" aria-labelledby="dk-projects-title">
       <div className="dk-wrap">
@@ -54,22 +46,28 @@ export function PublicProjectsSection() {
         </div>
 
         <div className="dk-projects__layout">
-          <nav className="dk-switchers" aria-label="Выбор объекта">
+          <div className="dk-switchers" role="tablist" aria-label="Выбор объекта">
             {SHOWCASE_PROJECTS.map((project, index) => (
               <button
                 type="button"
                 key={project.name}
+                id={`dk-project-tab-${index}`}
+                ref={(button) => { projectSwitcherButtonRefs.current[index] = button; }}
+                role="tab"
                 className={`dk-switch${index === activeIndex ? " dk-switch--active" : ""}`}
                 onClick={() => handleProjectSelect(index)}
-                aria-current={index === activeIndex ? "true" : undefined}
+                onKeyDown={(event) => handleProjectKeyDown(event, index)}
+                aria-selected={index === activeIndex}
+                aria-controls="dk-project-panel"
+                tabIndex={index === activeIndex ? 0 : -1}
               >
                 <span className="dk-switch__num">{String(index + 1).padStart(2, "0")}</span>
                 <span>{getProjectShortName(project)}</span>
               </button>
             ))}
-          </nav>
+          </div>
 
-          <div className="dk-projects__main">
+          <div className="dk-projects__main" id="dk-project-panel" role="tabpanel" aria-labelledby={`dk-project-tab-${activeIndex}`}>
             <div className="dk-projects__grid">
               <div className="dk-media">
                 <div className="dk-media__frame">
@@ -109,6 +107,7 @@ export function PublicProjectsSection() {
                         className={`dk-thumb${index === activeProjectImageIndex ? " dk-thumb--active" : ""}`}
                         onClick={() => setActiveProjectImageIndex(index)}
                         aria-label={`Фото ${index + 1}`}
+                        aria-pressed={index === activeProjectImageIndex}
                       >
                         <img src={image.src} alt={image.alt ?? ""} />
                       </button>

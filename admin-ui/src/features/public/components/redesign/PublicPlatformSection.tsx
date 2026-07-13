@@ -100,7 +100,7 @@ export function PublicPlatformSection() {
               ))}
             </div>
 
-            <div className="dk-control__summary">
+            <div className="dk-control__summary dk-control__motion" key={`summary-${activeView}`}>
               <div>
                 <small>{active.eyebrow}</small>
                 <h3>{active.title}</h3>
@@ -113,7 +113,7 @@ export function PublicPlatformSection() {
               </div>
             </div>
 
-            <div className="dk-control__rows">
+            <div className="dk-control__rows dk-control__motion" key={`rows-${activeView}`}>
               {active.rows.map(([title, status]) => (
                 <div key={title}><span>{title}</span><strong>{status}</strong></div>
               ))}

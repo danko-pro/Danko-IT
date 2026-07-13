@@ -1,30 +1,18 @@
+import { useEffect, useState } from "react";
+
 import { publicProjectItems } from "../../public-content";
 import { usePublicProjectsShowcase } from "../../hooks/usePublicProjectsShowcase";
 import {
   getProjectImages,
-  getProjectScope,
   getProjectShortName,
-  getProjectSubtitle,
-  type PublicProjectItem,
 } from "../projects/publicProjectModel";
+import { PublicProjectCasePanel, PublicProjectInfo } from "./PublicProjectCase";
 
 // Показываем в галерее только объекты, у которых есть фотографии.
 const SHOWCASE_PROJECTS = publicProjectItems.filter((project) => getProjectImages(project).length > 0);
 
-function buildScopeText(project: PublicProjectItem): string {
-  const scope = getProjectScope(project);
-
-  if (scope.length > 0) {
-    return scope
-      .flatMap((group) => group.items)
-      .slice(0, 6)
-      .join(" · ");
-  }
-
-  return `Ремонт под ключ: дизайн, отделка и комплектация под задачу объекта (${project.type}).`;
-}
-
 export function PublicProjectsSection() {
+  const [isCaseOpen, setIsCaseOpen] = useState(false);
   const {
     activeProject,
     activeProjectImages,
@@ -36,6 +24,10 @@ export function PublicProjectsSection() {
   } = usePublicProjectsShowcase({ projects: SHOWCASE_PROJECTS });
 
   const activeIndex = SHOWCASE_PROJECTS.indexOf(activeProject);
+
+  useEffect(() => {
+    setIsCaseOpen(false);
+  }, [activeProject.name]);
 
   return (
     <section className="dk-section dk-section--paper dk-projects dk-reveal" id="projects" aria-labelledby="dk-projects-title">
@@ -81,23 +73,10 @@ export function PublicProjectsSection() {
             </div>
           </div>
 
-          <aside className="dk-proj-info" key={activeProject.name}>
-            <h3 className="dk-proj-info__title">{activeProject.name}</h3>
-            <p className="dk-proj-info__loc">{getProjectSubtitle(activeProject)}</p>
-
-            <div className="dk-chips">
-              <span className="dk-chip dk-chip--area">{activeProject.area}</span>
-              <span className="dk-chip dk-chip--pkg">Пакет {activeProject.package}</span>
-              <span className="dk-chip dk-chip--type">{activeProject.type}</span>
-            </div>
-
-            <p className="dk-proj-info__scope">{buildScopeText(activeProject)}</p>
-
-            <a className="dk-btn dk-btn--green dk-proj-info__cta" href="#contacts">
-              Обсудить похожий проект
-            </a>
-          </aside>
+          <PublicProjectInfo project={activeProject} isOpen={isCaseOpen} onToggle={() => setIsCaseOpen((current) => !current)} />
         </div>
+
+        <PublicProjectCasePanel project={activeProject} isOpen={isCaseOpen} />
 
         <div className="dk-switchers">
           {SHOWCASE_PROJECTS.map((project, index) => (

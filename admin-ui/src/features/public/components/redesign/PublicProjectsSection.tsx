@@ -54,6 +54,7 @@ export function PublicProjectsSection() {
           <div className="dk-media">
             <div className="dk-media__frame">
               <img
+                key={activeProjectImage?.src}
                 className="dk-media__img"
                 src={activeProjectImage?.src}
                 alt={activeProjectImage?.alt ?? activeProject.name}
@@ -80,7 +81,7 @@ export function PublicProjectsSection() {
             </div>
           </div>
 
-          <aside className="dk-proj-info">
+          <aside className="dk-proj-info" key={activeProject.name}>
             <h3 className="dk-proj-info__title">{activeProject.name}</h3>
             <p className="dk-proj-info__loc">{getProjectSubtitle(activeProject)}</p>
 

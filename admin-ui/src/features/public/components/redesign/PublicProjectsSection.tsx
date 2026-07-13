@@ -93,7 +93,6 @@ export function PublicProjectsSection() {
                       <span>Проектирование · ремонт · комплектация</span>
                     </div>
                   )}
-                  <div className="dk-media__scrim" aria-hidden="true" />
                   <span className="dk-media__badge">
                     <i aria-hidden="true" />
                     Пакет {activeProject.package} · {activeProject.area}

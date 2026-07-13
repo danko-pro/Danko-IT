@@ -1,4 +1,4 @@
-import { useState, type CSSProperties } from "react";
+import { useState, type CSSProperties, type KeyboardEvent } from "react";
 
 const PLATFORM_VIEWS = {
   schedule: {
@@ -47,6 +47,16 @@ type PlatformView = keyof typeof PLATFORM_VIEWS;
 export function PublicPlatformSection() {
   const [activeView, setActiveView] = useState<PlatformView>("schedule");
   const active = PLATFORM_VIEWS[activeView];
+  const viewKeys = Object.keys(PLATFORM_VIEWS) as PlatformView[];
+  const handleTabKeyDown = (event: KeyboardEvent<HTMLButtonElement>, index: number) => {
+    const direction = event.key === "ArrowRight" ? 1 : event.key === "ArrowLeft" ? -1 : 0;
+    const nextIndex = event.key === "Home" ? 0 : event.key === "End" ? viewKeys.length - 1 : direction ? (index + direction + viewKeys.length) % viewKeys.length : -1;
+    if (nextIndex < 0) return;
+    event.preventDefault();
+    const nextView = viewKeys[nextIndex];
+    setActiveView(nextView);
+    document.getElementById(`dk-platform-tab-${nextView}`)?.focus();
+  };
 
   return (
     <section className="dk-section dk-section--soft dk-control dk-reveal" id="platform" aria-labelledby="dk-platform-title">
@@ -86,21 +96,25 @@ export function PublicPlatformSection() {
             </div>
 
             <div className="dk-control__tabs" role="tablist" aria-label="Разделы проекта">
-              {(Object.keys(PLATFORM_VIEWS) as PlatformView[]).map((key) => (
+              {viewKeys.map((key, index) => (
                 <button
                   key={key}
+                  id={`dk-platform-tab-${key}`}
                   type="button"
                   role="tab"
                   aria-selected={key === activeView}
+                  aria-controls="dk-platform-panel"
+                  tabIndex={key === activeView ? 0 : -1}
                   className={key === activeView ? "is-active" : ""}
                   onClick={() => setActiveView(key)}
+                  onKeyDown={(event) => handleTabKeyDown(event, index)}
                 >
                   {PLATFORM_VIEWS[key].label}
                 </button>
               ))}
             </div>
 
-            <div className="dk-control__summary dk-control__motion" key={`summary-${activeView}`}>
+            <div className="dk-control__summary dk-control__motion" id="dk-platform-panel" role="tabpanel" aria-labelledby={`dk-platform-tab-${activeView}`} key={`summary-${activeView}`}>
               <div>
                 <small>{active.eyebrow}</small>
                 <h3>{active.title}</h3>

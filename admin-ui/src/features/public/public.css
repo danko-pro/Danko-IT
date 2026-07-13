@@ -11596,3 +11596,70 @@ html:has(.public-estimate-page) {
     transform: none;
   }
 }
+
+/* public estimate — audited interaction states */
+.public-estimate-page :is(a, button, input, select, textarea):focus-visible {
+  outline: 3px solid rgba(184, 140, 46, 0.48);
+  outline-offset: 2px;
+}
+
+.public-estimate-page :is(button, input, select, textarea):disabled {
+  cursor: not-allowed;
+  opacity: 0.52;
+  filter: saturate(0.45);
+}
+
+.public-estimate-page :is(
+  .public-action,
+  .public-hero-secondary,
+  .public-estimate-small-action,
+  .public-estimate-row-remove,
+  .public-estimate-spec-open,
+  .public-estimate-passport-action,
+  .public-estimate-passport-volumes-action,
+  .public-estimate-spec-modal-back,
+  .public-estimate-spec-modal-close,
+  .public-estimate-geometry-compact-toggle,
+  .public-estimate-geometry-compact-print
+):active:not(:disabled) {
+  transform: translateY(1px) scale(0.985);
+}
+
+.public-estimate-page button[aria-pressed="true"] {
+  border-color: rgba(30, 81, 74, 0.42);
+  box-shadow: 0 0 0 2px rgba(30, 81, 74, 0.1);
+}
+
+.public-estimate-toggle-group button[aria-pressed="false"]:focus-visible,
+.public-estimate-plumbing-sink-zone-toggle button[aria-pressed="false"]:focus-visible {
+  border-color: rgba(184, 140, 46, 0.5);
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--public-green-deep);
+  box-shadow: 0 0 0 3px rgba(184, 140, 46, 0.14);
+}
+
+.public-estimate-rail-link:focus-visible {
+  border-color: rgba(184, 140, 46, 0.56);
+  box-shadow: 0 0 0 3px rgba(184, 140, 46, 0.14);
+}
+
+.public-estimate-rail-link:active {
+  background: rgba(30, 81, 74, 0.12);
+  transform: translateY(1px);
+}
+
+.public-estimate-rail-link[aria-current="location"] {
+  box-shadow: inset 3px 0 0 var(--public-green);
+}
+
+.public-estimate-geometry-compact-toggle[aria-expanded="true"] {
+  border-color: rgba(30, 81, 74, 0.32);
+  background: rgba(30, 81, 74, 0.08);
+  color: var(--public-green-deep);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .public-estimate-page :is(button, a):active {
+    transform: none;
+  }
+}

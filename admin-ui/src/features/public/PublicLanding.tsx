@@ -8,6 +8,7 @@ import { PublicMarquee } from "./components/redesign/PublicMarquee";
 import { PublicPricingSection } from "./components/redesign/PublicPricingSection";
 import { PublicProjectsSection } from "./components/redesign/PublicProjectsSection";
 import { PublicRevealObserver } from "./components/redesign/PublicRevealObserver";
+import { PublicPlatformSection } from "./components/redesign/PublicPlatformSection";
 
 export function PublicLanding() {
   return (
@@ -20,6 +21,7 @@ export function PublicLanding() {
         <PublicMarquee />
         <PublicProjectsSection />
         <PublicApproachSection />
+        <PublicPlatformSection />
         <PublicPricingSection />
         <PublicContactsSection />
       </main>

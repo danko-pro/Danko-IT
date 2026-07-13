@@ -10,6 +10,7 @@ import publicHeroSource from "./components/redesign/PublicHero.tsx?raw";
 import publicMarqueeSource from "./components/redesign/PublicMarquee.tsx?raw";
 import publicPricingSource from "./components/redesign/PublicPricingSection.tsx?raw";
 import publicProjectsSource from "./components/redesign/PublicProjectsSection.tsx?raw";
+import publicPlatformSource from "./components/redesign/PublicPlatformSection.tsx?raw";
 import publicRevealObserverSource from "./components/redesign/PublicRevealObserver.tsx?raw";
 
 const require = createRequire(import.meta.url);
@@ -114,6 +115,24 @@ describe("public landing redesign architecture", () => {
     expect(publicHeaderSource).toContain('href="/estimate"');
     expect(publicProjectsSource).toContain("usePublicProjectsShowcase");
     expect(publicProjectsSource).toContain("publicProjectModel");
+  });
+
+  it("keeps navigation and selectors keyboard-readable", () => {
+    expect(publicHeaderSource).toContain('aria-controls="dk-public-nav"');
+    expect(publicHeaderSource).toContain('aria-current={activeHref === item.href ? "location" : undefined}');
+    expect(publicPlatformSource).toContain('role="tabpanel"');
+    expect(publicPlatformSource).toContain('event.key === "ArrowRight"');
+    expect(publicProjectsSource).toContain('role="tablist"');
+    expect(publicProjectsSource).toContain("aria-selected={index === activeIndex}");
+    expect(publicProjectsSource).toContain("aria-pressed={index === activeProjectImageIndex}");
+  });
+
+  it("defines visible focus, pressed, current and reduced-motion states", () => {
+    expect(publicRedesignCssSource).toContain(":focus-visible");
+    expect(publicRedesignCssSource).toContain('[aria-current="location"]');
+    expect(publicRedesignCssSource).toContain('[aria-selected="true"]');
+    expect(publicRedesignCssSource).toContain('[aria-pressed="true"]');
+    expect(publicRedesignCssSource).toContain("prefers-reduced-motion: reduce");
   });
 
   it("keeps public-redesign.css section marker comments", () => {

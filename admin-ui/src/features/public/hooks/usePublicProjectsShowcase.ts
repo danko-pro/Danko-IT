@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent } from "react";
 
 import {
   getProjectImages,
@@ -35,8 +35,9 @@ export function usePublicProjectsShowcase({ projects }: UsePublicProjectsShowcas
   }, [activeProjectIndex]);
 
   useEffect(() => {
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     projectSwitcherButtonRefs.current[activeProjectIndex]?.scrollIntoView({
-      behavior: "smooth",
+      behavior: reduceMotion ? "auto" : "smooth",
       block: "nearest",
       inline: "nearest",
     });
@@ -109,6 +110,15 @@ export function usePublicProjectsShowcase({ projects }: UsePublicProjectsShowcas
     setActiveProjectImageIndex(0);
   };
 
+  const handleProjectKeyDown = (event: KeyboardEvent<HTMLButtonElement>, index: number) => {
+    const direction = event.key === "ArrowDown" || event.key === "ArrowRight" ? 1 : event.key === "ArrowUp" || event.key === "ArrowLeft" ? -1 : 0;
+    const nextIndex = event.key === "Home" ? 0 : event.key === "End" ? projects.length - 1 : direction ? (index + direction + projects.length) % projects.length : -1;
+    if (nextIndex < 0) return;
+    event.preventDefault();
+    handleProjectSelect(nextIndex);
+    projectSwitcherButtonRefs.current[nextIndex]?.focus();
+  };
+
   return {
     activeProjectIndex,
     activeProjectImageIndex,
@@ -122,6 +132,7 @@ export function usePublicProjectsShowcase({ projects }: UsePublicProjectsShowcas
     projectSwitcherButtonRefs,
     projectTitleRef,
     handleProjectSelect,
+    handleProjectKeyDown,
     setActiveProjectImageIndex,
   };
 }

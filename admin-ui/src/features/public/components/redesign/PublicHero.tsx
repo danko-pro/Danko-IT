@@ -13,10 +13,10 @@ export function PublicHero() {
           Ремонт под ключ · Калининград
         </p>
         <h1 className="dk-hero__title" id="dk-hero-title">
-          Ремонт квартир и апартаментов <span>под ключ</span>
+          Продуманный ремонт <span>от проекта до заселения</span>
         </h1>
         <p className="dk-hero__lead">
-          От идеи и расчёта до отделки, комплектации и сдачи объекта — единым понятным процессом.
+          Берём на себя дизайн, работы и комплектацию. Вы видите понятную смету, ход проекта и результат на каждом этапе.
         </p>
 
         <div className="dk-hero__actions">
@@ -36,6 +36,12 @@ export function PublicHero() {
             </div>
           ))}
         </dl>
+
+        <a className="dk-hero__control" href="#platform">
+          <span className="dk-hero__control-icon" aria-hidden="true">✓</span>
+          <span><small>Весь проект под контролем</small><strong>Сроки, смета и комплектация</strong></span>
+          <span aria-hidden="true">→</span>
+        </a>
       </div>
     </section>
   );

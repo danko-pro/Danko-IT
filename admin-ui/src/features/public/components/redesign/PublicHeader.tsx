@@ -1,10 +1,12 @@
 import { useState } from "react";
 
 import { usePublicHeaderVisibility } from "../../hooks/usePublicHeaderVisibility";
+import { usePublicNavigationState } from "../../hooks/usePublicNavigationState";
 
 const NAV_ITEMS = [
   { href: "#projects", label: "Объекты" },
   { href: "#approach", label: "Подход" },
+  { href: "#platform", label: "Платформа" },
   { href: "#pricing", label: "Цены" },
   { href: "#contacts", label: "Контакты" },
 ];
@@ -12,6 +14,7 @@ const NAV_ITEMS = [
 export function PublicHeader() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const isHeaderHidden = usePublicHeaderVisibility(isMenuOpen);
+  const activeHref = usePublicNavigationState(isMenuOpen, setIsMenuOpen);
   const closeMenu = () => setIsMenuOpen(false);
 
   return (
@@ -25,9 +28,9 @@ export function PublicHeader() {
           </span>
         </a>
 
-        <nav className={`dk-nav${isMenuOpen ? " dk-nav--open" : ""}`} aria-label="Навигация публичного сайта">
+        <nav id="dk-public-nav" className={`dk-nav${isMenuOpen ? " dk-nav--open" : ""}`} aria-label="Навигация публичного сайта">
           {NAV_ITEMS.map((item) => (
-            <a key={item.href} href={item.href} onClick={closeMenu}>
+            <a key={item.href} href={item.href} aria-current={activeHref === item.href ? "location" : undefined} onClick={closeMenu}>
               {item.label}
             </a>
           ))}
@@ -45,6 +48,7 @@ export function PublicHeader() {
           type="button"
           aria-label={isMenuOpen ? "Закрыть меню" : "Открыть меню"}
           aria-expanded={isMenuOpen}
+          aria-controls="dk-public-nav"
           onClick={() => setIsMenuOpen((current) => !current)}
         >
           <span aria-hidden="true" />

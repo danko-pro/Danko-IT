@@ -661,12 +661,6 @@
   transform: scale(1.05);
 }
 
-.dk-media__scrim {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(to top, rgba(8, 16, 13, 0.55), transparent 38%);
-}
-
 .dk-media__badge {
   position: absolute;
   left: 18px;
@@ -676,7 +670,7 @@
   gap: 10px;
   padding: 9px 16px;
   border-radius: 999px;
-  background: rgba(12, 23, 20, 0.55);
+  background: rgba(12, 23, 20, 0.78);
   backdrop-filter: blur(8px);
   color: #fff;
   font-size: 13px;

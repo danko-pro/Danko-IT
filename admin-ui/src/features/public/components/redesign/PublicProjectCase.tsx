@@ -1,5 +1,6 @@
 import {
   getProjectCaseStats,
+  getProjectMapUrl,
   getProjectPrice,
   getProjectScope,
   getProjectShortName,
@@ -16,12 +17,26 @@ type ProjectCaseProps = {
 
 export function PublicProjectInfo({ project, isOpen, onToggle }: ProjectCaseProps) {
   const hasCase = getProjectScope(project).length > 0;
+  const mapUrl = getProjectMapUrl(project);
   const price = getProjectPrice(project);
+  const subtitle = getProjectSubtitle(project);
 
   return (
     <aside className="dk-proj-info" key={project.name}>
       <h3 className="dk-proj-info__title">{project.name}</h3>
-      <p className="dk-proj-info__loc">{getProjectSubtitle(project)}</p>
+      {mapUrl ? (
+        <a className="dk-project-map" href={mapUrl} target="_blank" rel="noreferrer" aria-label={`${subtitle}. Открыть в Яндекс Картах`}>
+          <span className="dk-project-map__pin" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M12 21s7-6.1 7-12a7 7 0 1 0-14 0c0 5.9 7 12 7 12Z"/><circle cx="12" cy="9" r="2.35"/></svg>
+          </span>
+          <span>
+            <strong>{subtitle}</strong>
+            <small>Открыть в Яндекс Картах ↗</small>
+          </span>
+        </a>
+      ) : (
+        <p className="dk-proj-info__loc">{subtitle}</p>
+      )}
       <div className="dk-chips">
         <span className="dk-chip dk-chip--area">{project.area}</span>
         <span className="dk-chip dk-chip--pkg">Пакет {project.package}</span>
@@ -53,7 +68,7 @@ export function PublicProjectCasePanel({ project, isOpen }: Omit<ProjectCaseProp
   if (!isOpen || scope.length === 0) return null;
 
   return (
-    <article className="dk-case" id="dk-active-case" key={`case-${project.name}`}>
+    <article className="dk-case" id="dk-active-case" tabIndex={-1} key={`case-${project.name}`}>
       <div className="dk-case__head">
         <div>
           <p className="dk-section-kicker">Кейс · {getProjectShortName(project)}</p>

@@ -1898,3 +1898,238 @@
     border-bottom: 0;
   }
 }
+
+/* ---------- interaction polish ---------- */
+.dk-landing {
+  scroll-behavior: smooth;
+}
+
+.dk-hero__bg {
+  animation: dk-hero-breathe 18s var(--dk-ease) both;
+}
+
+.dk-hero__content > * {
+  animation: dk-hero-enter 0.9s var(--dk-ease) both;
+}
+
+.dk-hero__content > :nth-child(2) { animation-delay: 70ms; }
+.dk-hero__content > :nth-child(3) { animation-delay: 140ms; }
+.dk-hero__content > :nth-child(4) { animation-delay: 210ms; }
+.dk-hero__content > :nth-child(5) { animation-delay: 280ms; }
+.dk-hero__content > :nth-child(6) { animation-delay: 350ms; }
+
+@keyframes dk-hero-enter {
+  from {
+    opacity: 0;
+    transform: translateY(22px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes dk-hero-breathe {
+  from { transform: scale(1.035); }
+  to { transform: scale(1); }
+}
+
+.dk-reveal {
+  opacity: 0;
+  transform: translateY(34px);
+  transition: opacity 0.85s var(--dk-ease), transform 0.85s var(--dk-ease);
+}
+
+.dk-reveal--in {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.dk-media__img {
+  animation: dk-media-in 0.65s var(--dk-ease) both;
+}
+
+.dk-proj-info {
+  animation: dk-card-in 0.55s var(--dk-ease) both;
+}
+
+@keyframes dk-media-in {
+  from {
+    opacity: 0.35;
+    transform: scale(1.025);
+    filter: saturate(0.82);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+    filter: saturate(1);
+  }
+}
+
+@keyframes dk-card-in {
+  from {
+    opacity: 0;
+    transform: translateX(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.dk-thumb,
+.dk-switch,
+.dk-control__tabs button {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.dk-thumb:focus-visible,
+.dk-switch:focus-visible,
+.dk-control__tabs button:focus-visible,
+.dk-btn:focus-visible,
+.dk-pack__cta:focus-visible {
+  outline: 3px solid rgba(214, 177, 95, 0.5);
+  outline-offset: 3px;
+}
+
+.dk-switch::after {
+  display: block;
+  width: 0;
+  height: 2px;
+  margin-top: 7px;
+  border-radius: 999px;
+  background: var(--dk-gold);
+  content: "";
+  transition: width 0.35s var(--dk-ease);
+}
+
+.dk-switch:hover::after,
+.dk-switch--active::after {
+  width: 100%;
+}
+
+.dk-control__motion {
+  animation: dk-control-change 0.48s var(--dk-ease) both;
+}
+
+@keyframes dk-control-change {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dk-control__progress {
+  animation: dk-progress-in 0.8s var(--dk-ease) both;
+}
+
+@keyframes dk-progress-in {
+  from {
+    opacity: 0;
+    transform: scale(0.88) rotate(-8deg);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) rotate(0);
+  }
+}
+
+.dk-control__benefits article {
+  transition: padding-left 0.32s var(--dk-ease), background-color 0.32s var(--dk-ease);
+}
+
+.dk-control__benefits article:hover {
+  padding-left: 12px;
+  background: rgba(255, 255, 255, 0.38);
+}
+
+.dk-pack {
+  transition: transform 0.4s var(--dk-ease), box-shadow 0.4s var(--dk-ease), border-color 0.4s var(--dk-ease);
+}
+
+.dk-pack:hover {
+  transform: translateY(-8px);
+  border-color: rgba(30, 81, 74, 0.24);
+  box-shadow: 0 34px 70px -38px rgba(16, 35, 31, 0.42);
+}
+
+.dk-pack--featured:hover {
+  transform: translateY(-14px);
+}
+
+.dk-step,
+.dk-svc {
+  transition: transform 0.35s var(--dk-ease), box-shadow 0.35s var(--dk-ease), background-color 0.35s var(--dk-ease);
+}
+
+.dk-step:hover,
+.dk-svc:hover {
+  transform: translateY(-5px);
+}
+
+.dk-btn,
+.dk-pack__cta,
+.dk-cta {
+  position: relative;
+  overflow: hidden;
+}
+
+.dk-btn::after,
+.dk-pack__cta::after,
+.dk-cta::after {
+  position: absolute;
+  top: -40%;
+  left: -70%;
+  width: 42%;
+  height: 180%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.32), transparent);
+  content: "";
+  transform: skewX(-18deg);
+  transition: left 0.65s var(--dk-ease);
+  pointer-events: none;
+}
+
+.dk-btn:hover::after,
+.dk-pack__cta:hover::after,
+.dk-cta:hover::after {
+  left: 125%;
+}
+
+@media (hover: none) {
+  .dk-control__benefits article:hover {
+    padding-left: 4px;
+    background: transparent;
+  }
+
+  .dk-pack:hover,
+  .dk-pack--featured:hover,
+  .dk-step:hover,
+  .dk-svc:hover {
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dk-landing {
+    scroll-behavior: auto;
+  }
+
+  .dk-hero__bg,
+  .dk-hero__content > *,
+  .dk-media__img,
+  .dk-proj-info,
+  .dk-control__motion,
+  .dk-control__progress {
+    animation: none;
+  }
+
+  .dk-btn::after,
+  .dk-pack__cta::after,
+  .dk-cta::after {
+    display: none;
+  }
+}

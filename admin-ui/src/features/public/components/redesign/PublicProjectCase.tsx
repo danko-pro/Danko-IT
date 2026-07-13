@@ -1,5 +1,6 @@
 import {
   getProjectCaseStats,
+  getProjectPrice,
   getProjectScope,
   getProjectShortName,
   getProjectSubtitle,
@@ -15,6 +16,7 @@ type ProjectCaseProps = {
 
 export function PublicProjectInfo({ project, isOpen, onToggle }: ProjectCaseProps) {
   const hasCase = getProjectScope(project).length > 0;
+  const price = getProjectPrice(project);
 
   return (
     <aside className="dk-proj-info" key={project.name}>
@@ -25,6 +27,13 @@ export function PublicProjectInfo({ project, isOpen, onToggle }: ProjectCaseProp
         <span className="dk-chip dk-chip--pkg">Пакет {project.package}</span>
         <span className="dk-chip dk-chip--type">{project.type}</span>
       </div>
+      {price ? (
+        <div className="dk-project-price">
+          <span>Стоимость ремонта</span>
+          <strong>{price.value}</strong>
+          <small>{price.note}</small>
+        </div>
+      ) : null}
       <p className="dk-proj-info__scope">{getProjectSummary(project)}</p>
       {hasCase ? (
         <button className="dk-case-toggle" type="button" aria-expanded={isOpen} aria-controls="dk-active-case" onClick={onToggle}>

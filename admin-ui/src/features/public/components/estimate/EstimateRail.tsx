@@ -202,6 +202,7 @@ export function EstimateRail({
             className="public-estimate-geometry-compact-toggle"
             type="button"
             aria-expanded={isMobileVolumesExpanded}
+            aria-controls="public-estimate-mobile-volumes"
             onClick={onToggleMobileVolumesExpanded}
           >
             {isMobileVolumesExpanded ? "Свернуть" : "Все объёмы"}
@@ -209,7 +210,7 @@ export function EstimateRail({
         </div>
 
         {isMobileVolumesExpanded ? (
-          <dl className="public-estimate-geometry-compact-full">
+          <dl className="public-estimate-geometry-compact-full" id="public-estimate-mobile-volumes">
             {summaryItems.map((item) => (
               <div className="public-estimate-geometry-compact-item" key={item.label}>
                 <dt>{item.label}</dt>

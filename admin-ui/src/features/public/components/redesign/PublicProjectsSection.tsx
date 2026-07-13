@@ -77,6 +77,8 @@ export function PublicProjectsSection() {
                       className="dk-media__img"
                       src={activeProjectImage.src}
                       alt={activeProjectImage.alt ?? activeProject.name}
+                      width={1280} height={932}
+                      decoding="async"
                     />
                   ) : (
                     <div className="dk-project-passport" key={`passport-${activeProject.name}`}>
@@ -97,7 +99,6 @@ export function PublicProjectsSection() {
                     Пакет {activeProject.package} · {activeProject.area}
                   </span>
                 </div>
-
                 {activeProjectImages.length > 0 ? (
                   <div className="dk-thumbs">
                     {activeProjectImages.map((image, index) => (
@@ -109,7 +110,7 @@ export function PublicProjectsSection() {
                         aria-label={`Фото ${index + 1}`}
                         aria-pressed={index === activeProjectImageIndex}
                       >
-                        <img src={image.src} alt={image.alt ?? ""} />
+                        <img src={image.src} alt={image.alt ?? ""} width={1280} height={932} loading="lazy" decoding="async" />
                       </button>
                     ))}
                   </div>

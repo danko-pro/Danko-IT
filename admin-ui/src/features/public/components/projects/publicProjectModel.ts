@@ -11,6 +11,8 @@ export type PublicProjectScopeGroup = {
 };
 
 export type PublicProjectWithDetails = PublicProjectItem & {
+  caseIntro?: string;
+  caseStats?: Array<{ value: string; label: string }>;
   imageAlt?: string;
   imageSrc?: string;
   images?: PublicProjectImage[];
@@ -19,6 +21,32 @@ export type PublicProjectWithDetails = PublicProjectItem & {
   scope?: PublicProjectScopeGroup[];
   shortName?: string;
 };
+
+export function getProjectCaseIntro(project: PublicProjectItem) {
+  const intro = (project as PublicProjectWithDetails).caseIntro;
+
+  return typeof intro === "string" && intro.length > 0 ? intro : undefined;
+}
+
+export function getProjectCaseStats(project: PublicProjectItem) {
+  const stats = (project as PublicProjectWithDetails).caseStats;
+
+  return Array.isArray(stats) ? stats.filter((stat) => stat.value.length > 0 && stat.label.length > 0) : [];
+}
+
+export function getProjectSummary(project: PublicProjectItem) {
+  const intro = getProjectCaseIntro(project);
+
+  if (intro) {
+    return intro;
+  }
+
+  const scope = getProjectScope(project);
+
+  return scope.length > 0
+    ? scope.flatMap((group) => group.items).slice(0, 6).join(" · ")
+    : `Ремонт под ключ: дизайн, отделка и комплектация под задачу объекта (${project.type}).`;
+}
 
 export function getProjectImages(project: PublicProjectItem) {
   const projectWithDetails = project as PublicProjectWithDetails;

@@ -4,12 +4,15 @@ import { publicProjectItems } from "../../public-content";
 import { usePublicProjectsShowcase } from "../../hooks/usePublicProjectsShowcase";
 import {
   getProjectImages,
+  getProjectScope,
   getProjectShortName,
 } from "../projects/publicProjectModel";
 import { PublicProjectCasePanel, PublicProjectInfo } from "./PublicProjectCase";
 
-// Показываем в галерее только объекты, у которых есть фотографии.
-const SHOWCASE_PROJECTS = publicProjectItems.filter((project) => getProjectImages(project).length > 0);
+// Готовые кейсы без фотосъёмки показываем через технический паспорт объекта.
+const SHOWCASE_PROJECTS = publicProjectItems.filter(
+  (project) => getProjectImages(project).length > 0 || getProjectScope(project).length > 0,
+);
 
 export function PublicProjectsSection() {
   const [isCaseOpen, setIsCaseOpen] = useState(false);
@@ -45,12 +48,26 @@ export function PublicProjectsSection() {
         <div className="dk-projects__grid">
           <div className="dk-media">
             <div className="dk-media__frame">
-              <img
-                key={activeProjectImage?.src}
-                className="dk-media__img"
-                src={activeProjectImage?.src}
-                alt={activeProjectImage?.alt ?? activeProject.name}
-              />
+              {activeProjectImage ? (
+                <img
+                  key={activeProjectImage.src}
+                  className="dk-media__img"
+                  src={activeProjectImage.src}
+                  alt={activeProjectImage.alt ?? activeProject.name}
+                />
+              ) : (
+                <div className="dk-project-passport" key={`passport-${activeProject.name}`}>
+                  <div className="dk-project-passport__grid" aria-hidden="true" />
+                  <p>Паспорт проекта</p>
+                  <strong>{activeProject.name}</strong>
+                  <dl>
+                    <div><dt>Площадь</dt><dd>{activeProject.area}</dd></div>
+                    <div><dt>Формат</dt><dd>Пакет {activeProject.package}</dd></div>
+                    <div><dt>Контур</dt><dd>{activeProject.focus.length} направления</dd></div>
+                  </dl>
+                  <span>Проектирование · ремонт · комплектация</span>
+                </div>
+              )}
               <div className="dk-media__scrim" aria-hidden="true" />
               <span className="dk-media__badge">
                 <i aria-hidden="true" />
@@ -58,19 +75,21 @@ export function PublicProjectsSection() {
               </span>
             </div>
 
-            <div className="dk-thumbs">
-              {activeProjectImages.map((image, index) => (
-                <button
-                  type="button"
-                  key={image.src}
-                  className={`dk-thumb${index === activeProjectImageIndex ? " dk-thumb--active" : ""}`}
-                  onClick={() => setActiveProjectImageIndex(index)}
-                  aria-label={`Фото ${index + 1}`}
-                >
-                  <img src={image.src} alt={image.alt ?? ""} />
-                </button>
-              ))}
-            </div>
+            {activeProjectImages.length > 0 ? (
+              <div className="dk-thumbs">
+                {activeProjectImages.map((image, index) => (
+                  <button
+                    type="button"
+                    key={image.src}
+                    className={`dk-thumb${index === activeProjectImageIndex ? " dk-thumb--active" : ""}`}
+                    onClick={() => setActiveProjectImageIndex(index)}
+                    aria-label={`Фото ${index + 1}`}
+                  >
+                    <img src={image.src} alt={image.alt ?? ""} />
+                  </button>
+                ))}
+              </div>
+            ) : null}
           </div>
 
           <PublicProjectInfo project={activeProject} isOpen={isCaseOpen} onToggle={() => setIsCaseOpen((current) => !current)} />

@@ -1,5 +1,13 @@
+import { createRequire } from "module";
 import { describe, expect, it } from "vitest";
 import publicEstimateSource from "./PublicEstimate.tsx?raw";
+import estimateRailSource from "./components/estimate/EstimateRail.tsx?raw";
+
+const require = createRequire(import.meta.url);
+const publicCssSource = require("fs").readFileSync(
+  require("path").join(require("path").dirname(require("url").fileURLToPath(import.meta.url)), "public.css"),
+  "utf8",
+) as string;
 
 const REQUIRED_SECTION_HOOKS = [
   "useEstimateRooms.ts",
@@ -77,5 +85,14 @@ describe("public estimate architecture (A9.8)", () => {
     for (const hookFile of REQUIRED_SECTION_HOOKS) {
       expect(estimateHookModulePaths).toContain(`./estimate/${hookFile}`);
     }
+  });
+
+  it("keeps rail and mobile volumes states accessible", () => {
+    expect(estimateRailSource).toContain('aria-current={isActive ? "location" : undefined}');
+    expect(estimateRailSource).toContain('aria-controls="public-estimate-mobile-volumes"');
+    expect(publicCssSource).toContain("public estimate — audited interaction states");
+    expect(publicCssSource).toContain(':disabled');
+    expect(publicCssSource).toContain('[aria-pressed="true"]');
+    expect(publicCssSource).toContain('[aria-current="location"]');
   });
 });

@@ -648,6 +648,36 @@
   font-weight: 750;
 }
 
+.dk-project-price {
+  display: grid;
+  gap: 0.28rem;
+  margin-top: 1rem;
+  padding: 1rem 1.05rem;
+  border: 1px solid rgba(30, 81, 74, 0.14);
+  border-radius: 18px;
+  background: linear-gradient(135deg, rgba(229, 244, 237, 0.92), rgba(255, 248, 224, 0.78));
+}
+
+.dk-project-price span {
+  font-size: 0.72rem;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--dk-green);
+}
+
+.dk-project-price strong {
+  font-size: clamp(1.35rem, 2.5vw, 1.75rem);
+  line-height: 1.05;
+  color: var(--dk-green-deep);
+}
+
+.dk-project-price small {
+  font-size: 0.74rem;
+  line-height: 1.4;
+  color: var(--dk-muted);
+}
+
 .dk-proj-info__scope {
   margin: 1.2rem 0 0;
   font-size: 0.94rem;

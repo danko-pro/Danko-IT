@@ -73,31 +73,31 @@ export function PublicProjectsSection() {
             <div className="dk-projects__grid">
               <div className="dk-media">
                 <div className="dk-media__frame">
-              {activeProjectImage ? (
-                <img
-                  key={activeProjectImage.src}
-                  className="dk-media__img"
-                  src={activeProjectImage.src}
-                  alt={activeProjectImage.alt ?? activeProject.name}
-                />
-              ) : (
-                <div className="dk-project-passport" key={`passport-${activeProject.name}`}>
-                  <div className="dk-project-passport__grid" aria-hidden="true" />
-                  <p>Паспорт проекта</p>
-                  <strong>{activeProject.name}</strong>
-                  <dl>
-                    <div><dt>Площадь</dt><dd>{activeProject.area}</dd></div>
-                    <div><dt>Формат</dt><dd>Пакет {activeProject.package}</dd></div>
-                    <div><dt>Контур</dt><dd>{activeProject.focus.length} направления</dd></div>
-                  </dl>
-                  <span>Проектирование · ремонт · комплектация</span>
-                </div>
-              )}
-              <div className="dk-media__scrim" aria-hidden="true" />
-              <span className="dk-media__badge">
-                <i aria-hidden="true" />
-                Пакет {activeProject.package} · {activeProject.area}
-              </span>
+                  {activeProjectImage ? (
+                    <img
+                      key={activeProjectImage.src}
+                      className="dk-media__img"
+                      src={activeProjectImage.src}
+                      alt={activeProjectImage.alt ?? activeProject.name}
+                    />
+                  ) : (
+                    <div className="dk-project-passport" key={`passport-${activeProject.name}`}>
+                      <div className="dk-project-passport__grid" aria-hidden="true" />
+                      <p>Паспорт проекта</p>
+                      <strong>{activeProject.name}</strong>
+                      <dl>
+                        <div><dt>Площадь</dt><dd>{activeProject.area}</dd></div>
+                        <div><dt>Формат</dt><dd>Пакет {activeProject.package}</dd></div>
+                        <div><dt>Контур</dt><dd>{activeProject.focus.length} направления</dd></div>
+                      </dl>
+                      <span>Проектирование · ремонт · комплектация</span>
+                    </div>
+                  )}
+                  <div className="dk-media__scrim" aria-hidden="true" />
+                  <span className="dk-media__badge">
+                    <i aria-hidden="true" />
+                    Пакет {activeProject.package} · {activeProject.area}
+                  </span>
                 </div>
 
                 {activeProjectImages.length > 0 ? (

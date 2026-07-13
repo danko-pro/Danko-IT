@@ -482,6 +482,17 @@
 }
 
 /* ---------- projects ---------- */
+.dk-projects__layout {
+  display: grid;
+  grid-template-columns: minmax(178px, 210px) minmax(0, 1fr);
+  gap: clamp(1rem, 2.2vw, 1.8rem);
+  align-items: start;
+}
+
+.dk-projects__main {
+  min-width: 0;
+}
+
 .dk-projects__grid {
   display: grid;
   grid-template-columns: minmax(0, 1.32fr) minmax(300px, 0.68fr);
@@ -713,6 +724,61 @@
   color: var(--dk-green);
 }
 
+.dk-project-map {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr);
+  gap: 0.75rem;
+  align-items: center;
+  margin-top: 0.75rem;
+  color: var(--dk-green);
+  text-decoration: none;
+}
+
+.dk-project-map__pin {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border: 1px solid rgba(30, 81, 74, 0.15);
+  border-radius: 13px;
+  background: var(--dk-soft);
+  transition: transform 0.25s var(--dk-ease), background-color 0.25s var(--dk-ease);
+}
+
+.dk-project-map__pin svg {
+  width: 20px;
+  height: 20px;
+  overflow: visible;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.dk-project-map > span:last-child {
+  display: grid;
+  gap: 0.18rem;
+  min-width: 0;
+}
+
+.dk-project-map strong {
+  color: var(--dk-green-deep);
+  font-size: 0.86rem;
+  line-height: 1.35;
+}
+
+.dk-project-map small {
+  color: var(--dk-green);
+  font-size: 0.71rem;
+  font-weight: 750;
+}
+
+.dk-project-map:hover .dk-project-map__pin {
+  transform: translateY(-2px);
+  background: #dceee7;
+}
+
 .dk-chips {
   display: flex;
   flex-wrap: wrap;
@@ -797,25 +863,31 @@
 }
 
 .dk-switchers {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.6rem;
-  margin-top: 1.2rem;
+  position: sticky;
+  top: 96px;
+  display: grid;
+  gap: 0.55rem;
+  min-width: 0;
 }
 
 .dk-switch {
-  display: inline-flex;
+  position: relative;
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
   align-items: center;
-  gap: 0.6rem;
-  padding: 0.7rem 1.1rem;
-  border-radius: 999px;
+  gap: 0.7rem;
+  width: 100%;
+  min-height: 58px;
+  padding: 0.7rem 0.8rem;
+  border-radius: 17px;
   cursor: pointer;
-  white-space: nowrap;
+  text-align: left;
   border: 1px solid rgba(30, 81, 74, 0.2);
   background: rgba(255, 255, 255, 0.7);
   color: var(--dk-green-deep);
-  font-size: 0.92rem;
+  font-size: 0.82rem;
   font-weight: 800;
+  line-height: 1.2;
   transition: all 0.4s var(--dk-ease);
 }
 
@@ -830,6 +902,12 @@
 }
 
 .dk-switch__num {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border-radius: 9px;
+  background: rgba(30, 81, 74, 0.07);
   font-size: 0.7rem;
   font-weight: 850;
   color: rgba(30, 81, 74, 0.5);
@@ -837,6 +915,7 @@
 
 .dk-switch--active .dk-switch__num {
   color: var(--dk-gold);
+  background: rgba(255, 255, 255, 0.12);
 }
 
 /* ---------- approach (services + steps) ---------- */
@@ -1509,6 +1588,7 @@
 }
 
 .dk-case {
+  scroll-margin-top: 96px;
   margin-top: 20px;
   overflow: hidden;
   border: 1px solid rgba(30, 81, 74, 0.13);
@@ -1516,6 +1596,10 @@
   background: #fff;
   box-shadow: 0 34px 78px -48px rgba(16, 35, 31, 0.42);
   animation: dk-case-expand 0.58s var(--dk-ease) both;
+}
+
+.dk-case:focus {
+  outline: none;
 }
 
 @keyframes dk-case-expand {
@@ -1695,6 +1779,27 @@
 
 /* ---------- responsive ---------- */
 @media (max-width: 980px) {
+  .dk-projects__layout {
+    grid-template-columns: 1fr;
+  }
+
+  .dk-switchers {
+    position: static;
+    display: flex;
+    gap: 0.55rem;
+    overflow-x: auto;
+    padding-bottom: 0.35rem;
+    scrollbar-width: none;
+  }
+
+  .dk-switchers::-webkit-scrollbar {
+    display: none;
+  }
+
+  .dk-switch {
+    flex: 0 0 188px;
+  }
+
   .dk-projects__grid,
   .dk-contact__grid {
     grid-template-columns: 1fr;
@@ -1829,7 +1934,8 @@
   }
 
   .dk-switch {
-    flex: 0 0 auto;
+    flex: 0 0 168px;
+    min-height: 52px;
   }
 }
 
@@ -2352,19 +2458,22 @@
 }
 
 .dk-switch::after {
-  display: block;
-  width: 0;
-  height: 2px;
-  margin-top: 7px;
+  position: absolute;
+  top: 50%;
+  left: -1px;
+  width: 3px;
+  height: 0;
+  margin: 0;
   border-radius: 999px;
   background: var(--dk-gold);
   content: "";
-  transition: width 0.35s var(--dk-ease);
+  transform: translateY(-50%);
+  transition: height 0.35s var(--dk-ease);
 }
 
 .dk-switch:hover::after,
 .dk-switch--active::after {
-  width: 100%;
+  height: 30px;
 }
 
 .dk-control__motion {
